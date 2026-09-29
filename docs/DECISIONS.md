@@ -68,6 +68,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** envelopper dès maintenant au format i18next `{ translation: { ... } }` et dépendre du paquet `i18next`.
 - **À valider :** oui
 
+## D-31 — Services locaux Docker Compose (NF-09)
+
+- **Date :** 29/09/2026
+- **Décision :** identifiants de développement documentés dans `.env.example` et repris par défaut dans `docker-compose.yml` : utilisateur Postgres `xplor` / mot de passe `xplor`, clé MinIO `xplor` / secret `xplor-dev-secret` (MinIO refuse un secret de moins de 8 caractères), bucket `xplor`. L'image du serveur objet est `minio/minio` ; `minio/mc` sert uniquement à créer le bucket. `POSTGRES_USER`, `POSTGRES_PASSWORD` et `POSTGRES_DB` complètent la liste imposée pour que Compose et `DATABASE_URL` restent alignés. Healthcheck et volume nommé sur postgres, redis, minio et mailpit ; `minio-init` est un conteneur éphémère sans volume.
+- **Alternatives :** secret MinIO identique au mot de passe Postgres (refusé par MinIO) ; image `quay.io/minio/minio` ; volume et healthcheck aussi sur `minio-init`.
+- **À valider :** oui
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
