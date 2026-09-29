@@ -187,6 +187,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | ----------------- | ----------------------------------------------------------------------------------------------- | ------- |
 | @nestjs/throttler | Limite `POST /auth/login` à 5 requêtes par minute et par IP (NF-01). 6.7.1, NestJS 11.         | MIT     |
 
+## D-41 — Seed des utilisateurs de démonstration (NF-09)
+
+- **Date :** 29/09/2026
+- **Décision :** `pnpm db:seed` exécute `prisma db seed` dans `@xplor/api`. Le champ `prisma.seed` lance `tsx prisma/seed.ts` (tsx déjà retenu en D-36 ; devDependency directe de l'API pour que le binaire soit résolu). Prisma 6.19 avertit que la clé `package.json#prisma` sera retirée en Prisma 7 au profit de `prisma.config.ts` : on la conserve, D-34 restant sur Prisma 6 et la consigne demandant `prisma.seed`. Le script charge le `.env` à la racine du dépôt, sans écraser les variables déjà présentes (même règle que l'API, D-33) : Prisma ne lit de lui-même que `apps/api/.env`. `SEED_DEFAULT_PASSWORD` (exemple `xplor-seed-dev-2026`) est validé par `validateNewPassword` avant l'upsert ; un refus produit un message qui cite la variable. Le hash est argon2id via `PasswordService` (D-37). L'upsert se fait sur `email` et réécrit `name`, `passwordHash`, `role`, `active` et `uiLang`. `failedLoginCount`, `lockedUntil`, `lastLoginAt` et le TOTP ne sont pas remis à zéro. Les noms affichés sont Administrateur, Éditeur, Gestionnaire, Partenaire. Hôtel, kiosque et visites restent hors de ce seed (M1, déjà acté pour `Hotel` en D-34).
+- **Alternatives :** `prisma.config.ts` (Prisma 7, écarté par D-34) ; `node --experimental-strip-types` (les imports `.js` ne sont pas réécrits, D-36) ; tout remettre à zéro à chaque seed, y compris le verrouillage ; placer `SEED_DEFAULT_PASSWORD` seulement dans `apps/api/.env`.
+- **À valider :** oui (valeur de développement du mot de passe ; colonnes laissées intactes lors d'un re-seed)
+
+| Paquet | Raison                                                                                                      | Licence |
+| ------ | ----------------------------------------------------------------------------------------------------------- | ------- |
+| tsx    | Exécute `prisma/seed.ts` (déjà la dépendance de `@xplor/worker`, D-36). 4.23.15, devDependency de l'API. | MIT     |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
