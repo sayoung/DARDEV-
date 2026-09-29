@@ -10,7 +10,9 @@ import {
   CityUpdateSchema,
   HotspotCreateSchema,
   HotspotIcon,
+  HotspotResponseSchema,
   HotspotType,
+  HotspotUpdateSchema,
   PaginatedTourResponseSchema,
   PaginationQuerySchema,
   ProcessingStatus,
@@ -41,6 +43,7 @@ const id = {
   media: '01990000-0000-7000-8000-000000000007',
   categoryResponse: '01990000-0000-7000-8000-000000000008',
   user: '01990000-0000-7000-8000-000000000009',
+  hotspot: '01990000-0000-7000-8000-00000000000a',
 } as const;
 
 const uuidV4 = '01990000-0000-4000-8000-000000000001';
@@ -524,6 +527,121 @@ describe('HotspotCreateSchema', () => {
         }).success,
       ).toBe(false);
     }
+  });
+});
+
+describe('HotspotUpdateSchema', () => {
+  const position = {
+    yaw: 1.2,
+    pitch: -0.1,
+    label: { fr: 'Entrer dans la kasbah' },
+  };
+
+  it('accepte un remplacement complet, le type peut changer', () => {
+    const sceneLink = {
+      type: HotspotType.SCENE_LINK,
+      ...position,
+      targetSceneId: id.scene,
+    };
+    expect(HotspotUpdateSchema.parse(sceneLink)).toEqual({
+      ...sceneLink,
+      icon: HotspotIcon.ARROW,
+    });
+    const info = {
+      type: HotspotType.INFO,
+      ...position,
+      body: { fr: '<p>Histoire</p>' },
+    };
+    expect(HotspotUpdateSchema.parse(info)).toEqual({ ...info, icon: HotspotIcon.INFO });
+  });
+
+  it('exige les champs requis de la variante choisie', () => {
+    expect(
+      HotspotUpdateSchema.safeParse({ type: HotspotType.INFO, ...position }).success,
+    ).toBe(false);
+  });
+
+  it('refuse une URL qui n’est pas http ou https', () => {
+    for (const url of [
+      'pas une url',
+      'javascript:alert(1)',
+      'JAVASCRIPT:alert(1)',
+      'data:text/html,<script>alert(1)</script>',
+      'file:///etc/passwd',
+    ]) {
+      expect(
+        HotspotUpdateSchema.safeParse({
+          type: HotspotType.URL,
+          ...position,
+          url,
+        }).success,
+      ).toBe(false);
+    }
+  });
+});
+
+describe('HotspotResponseSchema', () => {
+  const createdAt = '2026-09-29T18:00:00.000Z';
+  const base = {
+    id: id.hotspot,
+    sceneId: id.scene,
+    yaw: 1.2,
+    pitch: -0.1,
+    label: { fr: 'Entrer dans la kasbah' },
+    targetSceneId: null,
+    targetTourId: null,
+    targetTourSceneId: null,
+    body: null,
+    url: null,
+    arrivalYaw: null,
+    mediaAssetIds: [] as string[],
+    icon: HotspotIcon.ARROW,
+    createdAt,
+    updatedAt: createdAt,
+  };
+
+  it('accepte une réponse par type', () => {
+    const responses = [
+      {
+        ...base,
+        type: HotspotType.SCENE_LINK,
+        targetSceneId: id.scene,
+        arrivalYaw: 0.4,
+        icon: HotspotIcon.ARROW,
+      },
+      {
+        ...base,
+        type: HotspotType.TOUR_LINK,
+        targetTourId: id.tour,
+        targetTourSceneId: id.scene,
+        icon: HotspotIcon.PORTAL,
+      },
+      {
+        ...base,
+        type: HotspotType.INFO,
+        body: { fr: '<p>Histoire</p>', ar: 'تاريخ', en: 'History' },
+        icon: HotspotIcon.INFO,
+      },
+      {
+        ...base,
+        type: HotspotType.MEDIA,
+        mediaAssetIds: [id.media],
+        icon: HotspotIcon.PHOTO,
+      },
+      {
+        ...base,
+        type: HotspotType.URL,
+        url: 'https://example.com/lieu',
+        icon: HotspotIcon.INFO,
+      },
+    ];
+    for (const response of responses) {
+      expect(HotspotResponseSchema.parse(response)).toEqual(response);
+    }
+  });
+
+  it('refuse un type inconnu', () => {
+    expect(HotspotResponseSchema.safeParse({ ...base, type: 'NOT_A_TYPE' }).success).toBe(false);
   });
 });
 
