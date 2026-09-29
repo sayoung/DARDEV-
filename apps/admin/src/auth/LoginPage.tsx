@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { isAccountLocked, isInvalidCredentials } from '../api/client.js';
 import { useAuth } from './AuthProvider.js';
 
-type LoginErrorKey = 'auth.login.error' | 'auth.login.locked';
+type LoginErrorKey = 'auth.login.error' | 'auth.login.locked' | 'auth.login.failed';
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -62,12 +62,12 @@ function readField(data: FormData, name: string): string {
   return typeof value === 'string' ? value : '';
 }
 
-function loginErrorKey(error: unknown): LoginErrorKey | null {
+function loginErrorKey(error: unknown): LoginErrorKey {
   if (isAccountLocked(error)) {
     return 'auth.login.locked';
   }
   if (isInvalidCredentials(error)) {
     return 'auth.login.error';
   }
-  return null;
+  return 'auth.login.failed';
 }

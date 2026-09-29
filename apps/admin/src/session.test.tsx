@@ -64,7 +64,8 @@ describe('session du back-office', () => {
     await submitLogin('ada@xplor.test', 'correct-horse');
 
     expect(await screen.findByText(profile.name)).toBeTruthy();
-    expect(screen.getByText(profile.role)).toBeTruthy();
+    expect(screen.getByText(resources.fr.auth.role.ADMIN)).toBeTruthy();
+    expect(screen.queryByText(profile.role)).toBeNull();
     expect(screen.queryByRole('form', { name: resources.fr.auth.login.title })).toBeNull();
     const loginCall = findCall('/auth/login');
     expect(loginCall?.credentials).toBe('include');
@@ -88,6 +89,37 @@ describe('session du back-office', () => {
     expect(screen.queryByText(profile.name)).toBeNull();
   });
 
+  it('affiche le rôle traduit en arabe', async () => {
+    window.history.replaceState(null, '', '/?lang=ar');
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/login')) {
+        return Promise.resolve(jsonResponse(200, profile));
+      }
+      return Promise.resolve(anonymous());
+    });
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', { name: resources.ar.auth.login.title }),
+    ).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(resources.ar.auth.login.email), {
+      target: { value: 'ada@xplor.test' },
+    });
+    fireEvent.change(screen.getByLabelText(resources.ar.auth.login.password), {
+      target: { value: 'correct-horse' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: resources.ar.auth.login.title }));
+
+    expect(await screen.findByText(resources.ar.auth.role.ADMIN)).toBeTruthy();
+    expect(screen.queryByText(profile.role)).toBeNull();
+    expect(document.documentElement.getAttribute('dir')).toBe('rtl');
+    const home = screen.getByText(resources.ar.auth.role.ADMIN).closest('section');
+    expect(home).not.toBeNull();
+    if (home !== null) {
+      expect(getComputedStyle(home).direction).toBe('rtl');
+    }
+  });
+
   it('un 423 ACCOUNT_LOCKED affiche le verrouillage', async () => {
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
       if (methodOf(input, init) === 'POST') {
@@ -101,6 +133,36 @@ describe('session du back-office', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe(resources.fr.auth.login.locked);
     expect(screen.queryByText(resources.fr.auth.login.error)).toBeNull();
+  });
+
+  it('un autre échec de connexion affiche un message', async () => {
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      if (methodOf(input, init) === 'POST') {
+        return Promise.resolve(errorResponse(500, 'INTERNAL'));
+      }
+      return Promise.resolve(anonymous());
+    });
+    render(<App />);
+    await submitLogin('ada@xplor.test', 'mot-de-passe-valide');
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe(resources.fr.auth.login.failed);
+    expect(screen.queryByText(resources.fr.auth.login.error)).toBeNull();
+    expect(screen.queryByText(resources.fr.auth.login.locked)).toBeNull();
+  });
+
+  it('une erreur réseau à la connexion affiche un message', async () => {
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      if (methodOf(input, init) === 'POST') {
+        return Promise.reject(new TypeError('Failed to fetch'));
+      }
+      return Promise.resolve(anonymous());
+    });
+    render(<App />);
+    await submitLogin('ada@xplor.test', 'mot-de-passe-valide');
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe(resources.fr.auth.login.failed);
   });
 
   it('la déconnexion envoie l’en-tête X-CSRF-Token', async () => {

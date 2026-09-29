@@ -15,7 +15,14 @@
       "password": "Mot de passe",
       "submit": "Se connecter",
       "error": "Identifiants incorrects",
-      "locked": "Compte verrouillé. Réessayez dans 15 minutes."
+      "locked": "Compte verrouillé. Réessayez dans 15 minutes.",
+      "failed": "La connexion a échoué. Réessayez."
+    },
+    "role": {
+      "ADMIN": "Administrateur",
+      "EDITOR": "Éditeur",
+      "HOTEL_MANAGER": "Gestionnaire d'hôtel",
+      "PARTNER": "Partenaire"
     },
     "logout": "Se déconnecter"
   },
