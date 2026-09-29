@@ -92,17 +92,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Complément (29/09/2026, D-64) :** le script `dev` est `tsx watch src/main.ts`. `nest build` reste le build de production.
 - **À valider :** non
 
-| Paquet                   | Raison                                                                                                 | Licence    |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ | ---------- |
-| @nestjs/common           | Socle des modules, contrôleurs et injection NestJS 11.                                                 | MIT        |
-| @nestjs/core             | Démarrage de l'application (`NestFactory`).                                                            | MIT        |
-| @nestjs/platform-fastify | Adaptateur HTTP Fastify imposé par le cahier des charges.                                              | MIT        |
+| Paquet                   | Raison                                                                                                        | Licence    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- | ---------- |
+| @nestjs/common           | Socle des modules, contrôleurs et injection NestJS 11.                                                        | MIT        |
+| @nestjs/core             | Démarrage de l'application (`NestFactory`).                                                                   | MIT        |
+| @nestjs/platform-fastify | Adaptateur HTTP Fastify imposé par le cahier des charges.                                                     | MIT        |
 | @nestjs/cli              | Script `build` (`nest build`), métadonnées des décorateurs via `tsc`. Le script `dev` est `tsx watch` (D-64). | MIT        |
-| @nestjs/schematics       | Collection déclarée par `nest-cli.json`.                                                               | MIT        |
-| fastify                  | Serveur HTTP, dépendance de pair de `@nestjs/platform-fastify`.                                        | MIT        |
-| reflect-metadata         | Réflexion exigée par les décorateurs NestJS.                                                           | Apache-2.0 |
-| rxjs                     | Dépendance de pair de `@nestjs/common`.                                                                | Apache-2.0 |
-| @types/node              | Types Node 22 (`process.env`, `process.loadEnvFile`).                                                  | MIT        |
+| @nestjs/schematics       | Collection déclarée par `nest-cli.json`.                                                                      | MIT        |
+| fastify                  | Serveur HTTP, dépendance de pair de `@nestjs/platform-fastify`.                                               | MIT        |
+| reflect-metadata         | Réflexion exigée par les décorateurs NestJS.                                                                  | Apache-2.0 |
+| rxjs                     | Dépendance de pair de `@nestjs/common`.                                                                       | Apache-2.0 |
+| @types/node              | Types Node 22 (`process.env`, `process.loadEnvFile`).                                                         | MIT        |
 
 ## D-34 — Prisma 6 et migration initiale sans base (NF-09)
 
@@ -405,8 +405,9 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Complément (29/09/2026) :** le run `36580207347` (commit `1eaf986`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347, job `ci` `109446061994`) est vert, y compris « API smoke » (même journal). Artefact `playwright-results` `11039602501`. Les critères 1, 2, 7 et 10 de `docs/PROGRESS.md`, ainsi que la variante « démo sans Docker local » de `docs/DEMO_M0.md`, citent ce run comme preuve CI.
 - **Complément (29/09/2026, NF-09) :** le moteur local répond. `docker version` affiche Server Docker Desktop 4.93.0 (moteur 29.8.1, linux/amd64) alors que `(Get-CimInstance Win32_Processor).VirtualizationFirmwareEnabled` vaut False. VirtualMachinePlatform et Microsoft-Windows-Subsystem-Linux sont activées (InstallState 1). `wsl --status` : distribution par défaut `docker-desktop`, version 2. Preuve locale des critères 1, 7 et 10 : quatre services `healthy`, `minio-init` sorti en 0, `pnpm db:migrate` déjà synchronisé, `pnpm db:seed` deux fois. Le critère 2 (connexion dans le navigateur) reste dû. Aucun code modifié.
 - **Complément (29/09/2026, F-90) :** le parcours HTTP local du critère 2 est fait. `scripts/ci-api-smoke.mjs` sort en 0 sur `http://localhost:3000` et sur le proxy `http://localhost:5173` (`GET /api/health` 200, OpenAPI 200, login 200 avec `xplor_sid`, `GET /api/v1/auth/me` 200). Le clic dans un navigateur graphique reste à faire. Le démarrage `nest start --watch` échouait ; le correctif est D-64.
+- **Complément (29/09/2026, démo M0) :** preuve locale obtenue le 29/09/2026 (Node 22.23.3). Quatre commandes : `docker compose up -d` (postgres, redis, minio et mailpit `healthy`, `minio-init` code 0), `pnpm db:migrate` déjà synchronisé, `pnpm db:seed` deux fois ; `pnpm install` non rejoué (workspace déjà installé). `GET /api/health` 200, `GET /api/v1/openapi.json` 200, `POST /api/v1/auth/login` 200 et `GET /api/v1/auth/me` 200 (`scripts/ci-api-smoke.mjs` sur `http://localhost:3000` et sur `http://localhost:5173`). Courriel de réinitialisation dans Mailpit (`POST /api/v1/auth/password/forgot` 202, corps contenant `/reset/`). `pnpm test:int` : 9 verts. La CI (run `36580207347`) reste une preuve complémentaire. La question de validation est sans objet pour les critères 1, 7 et 10.
 - **Alternatives :** attendre l'activation d'Intel VT-x ou d'AMD-V (SVM) dans le BIOS/UEFI ; jouer la démo sur un autre poste où Docker démarre.
-- **À valider :** oui (porteur)
+- **À valider :** sans objet pour les critères 1, 7 et 10 (preuve locale du 29/09/2026 ; la CI reste une preuve complémentaire).
 
 ## D-63 — Réinvitation d'un compte jamais connecté (F-90)
 
