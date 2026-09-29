@@ -234,6 +234,18 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** empreinte argon2id ; réinitialisation valable 24 h ; traiter l'instant `expiresAt` comme déjà expiré ; attendre une base fantôme pour `--from-migrations`.
 - **À valider :** oui (durée 1 h du jeton `PASSWORD_RESET` ; échéance encore valide à l'instant exact ; `USED` prioritaire sur `EXPIRED`)
 
+## D-45 — Courriels d'invitation et de réinitialisation (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `MailModule` est global. Le jeton `MAILER` expose `SmtpMailer` (nodemailer vers `SMTP_HOST` / `SMTP_PORT`, `secure: false`, sans propriété `auth` : Mailpit local n'en demande pas). `FakeMailer` n'est pas branché dans Nest : il garde les messages en mémoire pour les tests. L'expéditeur SMTP est fixe, `Xplor <noreply@xplor.local>`, car `Mailer.send` ne porte pas de champ `from`. `ADMIN_BASE_URL` est une URL ; absente ou vide, elle vaut `http://localhost:5173` (port du back-office, D-42). `mailActionLink` retire les barres finales puis ajoute `/invite/<token>` ou `/reset/<token>`. `renderMail(kind, lang, link)` lit `mail.invite.*` ou `mail.reset.*` dans `@xplor/i18n` (sujet, texte, HTML) pour la langue `uiLang` du destinataire et remplace `{link}`. Le HTML échappe `&`, `<`, `>` et `"`. `apps/api` dépend de `@xplor/i18n` et active `resolveJsonModule` pour suivre cet import.
+- **Alternatives :** variable `MAIL_FROM` ; authentification SMTP dès le développement ; corps HTML généré hors des clés i18n.
+- **À valider :** oui (expéditeur fixe ; emplacement `{link}`)
+
+| Paquet            | Raison                                                                                                  | Licence |
+| ----------------- | ------------------------------------------------------------------------------------------------------- | ------- |
+| nodemailer        | Envoi SMTP vers Mailpit (`SMTP_HOST`, `SMTP_PORT`, sans authentification). 10.0.12.                     | MIT-0   |
+| @types/nodemailer | Déclarations TypeScript de nodemailer (`createTransport`, options SMTP). 8.0.2, devDependency de l'API. | MIT     |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

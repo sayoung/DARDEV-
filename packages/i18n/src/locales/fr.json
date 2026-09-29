@@ -28,5 +28,17 @@
   },
   "health": {
     "ok": "Service disponible"
+  },
+  "mail": {
+    "invite": {
+      "subject": "Invitation à rejoindre Xplor",
+      "text": "Vous êtes invité à rejoindre Xplor. Définissez votre mot de passe en ouvrant ce lien (valable 48 heures) : {link}",
+      "html": "<p>Vous êtes invité à rejoindre Xplor.</p><p><a href=\"{link}\">Définir votre mot de passe</a> (lien valable 48 heures).</p>"
+    },
+    "reset": {
+      "subject": "Réinitialisation de votre mot de passe Xplor",
+      "text": "Pour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) : {link}",
+      "html": "<p><a href=\"{link}\">Choisir un nouveau mot de passe</a> (lien valable 1 heure).</p>"
+    }
   }
 }

@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { type Env } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
+import { MailModule } from './mail/mail.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 
@@ -12,7 +13,14 @@ export class AppModule {
   static forRoot(env: Env): DynamicModule {
     return {
       module: AppModule,
-      imports: [ConfigModule.forRoot(env), PrismaModule, RedisModule, AuthModule, HealthModule],
+      imports: [
+        ConfigModule.forRoot(env),
+        PrismaModule,
+        RedisModule,
+        MailModule,
+        AuthModule,
+        HealthModule,
+      ],
     };
   }
 }
