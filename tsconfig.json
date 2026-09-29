@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["vitest.workspace.ts"]
+  "include": ["vitest.workspace.ts", "vitest.config.ts"]
 }
