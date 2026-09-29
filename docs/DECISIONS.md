@@ -153,6 +153,18 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | SecLists `Pwdb_top-10000.txt`               | Liste embarquée des 10 000 mots de passe les plus courants. Le dépôt danielmiessler/SecLists est sous licence MIT. | MIT (dépôt)  |
 | Probable-Wordlists (berzerk0), source amont | Même liste, publiée dans SecLists sous le nom `Pwdb_top-10000.txt`. Attribution conservée ici.                     | CC BY-SA 4.0 |
 
+## D-38 — Santé `GET /api/health` (NF-04, NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** `GET /api/health` est exclu du préfixe global `/api/v1` via `setGlobalPrefix` (`exclude` sur `api/health`). `HealthService` agrège trois sondes injectées par jetons Nest (`DB_HEALTH_PROBE`, `REDIS_HEALTH_PROBE`, `STORAGE_HEALTH_PROBE`). Chaque sonde est plafonnée à 2 s. Le corps est `{ status: 'ok'|'error', checks: { db, redis, storage } }` ; HTTP 200 si les trois valent `ok`, 503 sinon. `RedisModule` (global) crée un seul client ioredis depuis `REDIS_URL` (`lazyConnect`) et le ferme dans `onModuleDestroy` par `disconnect()` : un `QUIT` attendrait une réponse et bloquerait l'arrêt si Redis est absent. L'événement `error` du client est absorbé pour que l'absence de Redis ne tue pas le processus. Le stockage appelle `HeadBucket` avec `endpoint` = `S3_ENDPOINT`, `forcePathStyle: true`, les identifiants `S3_ACCESS_KEY` / `S3_SECRET_KEY`, et la région `us-east-1` (exigée par le SDK ; MinIO l'ignore en path-style). `PrismaService.onModuleInit` attrape l'échec de `$connect` : l'API reste en écoute et `/api/health` répond 503.
+- **Alternatives :** arrêter le processus si PostgreSQL est absent ; `redis.quit()` ; variable `S3_REGION` ; ioredis 5.
+- **À valider :** oui (région fixe `us-east-1` ; ioredis 6.0.0, majeure récente, plutôt qu'ioredis 5)
+
+| Paquet               | Raison                                                                                          | Licence    |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| ioredis              | Client Redis unique pour le `PING` du healthcheck, fermé à l'arrêt de `RedisModule`. 6.0.0.   | MIT        |
+| @aws-sdk/client-s3   | `HeadBucket` du healthcheck vers MinIO (`S3_ENDPOINT`, `forcePathStyle`). 3.1142.0.            | Apache-2.0 |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
