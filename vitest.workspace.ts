@@ -25,6 +25,30 @@ const workspace: TestProjectConfiguration[] = [
       include: ['src/**/*.test.ts'],
     },
   },
+  {
+    test: {
+      name: '@xplor/web',
+      root: './apps/web',
+      environment: 'happy-dom',
+      include: ['src/**/*.test.ts'],
+    },
+  },
+  {
+    test: {
+      name: '@xplor/kiosk',
+      root: './apps/kiosk',
+      environment: 'happy-dom',
+      include: ['src/**/*.test.ts'],
+    },
+  },
+  {
+    test: {
+      name: '@xplor/worker',
+      root: './apps/worker',
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+    },
+  },
 ];
 
 export default workspace;
