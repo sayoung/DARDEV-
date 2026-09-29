@@ -203,3 +203,30 @@ export function paginated<Item extends z.ZodType>(itemSchema: Item) {
 
 /** Page de résultats. Déduit du schéma pour rester aligné sur `paginated`. */
 export type Paginated<T> = z.infer<ReturnType<typeof paginated<z.ZodType<T>>>>;
+
+/**
+ * Code d'un refus de publication (cahier 5.4, F-03).
+ * L'admin importe cet enum ; il ne le redéclare pas.
+ */
+export enum ValidationIssueCode {
+  START_SCENE_MISSING = 'START_SCENE_MISSING',
+  START_SCENE_FOREIGN = 'START_SCENE_FOREIGN',
+  PANORAMA_NOT_READY = 'PANORAMA_NOT_READY',
+  SCENE_UNREACHABLE = 'SCENE_UNREACHABLE',
+  SCENE_LINK_TARGET_MISSING = 'SCENE_LINK_TARGET_MISSING',
+  SCENE_LINK_SELF = 'SCENE_LINK_SELF',
+  SCENE_LINK_FOREIGN = 'SCENE_LINK_FOREIGN',
+  SCENE_LINK_TARGET_DELETED = 'SCENE_LINK_TARGET_DELETED',
+  TOUR_LINK_TARGET_MISSING = 'TOUR_LINK_TARGET_MISSING',
+  TOUR_LINK_SELF = 'TOUR_LINK_SELF',
+  TOUR_LINK_TARGET_UNPUBLISHED = 'TOUR_LINK_TARGET_UNPUBLISHED',
+  TOUR_LINK_SCENE_FOREIGN = 'TOUR_LINK_SCENE_FOREIGN',
+}
+
+/** Un problème de publication. `message` est en français, prêt à afficher. */
+export type ValidationIssue = {
+  code: ValidationIssueCode;
+  sceneId?: string;
+  hotspotId?: string;
+  message: string;
+};

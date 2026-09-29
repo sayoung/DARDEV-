@@ -447,6 +447,16 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** Update partiel ; `sceneId` dans le corps ; UUID de toute version ; icône sans défaut ; `page` coercé depuis une chaîne de query ; `durationMinutes` strictement positif ; `z.url()` sans restriction de protocole. Pour le schéma : `@default` SQL de `shareToken` (PostgreSQL 16 n'a pas `nanoid`) ; `Cascade` de `Scene` vers `Tour` (effacerait les scènes à la suppression physique, alors que le cahier prévoit `deletedAt`) ; jointure implicite Prisma sans horodatage.
 - **À valider :** oui
 
+## D-68 — Validation de publication en fonction pure (F-03)
+
+- **Date :** 29/09/2026
+- **Décision :** `validateTour` (`apps/api/src/catalog/tour-validation.ts`) est une fonction pure. Elle ne lit pas Prisma : l'appelant fournit l'instantané de la visite et `findTargetTour`. Le service Nest qui chargera les lignes viendra avec la route de publication. `ValidationIssueCode` et `ValidationIssue` vivent dans `@xplor/shared` (`catalog.ts`) : l'admin importera la liste `{ code, sceneId?, hotspotId?, message }` sans redéclarer le type. `message` est une phrase française fixe, attachée au code.
+- **Graphe :** une scène `deleted` sort du graphe de publication. On ne vérifie pas son panorama, on n'exige pas qu'elle soit atteignable, et on ne suit pas ses hotspots. Un `SCENE_LINK` vers elle produit `SCENE_LINK_TARGET_DELETED`. `startSceneId` null, ou une scène de départ supprimée, produit `START_SCENE_MISSING` (avec `sceneId` seulement dans le second cas). Un identifiant de départ absent de l'instantané produit `START_SCENE_FOREIGN`. S'il n'y a pas de scène de départ vivante, les autres scènes ne sont pas déclarées `SCENE_UNREACHABLE`. L'atteignabilité est un parcours en largeur depuis la scène de départ, en suivant uniquement les `SCENE_LINK` valides, dans le sens du lien. Un second chemin ou un cycle est ignoré. `INFO`, `MEDIA` et `URL` ne créent pas d'arête.
+- **Visite cible :** `findTargetTour` renvoie `undefined` si l'identifiant est inconnu. Inconnue, `deleted` ou d'un statut autre que `PUBLISHED` : `TOUR_LINK_TARGET_UNPUBLISHED`. `sceneIds` est la liste des scènes vivantes de la cible. `TOUR_LINK_SCENE_FOREIGN` est émis seulement quand l'instantané cible existe et que `targetTourSceneId` est renseigné hors de `sceneIds` (y compris si la cible n'est pas publiée : les deux codes sortent ensemble). Une cible inconnue n'a pas de liste de scènes : pas de `TOUR_LINK_SCENE_FOREIGN`. Un `TOUR_LINK` sans `targetTourId`, ou vers la visite courante, n'appelle pas `findTargetTour`.
+- **Couverture :** `vitest.config.ts` inclut `apps/api/src/catalog/tour-validation.ts` et en exige 100 % (lignes, branches, fonctions, instructions), comme `access-policy.ts` (D-35). Aucun paquet npm ajouté.
+- **Alternatives :** une classe Nest injectée dès maintenant (elle tirerait Prisma dans le test) ; un code distinct pour une visite cible inconnue ; exiger l'atteignabilité des scènes supprimées ; messages traduits dans `@xplor/i18n` (l'interface admin reste en français, F-04).
+- **À valider :** oui
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

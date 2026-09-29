@@ -18,6 +18,7 @@ import {
   TourCreateSchema,
   TourStatus,
   TourUpdateSchema,
+  ValidationIssueCode,
   paginated,
   type CityResponse,
   type Paginated,
@@ -65,6 +66,20 @@ describe('enums de contenu', () => {
     expect(Object.values(HotspotIcon)).toEqual(['ARROW', 'INFO', 'PHOTO', 'PLAY', 'PORTAL']);
     expect(Object.values(AssetKind)).toEqual(['PANORAMA', 'IMAGE', 'AUDIO', 'VIDEO']);
     expect(Object.values(ProcessingStatus)).toEqual(['PENDING', 'PROCESSING', 'READY', 'ERROR']);
+    expect(Object.values(ValidationIssueCode)).toEqual([
+      'START_SCENE_MISSING',
+      'START_SCENE_FOREIGN',
+      'PANORAMA_NOT_READY',
+      'SCENE_UNREACHABLE',
+      'SCENE_LINK_TARGET_MISSING',
+      'SCENE_LINK_SELF',
+      'SCENE_LINK_FOREIGN',
+      'SCENE_LINK_TARGET_DELETED',
+      'TOUR_LINK_TARGET_MISSING',
+      'TOUR_LINK_SELF',
+      'TOUR_LINK_TARGET_UNPUBLISHED',
+      'TOUR_LINK_SCENE_FOREIGN',
+    ]);
   });
 });
 

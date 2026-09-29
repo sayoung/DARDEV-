@@ -32,6 +32,7 @@ export {
   TourCreateSchema,
   TourStatus,
   TourUpdateSchema,
+  ValidationIssueCode,
   paginated,
   type CategoryCreate,
   type CategoryResponse,
@@ -46,6 +47,7 @@ export {
   type SceneUpdate,
   type TourCreate,
   type TourUpdate,
+  type ValidationIssue,
 } from './catalog.js';
 export { LANGS, type Lang } from './lang.js';
 export {
