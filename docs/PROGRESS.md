@@ -11,17 +11,16 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 API-23, partie 2 — liste et création des hotspots. Hors de ce lot : PATCH, DELETE, écrans admin.
+**Exigence :** M1 API-23, partie 3 — modification et suppression des hotspots. Hors de ce lot : écrans admin.
 
 Plan :
 
-1. `HotspotsController` fin et `HotspotsService` dans `CatalogModule`. `GET` et `POST` `/api/v1/admin/scenes/:sceneId/hotspots`. `SessionGuard`, `CsrfGuard`, `canManageContent`. `createdById` = session. Réponse `HotspotResponseSchema`, création en 201. Liste triée par `createdAt` croissant.
-2. Scène parente absente ou supprimée : 404 `SCENE_NOT_FOUND`. Contrôles 422 `{ error: { code, message } }` dans une méthode privée du service, réutilisable par PATCH : `SCENE_LINK_TARGET_MISSING`, `SCENE_LINK_SELF`, `SCENE_LINK_FOREIGN`, `TOUR_LINK_TARGET_MISSING`, `TOUR_LINK_SELF`, `TOUR_LINK_SCENE_FOREIGN` (une visite cible `DRAFT` reste acceptée), `MEDIA_ASSET_NOT_FOUND`.
-3. `contentVersion` de la visite parente +1 à la création, dans la même transaction.
-4. Tests unitaires : un cas par code 422. `test/hotspots.int.test.ts` : 401, 403 sans CSRF, 403 PARTNER, 201 pour un `SCENE_LINK` valide, 422 `SCENE_LINK_SELF` et `SCENE_LINK_FOREIGN`, 404 sur une scène supprimée, GET qui renvoie le hotspot créé.
-5. Régénérer `docs/openapi.json`. Compléter D-73. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
+1. `PATCH /api/v1/admin/hotspots/:id` (`HotspotUpdateSchema`) et `DELETE` (suppression physique, 204) dans `HotspotsController` et `HotspotsService`. Les 422 passent par `assertTargets`, déjà utilisée à la création. Si le type change, les champs des autres variantes sont remis à `null` ou `[]` dans la même écriture. `contentVersion` de la visite +1 dans la même transaction.
+2. Hotspot inconnu ou scène parente supprimée : 404 `HOTSPOT_NOT_FOUND`. Même contrôle d’accès (`SessionGuard`, `CsrfGuard`, `canManageContent`).
+3. Tests unitaires du service. Étendre `test/hotspots.int.test.ts` : passage `SCENE_LINK` vers `INFO` avec `targetSceneId` à `null`, 422 `SCENE_LINK_SELF` au PATCH, 204 puis 404 au second DELETE, 403 pour `HOTEL_MANAGER`.
+4. Régénérer `docs/openapi.json`. Compléter D-73. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : `GET` et `POST` `/api/v1/admin/scenes/:sceneId/hotspots`. `assertTargets` porte les sept codes 422 et reste appelable par le PATCH (`HotspotUpdate` est la même union). `contentVersion` +1, `createdById` = session, liste triée par `createdAt` croissant. D-73 complétée. OpenAPI régénéré. `pnpm lint`, `pnpm typecheck` et `pnpm test` (337) verts. `pnpm test:int` vert (36, dont 6 dans `hotspots.int.test.ts`). Aucun commit (orchestrateur).
+Réalisé (29/09/2026, Node 22.23.3) : `PATCH` et `DELETE` `/api/v1/admin/hotspots/:id`. `assertTargets` porte les 422 du remplacement. Un changement de type remet les champs des autres variantes à `null` ou `[]` dans la même écriture. Suppression physique, 204. 404 `HOTSPOT_NOT_FOUND` si le hotspot est inconnu ou si la scène parente est supprimée. `contentVersion` +1. D-73 complétée. OpenAPI régénéré. `pnpm lint`, `pnpm typecheck` et `pnpm test` (342) verts. `pnpm test:int` vert (41, dont 11 dans `hotspots.int.test.ts`). Aucun commit (orchestrateur).
 
 Le schéma 5.6 à 5.8 et API-25 sont dans la section « Fait ».
 
@@ -52,11 +51,12 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **API-25** (CRUD villes et catégories) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Lecture pour toute session ; écriture ADMIN et EDITOR (`canManageCatalog`). 409 `IN_USE` au format du cahier. Seed fr/ar/en. OpenAPI à jour. Pas d'écran admin (D-69).
 - **Schéma 5.6 à 5.8** (D-66, D-70) : `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, migration `20260929183235_hotels_kiosks`. Seed : 1 hôtel à Rabat (FIVE, RENTAL, fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`. CRUD et écrans restent en M5. La session ne charge pas encore `hotelIds`.
 - **API-23, partie 1** (contrats, D-73) : `HotspotUpdateSchema` et `HotspotResponseSchema` dans `@xplor/shared`, types `z.infer` exportés par `index.ts`. Tests : une réponse valide par type, type inconnu refusé, URL non http/https refusée à la mise à jour. Pas de route, pas d’OpenAPI, pas d’écran.
-- **API-23, partie 2** (liste et création, D-73) : `GET` et `POST` `/api/v1/admin/scenes/:sceneId/hotspots`. Liste triée par `createdAt` croissant. Création 201 `HotspotResponseSchema`, `createdById` = session, `contentVersion` de la visite +1. 404 `SCENE_NOT_FOUND` si la scène parente est absente ou supprimée. 422 `{ error: { code, message } }` via `assertTargets` (réutilisable par PATCH) : `SCENE_LINK_TARGET_MISSING`, `SCENE_LINK_SELF`, `SCENE_LINK_FOREIGN`, `TOUR_LINK_TARGET_MISSING`, `TOUR_LINK_SELF`, `TOUR_LINK_SCENE_FOREIGN` (une cible `DRAFT` reste acceptée), `MEDIA_ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour. Pas de PATCH, DELETE, ni écran.
+- **API-23, partie 2** (liste et création, D-73) : `GET` et `POST` `/api/v1/admin/scenes/:sceneId/hotspots`. Liste triée par `createdAt` croissant. Création 201 `HotspotResponseSchema`, `createdById` = session, `contentVersion` de la visite +1. 404 `SCENE_NOT_FOUND` si la scène parente est absente ou supprimée. 422 `{ error: { code, message } }` via `assertTargets` (réutilisable par PATCH) : `SCENE_LINK_TARGET_MISSING`, `SCENE_LINK_SELF`, `SCENE_LINK_FOREIGN`, `TOUR_LINK_TARGET_MISSING`, `TOUR_LINK_SELF`, `TOUR_LINK_SCENE_FOREIGN` (une cible `DRAFT` reste acceptée), `MEDIA_ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour.
+- **API-23, partie 3** (modification et suppression, D-73) : `PATCH` et `DELETE` `/api/v1/admin/hotspots/:id`. Remplacement complet (`HotspotUpdateSchema`) ; si le type change, les champs des autres types passent à `null` ou `[]` dans la même écriture. Suppression physique, 204. 404 `HOTSPOT_NOT_FOUND` si le hotspot est inconnu ou si la scène parente est supprimée. `contentVersion` +1 dans la même transaction. Mêmes 422 via `assertTargets`. ADMIN et EDITOR. OpenAPI à jour. Pas d’écran admin.
 
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD (publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token), API-23 PATCH et DELETE des hotspots, écrans admin (y compris villes, catégories, visites, scènes et hotspots), F-02 (sans traitement), F-04, F-05, et les 3 visites liées du seed. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; liste et création des hotspots aussi ; duplication et dépublication des visites restent. F-03 : la fonction est en place ; la réponse 422 de publication et l'affichage des problèmes dans l'admin restent à faire. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD (publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token), écrans admin (y compris villes, catégories, visites, scènes et hotspots), F-02 (sans traitement), F-04, F-05, et les 3 visites liées du seed. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; duplication et dépublication des visites restent. F-03 : la fonction est en place ; la réponse 422 de publication et l'affichage des problèmes dans l'admin restent à faire. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 

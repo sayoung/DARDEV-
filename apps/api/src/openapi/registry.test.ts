@@ -37,6 +37,8 @@ const ROUTES = [
   { path: '/api/v1/admin/scenes/{id}', method: 'delete' },
   { path: '/api/v1/admin/scenes/{sceneId}/hotspots', method: 'get' },
   { path: '/api/v1/admin/scenes/{sceneId}/hotspots', method: 'post' },
+  { path: '/api/v1/admin/hotspots/{id}', method: 'patch' },
+  { path: '/api/v1/admin/hotspots/{id}', method: 'delete' },
 ] as const;
 
 describe('document OpenAPI', () => {
@@ -95,6 +97,14 @@ describe('document OpenAPI', () => {
     const listHotspots = doc.paths?.['/api/v1/admin/scenes/{sceneId}/hotspots']?.get?.responses;
     expect(listHotspots?.['200']).toBeDefined();
     expect(listHotspots?.['403']).toBeDefined();
+    const updateHotspot = doc.paths?.['/api/v1/admin/hotspots/{id}']?.patch?.responses;
+    expect(updateHotspot?.['200']).toBeDefined();
+    expect(updateHotspot?.['422']).toBeDefined();
+    expect(updateHotspot?.['404']).toBeDefined();
+    const deleteHotspot = doc.paths?.['/api/v1/admin/hotspots/{id}']?.delete?.responses;
+    expect(deleteHotspot?.['204']).toBeDefined();
+    expect(deleteHotspot?.['404']).toBeDefined();
+    expect(body).toContain('HOTSPOT_NOT_FOUND');
 
     const invitations = doc.paths?.['/api/v1/admin/users/invitations']?.post?.responses;
     expect(invitations?.['403']).toBeDefined();

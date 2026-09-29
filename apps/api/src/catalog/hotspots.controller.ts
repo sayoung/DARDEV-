@@ -1,16 +1,18 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Inject,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { HotspotCreateSchema, type HotspotResponse } from '@xplor/shared';
+import { HotspotCreateSchema, HotspotUpdateSchema, type HotspotResponse } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
 import type { SessionRequest } from '../auth/session-request.js';
@@ -45,5 +47,22 @@ export class HotspotsController {
       parseBody(HotspotCreateSchema, body),
       principal.userId,
     );
+  }
+
+  @Patch('hotspots/:id')
+  update(
+    @Req() request: SessionRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<HotspotResponse> {
+    requireContentManager(request);
+    return this.hotspots.update(parseResourceId(id), parseBody(HotspotUpdateSchema, body));
+  }
+
+  @Delete('hotspots/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Req() request: SessionRequest, @Param('id') id: string): Promise<void> {
+    requireContentManager(request);
+    await this.hotspots.remove(parseResourceId(id));
   }
 }
