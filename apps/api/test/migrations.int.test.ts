@@ -12,7 +12,7 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-it('migrate deploy crée les tables utilisateurs et le modèle de contenu, et les enums Role et UserTokenType', async () => {
+it('migrate deploy crée les tables utilisateurs, le modèle de contenu et les modèles hôteliers', async () => {
   const tables = await prisma.$queryRaw<Array<{ table_name: string }>>`
     SELECT table_name
     FROM information_schema.tables
@@ -32,6 +32,11 @@ it('migrate deploy crée les tables utilisateurs et le modèle de contenu, et le
       'TourCategory',
       'Scene',
       'Hotspot',
+      'Hotel',
+      'Selection',
+      'SelectionItem',
+      'Kiosk',
+      'UserHotel',
     ]),
   );
 
@@ -45,5 +50,14 @@ it('migrate deploy crée les tables utilisateurs et le modèle de contenu, et le
   `;
   const enumNames = enums.map((row) => row.typname);
 
-  expect(enumNames).toEqual(expect.arrayContaining(['Role', 'UserTokenType']));
+  expect(enumNames).toEqual(
+    expect.arrayContaining([
+      'Role',
+      'UserTokenType',
+      'HotelStars',
+      'ContractType',
+      'KioskDeviceType',
+      'KioskStatus',
+    ]),
+  );
 });

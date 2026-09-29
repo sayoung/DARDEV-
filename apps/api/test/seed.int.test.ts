@@ -10,6 +10,7 @@ import { afterAll, expect, it } from 'vitest';
 
 import { PasswordService } from '../src/auth/password.service.js';
 import { SEED_CATEGORIES, SEED_CITIES } from '../src/seed/seed-catalog.js';
+import { SEED_HOTEL, SEED_KIOSK, SEED_MANAGER_EMAIL } from '../src/seed/seed-hotels.js';
 import { readDatabaseUrlTest, resetDb } from './global-setup.js';
 
 const execFileAsync = promisify(execFile);
@@ -69,6 +70,60 @@ it('deux exécutions du seed laissent quatre utilisateurs actifs, un par rôle',
     expect(category.color).toBe(expected.color);
     expect(category.weight).toBe(expected.weight);
   }
+
+  const hotels = await prisma.hotel.findMany();
+  const kiosks = await prisma.kiosk.findMany();
+  const selections = await prisma.selection.findMany();
+  const items = await prisma.selectionItem.findMany();
+  const links = await prisma.userHotel.findMany({ include: { user: true } });
+  const rabat = SEED_CITIES.find((city) => city.name.fr === 'Rabat');
+  if (rabat === undefined) {
+    throw new Error('ville de démonstration Rabat absente du référentiel de seed');
+  }
+
+  expect(hotels).toHaveLength(1);
+  const hotel = hotels[0];
+  if (hotel === undefined) {
+    throw new Error('hôtel de démonstration absent');
+  }
+  expect(hotel).toMatchObject({
+    id: SEED_HOTEL.id,
+    name: SEED_HOTEL.name,
+    stars: SEED_HOTEL.stars,
+    cityId: rabat.id,
+    contractType: SEED_HOTEL.contractType,
+    languages: [...SEED_HOTEL.languages],
+    maintenancePinHash: null,
+    active: true,
+  });
+  expect(selections).toHaveLength(1);
+  const selection = selections[0];
+  if (selection === undefined) {
+    throw new Error('sélection de démonstration absente');
+  }
+  expect(selection).toMatchObject({ hotelId: SEED_HOTEL.id, featuredTourId: null, version: 1 });
+  expect(items).toHaveLength(0);
+  expect(kiosks).toHaveLength(1);
+  const kiosk = kiosks[0];
+  if (kiosk === undefined) {
+    throw new Error('kiosque de démonstration absent');
+  }
+  expect(kiosk).toMatchObject({
+    id: SEED_KIOSK.id,
+    label: SEED_KIOSK.label,
+    hotelId: SEED_HOTEL.id,
+    status: SEED_KIOSK.status,
+    deviceType: SEED_KIOSK.deviceType,
+  });
+  expect(links).toHaveLength(1);
+  const link = links[0];
+  if (link === undefined) {
+    throw new Error('rattachement de démonstration absent');
+  }
+  expect(link).toMatchObject({
+    hotelId: SEED_HOTEL.id,
+    user: { email: SEED_MANAGER_EMAIL, role: Role.HOTEL_MANAGER },
+  });
 });
 
 function readSeedPassword(): string {
