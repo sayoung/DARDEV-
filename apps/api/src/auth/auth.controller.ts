@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
+  AcceptInviteRequestSchema,
   ForgotPasswordRequestSchema,
   LoginRequestSchema,
   ResetPasswordRequestSchema,
@@ -114,10 +115,26 @@ export class AuthController {
   async resetPassword(@Body() body: unknown): Promise<void> {
     const parsed = ResetPasswordRequestSchema.safeParse(body);
     if (!parsed.success) {
-      throw resetSchemaError(parsed.error);
+      throw passwordSchemaError(parsed.error);
     }
     try {
       await this.auth.resetPassword(parsed.data.token, parsed.data.password);
+    } catch (error: unknown) {
+      rethrowAsHttp(error);
+    }
+  }
+
+  @Post('invite/accept')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle(FIVE_PER_MINUTE)
+  @UseGuards(ThrottlerGuard)
+  async acceptInvite(@Body() body: unknown): Promise<void> {
+    const parsed = AcceptInviteRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw passwordSchemaError(parsed.error);
+    }
+    try {
+      await this.auth.acceptInvite(parsed.data.token, parsed.data.password);
     } catch (error: unknown) {
       rethrowAsHttp(error);
     }
@@ -138,7 +155,7 @@ function rethrowAsHttp(error: unknown): never {
   throw error;
 }
 
-function resetSchemaError(error: ZodError): HttpException {
+function passwordSchemaError(error: ZodError): HttpException {
   const passwordIssue = error.issues.some((issue) => issue.path[0] === 'password');
   if (passwordIssue) {
     return new HttpException(

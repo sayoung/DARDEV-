@@ -3,11 +3,12 @@ import { Role as PrismaRole } from '@prisma/client';
 import { LANGS, type Lang } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
-import { toSharedRole } from './prisma-role.js';
+import { toPrismaRole, toSharedRole } from './prisma-role.js';
 import { type AuthTx } from './unit-of-work.js';
 import {
   type AuthUser,
   type LoginStateUpdate,
+  type NewInvitedUser,
   type PasswordUpdate,
   type UserRepository,
 } from './user.repository.js';
@@ -97,6 +98,33 @@ export class PrismaUserRepository implements UserRepository {
         failedLoginCount: state.failedLoginCount,
         lockedUntil: state.lockedUntil,
       },
+    };
+    if (db) {
+      await db.user.update(args);
+      return;
+    }
+    await this.prisma.user.update(args);
+  }
+
+  async createInvited(input: NewInvitedUser): Promise<AuthUser> {
+    const user = await this.prisma.user.create({
+      data: {
+        email: input.email,
+        name: input.name,
+        passwordHash: input.passwordHash,
+        role: toPrismaRole(input.role),
+        uiLang: input.uiLang,
+        active: false,
+      },
+      select: authUserSelect,
+    });
+    return toAuthUser(user);
+  }
+
+  async activate(id: string, passwordHash: string, db?: AuthTx): Promise<void> {
+    const args = {
+      where: { id },
+      data: { passwordHash, active: true },
     };
     if (db) {
       await db.user.update(args);

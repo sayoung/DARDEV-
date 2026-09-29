@@ -17,6 +17,7 @@ import { InMemorySessionStore } from './in-memory-session.store.js';
 import { type AuthTx, type UnitOfWork } from './unit-of-work.js';
 import {
   type LoginStateUpdate,
+  type NewInvitedUser,
   type PasswordUpdate,
   type AuthUser,
   type UserRepository,
@@ -26,7 +27,7 @@ import {
   type UserTokenRecord,
   type UserTokenRepository,
 } from './user-token.repository.js';
-import { PASSWORD_RESET_TTL_MS, hashToken } from './user-token.js';
+import { INVITE_TTL_MS, PASSWORD_RESET_TTL_MS, hashToken } from './user-token.js';
 
 const NOW = new Date('2026-09-29T12:00:00.000Z');
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
@@ -56,6 +57,7 @@ function account(overrides: Partial<AuthUser> = {}): AuthUser {
 class MemoryUsers implements UserRepository {
   readonly updates: { id: string; state: LoginStateUpdate }[] = [];
   readonly passwordUpdates: { id: string; state: PasswordUpdate }[] = [];
+  readonly activations: { id: string; passwordHash: string }[] = [];
   /** Après ce nombre de lectures par id, le compte devient inactif. */
   inactiveAfterIdReads: number | null = null;
   private idReads = 0;
@@ -106,6 +108,33 @@ class MemoryUsers implements UserRepository {
         user.passwordHash = state.passwordHash;
         user.failedLoginCount = state.failedLoginCount;
         user.lockedUntil = state.lockedUntil;
+      }
+    }
+    return Promise.resolve();
+  }
+
+  createInvited(input: NewInvitedUser): Promise<AuthUser> {
+    const user: AuthUser = {
+      id: `invited-${input.email}`,
+      email: input.email,
+      name: input.name,
+      passwordHash: input.passwordHash,
+      role: input.role,
+      uiLang: input.uiLang,
+      active: false,
+      failedLoginCount: 0,
+      lockedUntil: null,
+    };
+    this.byEmail.set(input.email, user);
+    return Promise.resolve(user);
+  }
+
+  activate(id: string, passwordHash: string): Promise<void> {
+    this.activations.push({ id, passwordHash });
+    for (const user of this.byEmail.values()) {
+      if (user.id === id) {
+        user.passwordHash = passwordHash;
+        user.active = true;
       }
     }
     return Promise.resolve();
@@ -709,5 +738,95 @@ describe('AuthService.resetPassword', () => {
       statusCode: 400,
       code: TOKEN_INVALID,
     });
+  });
+});
+
+function plantInvite(tokens: MemoryTokens, userId: string, token: string, expiresAt: Date): void {
+  tokens.rows.push({
+    id: `invite-${token}`,
+    userId,
+    type: 'INVITE',
+    tokenHash: hashToken(token),
+    expiresAt,
+    usedAt: null,
+  });
+}
+
+describe('AuthService.acceptInvite', () => {
+  it('répond TOKEN_INVALID pour un jeton inconnu, d’un autre type ou expiré, sans le consommer', async () => {
+    const user = account({ active: false });
+    const { service, tokens } = setup(user, false);
+    const reset = 'jeton-reset';
+    const expired = 'jeton-expire';
+    tokens.rows.push({
+      id: 'reset',
+      userId: user.id,
+      type: 'PASSWORD_RESET',
+      tokenHash: hashToken(reset),
+      expiresAt: new Date(NOW.getTime() + INVITE_TTL_MS),
+      usedAt: null,
+    });
+    plantInvite(tokens, user.id, expired, new Date(NOW.getTime() - 1));
+
+    for (const token of ['inconnu', reset, expired]) {
+      await expect(service.acceptInvite(token, NEW_PASSWORD)).rejects.toMatchObject({
+        statusCode: 400,
+        code: TOKEN_INVALID,
+      });
+    }
+
+    expect(tokens.rows.every((row) => row.usedAt === null)).toBe(true);
+    expect(user.active).toBe(false);
+    expect(user.passwordHash).toBe('hash-ada');
+  });
+
+  it('consomme le jeton si le compte a disparu', async () => {
+    const { service, tokens } = setup(null, false);
+    const token = 'jeton-orphelin';
+    plantInvite(tokens, 'absent', token, new Date(NOW.getTime() + INVITE_TTL_MS));
+
+    await expect(service.acceptInvite(token, NEW_PASSWORD)).rejects.toMatchObject({
+      statusCode: 400,
+      code: TOKEN_INVALID,
+    });
+
+    expect(tokens.rows[0]?.usedAt).toEqual(NOW);
+  });
+
+  it('refuse un mot de passe courant ou trop court sans consommer le jeton', async () => {
+    const user = account({ active: false });
+    const { service, tokens } = setup(user, false);
+    const token = 'jeton-invite';
+    plantInvite(tokens, user.id, token, new Date(NOW.getTime() + INVITE_TTL_MS));
+
+    await expect(service.acceptInvite(token, 'password1234')).rejects.toMatchObject({
+      statusCode: 400,
+      code: PASSWORD_TOO_COMMON,
+    });
+    await expect(service.acceptInvite(token, 'court')).rejects.toMatchObject({
+      statusCode: 400,
+      code: PASSWORD_INVALID,
+    });
+
+    expect(tokens.rows[0]?.usedAt).toBeNull();
+    expect(user.active).toBe(false);
+  });
+
+  it('n’active pas le compte si le jeton est pris entre-temps', async () => {
+    const user = account({ active: false });
+    const { service, tokens, users } = setup(user, false);
+    const token = 'jeton-invite';
+    plantInvite(tokens, user.id, token, new Date(NOW.getTime() + INVITE_TTL_MS));
+    tokens.allowConsume = false;
+
+    await expect(service.acceptInvite(token, NEW_PASSWORD)).rejects.toMatchObject({
+      statusCode: 400,
+      code: TOKEN_INVALID,
+    });
+
+    expect(user.active).toBe(false);
+    expect(user.passwordHash).toBe('hash-ada');
+    expect(users.activations).toEqual([]);
+    expect(tokens.rows[0]?.usedAt).toBeNull();
   });
 });
