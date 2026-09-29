@@ -11,16 +11,17 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 F-01 — correction du refus relecteur : hotspot `URL` limité à http/https.
+**Exigence :** M1 F-01 — migration Prisma du modèle de contenu (cahier 5.1 à 5.5, Asset minimal D-65).
 
 Plan :
 
-1. Remplacer `z.url()` par `z.httpUrl()` sur le hotspot `URL` (`javascript:` et `data:` refusés).
-2. Tests de refus pour ces schémas, et un cas `http` valide.
-3. `Paginated<T>` déduit par `z.infer` du schéma `paginated`. `PaginationQuery` reste sur des nombres déjà typés (`page` obligatoire).
-4. `pnpm lint`, `pnpm typecheck`, `pnpm --filter @xplor/shared test` (couverture de `catalog.ts` ≥ 90 %). Compléter D-67. Aucun commit (orchestrateur).
+1. Ajouter `City`, `Category`, `Asset` (champs D-65), `Tour`, `TourCategory`, `Scene` et `Hotspot` dans `schema.prisma` : UUID v7, `createdAt` / `updatedAt`, `createdById` sur Tour, Scene et Hotspot, index sur les clés étrangères.
+2. `shareToken` nullable et unique (généré plus tard par le service). `publicShare` défaut false, `contentVersion` défaut 1, `status` défaut `DRAFT`, `deletedAt` sur Tour et Scene. Hotspot : `targetScene` et `targetTour` optionnels, `onDelete: SetNull`.
+3. Générer `prisma migrate dev --name content_model` sous Node 22, sans modifier les migrations déjà présentes.
+4. Étendre `test/migrations.int.test.ts` (tables du modèle de contenu). Choix `onDelete` et `shareToken` dans D-67.
+5. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : `url` du hotspot `URL` passe par `z.httpUrl()`. Tests : `http` accepté ; `javascript:`, `data:` et `file:` refusés. `Paginated<T>` vient de `z.infer`. D-67 complétée. `pnpm lint` et `pnpm typecheck` verts. `pnpm --filter @xplor/shared test` : 63 tests verts, couverture de `catalog.ts` 100 % (lignes, branches, fonctions, instructions). Aucun code API ni front. Aucun commit (orchestrateur).
+Réalisé (29/09/2026, Node 22.23.3) : migration `20260929172452_content_model` générée et appliquée sur PostgreSQL 16 (base `xplor`). Tables `City`, `Category`, `Asset`, `Tour`, `TourCategory`, `Scene`, `Hotspot`. `shareToken` nullable unique (`varchar(22)`). `onDelete` documenté dans D-67. Migrations `init_users` et `user_tokens` inchangées. `pnpm lint`, `pnpm typecheck`, `pnpm test` (232) et `pnpm test:int` (9, dont les tables de contenu) verts. Aucun commit (orchestrateur).
 
 ## Definition of Done — M1
 
@@ -41,11 +42,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### Fait
 
-- **F-01** (schémas Zod seulement) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (63 tests du paquet). Pas de Prisma, pas d'API, pas d'écran. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (63 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). Pas d'API, pas d'écran. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
 
 ### En cours
 
-- Reste du jalon M1 : schéma Prisma 5.1 à 5.8, API-21/22/23/25, écrans admin, F-02 (sans traitement), F-03, F-04, F-05. La partie liste / CRUD / duplication de F-01 n'est pas commencée.
+- Reste du jalon M1 : schéma Prisma 5.6 à 5.8 (`Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, D-66), API-21/22/23/25, écrans admin, F-02 (sans traitement), F-03, F-04, F-05. La partie liste / CRUD / duplication de F-01 n'est pas commencée.
 
 ### Bloqué
 

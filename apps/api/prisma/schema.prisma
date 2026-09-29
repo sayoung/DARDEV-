@@ -30,6 +30,9 @@ model User {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   tokens           UserToken[]
+  toursCreated     Tour[]      @relation("TourCreatedBy")
+  scenesCreated    Scene[]     @relation("SceneCreatedBy")
+  hotspotsCreated  Hotspot[]   @relation("HotspotCreatedBy")
 }
 
 enum UserTokenType {
@@ -50,4 +53,210 @@ model UserToken {
   createdAt DateTime      @default(now())
 
   @@index([userId, type])
+}
+
+enum TourStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum HotspotType {
+  SCENE_LINK
+  TOUR_LINK
+  INFO
+  MEDIA
+  URL
+}
+
+enum HotspotIcon {
+  ARROW
+  INFO
+  PHOTO
+  PLAY
+  PORTAL
+}
+
+enum AssetKind {
+  PANORAMA
+  IMAGE
+  AUDIO
+  VIDEO
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  READY
+  ERROR
+}
+
+/// Ville ou zone (cahier, 5.1). Suppression physique.
+model City {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  /// LocalizedText { fr, ar?, en? }.
+  name      Json
+  region    String
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tours     Tour[]
+}
+
+/// Catégorie de visite (cahier, 5.1). Suppression physique.
+model Category {
+  id        String         @id @default(uuid(7)) @db.Uuid
+  /// LocalizedText { fr, ar?, en? }.
+  name      Json
+  icon      String
+  /// Couleur d'accent `#` + 6 hexadécimaux, contrôlée par Zod.
+  color     String
+  weight    Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  tours     TourCategory[]
+}
+
+/// Média minimal (D-65). L'upload et le traitement arrivent en M2.
+model Asset {
+  id               String           @id @default(uuid(7)) @db.Uuid
+  kind             AssetKind
+  originalKey      String
+  mimeType         String
+  sizeBytes        Int
+  width            Int?
+  height           Int?
+  contentHash      String
+  processingStatus ProcessingStatus @default(PENDING)
+  derivatives      Json             @default("{}")
+  copyright        String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  coverOf          Tour[]           @relation("TourCover")
+  panoramas        Scene[]          @relation("ScenePanorama")
+  ambientOf        Scene[]          @relation("SceneAmbient")
+}
+
+/// Visite virtuelle (cahier, 5.2). Suppression logique via deletedAt.
+model Tour {
+  id              String         @id @default(uuid(7)) @db.Uuid
+  /// LocalizedText { fr, ar?, en? }.
+  title           Json
+  /// LocalizedText, 500 caractères par langue (Zod).
+  summary         Json
+  description     Json?
+  cityId          String         @db.Uuid
+  city            City           @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  categories      TourCategory[]
+  coverAssetId    String         @db.Uuid
+  coverAsset      Asset          @relation("TourCover", fields: [coverAssetId], references: [id], onDelete: Restrict)
+  /// Facultatif tant que la visite n'est pas publiée.
+  startSceneId    String?        @db.Uuid
+  startScene      Scene?         @relation("TourStartScene", fields: [startSceneId], references: [id], onDelete: SetNull)
+  durationMinutes Int?
+  lat             Float?
+  lng             Float?
+  practicalInfo   Json?
+  /// 22 caractères, émis plus tard par le service (nanoid). Null tant qu'il n'existe pas.
+  shareToken      String?        @unique @db.VarChar(22)
+  publicShare     Boolean        @default(false)
+  contentVersion  Int            @default(1)
+  status          TourStatus     @default(DRAFT)
+  publishedAt     DateTime?
+  deletedAt       DateTime?
+  createdById     String         @db.Uuid
+  createdBy       User           @relation("TourCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  scenes          Scene[]        @relation("TourScenes")
+  targetedBy      Hotspot[]      @relation("HotspotTargetTour")
+
+  @@index([cityId])
+  @@index([coverAssetId])
+  @@index([startSceneId])
+  @@index([createdById])
+}
+
+/// Jointure explicite visite ↔ catégorie. Suppression physique avec la visite.
+model TourCategory {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  tourId     String   @db.Uuid
+  tour       Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  categoryId String   @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tourId, categoryId])
+  @@index([tourId])
+  @@index([categoryId])
+}
+
+/// Scène : un panorama 360° (cahier, 5.3). Suppression logique via deletedAt.
+model Scene {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  tourId          String    @db.Uuid
+  tour            Tour      @relation("TourScenes", fields: [tourId], references: [id], onDelete: Restrict)
+  /// LocalizedText { fr, ar?, en? }.
+  title           Json
+  caption         Json?
+  panoramaAssetId String    @db.Uuid
+  panoramaAsset   Asset     @relation("ScenePanorama", fields: [panoramaAssetId], references: [id], onDelete: Restrict)
+  initialYaw      Float     @default(0)
+  initialPitch    Float     @default(0)
+  initialZoom     Int       @default(50)
+  /// Pistes audio par langue : { fr?: assetId, ar?: assetId, en?: assetId }.
+  narration       Json?
+  ambientAssetId  String?   @db.Uuid
+  ambientAsset    Asset?    @relation("SceneAmbient", fields: [ambientAssetId], references: [id], onDelete: SetNull)
+  mapX            Float?
+  mapY            Float?
+  weight          Int
+  deletedAt       DateTime?
+  createdById     String    @db.Uuid
+  createdBy       User      @relation("SceneCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  hotspots        Hotspot[] @relation("HotspotScene")
+  targetedBy      Hotspot[] @relation("HotspotTargetScene")
+  arrivalFor      Hotspot[] @relation("HotspotTargetTourScene")
+  startOf         Tour[]    @relation("TourStartScene")
+
+  @@index([tourId])
+  @@index([panoramaAssetId])
+  @@index([ambientAssetId])
+  @@index([createdById])
+}
+
+/// Point cliquable dans une scène (cahier, 5.4). Suppression physique.
+model Hotspot {
+  id                String      @id @default(uuid(7)) @db.Uuid
+  sceneId           String      @db.Uuid
+  scene             Scene       @relation("HotspotScene", fields: [sceneId], references: [id], onDelete: Cascade)
+  type              HotspotType
+  yaw               Float
+  pitch             Float
+  /// LocalizedText { fr, ar?, en? }.
+  label             Json
+  targetSceneId     String?     @db.Uuid
+  targetScene       Scene?      @relation("HotspotTargetScene", fields: [targetSceneId], references: [id], onDelete: SetNull)
+  targetTourId      String?     @db.Uuid
+  targetTour        Tour?       @relation("HotspotTargetTour", fields: [targetTourId], references: [id], onDelete: SetNull)
+  targetTourSceneId String?     @db.Uuid
+  targetTourScene   Scene?      @relation("HotspotTargetTourScene", fields: [targetTourSceneId], references: [id], onDelete: SetNull)
+  body              Json?
+  mediaAssetIds     String[]    @default([])
+  url               String?
+  icon              HotspotIcon
+  arrivalYaw        Float?
+  createdById       String      @db.Uuid
+  createdBy         User        @relation("HotspotCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([sceneId])
+  @@index([targetSceneId])
+  @@index([targetTourId])
+  @@index([targetTourSceneId])
+  @@index([createdById])
 }
