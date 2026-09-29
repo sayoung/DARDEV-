@@ -102,7 +102,11 @@ export class AuthController {
     if (!parsed.success) {
       throw new BadRequestException();
     }
-    await this.auth.forgotPassword(parsed.data.email);
+    try {
+      await this.auth.forgotPassword(parsed.data.email);
+    } catch {
+      // 202 dans tous les cas : un échec d'envoi ne doit pas révéler que le compte existe.
+    }
   }
 
   @Post('password/reset')

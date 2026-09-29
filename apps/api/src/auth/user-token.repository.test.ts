@@ -14,7 +14,7 @@ const row = {
   createdAt: new Date('2026-09-29T12:00:00.000Z'),
 };
 
-function repositoryFor(found: typeof row | null) {
+function repositoryFor(found: typeof row | null, markCount = 1) {
   const calls: { op: string; args: unknown }[] = [];
   const prisma = {
     userToken: {
@@ -32,7 +32,7 @@ function repositoryFor(found: typeof row | null) {
       },
       updateMany: (args: unknown) => {
         calls.push({ op: 'updateMany', args });
-        return Promise.resolve({ count: 1 });
+        return Promise.resolve({ count: markCount });
       },
     },
   };
@@ -90,24 +90,34 @@ describe('PrismaUserTokenRepository', () => {
     });
   });
 
-  it('marque un jeton utilisé sur Prisma ou sur la transaction', async () => {
+  it('marque un jeton encore libre, sur Prisma ou sur la transaction', async () => {
     const { repository, calls } = repositoryFor(row);
     const txCalls: unknown[] = [];
     const tx = {
       userToken: {
-        update: (args: unknown) => {
+        updateMany: (args: unknown) => {
           txCalls.push(args);
-          return Promise.resolve(row);
+          return Promise.resolve({ count: 1 });
         },
       },
     };
     const usedAt = new Date('2026-09-29T12:30:00.000Z');
+    const expected = { where: { id: 'token-1', usedAt: null }, data: { usedAt } };
 
-    await repository.markUsed('token-1', usedAt);
-    await repository.markUsed('token-1', usedAt, tx as unknown as AuthTx);
+    await expect(repository.markUsed('token-1', usedAt)).resolves.toBe(true);
+    await expect(repository.markUsed('token-1', usedAt, tx as unknown as AuthTx)).resolves.toBe(
+      true,
+    );
 
-    expect(calls).toEqual([{ op: 'update', args: { where: { id: 'token-1' }, data: { usedAt } } }]);
-    expect(txCalls).toEqual([{ where: { id: 'token-1' }, data: { usedAt } }]);
+    expect(calls).toEqual([{ op: 'updateMany', args: expected }]);
+    expect(txCalls).toEqual([expected]);
+  });
+
+  it('ne marque pas un jeton déjà pris', async () => {
+    const { repository } = repositoryFor(row, 0);
+    const usedAt = new Date('2026-09-29T12:30:00.000Z');
+
+    await expect(repository.markUsed('token-1', usedAt)).resolves.toBe(false);
   });
 
   it('invalide les jetons encore inutilisés de ce compte et de ce type', async () => {

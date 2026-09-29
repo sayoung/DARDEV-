@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { MeResponseSchema, type LoginRequest, type MeResponse } from '@xplor/shared';
 import { ZodError } from 'zod';
 
@@ -44,6 +44,8 @@ export type LoginResult = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @Inject(USER_REPOSITORY) private readonly users: UserRepository,
     @Inject(SESSION_STORE) private readonly sessions: SessionStore,
@@ -104,7 +106,7 @@ export class AuthService {
   }
 
   /**
-   * Réponse identique pour toute adresse.
+   * Réponse identique pour toute adresse : la promesse est tenue, même si l'envoi échoue.
    * Un compte actif reçoit un nouveau jeton après invalidation des jetons PASSWORD_RESET encore inutilisés.
    */
   async forgotPassword(email: string): Promise<void> {
@@ -112,18 +114,22 @@ export class AuthService {
     if (!user || !user.active) {
       return;
     }
-    const now = this.clock();
-    await this.tokens.invalidateUnused(user.id, 'PASSWORD_RESET');
-    const generated = generateToken();
-    await this.tokens.create({
-      userId: user.id,
-      type: 'PASSWORD_RESET',
-      tokenHash: generated.tokenHash,
-      expiresAt: expiryFor('PASSWORD_RESET', now),
-    });
-    const link = mailActionLink(this.env.ADMIN_BASE_URL, 'reset', generated.token);
-    const rendered = renderMail('reset', user.uiLang, link);
-    await this.mailer.send({ to: user.email, ...rendered });
+    try {
+      const now = this.clock();
+      await this.tokens.invalidateUnused(user.id, 'PASSWORD_RESET');
+      const generated = generateToken();
+      await this.tokens.create({
+        userId: user.id,
+        type: 'PASSWORD_RESET',
+        tokenHash: generated.tokenHash,
+        expiresAt: expiryFor('PASSWORD_RESET', now),
+      });
+      const link = mailActionLink(this.env.ADMIN_BASE_URL, 'reset', generated.token);
+      const rendered = renderMail('reset', user.uiLang, link);
+      await this.mailer.send({ to: user.email, ...rendered });
+    } catch {
+      this.logger.warn('Envoi de réinitialisation interrompu');
+    }
   }
 
   async resetPassword(token: string, password: string): Promise<void> {
@@ -132,15 +138,27 @@ export class AuthService {
     if (record === null || record.type !== 'PASSWORD_RESET' || checkToken(record, now) !== 'OK') {
       throw tokenInvalid();
     }
+    const user = await this.users.findById(record.userId);
+    if (!user || !user.active) {
+      await this.tokens.markUsed(record.id, now);
+      throw tokenInvalid();
+    }
     assertNewPassword(password);
     await this.unitOfWork.run(async (db) => {
+      const current = await this.users.findById(record.userId, db);
+      if (!current || !current.active) {
+        throw tokenInvalid();
+      }
+      const consumed = await this.tokens.markUsed(record.id, now, db);
+      if (!consumed) {
+        throw tokenInvalid();
+      }
       const passwordHash = await this.passwords.hash(password);
       await this.users.updatePassword(
         record.userId,
         { passwordHash, failedLoginCount: 0, lockedUntil: null },
         db,
       );
-      await this.tokens.markUsed(record.id, now, db);
     });
     await this.sessions.destroyAllForUser(record.userId);
   }

@@ -87,6 +87,40 @@ describe('PrismaUserRepository', () => {
     });
   });
 
+  it('lit le compte sur le client de transaction', async () => {
+    const { repository } = repositoryFor(null);
+    const txCalls: unknown[] = [];
+    const tx = {
+      user: {
+        findUnique: (args: unknown) => {
+          txCalls.push(args);
+          return Promise.resolve(row);
+        },
+      },
+    };
+
+    await expect(repository.findById('user-1', tx as unknown as AuthTx)).resolves.toMatchObject({
+      id: 'user-1',
+      active: true,
+    });
+    expect(txCalls).toEqual([
+      {
+        where: { id: 'user-1' },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          passwordHash: true,
+          role: true,
+          uiLang: true,
+          active: true,
+          failedLoginCount: true,
+          lockedUntil: true,
+        },
+      },
+    ]);
+  });
+
   it('renvoie null si le compte est absent', async () => {
     const { repository } = repositoryFor(null);
 

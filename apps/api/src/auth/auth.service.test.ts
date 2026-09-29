@@ -2,7 +2,7 @@ import { Role, type LoginRequest } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import { FakeMailer } from '../mail/fake-mailer.js';
-import { type MailMessage } from '../mail/mailer.js';
+import { type Mailer, type MailMessage } from '../mail/mailer.js';
 import {
   ACCOUNT_LOCKED,
   PASSWORD_INVALID,
@@ -56,6 +56,9 @@ function account(overrides: Partial<AuthUser> = {}): AuthUser {
 class MemoryUsers implements UserRepository {
   readonly updates: { id: string; state: LoginStateUpdate }[] = [];
   readonly passwordUpdates: { id: string; state: PasswordUpdate }[] = [];
+  /** Après ce nombre de lectures par id, le compte devient inactif. */
+  inactiveAfterIdReads: number | null = null;
+  private idReads = 0;
 
   constructor(private readonly byEmail: Map<string, AuthUser>) {}
 
@@ -64,12 +67,25 @@ class MemoryUsers implements UserRepository {
   }
 
   findById(id: string): Promise<AuthUser | null> {
+    const user = this.cached(id);
+    this.idReads += 1;
+    if (
+      user !== null &&
+      this.inactiveAfterIdReads !== null &&
+      this.idReads > this.inactiveAfterIdReads
+    ) {
+      user.active = false;
+    }
+    return Promise.resolve(user);
+  }
+
+  private cached(id: string): AuthUser | null {
     for (const user of this.byEmail.values()) {
       if (user.id === id) {
-        return Promise.resolve(user);
+        return user;
       }
     }
-    return Promise.resolve(null);
+    return null;
   }
 
   updateLoginState(id: string, state: LoginStateUpdate): Promise<void> {
@@ -109,6 +125,8 @@ class ImmediateUnitOfWork implements UnitOfWork {
 
 class MemoryTokens implements UserTokenRepository {
   readonly rows: UserTokenRecord[] = [];
+  /** `false` simule une course : le jeton a été pris entre la lecture et l'écriture. */
+  allowConsume = true;
   private seq = 0;
 
   create(input: NewUserToken): Promise<UserTokenRecord> {
@@ -129,12 +147,16 @@ class MemoryTokens implements UserTokenRepository {
     return Promise.resolve(this.rows.find((row) => row.tokenHash === tokenHash) ?? null);
   }
 
-  markUsed(id: string, usedAt: Date): Promise<void> {
-    const row = this.rows.find((item) => item.id === id);
-    if (row) {
-      row.usedAt = usedAt;
+  markUsed(id: string, usedAt: Date): Promise<boolean> {
+    if (!this.allowConsume) {
+      return Promise.resolve(false);
     }
-    return Promise.resolve();
+    const row = this.rows.find((item) => item.id === id);
+    if (!row || row.usedAt !== null) {
+      return Promise.resolve(false);
+    }
+    row.usedAt = usedAt;
+    return Promise.resolve(true);
   }
 
   invalidateUnused(userId: string, type: UserTokenRecord['type']): Promise<void> {
@@ -171,13 +193,35 @@ class FakePasswords implements PasswordVerifier {
   }
 }
 
-function setup(user: AuthUser | null, acceptPassword: boolean) {
+function setup(
+  user: AuthUser | null,
+  acceptPassword: boolean,
+): {
+  users: MemoryUsers;
+  passwords: FakePasswords;
+  sessions: InMemorySessionStore;
+  service: AuthService;
+  tokens: MemoryTokens;
+  mailer: FakeMailer;
+};
+function setup(
+  user: AuthUser | null,
+  acceptPassword: boolean,
+  mailer: Mailer,
+): {
+  users: MemoryUsers;
+  passwords: FakePasswords;
+  sessions: InMemorySessionStore;
+  service: AuthService;
+  tokens: MemoryTokens;
+  mailer: Mailer;
+};
+function setup(user: AuthUser | null, acceptPassword: boolean, mailer: Mailer = new FakeMailer()) {
   const users = new MemoryUsers(
     user === null ? new Map<string, AuthUser>() : new Map([[user.email, user]]),
   );
   const sessions = new InMemorySessionStore(() => NOW.getTime());
   const tokens = new MemoryTokens();
-  const mailer = new FakeMailer();
   const unitOfWork = new ImmediateUnitOfWork();
   const passwords = new FakePasswords(
     (hash, password) => acceptPassword && hash === user?.passwordHash && password === PASSWORD,
@@ -435,6 +479,24 @@ describe('AuthService.forgotPassword', () => {
     expect(stored?.expiresAt).toEqual(new Date(NOW.getTime() + PASSWORD_RESET_TTL_MS));
     expect(stored?.usedAt).toBeNull();
   });
+
+  it('reste résolu si l’envoi échoue, sans persister le jeton en clair', async () => {
+    let plaintext = '';
+    const mailer: Mailer = {
+      send: (message) => {
+        const match = /\/reset\/([^/\s"<]+)/.exec(message.text);
+        plaintext = match?.[1] ?? '';
+        return Promise.reject(new Error('smtp'));
+      },
+    };
+    const { service, tokens } = setup(account(), true, mailer);
+
+    await expect(service.forgotPassword('ada@xplor.test')).resolves.toBeUndefined();
+
+    expect(plaintext.length).toBeGreaterThan(0);
+    expect(tokens.rows).toHaveLength(1);
+    expect(JSON.stringify(tokens.rows)).not.toContain(plaintext);
+  });
 });
 
 describe('AuthService.resetPassword', () => {
@@ -511,6 +573,78 @@ describe('AuthService.resetPassword', () => {
       code: TOKEN_INVALID,
     });
     expect(tokens.rows[0]?.usedAt).toBeNull();
+  });
+
+  it('répond TOKEN_INVALID pour un compte inactif, sans changer le mot de passe', async () => {
+    const user = account({
+      failedLoginCount: 4,
+      lockedUntil: new Date(NOW.getTime() + FIFTEEN_MIN_MS),
+    });
+    const { service, mailer, tokens, users, sessions } = setup(user, true);
+    const previous = await sessions.create({
+      userId: user.id,
+      csrfToken: 'session-existante',
+      createdAt: NOW.toISOString(),
+    });
+    await service.forgotPassword(user.email);
+    const token = tokenFrom(sentAt(mailer, 0));
+    user.active = false;
+
+    await expect(service.resetPassword(token, 'password1234')).rejects.toMatchObject({
+      statusCode: 400,
+      code: TOKEN_INVALID,
+    });
+
+    expect(user.passwordHash).toBe('hash-ada');
+    expect(user.failedLoginCount).toBe(4);
+    expect(user.lockedUntil).toEqual(new Date(NOW.getTime() + FIFTEEN_MIN_MS));
+    expect(users.passwordUpdates).toEqual([]);
+    expect(tokens.rows[0]?.usedAt).toEqual(NOW);
+    expect(await sessions.get(previous)).not.toBeNull();
+  });
+
+  it('répond TOKEN_INVALID si le compte est désactivé pendant la transaction', async () => {
+    const user = account();
+    const { service, mailer, tokens, users, sessions } = setup(user, true);
+    users.inactiveAfterIdReads = 1;
+    const previous = await sessions.create({
+      userId: user.id,
+      csrfToken: 'session-existante',
+      createdAt: NOW.toISOString(),
+    });
+    await service.forgotPassword(user.email);
+    const token = tokenFrom(sentAt(mailer, 0));
+
+    await expect(service.resetPassword(token, NEW_PASSWORD)).rejects.toMatchObject({
+      statusCode: 400,
+      code: TOKEN_INVALID,
+    });
+
+    expect(users.passwordUpdates).toEqual([]);
+    expect(tokens.rows[0]?.usedAt).toBeNull();
+    expect(await sessions.get(previous)).not.toBeNull();
+  });
+
+  it('répond TOKEN_INVALID si le jeton est pris entre-temps, sans changer le mot de passe', async () => {
+    const user = account();
+    const { service, mailer, tokens, users, sessions } = setup(user, true);
+    const previous = await sessions.create({
+      userId: user.id,
+      csrfToken: 'session-existante',
+      createdAt: NOW.toISOString(),
+    });
+    await service.forgotPassword(user.email);
+    const token = tokenFrom(sentAt(mailer, 0));
+    tokens.allowConsume = false;
+
+    await expect(service.resetPassword(token, NEW_PASSWORD)).rejects.toMatchObject({
+      statusCode: 400,
+      code: TOKEN_INVALID,
+    });
+
+    expect(users.passwordUpdates).toEqual([]);
+    expect(tokens.rows[0]?.usedAt).toBeNull();
+    expect(await sessions.get(previous)).not.toBeNull();
   });
 
   it('refuse un mot de passe courant sans consommer le jeton', async () => {

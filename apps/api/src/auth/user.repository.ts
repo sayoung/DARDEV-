@@ -31,7 +31,7 @@ export type PasswordUpdate = {
 
 export interface UserRepository {
   findByEmail(email: string): Promise<AuthUser | null>;
-  findById(id: string): Promise<AuthUser | null>;
+  findById(id: string, db?: AuthTx): Promise<AuthUser | null>;
   updateLoginState(id: string, state: LoginStateUpdate): Promise<void>;
   updatePassword(id: string, state: PasswordUpdate, db?: AuthTx): Promise<void>;
 }

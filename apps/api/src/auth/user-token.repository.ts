@@ -28,7 +28,8 @@ export type NewUserToken = {
 export interface UserTokenRepository {
   create(input: NewUserToken): Promise<UserTokenRecord>;
   findByHash(tokenHash: string): Promise<UserTokenRecord | null>;
-  markUsed(id: string, usedAt: Date, db?: AuthTx): Promise<void>;
+  /** `true` seulement si `usedAt` était encore null. */
+  markUsed(id: string, usedAt: Date, db?: AuthTx): Promise<boolean>;
   invalidateUnused(userId: string, type: UserTokenKind): Promise<void>;
 }
 
@@ -75,13 +76,12 @@ export class PrismaUserTokenRepository implements UserTokenRepository {
     return row === null ? null : toRecord(row);
   }
 
-  async markUsed(id: string, usedAt: Date, db?: AuthTx): Promise<void> {
-    const args = { where: { id }, data: { usedAt } };
-    if (db) {
-      await db.userToken.update(args);
-      return;
-    }
-    await this.prisma.userToken.update(args);
+  async markUsed(id: string, usedAt: Date, db?: AuthTx): Promise<boolean> {
+    const args = { where: { id, usedAt: null }, data: { usedAt } };
+    const result = db
+      ? await db.userToken.updateMany(args)
+      : await this.prisma.userToken.updateMany(args);
+    return result.count === 1;
   }
 
   async invalidateUnused(userId: string, type: UserTokenKind): Promise<void> {

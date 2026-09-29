@@ -236,6 +236,14 @@ describe('AuthController', () => {
     );
   });
 
+  it('répond 202 même lorsque le service rejette l’envoi', async () => {
+    const controller = controllerFor({
+      forgotPassword: () => Promise.reject(new Error('smtp')),
+    });
+
+    await expect(controller.forgotPassword({ email: 'ada@xplor.test' })).resolves.toBeUndefined();
+  });
+
   it('répond 204 pour reset et traduit TOKEN_INVALID et PASSWORD_TOO_COMMON', async () => {
     const accepted = controllerFor({
       resetPassword: () => Promise.resolve(),
