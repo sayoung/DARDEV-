@@ -51,15 +51,15 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** prendre les dernières majeures du registre (ESLint 10, TypeScript 7, Vitest 5) et remplacer `vitest.workspace.ts` par `test.projects`.
 - **À valider :** non
 
-| Paquet | Raison | Licence |
-|---|---|---|
-| zod | Schémas de validation partagés entre l'API et les fronts (`LocalizedTextSchema`, langues). | MIT |
-| eslint | Analyse statique ESLint 9, configuration plate `eslint.config.mjs`. | MIT |
-| @eslint/js | Règles recommandées ESLint, socle de la config plate. | MIT |
-| typescript-eslint | Règles TypeScript en mode `strict-type-checked`, dont `@typescript-eslint/no-explicit-any` en erreur. | MIT |
-| prettier | Formatage commun (`.prettierrc`, `.prettierignore`). | MIT |
-| vitest | Tests unitaires, fichier de workspace `vitest.workspace.ts`. | MIT |
-| typescript | `tsc --noEmit`, TypeScript 5 imposé par la pile. | Apache-2.0 |
+| Paquet            | Raison                                                                                                | Licence    |
+| ----------------- | ----------------------------------------------------------------------------------------------------- | ---------- |
+| zod               | Schémas de validation partagés entre l'API et les fronts (`LocalizedTextSchema`, langues).            | MIT        |
+| eslint            | Analyse statique ESLint 9, configuration plate `eslint.config.mjs`.                                   | MIT        |
+| @eslint/js        | Règles recommandées ESLint, socle de la config plate.                                                 | MIT        |
+| typescript-eslint | Règles TypeScript en mode `strict-type-checked`, dont `@typescript-eslint/no-explicit-any` en erreur. | MIT        |
+| prettier          | Formatage commun (`.prettierrc`, `.prettierignore`).                                                  | MIT        |
+| vitest            | Tests unitaires, fichier de workspace `vitest.workspace.ts`.                                          | MIT        |
+| typescript        | `tsc --noEmit`, TypeScript 5 imposé par la pile.                                                      | Apache-2.0 |
 
 ## D-30 — Ressources `@xplor/i18n`
 
@@ -89,17 +89,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `tsx watch` à la place de `nest start --watch` ; paquet `dotenv` ; `NODE_ENV` obligatoire dans `.env.example`.
 - **À valider :** non
 
-| Paquet | Raison | Licence |
-|---|---|---|
-| @nestjs/common | Socle des modules, contrôleurs et injection NestJS 11. | MIT |
-| @nestjs/core | Démarrage de l'application (`NestFactory`). | MIT |
-| @nestjs/platform-fastify | Adaptateur HTTP Fastify imposé par le cahier des charges. | MIT |
-| @nestjs/cli | Scripts `dev` (`nest start --watch`) et `build` (`nest build`), métadonnées des décorateurs via `tsc`. | MIT |
-| @nestjs/schematics | Collection déclarée par `nest-cli.json`. | MIT |
-| fastify | Serveur HTTP, dépendance de pair de `@nestjs/platform-fastify`. | MIT |
-| reflect-metadata | Réflexion exigée par les décorateurs NestJS. | Apache-2.0 |
-| rxjs | Dépendance de pair de `@nestjs/common`. | Apache-2.0 |
-| @types/node | Types Node 22 (`process.env`, `process.loadEnvFile`). | MIT |
+| Paquet                   | Raison                                                                                                 | Licence    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | ---------- |
+| @nestjs/common           | Socle des modules, contrôleurs et injection NestJS 11.                                                 | MIT        |
+| @nestjs/core             | Démarrage de l'application (`NestFactory`).                                                            | MIT        |
+| @nestjs/platform-fastify | Adaptateur HTTP Fastify imposé par le cahier des charges.                                              | MIT        |
+| @nestjs/cli              | Scripts `dev` (`nest start --watch`) et `build` (`nest build`), métadonnées des décorateurs via `tsc`. | MIT        |
+| @nestjs/schematics       | Collection déclarée par `nest-cli.json`.                                                               | MIT        |
+| fastify                  | Serveur HTTP, dépendance de pair de `@nestjs/platform-fastify`.                                        | MIT        |
+| reflect-metadata         | Réflexion exigée par les décorateurs NestJS.                                                           | Apache-2.0 |
+| rxjs                     | Dépendance de pair de `@nestjs/common`.                                                                | Apache-2.0 |
+| @types/node              | Types Node 22 (`process.env`, `process.loadEnvFile`).                                                  | MIT        |
 
 ## D-34 — Prisma 6 et migration initiale sans base (NF-09)
 
@@ -109,10 +109,10 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** Prisma 7+ avec `prisma.config.ts` ; rédiger le SQL à la main ; attendre Docker pour `prisma migrate dev --name init_users`.
 - **À valider :** oui
 
-| Paquet | Raison | Licence |
-|---|---|---|
-| prisma | CLI : `migrate`, `generate`, `validate`. Version 6 pour garder `DATABASE_URL` dans le schéma. | Apache-2.0 |
-| @prisma/client | Client Prisma utilisé par `PrismaService` au démarrage NestJS. | Apache-2.0 |
+| Paquet         | Raison                                                                                        | Licence    |
+| -------------- | --------------------------------------------------------------------------------------------- | ---------- |
+| prisma         | CLI : `migrate`, `generate`, `validate`. Version 6 pour garder `DATABASE_URL` dans le schéma. | Apache-2.0 |
+| @prisma/client | Client Prisma utilisé par `PrismaService` au démarrage NestJS.                                | Apache-2.0 |
 
 ## D-35 — Couverture de `AccessPolicy` (F-90)
 
@@ -121,9 +121,24 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `@vitest/coverage-istanbul` ; pas de seuil tant que la couverture globale des modules métier (NF-08, ≥ 70 %) n'est pas en place.
 - **À valider :** oui
 
-| Paquet | Raison | Licence |
-|---|---|---|
-| @vitest/coverage-v8 | Fournisseur V8 de `vitest --coverage`, pour vérifier `access-policy.ts` à 100 %. | MIT |
+| Paquet              | Raison                                                                           | Licence |
+| ------------------- | -------------------------------------------------------------------------------- | ------- |
+| @vitest/coverage-v8 | Fournisseur V8 de `vitest --coverage`, pour vérifier `access-policy.ts` à 100 %. | MIT     |
+
+## D-36 — Squelettes web, kiosque et worker (NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** `apps/web` et `apps/kiosk` sont des applications Vite + TypeScript sans framework (cahier, section 4.1). Les ports de dev sont fixes : 5174 (web) et 5175 (kiosk), `strictPort`. Les tests de `lang` / `dir` tournent dans Vitest avec **happy-dom** (environnement du `vitest.workspace.ts`), dépendance de développement à la racine pour que le lanceur unique la résolve. `apps/worker` est un processus Node : `src/main.ts` charge le `.env` racine s'il existe (même règle que l'API, D-33), valide `REDIS_URL` avec Zod, puis écrit `worker prêt`. BullMQ n'est pas encore une dépendance. Le script `dev` du worker utilise `tsx watch`, car les imports du dépôt sont en spécificateurs `.js` (NodeNext) et le type stripping de Node 22 ne les réécrit pas. Le `build` du worker est `tsc`.
+- **Alternatives :** jsdom à la place de happy-dom ; lancer le worker avec `node --experimental-strip-types` et des imports `.ts` ; brancher BullMQ dès le squelette.
+- **À valider :** oui
+
+| Paquet    | Raison                                                                              | Licence |
+| --------- | ----------------------------------------------------------------------------------- | ------- |
+| vite      | Serveur de dev et build de production de `apps/web` et `apps/kiosk`.                | MIT     |
+| happy-dom | Environnement DOM de Vitest pour vérifier `lang` et `dir` sur le web et le kiosque. | MIT     |
+| tsx       | Exécution et rechargement de `apps/worker/src/main.ts` en développement.            | MIT     |
+
+`zod`, `typescript`, `vitest` (D-29) et `@types/node` (D-33) sont redéclarés comme dépendances directes du worker, comme pour l'API.
 
 ## Encore à valider (cahier des charges, section 11.2)
 
