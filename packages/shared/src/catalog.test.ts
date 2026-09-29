@@ -26,6 +26,7 @@ import {
   TourResponseSchema,
   TourStatus,
   TourUpdateSchema,
+  TourValidationResponseSchema,
   ValidationIssueCode,
   ValidationIssueSchema,
   paginated,
@@ -556,9 +557,9 @@ describe('HotspotUpdateSchema', () => {
   });
 
   it('exige les champs requis de la variante choisie', () => {
-    expect(
-      HotspotUpdateSchema.safeParse({ type: HotspotType.INFO, ...position }).success,
-    ).toBe(false);
+    expect(HotspotUpdateSchema.safeParse({ type: HotspotType.INFO, ...position }).success).toBe(
+      false,
+    );
   });
 
   it('refuse une URL qui n’est pas http ou https', () => {
@@ -682,6 +683,44 @@ describe('ValidationIssueSchema', () => {
       ValidationIssueSchema.safeParse({
         code: 'NOT_A_CODE',
         message: 'inconnu',
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe('TourValidationResponseSchema', () => {
+  it('accepte une liste vide', () => {
+    expect(TourValidationResponseSchema.parse({ issues: [] })).toEqual({ issues: [] });
+  });
+
+  it('accepte un problème de publication', () => {
+    const body = {
+      issues: [
+        {
+          code: ValidationIssueCode.SCENE_UNREACHABLE,
+          sceneId: id.scene,
+          message: 'Cette scène est inatteignable depuis la scène de départ.',
+        },
+      ],
+    };
+    expect(TourValidationResponseSchema.parse(body)).toEqual(body);
+  });
+
+  it('refuse un code inconnu ou un sceneId qui n’est pas un UUID', () => {
+    expect(
+      TourValidationResponseSchema.safeParse({
+        issues: [{ code: 'NOT_A_CODE', message: 'inconnu' }],
+      }).success,
+    ).toBe(false);
+    expect(
+      TourValidationResponseSchema.safeParse({
+        issues: [
+          {
+            code: ValidationIssueCode.SCENE_UNREACHABLE,
+            sceneId: 'remparts',
+            message: 'Cette scène est inatteignable depuis la scène de départ.',
+          },
+        ],
       }).success,
     ).toBe(false);
   });

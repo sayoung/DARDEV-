@@ -9,6 +9,7 @@ import { HotspotsController } from './hotspots.controller.js';
 import { HotspotsService } from './hotspots.service.js';
 import { ScenesController } from './scenes.controller.js';
 import { ScenesService } from './scenes.service.js';
+import { TourPublicationService } from './tour-publication.service.js';
 import { ToursController } from './tours.controller.js';
 import { ToursService } from './tours.service.js';
 
@@ -21,6 +22,13 @@ import { ToursService } from './tours.service.js';
     ScenesController,
     HotspotsController,
   ],
-  providers: [CitiesService, CategoriesService, ToursService, ScenesService, HotspotsService],
+  providers: [
+    CitiesService,
+    CategoriesService,
+    ToursService,
+    TourPublicationService,
+    ScenesService,
+    HotspotsService,
+  ],
 })
 export class CatalogModule {}

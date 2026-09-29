@@ -40,6 +40,7 @@ export {
   TourResponseSchema,
   TourStatus,
   TourUpdateSchema,
+  TourValidationResponseSchema,
   ValidationIssueCode,
   ValidationIssueSchema,
   paginated,
@@ -64,6 +65,7 @@ export {
   type TourListQuery,
   type TourResponse,
   type TourUpdate,
+  type TourValidationResponse,
   type ValidationIssue,
 } from './catalog.js';
 export { LANGS, type Lang } from './lang.js';
