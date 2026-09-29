@@ -3,10 +3,24 @@
 ## Prérequis
 
 - Docker Desktop, backend WSL2
-- Node.js 22 (le dépôt exige `>=22 <23`)
+- Node.js 22. `package.json` exige `>=22 <23` et `.nvmrc` contient `22`. Si le Node du terminal est une autre version : `nvm use 22` (ou `nvm use`, qui lit `.nvmrc`) avant `pnpm install`, `pnpm dev` et les tests.
 - pnpm 9 (le champ `packageManager` fixe pnpm 9.15.9)
 
-Copier `.env.example` vers `.env` à la racine. Les valeurs fournies sont celles du développement local. Docker Compose les lit pour PostgreSQL, MinIO et le port SMTP ; les URL (`DATABASE_URL`, `REDIS_URL`, `S3_ENDPOINT`, etc.) serviront à l'API.
+Deux copies identiques de `.env.example`. Les valeurs sont celles du développement local.
+
+```bash
+cp .env.example .env
+cp .env.example apps/api/.env
+```
+
+`loadEnv` (Zod, `apps/api/src/config/env.ts`) ne lit aucun fichier : il valide les variables déjà présentes. Le fichier qui les charge dépend de l'outil.
+
+| Fichier            | Qui le lit                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.env` à la racine | `process.loadEnvFile` (Node 22), sans écraser une variable déjà définie : API (`apps/api/src/main.ts`, le même `../../../.env` depuis `dist/main.js`), worker, `apps/api/prisma/seed.ts` (`SEED_DEFAULT_PASSWORD`), `globalSetup` de `pnpm test:int` (`DATABASE_URL_TEST`). Docker Compose interpole aussi ce fichier ; le Compose a déjà les mêmes valeurs par défaut. |
+| `apps/api/.env`    | Prisma CLI (`pnpm db:migrate`, `pnpm db:deploy`, `pnpm db:generate`). Il s'arrête au `package.json` de `@xplor/api` et ne lit pas le `.env` de la racine. Il charge aussi `apps/api/prisma/.env` s'il existe : ne pas en créer un deuxième avec d'autres valeurs.                                                                                                       |
+
+Sans `apps/api/.env`, `prisma migrate dev` et `prisma db seed` n'ont pas `DATABASE_URL` : le CLI charge le schéma avant de lancer `prisma/seed.ts`. Sans le `.env` racine, l'API, le worker et `pnpm test:int` n'ont pas leurs variables. `prisma/seed.ts` relit aussi ce fichier pour `SEED_DEFAULT_PASSWORD` ; une variable déjà posée par `apps/api/.env` n'est pas écrasée.
 
 ## Environnement complet (NF-09)
 
@@ -34,13 +48,21 @@ pnpm db:seed
 
 `pnpm test` lance les tests unitaires et ignore les fichiers `*.int.test.ts`.
 
-`pnpm test:int` (identique à `pnpm --filter @xplor/api test:int`) lance le projet Vitest `api-int` contre PostgreSQL. Le `globalSetup` lit `DATABASE_URL_TEST` (fichier `.env` à la racine, ou variable déjà exportée). Si la variable est absente, ou si la base est injoignable, la commande s'arrête avec un message explicite et n'exécute pas les tests. Sinon elle applique `prisma migrate deploy` sur cette base. `resetDb()` vide ensuite les tables, sauf `_prisma_migrations`.
+`pnpm test:int` (identique à `pnpm --filter @xplor/api test:int`) lance le projet Vitest `api-int` contre PostgreSQL. Le `globalSetup` lit `DATABASE_URL_TEST` dans le `.env` à la racine, ou une variable déjà exportée. Si la variable est absente, ou si la base est injoignable, la commande s'arrête avec un message explicite et n'exécute pas les tests. Sinon elle applique `prisma migrate deploy` sur cette base. `resetDb()` vide ensuite les tables, sauf `_prisma_migrations`.
 
 La base `xplor_test` est créée par `docker/postgres/init.sql` au premier démarrage d'un volume Postgres vide. Le test de seed a besoin de `SEED_DEFAULT_PASSWORD` (valeur de développement de `.env.example`, pas un secret).
 
 ```bash
 docker compose up -d
 pnpm test:int
+```
+
+## Tests de bout en bout
+
+`pnpm test:e2e` est le nom prévu pour Playwright (`AGENTS.md`, accessibilité NF-05). Au jalon M0, la racine `package.json` ne déclare pas ce script et le dépôt n'a pas de configuration Playwright. La commande ne lance donc pas de parcours.
+
+```bash
+pnpm test:e2e
 ```
 
 ## Contrôle

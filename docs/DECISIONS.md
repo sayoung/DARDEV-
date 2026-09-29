@@ -298,6 +298,20 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | --------------- | --------------------------------------------------------------------------------------------------------- | ------- |
 | @nestjs/testing | `Test.createTestingModule` et `overrideProvider` pour brancher `FakeMailer` sans SMTP. 11.2.6, NestJS 11. | MIT     |
 
+## D-52 — Installation de Docker Desktop
+
+- **Date :** 29/09/2026
+- **Décision :** Le porteur autorise l'installation de Docker Desktop (backend WSL2) sur le poste de développement. Sans lui, la Definition of Done de M0 ne se vérifie pas (quatre commandes, connexion réelle, migrations sur PostgreSQL). Cette session rédige le scénario de démo et ne lance pas l'installeur : les points qui dépendent de Docker restent bloqués dans `docs/PROGRESS.md` tant que `docker compose ps` ne montre pas les quatre services `healthy`.
+- **Alternatives :** lancer l'installeur pendant la session de documentation ; installer PostgreSQL, Redis et MinIO hors Compose.
+- **À valider :** non
+
+## D-53 — Dépôt distant pour la CI
+
+- **Date :** 29/09/2026
+- **Décision :** L'URL indiquée par le porteur est `https://github.com/sayoung/DARDEV-.git`. Le workflow `.github/workflows/ci.yml` ne s'exécute qu'après un push sur `main` ou `develop`. Cette session n'ajoute pas de remote et ne pousse pas : l'orchestrateur réserve les commandes git qui modifient le dépôt. « CI verte » reste bloquée jusqu'à ce push.
+- **Alternatives :** créer le dépôt sous une organisation GitHub `DARDEV` plutôt que sous le compte `sayoung`.
+- **À valider :** non
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
