@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r typecheck",
     "test": "vitest run",
-    "dev": "pnpm -r dev",
+    "dev": "pnpm --parallel --filter @xplor/api --filter @xplor/admin --filter @xplor/web --filter @xplor/kiosk --filter @xplor/worker dev",
     "db:migrate": "pnpm -r db:migrate",
     "db:deploy": "pnpm -r db:deploy",
     "db:generate": "pnpm -r db:generate",
@@ -21,6 +21,7 @@
     "eslint": "^9.39.5",
     "prettier": "^3.9.9",
     "happy-dom": "^20.14.5",
+    "jsdom": "^30.1.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.0",
     "vitest": "^3.2.7"

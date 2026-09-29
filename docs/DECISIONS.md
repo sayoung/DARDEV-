@@ -147,9 +147,9 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `10k-most-common.txt` ou la tranche xato des 10 000 ; paquet `argon2` (node-gyp) ; coûts laissés implicites.
 - **À valider :** oui
 
-| Paquet ou ressource                         | Raison                                                                                                              | Licence      |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------ |
-| @node-rs/argon2                             | Hachage et vérification argon2id, bindings Rust (sans node-gyp).                                                    | MIT          |
+| Paquet ou ressource                         | Raison                                                                                                             | Licence      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------ |
+| @node-rs/argon2                             | Hachage et vérification argon2id, bindings Rust (sans node-gyp).                                                   | MIT          |
 | SecLists `Pwdb_top-10000.txt`               | Liste embarquée des 10 000 mots de passe les plus courants. Le dépôt danielmiessler/SecLists est sous licence MIT. | MIT (dépôt)  |
 | Probable-Wordlists (berzerk0), source amont | Même liste, publiée dans SecLists sous le nom `Pwdb_top-10000.txt`. Attribution conservée ici.                     | CC BY-SA 4.0 |
 
@@ -160,10 +160,10 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** arrêter le processus si PostgreSQL est absent ; `redis.quit()` ; variable `S3_REGION` ; ioredis 5.
 - **À valider :** oui (région fixe `us-east-1` ; ioredis 6.0.0, majeure récente, plutôt qu'ioredis 5)
 
-| Paquet               | Raison                                                                                          | Licence    |
-| -------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
-| ioredis              | Client Redis unique pour le `PING` du healthcheck, fermé à l'arrêt de `RedisModule`. 6.0.0.   | MIT        |
-| @aws-sdk/client-s3   | `HeadBucket` du healthcheck vers MinIO (`S3_ENDPOINT`, `forcePathStyle`). 3.1142.0.            | Apache-2.0 |
+| Paquet             | Raison                                                                                      | Licence    |
+| ------------------ | ------------------------------------------------------------------------------------------- | ---------- |
+| ioredis            | Client Redis unique pour le `PING` du healthcheck, fermé à l'arrêt de `RedisModule`. 6.0.0. | MIT        |
+| @aws-sdk/client-s3 | `HeadBucket` du healthcheck vers MinIO (`S3_ENDPOINT`, `forcePathStyle`). 3.1142.0.         | Apache-2.0 |
 
 ## D-39 — Sessions, cookie `xplor_sid` et CSRF (F-90)
 
@@ -172,9 +172,9 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** signer le cookie avec `SESSION_SECRET` ; guard global et liste d'exclusion pour `/api/health` ; `ioredis-mock` pour exercer `RedisSessionStore`.
 - **À valider :** oui (cookie non signé ; guards non globaux)
 
-| Paquet          | Raison                                                                                          | Licence |
-| --------------- | ----------------------------------------------------------------------------------------------- | ------- |
-| @fastify/cookie | Lire et poser le cookie de session `xplor_sid` (httpOnly, SameSite=Lax). 11.1.2, Fastify 5.   | MIT     |
+| Paquet          | Raison                                                                                      | Licence |
+| --------------- | ------------------------------------------------------------------------------------------- | ------- |
+| @fastify/cookie | Lire et poser le cookie de session `xplor_sid` (httpOnly, SameSite=Lax). 11.1.2, Fastify 5. | MIT     |
 
 ## D-40 — Login, logout, me et limite de débit (F-90, NF-01)
 
@@ -183,9 +183,9 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** stockage Redis du compteur de débit ; répondre 423 dès le 10e échec ; guard de débit global avec `@SkipThrottle` sur le reste ; signer le cookie (déjà écarté en D-39).
 - **À valider :** oui (compteur en mémoire ; 401 au 10e échec puis 423 à l'essai suivant ; destruction de toutes les sessions du compte à chaque login ; repli `uiLang` sur `fr`)
 
-| Paquet            | Raison                                                                                          | Licence |
-| ----------------- | ----------------------------------------------------------------------------------------------- | ------- |
-| @nestjs/throttler | Limite `POST /auth/login` à 5 requêtes par minute et par IP (NF-01). 6.7.1, NestJS 11.         | MIT     |
+| Paquet            | Raison                                                                                 | Licence |
+| ----------------- | -------------------------------------------------------------------------------------- | ------- |
+| @nestjs/throttler | Limite `POST /auth/login` à 5 requêtes par minute et par IP (NF-01). 6.7.1, NestJS 11. | MIT     |
 
 ## D-41 — Seed des utilisateurs de démonstration (NF-09)
 
@@ -194,9 +194,30 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `prisma.config.ts` (Prisma 7, écarté par D-34) ; `node --experimental-strip-types` (les imports `.js` ne sont pas réécrits, D-36) ; tout remettre à zéro à chaque seed, y compris le verrouillage ; placer `SEED_DEFAULT_PASSWORD` seulement dans `apps/api/.env`.
 - **À valider :** oui (valeur de développement du mot de passe ; colonnes laissées intactes lors d'un re-seed)
 
-| Paquet | Raison                                                                                                      | Licence |
-| ------ | ----------------------------------------------------------------------------------------------------------- | ------- |
+| Paquet | Raison                                                                                                   | Licence |
+| ------ | -------------------------------------------------------------------------------------------------------- | ------- |
 | tsx    | Exécute `prisma/seed.ts` (déjà la dépendance de `@xplor/worker`, D-36). 4.23.15, devDependency de l'API. | MIT     |
+
+## D-42 — Application `@xplor/admin` (NF-08, NF-06)
+
+- **Date :** 29/09/2026
+- **Décision :** `apps/admin` est le back-office React 19 + Vite, paquet `@xplor/admin`, port de dev **5173** (`strictPort`). Le proxy Vite renvoie `/api` vers `http://localhost:3000` (l'API et `GET /api/health` restent sur ce préfixe). i18next et react-i18next consomment `resources` exporté par `@xplor/i18n` (D-30) : les JSON ne sont pas copiés dans l'application. La langue au démarrage est `?lang=` (fr, ar ou en), sinon la clé `localStorage` `xplor.lang`, sinon `fr`. Le paramètre d'URL ne réécrit pas le stockage. Le sélecteur enregistre `xplor.lang` et met à jour `lang` et `dir` sans rechargement. Les libellés du sélecteur sont les clés `common.language.*`. Les tests du back-office tournent sous **jsdom** (consigne NF-08 de ce squelette) ; le web et le kiosque restent sous happy-dom (D-36). `jsdom` est une devDependency racine pour que le lanceur Vitest unique le résolve, et une devDependency de `@xplor/admin` pour son script `test`. Le script racine `dev` nomme `@xplor/admin` avec l'API, le web, le kiosque et le worker, et passe `--parallel` : la concurrence par défaut de `pnpm -r` est 4, un cinquième processus resterait en attente. Le projet Vitest de l'admin ne charge pas `vite.config.ts` : Vitest 3 transforme avec Vite 7, tandis que `@vitejs/plugin-react` 6 cible Vite 8. Les tests JSX passent par esbuild. `react` 19.3.0 ne publie plus ses types : `@types/react` et `@types/react-dom` sont des devDependencies.
+- **Alternatives :** happy-dom pour les tests admin ; copier les JSON dans `apps/admin` ; laisser `pnpm -r dev` sans `--parallel`.
+- **À valider :** oui (clé `xplor.lang` ; jsdom pour l'admin ; `--parallel` sur le script `dev`)
+
+| Paquet                 | Raison                                                                                                 | Licence |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ | ------- |
+| react                  | UI du back-office, React 19. 19.3.0.                                                                   | MIT     |
+| react-dom              | Rendu dans le DOM. 19.3.0.                                                                             | MIT     |
+| @vitejs/plugin-react   | Transformation JSX et Fast Refresh pour Vite 8. 6.1.1.                                                 | MIT     |
+| i18next                | Internationalisation du back-office, alimentée par `@xplor/i18n` (levée de l'attente de D-30). 26.4.2. | MIT     |
+| react-i18next          | Liaison de i18next avec React. 17.0.15.                                                                | MIT     |
+| @testing-library/react | Rendu des composants dans les tests Vitest. 16.3.3.                                                    | MIT     |
+| @types/react           | Types TypeScript de React 19. Le paquet `react` 19.3.0 ne les embarque plus.                           | MIT     |
+| @types/react-dom       | Types TypeScript de `react-dom`. 19.3.0.                                                               | MIT     |
+| jsdom                  | Environnement DOM des tests `@xplor/admin`. 30.1.1.                                                    | MIT     |
+
+`vite`, `typescript` et `vitest` (D-29, D-36) sont redéclarés comme dépendances directes de `@xplor/admin`, comme pour le web et le kiosque.
 
 ## Encore à valider (cahier des charges, section 11.2)
 
