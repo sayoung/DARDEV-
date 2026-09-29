@@ -18,6 +18,32 @@
       "locked": "Compte verrouillé. Réessayez dans 15 minutes.",
       "failed": "La connexion a échoué. Réessayez."
     },
+    "forgot": {
+      "link": "Mot de passe oublié",
+      "title": "Mot de passe oublié",
+      "email": "Adresse e-mail",
+      "submit": "Envoyer le lien",
+      "sent": "Si un compte correspond à cette adresse, un courriel vient d'être envoyé.",
+      "invalidEmail": "Indiquez une adresse e-mail valide.",
+      "back": "Retour à la connexion"
+    },
+    "setPassword": {
+      "titleReset": "Nouveau mot de passe",
+      "titleInvite": "Définir votre mot de passe",
+      "password": "Mot de passe",
+      "confirm": "Confirmation du mot de passe",
+      "submit": "Enregistrer",
+      "mismatch": "Les deux mots de passe ne correspondent pas.",
+      "back": "Retour à la connexion",
+      "successReset": "Votre mot de passe a été mis à jour. Vous pouvez vous connecter.",
+      "successInvite": "Votre mot de passe est défini. Vous pouvez vous connecter."
+    },
+    "errors": {
+      "TOKEN_INVALID": "Ce lien n'est plus valable.",
+      "PASSWORD_TOO_COMMON": "Ce mot de passe est trop courant.",
+      "PASSWORD_INVALID": "Le mot de passe doit contenir au moins 12 caractères.",
+      "request": "La demande a échoué. Réessayez."
+    },
     "role": {
       "ADMIN": "Administrateur",
       "EDITOR": "Éditeur",

@@ -1,8 +1,14 @@
 import {
+  AcceptInviteRequestSchema,
+  ForgotPasswordRequestSchema,
   LoginRequestSchema,
   MeResponseSchema,
+  ResetPasswordRequestSchema,
+  type AcceptInviteRequest,
+  type ForgotPasswordRequest,
   type LoginRequest,
   type MeResponse,
+  type ResetPasswordRequest,
 } from '@xplor/shared';
 
 /** Méthodes sans effet de bord : pas d'en-tête CSRF (même règle que `CsrfGuard`). */
@@ -72,6 +78,29 @@ export async function logout(): Promise<void> {
     throw await toApiError(response);
   }
   clearCsrfToken();
+}
+
+export async function forgotPassword(input: ForgotPasswordRequest): Promise<void> {
+  await postJson('/api/v1/auth/password/forgot', ForgotPasswordRequestSchema.parse(input));
+}
+
+export async function resetPassword(input: ResetPasswordRequest): Promise<void> {
+  await postJson('/api/v1/auth/password/reset', ResetPasswordRequestSchema.parse(input));
+}
+
+export async function acceptInvite(input: AcceptInviteRequest): Promise<void> {
+  await postJson('/api/v1/auth/invite/accept', AcceptInviteRequestSchema.parse(input));
+}
+
+async function postJson(path: string, body: unknown): Promise<void> {
+  const response = await apiFetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
 }
 
 async function readMe(response: Response): Promise<MeResponse> {

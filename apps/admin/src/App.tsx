@@ -3,10 +3,13 @@ import { useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AuthProvider, useAuth } from './auth/AuthProvider.js';
+import { ForgotPasswordPage } from './auth/ForgotPasswordPage.js';
 import { HomePage } from './auth/HomePage.js';
 import { LoginPage } from './auth/LoginPage.js';
+import { SetPasswordPage } from './auth/SetPasswordPage.js';
 import { i18n } from './i18n.js';
 import { applyDocumentLang, LANG_STORAGE_KEY, resolveLang } from './lang.js';
+import { useAppLocation, type Notice } from './router.js';
 
 export function App() {
   return (
@@ -16,9 +19,18 @@ export function App() {
   );
 }
 
+const SUCCESS_MESSAGE = {
+  reset: 'auth.setPassword.successReset',
+  invite: 'auth.setPassword.successInvite',
+} as const satisfies Record<
+  Notice,
+  'auth.setPassword.successReset' | 'auth.setPassword.successInvite'
+>;
+
 function AdminShell() {
   const { t } = useTranslation();
   const auth = useAuth();
+  const { route, notice } = useAppLocation();
   const [lang, setLang] = useState<Lang>(() =>
     resolveLang(window.location.search, localStorage.getItem(LANG_STORAGE_KEY)),
   );
@@ -57,8 +69,16 @@ function AdminShell() {
           ))}
         </ul>
       </nav>
-      {auth.state.status === 'authenticated' ? <HomePage /> : null}
-      {auth.state.status === 'anonymous' ? <LoginPage /> : null}
+      {route.name === 'forgot' ? <ForgotPasswordPage /> : null}
+      {route.name === 'reset' ? <SetPasswordPage kind="reset" token={route.token} /> : null}
+      {route.name === 'invite' ? <SetPasswordPage kind="invite" token={route.token} /> : null}
+      {route.name === 'session' && notice !== null && auth.state.status === 'anonymous' ? (
+        <p className="auth-status" role="status">
+          {t(SUCCESS_MESSAGE[notice])}
+        </p>
+      ) : null}
+      {route.name === 'session' && auth.state.status === 'authenticated' ? <HomePage /> : null}
+      {route.name === 'session' && auth.state.status === 'anonymous' ? <LoginPage /> : null}
     </main>
   );
 }

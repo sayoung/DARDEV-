@@ -46,7 +46,12 @@ h1 {
 }
 
 .auth-alert,
+.auth-status,
 .home-session p {
   margin-block: 0;
   margin-inline: 0;
+}
+
+.auth-link {
+  color: inherit;
 }

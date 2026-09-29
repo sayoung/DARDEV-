@@ -261,6 +261,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** créer le compte déjà actif ; renvoyer une invitation pour un email inactif au lieu de 409 ; ouvrir une session à l'acceptation ; répondre 200 avec un corps ; remettre le verrouillage à zéro comme pour la réinitialisation ; distinguer un jeton expiré d'un jeton inconnu ; hacher le mot de passe avant de poser `usedAt` (deux acceptations parallèles pourraient alors écrire le mot de passe si la transaction simulée des tests n'annule pas).
 - **À valider :** oui (compte inactif jusqu'à l'acceptation ; 409 même si l'invitation n'a pas été acceptée ; pas de session à l'acceptation ; pas de remise à zéro du verrouillage ; `usedAt` avant le hachage dans la transaction)
 
+## D-48 — Écrans de réinitialisation et d'invitation (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** Le back-office route `/forgot`, `/reset/<token>` et `/invite/<token>` avec `history.pushState` et l'événement `popstate`, sans paquet de routage. Toute autre adresse affiche la session (connexion ou accueil). Les liens interceptent le clic simple et laissent le navigateur ouvrir un nouvel onglet si un modificateur est enfoncé. `?lang=` est conservé lors d'un changement d'écran. Après un mot de passe enregistré, l'adresse redevient `/` avec `notice=reset` ou `notice=invite`, et le message `auth.setPassword.successReset` ou `auth.setPassword.successInvite` s'affiche. `POST /api/v1/auth/password/forgot` (202), `POST /api/v1/auth/password/reset` (204) et `POST /api/v1/auth/invite/accept` (204) passent par `client.ts`, qui parse les schémas de `@xplor/shared` avant l'envoi. L'écran d'oubli affiche toujours `auth.forgot.sent` quand la réponse est acceptée, sans dire si le compte existe. Une confirmation différente ou un mot de passe refusé par `PasswordSchema` n'appelle pas le réseau. `TOKEN_INVALID`, `PASSWORD_TOO_COMMON` et `PASSWORD_INVALID` (400) utilisent `auth.errors.*`. Tout autre échec utilise `auth.errors.request`. Aucun paquet ajouté.
+- **Alternatives :** `react-router-dom` ; afficher la confirmation d'oubli même si le réseau échoue ; message de succès seulement dans l'état React, perdu au rafraîchissement.
+- **À valider :** oui (routeur maison ; paramètre `notice` ; confirmation uniquement sur réponse acceptée)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
