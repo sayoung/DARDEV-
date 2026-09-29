@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type AuthTx } from './unit-of-work.js';
@@ -57,7 +57,7 @@ function toRecord(row: TokenRow): UserTokenRecord {
 
 @Injectable()
 export class PrismaUserTokenRepository implements UserTokenRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async create(input: NewUserToken): Promise<UserTokenRecord> {
     const row = await this.prisma.userToken.create({

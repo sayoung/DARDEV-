@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Role as PrismaRole } from '@prisma/client';
 import { LANGS, type Lang } from '@xplor/shared';
 
@@ -63,7 +63,7 @@ function toAuthUser(user: UserRow): AuthUser {
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string): Promise<AuthUser | null> {
     const user = await this.prisma.user.findFirst({

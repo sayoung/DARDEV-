@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { type Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -18,7 +18,7 @@ export const UNIT_OF_WORK = Symbol('UNIT_OF_WORK');
 
 @Injectable()
 export class PrismaUnitOfWork implements UnitOfWork {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   run<T>(work: (db: AuthTx) => Promise<T>): Promise<T> {
     return this.prisma.$transaction(work);

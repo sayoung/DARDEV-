@@ -1,11 +1,11 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Inject, Res } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 
 import { HealthService, type HealthBody } from './health.service.js';
 
 @Controller('api/health')
 export class HealthController {
-  constructor(private readonly health: HealthService) {}
+  constructor(@Inject(HealthService) private readonly health: HealthService) {}
 
   @Get()
   async show(@Res({ passthrough: true }) reply: FastifyReply): Promise<HealthBody> {
