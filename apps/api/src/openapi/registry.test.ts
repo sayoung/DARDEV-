@@ -31,6 +31,7 @@ const ROUTES = [
   { path: '/api/v1/admin/tours/{id}/validate', method: 'post' },
   { path: '/api/v1/admin/tours/{id}/publish', method: 'post' },
   { path: '/api/v1/admin/tours/{id}/unpublish', method: 'post' },
+  { path: '/api/v1/admin/tours/{id}/duplicate', method: 'post' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'get' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'post' },
   { path: '/api/v1/admin/tours/{tourId}/scenes/reorder', method: 'post' },
@@ -85,6 +86,10 @@ describe('document OpenAPI', () => {
     const unpublishTour = doc.paths?.['/api/v1/admin/tours/{id}/unpublish']?.post?.responses;
     expect(unpublishTour?.['200']).toBeDefined();
     expect(unpublishTour?.['404']).toBeDefined();
+    const duplicateTour = doc.paths?.['/api/v1/admin/tours/{id}/duplicate']?.post?.responses;
+    expect(duplicateTour?.['201']).toBeDefined();
+    expect(duplicateTour?.['403']).toBeDefined();
+    expect(duplicateTour?.['404']).toBeDefined();
     expect(body).toContain('TOUR_NOT_PUBLISHABLE');
     const createScene = doc.paths?.['/api/v1/admin/tours/{tourId}/scenes']?.post?.responses;
     expect(createScene?.['422']).toBeDefined();

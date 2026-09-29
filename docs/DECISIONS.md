@@ -535,6 +535,18 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives (partie 2) :** refuser la publication hors transaction, après la lecture ; répondre 409 si la visite est déjà publiée ; effacer `publishedAt` à la dépublication ; inclure `publishedAt` dans `TourResponse`.
 - **À valider (partie 2) :** oui (422 avec `issues` et sans écriture ; `publishedAt` posé à chaque publication réussie ; dépublication qui conserve `publishedAt` et incrémente `contentVersion` ; `TourResponse` déjà porteur de `status`)
 
+## D-75 — Duplication des visites (F-01)
+
+- **Date :** 30/09/2026
+- **Décision :** `POST /api/v1/admin/tours/:id/duplicate` répond 201 `TourResponse`. La copie tient dans une seule transaction Prisma. La visite source n’est pas modifiée. Aucun paquet npm ajouté. Pas d’écran admin.
+- **Visite copiée :** `status` = `DRAFT` (même si la source est publiée), `publicShare` = false (D-05), `publishedAt` null, `contentVersion` = 1, `createdById` = l’utilisateur de la session. `shareToken` est un nouveau jeton, `crypto.randomBytes(16).toString('base64url')`, 22 caractères, comme à la création (D-71). Ville, vignette, résumé, description, durée, coordonnées et infos pratiques sont recopiés. Les mêmes catégories sont rattachées, dans l’ordre des jointures source.
+- **Titre :** seul `title.fr` reçoit le suffixe ` (copie)` (espace comprise, pour ne pas coller au texte). `ar` et `en` restent ceux de la source. `duplicateFrenchTitle` dans `tour-duplicate.ts`.
+- **Scènes :** seules les scènes dont `deletedAt` est vide sont copiées, avec le même `weight` et les autres champs (panorama, angles, narration, ambiance, plan). Leurs hotspots sont copiés. `createdById` des scènes et des hotspots copiés est la session, comme pour la visite.
+- **Remappage :** `remapDuplicateLinks` est une fonction pure. `startSceneId` et les `targetSceneId` des `SCENE_LINK` pointent vers les nouvelles scènes. Une cible absente de la carte (scène supprimée, donc non copiée) devient `null` : aucun hotspot copié ne pointe vers une scène de la source. Les `TOUR_LINK` conservent `targetTourId` et `targetTourSceneId`. Un `TOUR_LINK` vers la visite source n’est pas réécrit : la création l’interdit déjà (`TOUR_LINK_SELF`).
+- **Garde :** `SessionGuard`, `CsrfGuard`, `canManageContent`. ADMIN et EDITOR seulement. PARTNER et HOTEL_MANAGER reçoivent 403. Visite absente ou supprimée : 404 `{ error: { code: "TOUR_NOT_FOUND", message } }`. Un identifiant qui n’est pas un UUID v7 répond 400.
+- **Alternatives :** suffixe `(copie)` sans espace ; conserver le `createdById` d’origine sur les scènes et les hotspots ; laisser un `SCENE_LINK` pointer vers une scène source supprimée ; copier aussi les scènes supprimées ; incrémenter `contentVersion` de la source.
+- **À valider :** oui (suffixe ` (copie)` avec espace, seulement sur le français ; `createdById` de la copie = session, y compris scènes et hotspots ; cible de `SCENE_LINK` non copiée remise à `null` ; `TOUR_LINK` inchangé ; `publicShare` forcé à false et statut `DRAFT`)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
