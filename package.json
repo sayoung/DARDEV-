@@ -11,6 +11,8 @@
     "test": "vitest run",
     "dev": "pnpm -r dev",
     "db:migrate": "pnpm -r db:migrate",
+    "db:deploy": "pnpm -r db:deploy",
+    "db:generate": "pnpm -r db:generate",
     "db:seed": "pnpm -r db:seed"
   },
   "devDependencies": {
