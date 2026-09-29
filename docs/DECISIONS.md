@@ -424,6 +424,20 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** compiler `@xplor/shared` et pointer `exports` vers `dist` ; garder `nest start --watch` (Node ne réécrit pas les spécificateurs).
 - **À valider :** oui (dev local aligné sur le démarrage CI par tsx)
 
+## D-65 — Modèle `Asset` minimal en M1
+
+- **Date :** 29/09/2026
+- **Décision :** En M1, le modèle `Asset` est créé en version minimale (`kind`, `originalKey`, `mimeType`, `sizeBytes`, `width`, `height`, `contentHash`, `processingStatus` défaut `PENDING`, `derivatives` Json défaut `{}`, `copyright`), parce que `Tour.coverAssetId` et `Scene.panoramaAssetId` en dépendent. L'upload pré-signé et le traitement sont reportés à M2.
+- **Alternatives :** reporter tout le modèle `Asset` à M2 et laisser `coverAssetId` et `panoramaAssetId` sans cible jusqu'à M2 ; livrer dès M1 l'upload pré-signé et le traitement.
+- **À valider :** oui
+
+## D-66 — `Hotel`, `Selection`, `SelectionItem`, `Kiosk` et `UserHotel` dans le schéma M1
+
+- **Date :** 29/09/2026
+- **Décision :** `Hotel`, `Selection`, `SelectionItem`, `Kiosk` et `UserHotel` entrent dans le schéma en M1 pour le seed (1 hôtel, 1 kiosque). Leur CRUD et leurs écrans restent en M5.
+- **Alternatives :** n'ajouter ces modèles qu'en M5, avec le CRUD ; livrer aussi leurs écrans en M1.
+- **À valider :** oui
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
