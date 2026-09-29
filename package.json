@@ -2,6 +2,11 @@
   "name": "xplor",
   "private": true,
   "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "overrides": {
+      "deepmerge-ts": "8.0.2"
+    }
+  },
   "engines": {
     "node": ">=22 <23"
   },
