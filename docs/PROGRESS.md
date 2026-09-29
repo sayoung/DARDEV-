@@ -11,16 +11,18 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 API-21 partie 1 — CRUD des visites (`/api/v1/admin/tours`). Hors de ce lot : publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token.
+**Exigence :** M1 F-03 — livraison des règles de publication sous le nom `publication-rules`. Hors de ce lot : route 422 et affichage admin.
 
 Plan :
 
-1. `TourResponse`, `Paginated<TourResponse>` et `TourListQuery` dans `@xplor/shared` (`PaginationQuery` plus filtres `status`, `cityId`, `categoryId`, `q`).
-2. `ToursController` fin → `ToursService` → Prisma. Lecture et écriture via `canManageContent` (ADMIN, EDITOR). Création en `DRAFT` (D-26), `publicShare` false (D-05), `shareToken` par `crypto.randomBytes` (22 caractères), `createdById` = session. PATCH : `categoryIds` remplace `TourCategory` dans une transaction. DELETE : `deletedAt`, 204. Ville, catégorie ou vignette inconnue → 422 `{ error: { code, message } }`. Visite absente ou supprimée → 404.
-3. OpenAPI régénéré. Tests unitaires du service et `test/tours.int.test.ts` (401, 403 CSRF, 403 PARTNER et HOTEL_MANAGER, brouillon sans partage, filtre par ville, 404 après suppression, 422 ville inconnue).
-4. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
+1. Copier `tour-validation.ts` et `tour-validation.test.ts` vers `publication-rules.ts` et `publication-rules.test.ts` (seul l’import du test change), puis supprimer les anciens fichiers.
+2. `ValidationIssueSchema` dans `@xplor/shared` (`z.nativeEnum(ValidationIssueCode)`, `sceneId` et `hotspotId` UUID optionnels, `message` string). `ValidationIssue` devient `z.infer`. Export par `index.ts`. Cas valide et code inconnu dans `catalog.test.ts`.
+3. Seuil de couverture 100 % sur `publication-rules.ts`. Compléter D-68 (renommage).
+4. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test -- --coverage`. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/tours` (D-71). Création en `DRAFT`, `publicShare` false, `shareToken` de 22 caractères (`crypto.randomBytes`), `createdById` = session. Liste paginée (ville, catégorie, statut, titre fr) sans les visites supprimées. PATCH remplace `TourCategory` dans une transaction. DELETE pose `deletedAt` (204). 422 `CITY_NOT_FOUND` / `CATEGORY_NOT_FOUND` / `COVER_ASSET_NOT_FOUND`. Lecture et écriture : ADMIN et EDITOR (`canManageContent`). `pnpm lint`, `pnpm typecheck` et `pnpm test` (301) verts. `pnpm test:int` (21) vert, dont 7 tests HTTP des visites. OpenAPI régénéré. Couverture de `catalog.ts` : 100 % (70 tests du paquet). Aucun commit (orchestrateur).
+Réalisé (29/09/2026, Node 22.23.3) : `validateTour` dans `apps/api/src/catalog/publication-rules.ts` (25 tests, dont « Visite manuelle »). `ValidationIssueSchema` et `ValidationIssue` (`z.infer`) dans `@xplor/shared`. Couverture mesurée de `publication-rules.ts` : 100 % (lignes, branches, fonctions, instructions). `pnpm lint`, `pnpm typecheck` et `pnpm test` (303) verts. `pnpm test -- --coverage` vert, seuil 100 % tenu. Couverture de `catalog.ts` : 100 % (72 tests du paquet). La route 422 et l'affichage admin restent à faire. Aucun commit (orchestrateur).
+
+Le CRUD des visites (API-21, partie 1, D-71) est dans la section « Fait ».
 
 Le schéma 5.6 à 5.8 et API-25 sont dans la section « Fait ».
 
@@ -43,9 +45,9 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### Fait
 
-- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `TourResponse`, `PaginatedTourResponse` et `TourListQuery` complètent le contrat de liste (D-71). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (70 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). Le CRUD des visites est en place (API-21, partie 1). Duplication, dépublication et écrans restent à faire. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `TourResponse`, `PaginatedTourResponse` et `TourListQuery` complètent le contrat de liste (D-71). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (72 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). Le CRUD des visites est en place (API-21, partie 1). Duplication, dépublication et écrans restent à faire. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
 - **API-21, partie 1** (CRUD des visites, D-71) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/tours`. Liste paginée (`status`, `cityId`, `categoryId`, `q` sur le titre fr), détail avec `categoryIds` et `sceneCount`. Création en `DRAFT` (D-26), `publicShare` false (D-05), `shareToken` émis par le service, `createdById` = session. Suppression logique. 422 si la ville, une catégorie ou la vignette est inconnue. ADMIN et EDITOR seulement. OpenAPI à jour. Hors de ce lot : publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token. Pas d'écran admin.
-- **F-03** (règles de publication, fonction pure) : `validateTour` dans `apps/api/src/catalog/tour-validation.ts` (25 tests, dont « Visite manuelle »). `ValidationIssue` et `ValidationIssueCode` dans `@xplor/shared`. Couverture 100 %. Pas de route 422 ni d'écran (D-68).
+- **F-03** (règles de publication, fonction pure) : `validateTour` dans `apps/api/src/catalog/publication-rules.ts` (25 tests, dont « Visite manuelle »). `ValidationIssueSchema` (`code` par `z.nativeEnum(ValidationIssueCode)`, `sceneId` et `hotspotId` UUID optionnels, `message` string) et `ValidationIssue` (`z.infer`) dans `@xplor/shared`. Couverture mesurée : 100 % (lignes, branches, fonctions, instructions). La route 422 et l'affichage admin restent à faire (D-68).
 - **API-25** (CRUD villes et catégories) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Lecture pour toute session ; écriture ADMIN et EDITOR (`canManageCatalog`). 409 `IN_USE` au format du cahier. Seed fr/ar/en. OpenAPI à jour. Pas d'écran admin (D-69).
 - **Schéma 5.6 à 5.8** (D-66, D-70) : `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, migration `20260929183235_hotels_kiosks`. Seed : 1 hôtel à Rabat (FIVE, RENTAL, fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`. CRUD et écrans restent en M5. La session ne charge pas encore `hotelIds`.
 

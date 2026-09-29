@@ -22,6 +22,7 @@ import {
   TourStatus,
   TourUpdateSchema,
   ValidationIssueCode,
+  ValidationIssueSchema,
   paginated,
   type CityResponse,
   type Paginated,
@@ -479,6 +480,27 @@ describe('PaginationQuerySchema', () => {
     expect(PaginationQuerySchema.safeParse({ page: 1.5 }).success).toBe(false);
     expect(PaginationQuerySchema.safeParse({ page: 1, pageSize: 0 }).success).toBe(false);
     expect(PaginationQuerySchema.safeParse({ page: 1, pageSize: 101 }).success).toBe(false);
+  });
+});
+
+describe('ValidationIssueSchema', () => {
+  it('accepte un problème avec scène et hotspot', () => {
+    const issue = {
+      code: ValidationIssueCode.SCENE_LINK_SELF,
+      sceneId: id.scene,
+      hotspotId: id.media,
+      message: 'Le lien de scène pointe vers sa propre scène.',
+    };
+    expect(ValidationIssueSchema.parse(issue)).toEqual(issue);
+  });
+
+  it('refuse un code inconnu', () => {
+    expect(
+      ValidationIssueSchema.safeParse({
+        code: 'NOT_A_CODE',
+        message: 'inconnu',
+      }).success,
+    ).toBe(false);
   });
 });
 

@@ -36,6 +36,7 @@ export {
   TourStatus,
   TourUpdateSchema,
   ValidationIssueCode,
+  ValidationIssueSchema,
   paginated,
   type CategoryCreate,
   type CategoryResponse,

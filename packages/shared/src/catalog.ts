@@ -260,10 +260,16 @@ export enum ValidationIssueCode {
   TOUR_LINK_SCENE_FOREIGN = 'TOUR_LINK_SCENE_FOREIGN',
 }
 
-/** Un problème de publication. `message` est en français, prêt à afficher. */
-export type ValidationIssue = {
-  code: ValidationIssueCode;
-  sceneId?: string;
-  hotspotId?: string;
-  message: string;
-};
+/**
+ * Un problème de publication. `message` est en français, prêt à afficher.
+ * `sceneId` et `hotspotId` sont des UUID facultatifs.
+ */
+export const ValidationIssueSchema = z.object({
+  // F-03 impose `z.nativeEnum`. Zod 4 le marque déprécié : c'est l'alias de `z.enum`.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  code: z.nativeEnum(ValidationIssueCode),
+  sceneId: z.uuid().optional(),
+  hotspotId: z.uuid().optional(),
+  message: z.string(),
+});
+export type ValidationIssue = z.infer<typeof ValidationIssueSchema>;

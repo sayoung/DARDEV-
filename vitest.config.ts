@@ -9,7 +9,7 @@ export default defineConfig({
       include: [
         'apps/api/src/auth/**/*.ts',
         'apps/api/src/users/**/*.ts',
-        'apps/api/src/catalog/tour-validation.ts',
+        'apps/api/src/catalog/publication-rules.ts',
       ],
       thresholds: {
         lines: 70,
@@ -28,7 +28,7 @@ export default defineConfig({
           branches: 100,
           statements: 100,
         },
-        'apps/api/src/catalog/tour-validation.ts': {
+        'apps/api/src/catalog/publication-rules.ts': {
           lines: 100,
           functions: 100,
           branches: 100,
