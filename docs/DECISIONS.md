@@ -82,6 +82,25 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `pnpm/setup` (pnpm 11+) ; images `-alpine` comme en local ; monter `init.sql` ou créer `xplor_test` par `docker exec` ; passer les URL par secrets GitHub.
 - **À valider :** oui
 
+## D-33 — Application `@xplor/api` (NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** `apps/api` est l'application NestJS 11 sur adaptateur Fastify, préfixe global `/api/v1`. `loadEnv(source)` valide l'environnement avec Zod avant `NestFactory.create`. `NODE_ENV` absent ou vide vaut `development` (valeurs acceptées : `development`, `test`, `production`) : `.env.example` ne le fixe pas. `PORT` absent ou vide vaut 3000, et le fichier d'exemple le déclare aussi. Le fichier `.env` à la racine du dépôt, s'il existe, est chargé par `process.loadEnvFile` (Node 22) sans écraser les variables déjà présentes ; pas de paquet `dotenv`. Le jeton d'injection `ENV` est fourni par un `ConfigModule` global. Les modules Nest sont des classes décorées : `@typescript-eslint/no-extraneous-class` autorise ce cas (`allowWithDecorator`). `zod`, `typescript` et `vitest` sont déjà inscrits en D-29 ; l'API les redéclare comme dépendances directes.
+- **Alternatives :** `tsx watch` à la place de `nest start --watch` ; paquet `dotenv` ; `NODE_ENV` obligatoire dans `.env.example`.
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+|---|---|---|
+| @nestjs/common | Socle des modules, contrôleurs et injection NestJS 11. | MIT |
+| @nestjs/core | Démarrage de l'application (`NestFactory`). | MIT |
+| @nestjs/platform-fastify | Adaptateur HTTP Fastify imposé par le cahier des charges. | MIT |
+| @nestjs/cli | Scripts `dev` (`nest start --watch`) et `build` (`nest build`), métadonnées des décorateurs via `tsc`. | MIT |
+| @nestjs/schematics | Collection déclarée par `nest-cli.json`. | MIT |
+| fastify | Serveur HTTP, dépendance de pair de `@nestjs/platform-fastify`. | MIT |
+| reflect-metadata | Réflexion exigée par les décorateurs NestJS. | Apache-2.0 |
+| rxjs | Dépendance de pair de `@nestjs/common`. | Apache-2.0 |
+| @types/node | Types Node 22 (`process.env`, `process.loadEnvFile`). | MIT |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
