@@ -302,6 +302,7 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 
 - **Date :** 29/09/2026
 - **Décision :** Le porteur autorise l'installation de Docker Desktop (backend WSL2) sur le poste de développement. Sans lui, la Definition of Done de M0 ne se vérifie pas (quatre commandes, connexion réelle, migrations sur PostgreSQL). La session du scénario de démo n'a pas lancé l'installeur. La session suivante a exécuté `wsl --status` puis `wsl --install` : le jeton n'est pas élevé (compte `desktop-aa5s62m\hp` membre de `BUILTIN\Administrateurs`, niveau obligatoire moyen) et DISM renvoie l'erreur 740. L'installation s'arrête là, sans invite UAC. Les points qui dépendent de Docker restent bloqués dans `docs/PROGRESS.md` tant que `docker compose ps` ne montre pas les quatre services `healthy`.
+- **Complément (29/09/2026) :** la session de validation NF-09 (migrations, seed, `pnpm test:int`, santé, Mailpit) s'arrête au prérequis. Docker Desktop n'est toujours pas installé : la commande `docker` est absente, aucun binaire sous Program Files ni `%LOCALAPPDATA%\Docker`, `winget list` ne trouve pas le paquet, `wsl --status` renvoie le code 50. Aucune migration corrective n'est créée. D-34 et D-44 ne sont pas revalidés sur PostgreSQL.
 - **Alternatives :** lancer l'installeur pendant la session de documentation ; installer PostgreSQL, Redis et MinIO hors Compose.
 - **À valider :** non
 
