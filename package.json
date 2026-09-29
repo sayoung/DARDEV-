@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r typecheck",
     "test": "vitest run",
+    "test:int": "pnpm --filter @xplor/api test:int",
     "dev": "pnpm --parallel --filter @xplor/api --filter @xplor/admin --filter @xplor/web --filter @xplor/kiosk --filter @xplor/worker dev",
     "db:migrate": "pnpm -r db:migrate",
     "db:deploy": "pnpm -r db:deploy",

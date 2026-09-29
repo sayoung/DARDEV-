@@ -1,4 +1,4 @@
-import type { TestProjectConfiguration } from 'vitest/config';
+import { configDefaults, type TestProjectConfiguration } from 'vitest/config';
 
 const workspace: TestProjectConfiguration[] = [
   {
@@ -23,6 +23,7 @@ const workspace: TestProjectConfiguration[] = [
       root: './apps/api',
       environment: 'node',
       include: ['src/**/*.test.ts'],
+      exclude: [...configDefaults.exclude, '**/*.int.test.ts'],
     },
   },
   './apps/admin/vitest.config.ts',

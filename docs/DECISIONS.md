@@ -280,6 +280,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | ------------------------------ | ------------------------------------------------------------------------------------------ | ------- |
 | @asteasolutions/zod-to-openapi | OpenAPI 3.1 depuis les schémas Zod 4 de `@xplor/shared`, sans redéclarer les corps. 9.1.0. | MIT     |
 
+## D-50 — Tests d'intégration API sur PostgreSQL (NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** Le projet Vitest `api-int` vit dans `apps/api/vitest.int.config.ts` (`pnpm --filter @xplor/api test:int`, et `pnpm test:int` à la racine). Il n'est pas ajouté à `vitest.workspace.ts`. `pnpm test` exclut `**/*.int.test.ts` (racine et projet `@xplor/api`). `globalSetup` charge le `.env` racine sans écraser les variables déjà présentes (même règle que D-33), lit `DATABASE_URL_TEST`, sonde la base avec Prisma, puis lance `prisma migrate deploy` dans un processus enfant dont `DATABASE_URL` vaut `DATABASE_URL_TEST`. `resetDb()` vide toutes les tables du schéma `public` sauf `_prisma_migrations` (`TRUNCATE ... CASCADE`). Le seed d'intégration exécute `prisma/seed.ts` deux fois avec cette même URL. En CI, le runner installe `postgresql-client` s'il n'a pas `psql`, puis `PGPASSWORD=xplor psql ... -c "CREATE DATABASE xplor_test;"` (l'erreur est ignorée si la base existe déjà). `SEED_DEFAULT_PASSWORD` dans le workflow est `xplor-seed-dev-2026`, la valeur de développement déjà publiée dans `.env.example` (D-41), pas un secret. Aucun paquet npm ajouté.
+- **Alternatives :** ajouter `api-int` au workspace et l'exclure par un filtre CLI ; créer `xplor_test` avec un client Node plutôt que `psql` ; ne pas charger le `.env` racine dans `globalSetup`.
+- **À valider :** oui (projet Vitest séparé ; chargement du `.env` ; `postgresql-client` en CI ; `|| true` sur `CREATE DATABASE`)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

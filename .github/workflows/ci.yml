@@ -63,6 +63,21 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Créer la base xplor_test
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install --yes postgresql-client
+          fi
+          PGPASSWORD=xplor psql -h localhost -U xplor -d xplor -c "CREATE DATABASE xplor_test;" || true
+
+      - name: Tests d'intégration
+        run: pnpm test:int
+        env:
+          DATABASE_URL_TEST: postgresql://xplor:xplor@localhost:5432/xplor_test
+          REDIS_URL: redis://localhost:6379
+          SEED_DEFAULT_PASSWORD: xplor-seed-dev-2026
+
       - name: Tests
         run: pnpm test
         env:
