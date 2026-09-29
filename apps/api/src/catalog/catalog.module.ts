@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module.js';
+import { AssetsController } from './assets.controller.js';
+import { AssetsService } from './assets.service.js';
 import { CategoriesController } from './categories.controller.js';
 import { CategoriesService } from './categories.service.js';
 import { CitiesController } from './cities.controller.js';
@@ -16,6 +18,7 @@ import { ToursService } from './tours.service.js';
 @Module({
   imports: [AuthModule],
   controllers: [
+    AssetsController,
     CitiesController,
     CategoriesController,
     ToursController,
@@ -23,6 +26,7 @@ import { ToursService } from './tours.service.js';
     HotspotsController,
   ],
   providers: [
+    AssetsService,
     CitiesService,
     CategoriesService,
     ToursService,

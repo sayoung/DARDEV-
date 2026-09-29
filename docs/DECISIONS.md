@@ -547,6 +547,15 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** suffixe `(copie)` sans espace ; conserver le `createdById` d’origine sur les scènes et les hotspots ; laisser un `SCENE_LINK` pointer vers une scène source supprimée ; copier aussi les scènes supprimées ; incrémenter `contentVersion` de la source.
 - **À valider :** oui (suffixe ` (copie)` avec espace, seulement sur le français ; `createdById` de la copie = session, y compris scènes et hotspots ; cible de `SCENE_LINK` non copiée remise à `null` ; `TOUR_LINK` inchangé ; `publicShare` forcé à false et statut `DRAFT`)
 
+## D-76 — Liste des médias en lecture seule (F-05)
+
+- **Date :** 30/09/2026
+- **Décision :** `GET /api/v1/admin/assets` et `GET /api/v1/admin/assets/:id` exposent la médiathèque en lecture seule, pour que les formulaires admin puissent choisir un panorama, une vignette ou un média de hotspot. Pas d’upload, pas de `complete`, pas de `reprocess`, pas de suppression : cela reste API-24 en M2 (D-65). Aucun paquet npm ajouté. Pas d’écran admin.
+- **Contrat :** `AssetResponseSchema` dans `@xplor/shared` : `id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`. `width`, `height` et `copyright` sont `null` quand ils sont absents. `originalKey`, `contentHash`, `derivatives` et `updatedAt` ne sortent pas. `AssetListQuerySchema` étend `PaginationQuery` : `page` défaut 1, `pageSize` défaut 20 (1…100), `kind` facultatif (`AssetKind`). Tri `createdAt` décroissant, puis `id` croissant pour stabiliser la page. `PaginatedAssetResponseSchema` via `paginated`.
+- **Garde :** `SessionGuard`, `CsrfGuard`, `canManageContent`. ADMIN et EDITOR seulement. PARTNER et HOTEL_MANAGER reçoivent 403, y compris en lecture. GET est une méthode sûre : le jeton CSRF n’est pas exigé. Média inconnu : 404 `{ error: { code: "ASSET_NOT_FOUND", message } }`. Un identifiant qui n’est pas un UUID v7, ou un `kind` inconnu, répond 400.
+- **Alternatives :** ouvrir la lecture à toute session comme API-25 ; paginer sans `kind` ; inclure `originalKey` dans la réponse ; trier seulement sur `createdAt` sans second critère ; livrer l’upload dans ce lot.
+- **À valider :** oui (lecture réservée à ADMIN et EDITOR ; champs de réponse limités à la liste F-05 ; second tri `id` croissant ; upload, retraitement et suppression reportés à M2)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

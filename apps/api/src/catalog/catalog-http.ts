@@ -1,5 +1,11 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { TourListQuerySchema, type Principal, type TourListQuery } from '@xplor/shared';
+import {
+  AssetListQuerySchema,
+  TourListQuerySchema,
+  type AssetListQuery,
+  type Principal,
+  type TourListQuery,
+} from '@xplor/shared';
 import { z, type ZodType } from 'zod';
 
 import { canManageCatalog, canManageContent } from '../auth/access-policy.js';
@@ -13,7 +19,10 @@ export function requireCatalogWriter(request: SessionRequest): void {
   }
 }
 
-/** Lecture et écriture des visites, scènes et hotspots (API-21, API-22, API-23) : ADMIN et EDITOR. */
+/**
+ * Lecture et écriture des visites, scènes, hotspots et médias (F-05).
+ * ADMIN et EDITOR seulement (API-21, API-22, API-23).
+ */
 export function requireContentManager(request: SessionRequest): Principal {
   const principal = request.principal;
   if (principal === undefined || !canManageContent(principal)) {
@@ -41,6 +50,24 @@ export function parseTourListQuery(query: Record<string, unknown>): TourListQuer
   assignString(raw, 'categoryId', query.categoryId);
   assignString(raw, 'q', query.q);
   return parseBody(TourListQuerySchema, raw);
+}
+
+/**
+ * Query string de `GET /admin/assets`.
+ * `page` et `pageSize` arrivent en chaînes : `PaginationQuery` attend des nombres (D-67).
+ */
+export function parseAssetListQuery(query: Record<string, unknown>): AssetListQuery {
+  const raw: Record<string, unknown> = {};
+  const page = queryNumber(query.page);
+  if (page !== undefined) {
+    raw.page = page;
+  }
+  const pageSize = queryNumber(query.pageSize);
+  if (pageSize !== undefined) {
+    raw.pageSize = pageSize;
+  }
+  assignString(raw, 'kind', query.kind);
+  return parseBody(AssetListQuerySchema, raw);
 }
 
 /** Même mécanisme que l'auth : `safeParse`, puis 400 sans détail de champ. */
