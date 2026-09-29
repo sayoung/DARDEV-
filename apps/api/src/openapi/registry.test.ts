@@ -47,7 +47,7 @@ describe('document OpenAPI', () => {
   });
 
   it('est identique à docs/openapi.json', () => {
-    const committed = readFileSync(openApiDocumentFile(), 'utf8');
+    const committed = readFileSync(openApiDocumentFile(), 'utf8').replace(/\r\n/g, '\n');
     expect(committed).toBe(serializeOpenApiDocument());
   });
 });
