@@ -89,6 +89,7 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Date :** 29/09/2026
 - **Décision :** `apps/api` est l'application NestJS 11 sur adaptateur Fastify, préfixe global `/api/v1`. `loadEnv(source)` valide l'environnement avec Zod avant `NestFactory.create`. `NODE_ENV` absent ou vide vaut `development` (valeurs acceptées : `development`, `test`, `production`) : `.env.example` ne le fixe pas. `PORT` absent ou vide vaut 3000, et le fichier d'exemple le déclare aussi. Le fichier `.env` à la racine du dépôt, s'il existe, est chargé par `process.loadEnvFile` (Node 22) sans écraser les variables déjà présentes ; pas de paquet `dotenv`. Le jeton d'injection `ENV` est fourni par un `ConfigModule` global. Les modules Nest sont des classes décorées : `@typescript-eslint/no-extraneous-class` autorise ce cas (`allowWithDecorator`). `zod`, `typescript` et `vitest` sont déjà inscrits en D-29 ; l'API les redéclare comme dépendances directes.
 - **Alternatives :** `tsx watch` à la place de `nest start --watch` ; paquet `dotenv` ; `NODE_ENV` obligatoire dans `.env.example`.
+- **Complément (29/09/2026, D-64) :** le script `dev` est `tsx watch src/main.ts`. `nest build` reste le build de production.
 - **À valider :** non
 
 | Paquet                   | Raison                                                                                                 | Licence    |
@@ -96,7 +97,7 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | @nestjs/common           | Socle des modules, contrôleurs et injection NestJS 11.                                                 | MIT        |
 | @nestjs/core             | Démarrage de l'application (`NestFactory`).                                                            | MIT        |
 | @nestjs/platform-fastify | Adaptateur HTTP Fastify imposé par le cahier des charges.                                              | MIT        |
-| @nestjs/cli              | Scripts `dev` (`nest start --watch`) et `build` (`nest build`), métadonnées des décorateurs via `tsc`. | MIT        |
+| @nestjs/cli              | Script `build` (`nest build`), métadonnées des décorateurs via `tsc`. Le script `dev` est `tsx watch` (D-64). | MIT        |
 | @nestjs/schematics       | Collection déclarée par `nest-cli.json`.                                                               | MIT        |
 | fastify                  | Serveur HTTP, dépendance de pair de `@nestjs/platform-fastify`.                                        | MIT        |
 | reflect-metadata         | Réflexion exigée par les décorateurs NestJS.                                                           | Apache-2.0 |
@@ -403,6 +404,7 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Complément (29/09/2026) :** le run `36569962273` (commit `b100f8c`, https://github.com/sayoung/DARDEV-/actions/runs/36569962273, job `ci` `109411207526`) a l'étape « API smoke » verte. Journal : « API smoke : health, openapi, login et me sont conformes. » Artefact `playwright-results` présent.
 - **Complément (29/09/2026) :** le run `36580207347` (commit `1eaf986`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347, job `ci` `109446061994`) est vert, y compris « API smoke » (même journal). Artefact `playwright-results` `11039602501`. Les critères 1, 2, 7 et 10 de `docs/PROGRESS.md`, ainsi que la variante « démo sans Docker local » de `docs/DEMO_M0.md`, citent ce run comme preuve CI.
 - **Complément (29/09/2026, NF-09) :** le moteur local répond. `docker version` affiche Server Docker Desktop 4.93.0 (moteur 29.8.1, linux/amd64) alors que `(Get-CimInstance Win32_Processor).VirtualizationFirmwareEnabled` vaut False. VirtualMachinePlatform et Microsoft-Windows-Subsystem-Linux sont activées (InstallState 1). `wsl --status` : distribution par défaut `docker-desktop`, version 2. Preuve locale des critères 1, 7 et 10 : quatre services `healthy`, `minio-init` sorti en 0, `pnpm db:migrate` déjà synchronisé, `pnpm db:seed` deux fois. Le critère 2 (connexion dans le navigateur) reste dû. Aucun code modifié.
+- **Complément (29/09/2026, F-90) :** le parcours HTTP local du critère 2 est fait. `scripts/ci-api-smoke.mjs` sort en 0 sur `http://localhost:3000` et sur le proxy `http://localhost:5173` (`GET /api/health` 200, OpenAPI 200, login 200 avec `xplor_sid`, `GET /api/v1/auth/me` 200). Le clic dans un navigateur graphique reste à faire. Le démarrage `nest start --watch` échouait ; le correctif est D-64.
 - **Alternatives :** attendre l'activation d'Intel VT-x ou d'AMD-V (SVM) dans le BIOS/UEFI ; jouer la démo sur un autre poste où Docker démarre.
 - **À valider :** oui (porteur)
 
@@ -413,6 +415,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Complément (29/09/2026) :** le scénario `auth.int.test.ts` « renouvelle une invitation jamais acceptée et n'accepte que le second lien » est vert sur le run `36580207347` (commit `1eaf986`, test:int 9 dont 7 dans `auth.int.test.ts`).
 - **Alternatives :** supprimer le compte inactif puis le recréer (nouvel identifiant) ; répondre 409 et exposer une route de renvoi séparée ; inclure l'envoi SMTP dans la transaction (le courriel n'est pas une écriture Prisma).
 - **À valider :** oui (réinvitation seulement si le compte n'a jamais été connecté ; courriel après le commit ; pas de nouveau secret à la réinvitation)
+
+## D-64 — `pnpm dev` de l'API via tsx (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `pnpm dev` lançait `@xplor/api` avec `nest start --watch`. Nest compile vers `dist` puis Node exécute ce JavaScript. `@xplor/shared` (et `@xplor/i18n`) exportent `src/index.ts`. Node 22 retire les types de ce fichier, mais ne réécrit pas le spécificateur `./auth.js` vers `auth.ts`. Le processus s'arrête : `ERR_MODULE_NOT_FOUND` sur `packages/shared/src/auth.js`. Le script `dev` devient `tsx watch src/main.ts`, le même point d'entrée que l'étape CI « API smoke » (D-59). tsx, déjà devDependency pour le seed (D-41), résout ces spécificateurs `.js`. Les `@Inject` explicites (D-57) permettent au graphe de démarrer sous esbuild, sans `design:paramtypes`. `nest build` et `emitDecoratorMetadata` restent le chemin de production (D-33). Aucun paquet npm ajouté.
+- **Alternatives :** compiler `@xplor/shared` et pointer `exports` vers `dist` ; garder `nest start --watch` (Node ne réécrit pas les spécificateurs).
+- **À valider :** oui (dev local aligné sur le démarrage CI par tsx)
 
 ## Encore à valider (cahier des charges, section 11.2)
 
