@@ -18,6 +18,32 @@
       "locked": "Account locked. Try again in 15 minutes.",
       "failed": "Sign-in failed. Try again."
     },
+    "forgot": {
+      "link": "Forgot password",
+      "title": "Forgot password",
+      "email": "Email address",
+      "submit": "Send the link",
+      "sent": "If an account matches this address, an email has just been sent.",
+      "invalidEmail": "Enter a valid email address.",
+      "back": "Back to sign in"
+    },
+    "setPassword": {
+      "titleReset": "New password",
+      "titleInvite": "Set your password",
+      "password": "Password",
+      "confirm": "Confirm password",
+      "submit": "Save",
+      "mismatch": "The two passwords do not match.",
+      "back": "Back to sign in",
+      "successReset": "Your password has been updated. You can sign in.",
+      "successInvite": "Your password is set. You can sign in."
+    },
+    "errors": {
+      "TOKEN_INVALID": "This link is no longer valid.",
+      "PASSWORD_TOO_COMMON": "This password is too common.",
+      "PASSWORD_INVALID": "The password must contain at least 12 characters.",
+      "request": "The request failed. Try again."
+    },
     "role": {
       "ADMIN": "Administrator",
       "EDITOR": "Editor",

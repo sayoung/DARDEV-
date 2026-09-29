@@ -1,7 +1,8 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, type MouseEvent, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { isAccountLocked, isInvalidCredentials } from '../api/client.js';
+import { hrefFor, navigate } from '../router.js';
 import { useAuth } from './AuthProvider.js';
 
 type LoginErrorKey = 'auth.login.error' | 'auth.login.locked' | 'auth.login.failed';
@@ -53,8 +54,19 @@ export function LoginPage() {
       <button type="submit" disabled={pending}>
         {t('auth.login.submit')}
       </button>
+      <a className="auth-link" href={hrefFor('/forgot')} onClick={goToForgot}>
+        {t('auth.forgot.link')}
+      </a>
     </form>
   );
+}
+
+function goToForgot(event: MouseEvent<HTMLAnchorElement>): void {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0) {
+    return;
+  }
+  event.preventDefault();
+  navigate('/forgot');
 }
 
 function readField(data: FormData, name: string): string {

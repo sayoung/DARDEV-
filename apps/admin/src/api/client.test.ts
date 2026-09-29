@@ -1,7 +1,16 @@
 import { Role, type MeResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { apiFetch, clearCsrfToken, fetchCurrentUser, login, logout } from './client.js';
+import {
+  acceptInvite,
+  apiFetch,
+  clearCsrfToken,
+  fetchCurrentUser,
+  forgotPassword,
+  login,
+  logout,
+  resetPassword,
+} from './client.js';
 
 const profile = {
   id: 'user-1',
@@ -56,6 +65,32 @@ describe('client auth', () => {
     expect(call?.credentials).toBe('include');
     expect(headerOf(call, 'X-CSRF-Token')).toBe(profile.csrfToken);
     expect(call?.url).toBe('/api/v1/auth/logout');
+  });
+
+  it('valide les schémas mot de passe avant d’envoyer la requête', async () => {
+    await expect(forgotPassword({ email: 'pas-un-email' })).rejects.toThrow();
+    await expect(resetPassword({ token: 'jeton', password: 'court' })).rejects.toThrow();
+    await expect(acceptInvite({ token: '', password: 'a'.repeat(12) })).rejects.toThrow();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('envoie forgot, reset et accept avec le corps parsé', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+    const password = 'a'.repeat(12);
+
+    await forgotPassword({ email: 'ada@xplor.test' });
+    expect(lastCall()?.url).toBe('/api/v1/auth/password/forgot');
+    expect(lastCall()?.method).toBe('POST');
+    expect(lastCall()?.credentials).toBe('include');
+    expect(lastCall()?.init?.body).toBe(JSON.stringify({ email: 'ada@xplor.test' }));
+
+    await resetPassword({ token: 'jeton', password });
+    expect(lastCall()?.url).toBe('/api/v1/auth/password/reset');
+    expect(lastCall()?.init?.body).toBe(JSON.stringify({ token: 'jeton', password }));
+
+    await acceptInvite({ token: 'jeton', password });
+    expect(lastCall()?.url).toBe('/api/v1/auth/invite/accept');
+    expect(lastCall()?.init?.body).toBe(JSON.stringify({ token: 'jeton', password }));
   });
 });
 
