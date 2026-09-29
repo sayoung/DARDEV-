@@ -9,6 +9,14 @@ const workspace: TestProjectConfiguration[] = [
       include: ['src/**/*.test.ts'],
     },
   },
+  {
+    test: {
+      name: '@xplor/i18n',
+      root: './packages/i18n',
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+    },
+  },
 ];
 
 export default workspace;

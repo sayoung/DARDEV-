@@ -27,6 +27,19 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(lightningcss@1.33.0)
 
+  packages/i18n:
+    dependencies:
+      '@xplor/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(lightningcss@1.33.0)
+
   packages/shared:
     dependencies:
       zod:

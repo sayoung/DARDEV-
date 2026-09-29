@@ -1,6 +1,6 @@
 # Décisions — Xplor
 
-Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 propre à ce dépôt. « À valider : non » signifie que le porteur a déjà tranché, ou que la consigne de lancement du dépôt l'impose.
+Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30 propres à ce dépôt. « À valider : non » signifie que le porteur a déjà tranché, ou que la consigne de lancement du dépôt l'impose.
 
 ## D-03 — Langues
 
@@ -60,6 +60,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 propre 
 | prettier | Formatage commun (`.prettierrc`, `.prettierignore`). | MIT |
 | vitest | Tests unitaires, fichier de workspace `vitest.workspace.ts`. | MIT |
 | typescript | `tsc --noEmit`, TypeScript 5 imposé par la pile. | Apache-2.0 |
+
+## D-30 — Ressources `@xplor/i18n`
+
+- **Date :** 29/09/2026
+- **Décision :** `packages/i18n` exporte `resources` comme `{ fr, ar, en }` (arbres de clés imbriquées), plus `isRtl` et `dir`. Le type `Lang` vient de `@xplor/shared`. i18next n'est pas ajouté tant que le back-office React n'existe pas.
+- **Alternatives :** envelopper dès maintenant au format i18next `{ translation: { ... } }` et dépendre du paquet `i18next`.
+- **À valider :** oui
 
 ## Encore à valider (cahier des charges, section 11.2)
 
