@@ -226,6 +226,14 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** stocker le jeton dans `sessionStorage` ; ne l'envoyer que sur logout ; basculer la langue de l'interface sur `uiLang` du profil ; n'accepter que l'enveloppe `error.code` ; afficher le code `Role` tel quel ; n'afficher un message que pour 401 et 423.
 - **À valider :** oui (jeton CSRF en mémoire de module ; lecture des deux formes de corps d'erreur ; libellés des quatre rôles)
 
+## D-44 — Jetons d'invitation et de réinitialisation (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `UserToken` persiste l'empreinte SHA-256 hexadécimale d'un jeton de 32 octets encodé en base64url. Le jeton en clair n'est jamais stocké. `expiryFor` vaut 48 h pour `INVITE` (F-90) et 1 h pour `PASSWORD_RESET`. `checkToken` renvoie `NOT_FOUND` si l'enregistrement est absent, `USED` dès que `usedAt` est renseigné (y compris si l'échéance est aussi dépassée), `EXPIRED` lorsque `now` est strictement après `expiresAt`, et `OK` à l'instant exact de `expiresAt`.
+- **Migration hors Docker :** `prisma migrate diff --from-migrations` exige `--shadow-database-url`. Le port 5432 est fermé et Docker est absent, donc la migration `20260929043449_user_tokens` a été produite par `prisma migrate diff --from-schema-datamodel` (schéma équivalent à `20260929022909_init_users`) `--to-schema-datamodel prisma/schema.prisma --script`. `init_users` n'est pas modifié. Cette migration doit être revalidée par `prisma migrate dev` dès que Docker sera installé, avant de la considérer comme fusionnée (D-34).
+- **Alternatives :** empreinte argon2id ; réinitialisation valable 24 h ; traiter l'instant `expiresAt` comme déjà expiré ; attendre une base fantôme pour `--from-migrations`.
+- **À valider :** oui (durée 1 h du jeton `PASSWORD_RESET` ; échéance encore valide à l'instant exact ; `USED` prioritaire sur `EXPIRED`)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

@@ -15,18 +15,39 @@ enum Role {
 }
 
 model User {
-  id               String    @id @default(uuid(7)) @db.Uuid
-  email            String    @unique
+  id               String      @id @default(uuid(7)) @db.Uuid
+  email            String      @unique
   name             String
   passwordHash     String
   role             Role
   totpSecret       String?
-  totpEnabled      Boolean   @default(false)
+  totpEnabled      Boolean     @default(false)
   lastLoginAt      DateTime?
-  active           Boolean   @default(true)
-  uiLang           String    @default("fr")
-  failedLoginCount Int       @default(0)
+  active           Boolean     @default(true)
+  uiLang           String      @default("fr")
+  failedLoginCount Int         @default(0)
   lockedUntil      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  tokens           UserToken[]
+}
+
+enum UserTokenType {
+  INVITE
+  PASSWORD_RESET
+}
+
+/// Jeton d'invitation ou de réinitialisation. Seule l'empreinte est persistée.
+model UserToken {
+  id        String        @id @default(uuid(7)) @db.Uuid
+  userId    String        @db.Uuid
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      UserTokenType
+  /// Empreinte SHA-256 hexadécimale. Le jeton en clair n'est jamais stocké.
+  tokenHash String        @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([userId, type])
 }
