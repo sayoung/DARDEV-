@@ -119,8 +119,8 @@ export type TourUpdate = z.infer<typeof TourUpdateSchema>;
 
 /**
  * Visite renvoyée par l'API admin (API-21).
- * `publishedAt` et `startSceneId` restent hors de ce schéma : les routes
- * de publication et de scènes ne font pas partie de ce lot.
+ * `publishedAt` et `startSceneId` restent hors de ce schéma.
+ * La scène de départ se lit en base ; la réponse scène ne la répète pas.
  */
 export const TourResponseSchema = z.object({
   id: idSchema,
@@ -153,6 +153,28 @@ export type SceneCreate = z.infer<typeof SceneCreateSchema>;
 /** Remplacement d'une scène : mêmes champs que la création. */
 export const SceneUpdateSchema = z.object(sceneShape);
 export type SceneUpdate = z.infer<typeof SceneUpdateSchema>;
+
+/**
+ * Scène renvoyée par l'API admin (API-22).
+ * `hotspotCount` compte les hotspots (suppression physique, cahier 5.4).
+ * `createdAt` et `updatedAt` sont des dates ISO 8601.
+ * Narration, son d'ambiance et plan restent hors de ce schéma.
+ */
+export const SceneResponseSchema = z.object({
+  id: idSchema,
+  tourId: idSchema,
+  title: LocalizedTextSchema,
+  caption: LocalizedTextSchema.optional(),
+  panoramaAssetId: idSchema,
+  initialYaw: yawSchema,
+  initialPitch: pitchSchema,
+  initialZoom: z.number().int().min(0).max(100),
+  weight: z.number().int(),
+  hotspotCount: z.number().int().min(0),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type SceneResponse = z.infer<typeof SceneResponseSchema>;
 
 const hotspotPosition = {
   yaw: yawSchema,

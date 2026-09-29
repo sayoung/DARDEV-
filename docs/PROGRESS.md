@@ -11,18 +11,16 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 F-03 — livraison des règles de publication sous le nom `publication-rules`. Hors de ce lot : route 422 et affichage admin.
+**Exigence :** M1 API-22, partie 1 — CRUD des scènes. Hors de ce lot : `reorder`, `set-start`, hotspots (API-23), écrans admin.
 
 Plan :
 
-1. Copier `tour-validation.ts` et `tour-validation.test.ts` vers `publication-rules.ts` et `publication-rules.test.ts` (seul l’import du test change), puis supprimer les anciens fichiers.
-2. `ValidationIssueSchema` dans `@xplor/shared` (`z.nativeEnum(ValidationIssueCode)`, `sceneId` et `hotspotId` UUID optionnels, `message` string). `ValidationIssue` devient `z.infer`. Export par `index.ts`. Cas valide et code inconnu dans `catalog.test.ts`.
-3. Seuil de couverture 100 % sur `publication-rules.ts`. Compléter D-68 (renommage).
-4. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test -- --coverage`. Aucun commit (orchestrateur).
+1. `SceneResponseSchema` dans `@xplor/shared` (`id`, `tourId`, `title`, `caption`, `panoramaAssetId`, vue initiale, `weight`, `hotspotCount`, `createdAt`, `updatedAt`) et ses tests.
+2. `ScenesController` → `ScenesService` → Prisma. Liste triée par `weight` puis `createdAt`. Création : `createdById` = session ; première scène = `startSceneId` dans la même transaction. Suppression logique ; si c’était la scène de départ, `startSceneId` revient à null dans la même transaction. 404 `{ error: { code, message } }` si la visite ou la scène est inconnue ou supprimée ; 422 `PANORAMA_ASSET_NOT_FOUND` si le panorama est inconnu. `canManageContent`, `SessionGuard`, `CsrfGuard`.
+3. OpenAPI régénéré. Tests unitaires du service et `test/scenes.int.test.ts` (401, 403 CSRF, 403 PARTNER et HOTEL_MANAGER, scène de départ, 422, 404 et `startSceneId` à null).
+4. D-72. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : `validateTour` dans `apps/api/src/catalog/publication-rules.ts` (25 tests, dont « Visite manuelle »). `ValidationIssueSchema` et `ValidationIssue` (`z.infer`) dans `@xplor/shared`. Couverture mesurée de `publication-rules.ts` : 100 % (lignes, branches, fonctions, instructions). `pnpm lint`, `pnpm typecheck` et `pnpm test` (303) verts. `pnpm test -- --coverage` vert, seuil 100 % tenu. Couverture de `catalog.ts` : 100 % (72 tests du paquet). La route 422 et l'affichage admin restent à faire. Aucun commit (orchestrateur).
-
-Le CRUD des visites (API-21, partie 1, D-71) est dans la section « Fait ».
+Réalisé (29/09/2026, Node 22.23.3) : `SceneResponseSchema` dans `@xplor/shared`. `ScenesController` et `ScenesService` : liste, création (première scène = `startSceneId`, `createdById` = session), lecture, remplacement et suppression logique. `contentVersion` de la visite est incrémenté dans la même transaction (D-72). Erreurs 404 `TOUR_NOT_FOUND` / `SCENE_NOT_FOUND` et 422 `PANORAMA_ASSET_NOT_FOUND` au format `{ error: { code, message } }`. OpenAPI régénéré. `pnpm lint`, `pnpm typecheck` et `pnpm test` (314) verts. `pnpm test:int` vert (27, dont `scenes.int.test.ts` 6). Couverture de `catalog.ts` : 100 % (75 tests du paquet). `reorder` et `set-start` restent à faire. Aucun commit (orchestrateur).
 
 Le schéma 5.6 à 5.8 et API-25 sont dans la section « Fait ».
 
@@ -45,15 +43,16 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### Fait
 
-- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `TourResponse`, `PaginatedTourResponse` et `TourListQuery` complètent le contrat de liste (D-71). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (72 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). Le CRUD des visites est en place (API-21, partie 1). Duplication, dépublication et écrans restent à faire. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `TourResponse`, `PaginatedTourResponse` et `TourListQuery` complètent le contrat de liste (D-71). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (75 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). Le CRUD des visites est en place (API-21, partie 1). Duplication, dépublication et écrans restent à faire. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
 - **API-21, partie 1** (CRUD des visites, D-71) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/tours`. Liste paginée (`status`, `cityId`, `categoryId`, `q` sur le titre fr), détail avec `categoryIds` et `sceneCount`. Création en `DRAFT` (D-26), `publicShare` false (D-05), `shareToken` émis par le service, `createdById` = session. Suppression logique. 422 si la ville, une catégorie ou la vignette est inconnue. ADMIN et EDITOR seulement. OpenAPI à jour. Hors de ce lot : publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token. Pas d'écran admin.
+- **API-22, partie 1** (CRUD des scènes, D-72) : `GET` / `POST` `/api/v1/admin/tours/:tourId/scenes`, `GET` / `PATCH` / `DELETE` `/api/v1/admin/scenes/:id`. Liste des scènes non supprimées, tri `weight` puis `createdAt`. La première scène devient `startSceneId` ; la suppression de la scène de départ le remet à null, dans la même transaction. `createdById` = session. `contentVersion` de la visite +1. 404 `TOUR_NOT_FOUND` ou `SCENE_NOT_FOUND`, 422 `PANORAMA_ASSET_NOT_FOUND`, format `{ error: { code, message } }`. ADMIN et EDITOR (`canManageContent`). `SceneResponseSchema` dans `@xplor/shared`. OpenAPI à jour. Hors de ce lot : `reorder`, `set-start`. Pas d'écran admin.
 - **F-03** (règles de publication, fonction pure) : `validateTour` dans `apps/api/src/catalog/publication-rules.ts` (25 tests, dont « Visite manuelle »). `ValidationIssueSchema` (`code` par `z.nativeEnum(ValidationIssueCode)`, `sceneId` et `hotspotId` UUID optionnels, `message` string) et `ValidationIssue` (`z.infer`) dans `@xplor/shared`. Couverture mesurée : 100 % (lignes, branches, fonctions, instructions). La route 422 et l'affichage admin restent à faire (D-68).
 - **API-25** (CRUD villes et catégories) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Lecture pour toute session ; écriture ADMIN et EDITOR (`canManageCatalog`). 409 `IN_USE` au format du cahier. Seed fr/ar/en. OpenAPI à jour. Pas d'écran admin (D-69).
 - **Schéma 5.6 à 5.8** (D-66, D-70) : `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, migration `20260929183235_hotels_kiosks`. Seed : 1 hôtel à Rabat (FIVE, RENTAL, fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`. CRUD et écrans restent en M5. La session ne charge pas encore `hotelIds`.
 
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD (publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token), API-22/23, écrans admin (y compris villes, catégories et visites), F-02 (sans traitement), F-04, F-05, et les 3 visites liées du seed. F-01 : liste et CRUD des visites sont en place ; duplication et dépublication restent. F-03 : la fonction est en place ; la réponse 422 de publication et l'affichage des problèmes dans l'admin restent à faire. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD (publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token), API-22 au-delà du CRUD (`reorder`, `set-start`), API-23, écrans admin (y compris villes, catégories, visites et scènes), F-02 (sans traitement), F-04, F-05, et les 3 visites liées du seed. F-01 : liste et CRUD des visites et des scènes sont en place ; duplication, dépublication, réordonnancement et scène de départ explicite restent. F-03 : la fonction est en place ; la réponse 422 de publication et l'affichage des problèmes dans l'admin restent à faire. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 
@@ -69,7 +68,7 @@ Aucun.
 - Le sélecteur de langue, l'invitation et les autres écrans de la démo M0 ont été validés visuellement par le porteur le 29/09/2026 (`docs/DEMO_M0.md`). Les tests automatisés restent Vitest (jsdom) ou Playwright avec `/api` simulé : les scénarios back-office ne démarrent pas l'API.
 - Prisma 6 avertit que `package.json#prisma` (dont `prisma.seed`) est déprécié au profit de `prisma.config.ts` en Prisma 7 ; D-34 et D-41 conservent Prisma 6 et ce champ.
 - `.gitattributes` ne force LF au checkout de `docs/openapi.json` qu'une fois `git add --renormalize .` indexé par l'orchestrateur (critère 9).
-- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66, D-67, D-68, D-69, D-70). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
+- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66, D-67, D-68, D-69, D-70, D-71, D-72). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
 
 <details>
 <summary>Jalons terminés — M0</summary>

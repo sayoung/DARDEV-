@@ -489,6 +489,19 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `nanoid` (écarté par la consigne) ; lecture ouverte aux quatre rôles comme API-25 ; `contentVersion` figé jusqu’à la publication ; compter aussi les scènes supprimées ; tri sur le titre français ; laisser un `categoryId` répété échouer sur la contrainte d’unicité.
 - **À valider :** oui (jeton base64url plutôt que nanoid ; incrément de `contentVersion` dès le PATCH ; `q` vide ignoré ; scènes supprimées exclues du compteur)
 
+## D-72 — CRUD des scènes (API-22, partie 1)
+
+- **Date :** 29/09/2026
+- **Décision :** `ScenesController` dans `CatalogModule` expose `GET` et `POST` `/api/v1/admin/tours/:tourId/scenes`, puis `GET`, `PATCH` et `DELETE` `/api/v1/admin/scenes/:id`. `SessionGuard`, `CsrfGuard` et `canManageContent` : ADMIN et EDITOR seulement. PARTNER et HOTEL_MANAGER reçoivent 403, y compris en lecture. Les routes `reorder` et `set-start` restent hors de ce lot.
+- **Création :** le corps est `SceneCreateSchema` (vue initiale par défaut déjà dans le schéma). `createdById` est l’utilisateur de la session. Si `startSceneId` de la visite est null, la scène créée le devient, dans la même transaction. Une scène suivante ne le change pas. `contentVersion` de la visite est incrémenté de 1 dans cette transaction (cahier 5.2, prévu par D-71).
+- **Liste :** `deletedAt` vide, tri `weight` croissant puis `createdAt` croissant. Tableau JSON, sans pagination. Visite absente ou supprimée : 404.
+- **Mise à jour :** `SceneUpdateSchema` remplace les champs éditables. `tourId` et `createdById` ne changent pas. Une légende absente du corps est effacée. `contentVersion` +1. `startSceneId` ne change pas.
+- **Suppression :** `deletedAt` est posé, la réponse est 204. Si la scène est la scène de départ, `startSceneId` revient à null dans la même transaction. Aucune autre scène n’est promue. `contentVersion` +1.
+- **Réponse :** `SceneResponseSchema` : `id`, `tourId`, `title`, `caption` facultative, `panoramaAssetId`, `initialYaw`, `initialPitch`, `initialZoom`, `weight`, `hotspotCount`, `createdAt` et `updatedAt` en ISO 8601. `hotspotCount` compte les hotspots de la scène (suppression physique, cahier 5.4). Narration, ambiance et plan restent hors du schéma.
+- **Erreurs :** `{ error: { code, message } }`, format du cahier section 7. Visite inconnue ou supprimée : 404 `TOUR_NOT_FOUND`. Scène inconnue, supprimée, ou rattachée à une visite supprimée : 404 `SCENE_NOT_FOUND`. `panoramaAssetId` absent : 422 `PANORAMA_ASSET_NOT_FOUND`. L’existence de la ligne `Asset` suffit : le `kind` n’est pas contrôlé (même choix que la vignette, D-71). Un identifiant qui n’est pas un UUID v7 répond 400 Nest. Une clé étrangère apparue entre la vérification et l’écriture relance la même vérification.
+- **Alternatives :** 404 au format Nest `{ statusCode, message, error }` comme API-21 ; promouvoir la scène de poids suivant comme départ ; refuser un asset dont le `kind` n’est pas `PANORAMA` ; trier `createdAt` en décroissant ; laisser `contentVersion` inchangé jusqu’à API-23.
+- **À valider :** oui (codes 404, tri croissant, incrément de `contentVersion`, asset accepté quel que soit son `kind`)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

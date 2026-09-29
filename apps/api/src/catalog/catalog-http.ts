@@ -13,7 +13,7 @@ export function requireCatalogWriter(request: SessionRequest): void {
   }
 }
 
-/** Lecture et écriture des visites (API-21) : ADMIN et EDITOR. */
+/** Lecture et écriture des visites et des scènes (API-21, API-22) : ADMIN et EDITOR. */
 export function requireContentManager(request: SessionRequest): Principal {
   const principal = request.principal;
   if (principal === undefined || !canManageContent(principal)) {

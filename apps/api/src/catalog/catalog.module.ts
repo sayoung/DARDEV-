@@ -5,12 +5,14 @@ import { CategoriesController } from './categories.controller.js';
 import { CategoriesService } from './categories.service.js';
 import { CitiesController } from './cities.controller.js';
 import { CitiesService } from './cities.service.js';
+import { ScenesController } from './scenes.controller.js';
+import { ScenesService } from './scenes.service.js';
 import { ToursController } from './tours.controller.js';
 import { ToursService } from './tours.service.js';
 
 @Module({
   imports: [AuthModule],
-  controllers: [CitiesController, CategoriesController, ToursController],
-  providers: [CitiesService, CategoriesService, ToursService],
+  controllers: [CitiesController, CategoriesController, ToursController, ScenesController],
+  providers: [CitiesService, CategoriesService, ToursService, ScenesService],
 })
 export class CatalogModule {}
