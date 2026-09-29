@@ -6,12 +6,18 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text'],
-      include: ['apps/api/src/auth/**/*.ts'],
+      include: ['apps/api/src/auth/**/*.ts', 'apps/api/src/users/**/*.ts'],
       thresholds: {
         lines: 70,
         functions: 70,
         branches: 70,
         statements: 70,
+        'apps/api/src/users/**': {
+          lines: 70,
+          functions: 70,
+          branches: 70,
+          statements: 70,
+        },
         'apps/api/src/auth/access-policy.ts': {
           lines: 100,
           functions: 100,

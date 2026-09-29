@@ -23,19 +23,21 @@ import {
 import { INVITE_TTL_MS, hashToken } from '../auth/user-token.js';
 import {
   type AuthUser,
+  type InvitedProfileUpdate,
   type LoginStateUpdate,
   type NewInvitedUser,
   type PasswordUpdate,
   type UserRepository,
 } from '../auth/user.repository.js';
 import { FakeMailer } from '../mail/fake-mailer.js';
-import type { MailMessage } from '../mail/mailer.js';
+import { type Mailer, type MailMessage } from '../mail/mailer.js';
 import { UsersController } from './users.controller.js';
 import { UsersService } from './users.service.js';
 
 const START = new Date('2026-09-29T12:00:00.000Z');
 const NEW_PASSWORD = 'xplor-kiosque-rabat-2026';
 const ARABIC_SUBJECT = 'دعوة للانضمام إلى Xplor';
+const ENGLISH_SUBJECT = 'Invitation to join Xplor';
 
 const inviteBody = {
   email: 'nouveau@xplor.test',
@@ -61,9 +63,14 @@ class ImmediateUnitOfWork implements UnitOfWork {
 
 class MemoryTokens implements UserTokenRepository {
   readonly rows: UserTokenRecord[] = [];
+  createdInTransaction = false;
+  invalidatedInTransaction = false;
   private seq = 0;
 
+  constructor(private readonly unit: ImmediateUnitOfWork) {}
+
   create(input: NewUserToken): Promise<UserTokenRecord> {
+    this.createdInTransaction = this.unit.active;
     this.seq += 1;
     const row: UserTokenRecord = {
       id: `token-${String(this.seq)}`,
@@ -91,6 +98,7 @@ class MemoryTokens implements UserTokenRepository {
   }
 
   invalidateUnused(userId: string, type: UserTokenRecord['type']): Promise<void> {
+    this.invalidatedInTransaction = this.unit.active;
     const usedAt = new Date();
     for (const row of this.rows) {
       if (row.userId === userId && row.type === type && row.usedAt === null) {
@@ -103,12 +111,19 @@ class MemoryTokens implements UserTokenRepository {
 
 class MemoryUsers implements UserRepository {
   readonly createdEmails: string[] = [];
+  createdInTransaction = false;
+  updatedInTransaction = false;
   private seq = 0;
 
   constructor(
     private readonly byEmail: Map<string, AuthUser>,
     private readonly tokens: MemoryTokens,
+    private readonly unit: ImmediateUnitOfWork,
   ) {}
+
+  seed(user: AuthUser): void {
+    this.byEmail.set(user.email, user);
+  }
 
   findByEmail(email: string): Promise<AuthUser | null> {
     return Promise.resolve(this.byEmail.get(email) ?? null);
@@ -145,6 +160,7 @@ class MemoryUsers implements UserRepository {
   }
 
   createInvited(input: NewInvitedUser): Promise<AuthUser> {
+    this.createdInTransaction = this.unit.active;
     this.seq += 1;
     const user: AuthUser = {
       id: `user-${String(this.seq)}`,
@@ -154,6 +170,7 @@ class MemoryUsers implements UserRepository {
       role: input.role,
       uiLang: input.uiLang,
       active: false,
+      lastLoginAt: null,
       failedLoginCount: 0,
       lockedUntil: null,
     };
@@ -168,6 +185,19 @@ class MemoryUsers implements UserRepository {
       usedAt: null,
     });
     return Promise.resolve(user);
+  }
+
+  updateInvited(id: string, profile: InvitedProfileUpdate): Promise<AuthUser> {
+    this.updatedInTransaction = this.unit.active;
+    for (const user of this.byEmail.values()) {
+      if (user.id === id) {
+        user.name = profile.name;
+        user.role = profile.role;
+        user.uiLang = profile.uiLang;
+        return Promise.resolve(user);
+      }
+    }
+    return Promise.reject(new Error('compte absent'));
   }
 
   activate(id: string, passwordHash: string): Promise<void> {
@@ -237,24 +267,54 @@ function asRole(role: Role): SessionRequest {
   };
 }
 
-function harness() {
+class ObservingMailer implements Mailer {
+  sentInTransaction = false;
+
+  constructor(
+    readonly inner: Mailer & { readonly sent: MailMessage[] },
+    private readonly unit: ImmediateUnitOfWork,
+  ) {}
+
+  send(message: MailMessage): Promise<void> {
+    this.sentInTransaction = this.unit.active;
+    return this.inner.send(message);
+  }
+}
+
+class FlakyMailer implements Mailer {
+  readonly sent: MailMessage[] = [];
+  failNext = true;
+
+  send(message: MailMessage): Promise<void> {
+    if (this.failNext) {
+      this.failNext = false;
+      return Promise.reject(new Error('smtp'));
+    }
+    this.sent.push({ ...message });
+    return Promise.resolve();
+  }
+}
+
+function harness(inner?: Mailer & { readonly sent: MailMessage[] }) {
   let now = START;
-  const tokens = new MemoryTokens();
-  const users = new MemoryUsers(new Map(), tokens);
   const unitOfWork = new ImmediateUnitOfWork();
+  const tokens = new MemoryTokens(unitOfWork);
+  const users = new MemoryUsers(new Map(), tokens, unitOfWork);
   const passwords = new RecordingPasswords(unitOfWork);
   const sessions = new SpySessions(new InMemorySessionStore(() => now.getTime()));
-  const mailer = new FakeMailer();
+  const mailer = inner ?? new FakeMailer();
+  const delivery = new ObservingMailer(mailer, unitOfWork);
   const clock = (): Date => now;
   const env = { ADMIN_BASE_URL: 'http://admin.test' };
   const auth = new AuthService(users, sessions, passwords, clock, tokens, mailer, env, unitOfWork);
-  const usersService = new UsersService(users, tokens, passwords, clock, mailer, env);
+  const usersService = new UsersService(users, tokens, passwords, clock, delivery, env, unitOfWork);
   return {
     tokens,
     users,
     passwords,
     sessions,
     mailer,
+    delivery,
     auth,
     usersController: new UsersController(usersService),
     authController: new AuthController(auth, { NODE_ENV: 'test' }),
@@ -264,7 +324,7 @@ function harness() {
   };
 }
 
-function sent(mailer: FakeMailer): MailMessage {
+function sent(mailer: { readonly sent: readonly MailMessage[] }): MailMessage {
   const message = mailer.sent[0];
   if (message === undefined) {
     throw new Error('courriel absent');
@@ -353,18 +413,10 @@ describe('invitation par l’ADMIN', () => {
     });
     expect(ctx.tokens.rows.find((row) => row.id === 'ancien')?.usedAt).not.toBeNull();
     expect(ctx.passwords.hashedDuringTransaction).toBe(false);
-
-    await expect(
-      ctx.usersController.invite(asRole(Role.ADMIN), {
-        ...inviteBody,
-        email: 'Nouveau@Xplor.test',
-      }),
-    ).rejects.toMatchObject({
-      status: 409,
-      response: { code: 'EMAIL_TAKEN' },
-    });
-    expect(ctx.mailer.sent).toHaveLength(1);
-    expect(ctx.users.createdEmails).toEqual(['nouveau@xplor.test']);
+    expect(ctx.users.createdInTransaction).toBe(true);
+    expect(ctx.tokens.invalidatedInTransaction).toBe(true);
+    expect(ctx.tokens.createdInTransaction).toBe(true);
+    expect(ctx.delivery.sentInTransaction).toBe(false);
 
     await expect(
       ctx.auth.login({ email: 'nouveau@xplor.test', password: NEW_PASSWORD }),
@@ -429,5 +481,133 @@ describe('invitation par l’ADMIN', () => {
       usersController.invite({ method: 'POST', headers: {} }, inviteBody),
     ).rejects.toMatchObject({ status: 403 });
     expect(mailer.sent).toEqual([]);
+  });
+
+  it('renouvelle l’invitation d’un compte inactif jamais connecté', async () => {
+    const ctx = harness();
+    await ctx.usersController.invite(asRole(Role.ADMIN), inviteBody);
+    const firstToken = inviteToken(sent(ctx.mailer));
+    expect(ctx.mailer.sent).toHaveLength(1);
+
+    const response = await ctx.usersController.invite(asRole(Role.ADMIN), {
+      email: 'Nouveau@Xplor.test',
+      name: 'Renouvelé',
+      role: Role.PARTNER,
+      uiLang: 'en',
+    });
+
+    expect(response).toEqual({
+      id: 'user-1',
+      email: 'nouveau@xplor.test',
+      name: 'Renouvelé',
+      role: Role.PARTNER,
+    });
+    expect(ctx.mailer.sent).toHaveLength(2);
+    expect(ctx.mailer.sent[1]?.subject).toBe(ENGLISH_SUBJECT);
+    expect(ctx.users.createdEmails).toEqual(['nouveau@xplor.test']);
+    expect(ctx.users.updatedInTransaction).toBe(true);
+    expect(ctx.tokens.invalidatedInTransaction).toBe(true);
+    expect(ctx.tokens.createdInTransaction).toBe(true);
+    expect(ctx.delivery.sentInTransaction).toBe(false);
+    expect(ctx.passwords.plaintexts).toHaveLength(1);
+
+    const user = await ctx.users.findByEmail('nouveau@xplor.test');
+    expect(user).toMatchObject({
+      name: 'Renouvelé',
+      role: Role.PARTNER,
+      uiLang: 'en',
+      active: false,
+      lastLoginAt: null,
+    });
+
+    await expect(
+      ctx.authController.acceptInvite({ token: firstToken, password: NEW_PASSWORD }),
+    ).rejects.toMatchObject({
+      status: 400,
+      response: { code: TOKEN_INVALID },
+    });
+    expect(user?.active).toBe(false);
+
+    const second = ctx.mailer.sent[1];
+    if (second === undefined) {
+      throw new Error('second courriel absent');
+    }
+    await expect(
+      ctx.authController.acceptInvite({ token: inviteToken(second), password: NEW_PASSWORD }),
+    ).resolves.toBeUndefined();
+    expect(user?.active).toBe(true);
+  });
+
+  it('refuse l’adresse d’un compte actif ou déjà connecté', async () => {
+    const cases = [
+      { active: true, lastLoginAt: null },
+      { active: false, lastLoginAt: START },
+    ] as const;
+
+    for (const state of cases) {
+      const ctx = harness();
+      ctx.users.seed({
+        id: 'user-pris',
+        email: 'pris@xplor.test',
+        name: 'Pris',
+        passwordHash: 'hash',
+        role: Role.EDITOR,
+        uiLang: 'fr',
+        failedLoginCount: 0,
+        lockedUntil: null,
+        ...state,
+      });
+
+      await expect(
+        ctx.usersController.invite(asRole(Role.ADMIN), {
+          email: 'Pris@Xplor.test',
+          name: 'Autre',
+          role: Role.PARTNER,
+          uiLang: 'en',
+        }),
+      ).rejects.toMatchObject({
+        status: 409,
+        response: { code: 'EMAIL_TAKEN' },
+      });
+      expect(ctx.mailer.sent).toEqual([]);
+      expect(ctx.users.createdEmails).toEqual([]);
+      expect(ctx.tokens.rows).toEqual([]);
+
+      const user = await ctx.users.findByEmail('pris@xplor.test');
+      expect(user).toMatchObject({ name: 'Pris', role: Role.EDITOR, uiLang: 'fr' });
+    }
+  });
+
+  it('réinvite après un échec d’envoi', async () => {
+    const flaky = new FlakyMailer();
+    const ctx = harness(flaky);
+
+    await expect(ctx.usersController.invite(asRole(Role.ADMIN), inviteBody)).rejects.toThrow(
+      'smtp',
+    );
+    expect(flaky.sent).toEqual([]);
+    expect(ctx.users.createdEmails).toEqual(['nouveau@xplor.test']);
+    expect(ctx.users.createdInTransaction).toBe(true);
+    const pending = await ctx.users.findByEmail('nouveau@xplor.test');
+    expect(pending).toMatchObject({ active: false, lastLoginAt: null });
+
+    const response = await ctx.usersController.invite(asRole(Role.ADMIN), {
+      ...inviteBody,
+      name: 'Renvoyé',
+    });
+    expect(response).toEqual({
+      id: 'user-1',
+      email: 'nouveau@xplor.test',
+      name: 'Renvoyé',
+      role: Role.EDITOR,
+    });
+    expect(flaky.sent).toHaveLength(1);
+    expect(ctx.users.createdEmails).toEqual(['nouveau@xplor.test']);
+    expect(ctx.delivery.sentInTransaction).toBe(false);
+    expect(ctx.users.updatedInTransaction).toBe(true);
+
+    const unused = ctx.tokens.rows.filter((row) => row.usedAt === null);
+    expect(unused).toHaveLength(1);
+    expect(unused[0]?.tokenHash).toBe(hashToken(inviteToken(flaky.sent[0] ?? sent(flaky))));
   });
 });

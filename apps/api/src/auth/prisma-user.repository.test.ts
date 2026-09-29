@@ -14,6 +14,7 @@ type StoredUser = {
   role: PrismaRole;
   uiLang: string;
   active: boolean;
+  lastLoginAt: Date | null;
   failedLoginCount: number;
   lockedUntil: Date | null;
 };
@@ -26,6 +27,7 @@ const row: StoredUser = {
   role: PrismaRole.HOTEL_MANAGER,
   uiLang: 'en',
   active: true,
+  lastLoginAt: null,
   failedLoginCount: 2,
   lockedUntil: null,
 };
@@ -68,6 +70,7 @@ describe('PrismaUserRepository', () => {
       role: Role.HOTEL_MANAGER,
       uiLang: 'en',
       active: true,
+      lastLoginAt: null,
       failedLoginCount: 2,
       lockedUntil: null,
     });
@@ -114,6 +117,7 @@ describe('PrismaUserRepository', () => {
           role: true,
           uiLang: true,
           active: true,
+          lastLoginAt: true,
           failedLoginCount: true,
           lockedUntil: true,
         },
@@ -253,6 +257,7 @@ describe('PrismaUserRepository', () => {
           role: true,
           uiLang: true,
           active: true,
+          lastLoginAt: true,
           failedLoginCount: true,
           lockedUntil: true,
         },
@@ -277,6 +282,62 @@ describe('PrismaUserRepository', () => {
     expect(calls[1]).toEqual({
       op: 'update',
       args: { where: { id: 'user-1' }, data: { passwordHash: 'hash-direct', active: true } },
+    });
+  });
+
+  it('écrit la création et la mise à jour d’invitation sur la transaction', async () => {
+    const txCalls: { op: string; args: unknown }[] = [];
+    const tx = {
+      user: {
+        create: (args: unknown) => {
+          txCalls.push({ op: 'create', args });
+          return Promise.resolve({ ...row, active: false, lastLoginAt: null });
+        },
+        update: (args: unknown) => {
+          txCalls.push({ op: 'update', args });
+          return Promise.resolve({ ...row, name: 'Renouvelé', role: PrismaRole.PARTNER });
+        },
+      },
+    };
+    const repository = new PrismaUserRepository({ user: {} } as unknown as PrismaService);
+
+    await repository.createInvited(
+      {
+        email: 'nouveau@xplor.test',
+        name: 'Nouveau',
+        passwordHash: 'hash-secret',
+        role: Role.EDITOR,
+        uiLang: 'ar',
+      },
+      tx as unknown as AuthTx,
+    );
+    await expect(
+      repository.updateInvited(
+        'user-1',
+        { name: 'Renouvelé', role: Role.PARTNER, uiLang: 'en' },
+        tx as unknown as AuthTx,
+      ),
+    ).resolves.toMatchObject({ name: 'Renouvelé', role: Role.PARTNER, lastLoginAt: null });
+
+    expect(txCalls[0]).toMatchObject({ op: 'create' });
+    expect(txCalls[1]).toEqual({
+      op: 'update',
+      args: {
+        where: { id: 'user-1' },
+        data: { name: 'Renouvelé', role: PrismaRole.PARTNER, uiLang: 'en' },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          passwordHash: true,
+          role: true,
+          uiLang: true,
+          active: true,
+          lastLoginAt: true,
+          failedLoginCount: true,
+          lockedUntil: true,
+        },
+      },
     });
   });
 });

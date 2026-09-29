@@ -233,17 +233,23 @@ registry.registerPath({
   tags: ['Admin'],
   security: sessionAndCsrfSecurity,
   request: {
-    body: jsonBody(InviteUserRequestSchema, 'Compte à créer, inactif jusqu’à l’acceptation.'),
+    body: jsonBody(
+      InviteUserRequestSchema,
+      'Compte à créer, ou invitation à renouveler si le compte est inactif et n’a jamais été connecté.',
+    ),
   },
   responses: {
     '201': jsonResponse(
-      'Compte créé. Le courriel d’invitation est envoyé.',
+      'Compte créé ou invitation renouvelée. Le courriel est envoyé après l’enregistrement.',
       InviteUserResponseSchema,
     ),
     '400': jsonResponse('Corps refusé par InviteUserRequestSchema.', badRequestError),
     '401': jsonResponse('Session absente.', unauthorizedError),
     '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN.', forbiddenError),
-    '409': jsonResponse('Un compte existe déjà pour cette adresse.', emailTakenError),
+    '409': jsonResponse(
+      'Un compte actif, ou déjà connecté au moins une fois, existe pour cette adresse.',
+      emailTakenError,
+    ),
   },
 });
 
