@@ -11,17 +11,17 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 F-01 — migration Prisma du modèle de contenu (cahier 5.1 à 5.5, Asset minimal D-65).
+**Exigence :** M1 F-03 — validation de publication, fonction pure `validateTour`, sans Prisma.
 
 Plan :
 
-1. Ajouter `City`, `Category`, `Asset` (champs D-65), `Tour`, `TourCategory`, `Scene` et `Hotspot` dans `schema.prisma` : UUID v7, `createdAt` / `updatedAt`, `createdById` sur Tour, Scene et Hotspot, index sur les clés étrangères.
-2. `shareToken` nullable et unique (généré plus tard par le service). `publicShare` défaut false, `contentVersion` défaut 1, `status` défaut `DRAFT`, `deletedAt` sur Tour et Scene. Hotspot : `targetScene` et `targetTour` optionnels, `onDelete: SetNull`.
-3. Générer `prisma migrate dev --name content_model` sous Node 22, sans modifier les migrations déjà présentes.
-4. Étendre `test/migrations.int.test.ts` (tables du modèle de contenu). Choix `onDelete` et `shareToken` dans D-67.
-5. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
+1. `ValidationIssueCode` et `ValidationIssue` dans `packages/shared/src/catalog.ts`, exportés par `index.ts`, pour que l'admin affiche la liste sans redéclarer le type.
+2. `validateTour` dans `apps/api/src/catalog/tour-validation.ts` : instantané `{ id, startSceneId, scenes }` et recherche des visites cibles, liste `{ code, sceneId?, hotspotId?, message }` en français. Parcours en largeur depuis la scène de départ, liens `SCENE_LINK` seulement.
+3. Tests dans `tour-validation.test.ts`, dont « Visite manuelle » : Porte → Jardin, Remparts sans lien entrant → un seul `SCENE_UNREACHABLE` ; après Jardin → Remparts, aucun problème.
+4. Seuil 100 % sur `tour-validation.ts` dans `vitest.config.ts` (même mécanisme que `access-policy.ts`, D-35). Hypothèses de graphe dans D-68.
+5. `pnpm lint`, `pnpm typecheck`, `pnpm test`, couverture. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : migration `20260929172452_content_model` générée et appliquée sur PostgreSQL 16 (base `xplor`). Tables `City`, `Category`, `Asset`, `Tour`, `TourCategory`, `Scene`, `Hotspot`. `shareToken` nullable unique (`varchar(22)`). `onDelete` documenté dans D-67. Migrations `init_users` et `user_tokens` inchangées. `pnpm lint`, `pnpm typecheck`, `pnpm test` (232) et `pnpm test:int` (9, dont les tables de contenu) verts. Aucun commit (orchestrateur).
+Réalisé (29/09/2026, Node 22.23.3) : `ValidationIssueCode` et `ValidationIssue` dans `@xplor/shared`. `validateTour` est pure, sans Prisma. Scénario « Visite manuelle » : Remparts seul `SCENE_UNREACHABLE`, puis aucun problème après le lien Jardin → Remparts. `pnpm lint`, `pnpm typecheck` et `pnpm test` (257) verts. Couverture de `tour-validation.ts` et de `catalog.ts` : 100 %. Hypothèses dans D-68. La réponse 422 et l'affichage admin restent à faire. Aucun commit (orchestrateur).
 
 ## Definition of Done — M1
 
@@ -43,10 +43,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 ### Fait
 
 - **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (63 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). Pas d'API, pas d'écran. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **F-03** (règles de publication, fonction pure) : `validateTour` dans `apps/api/src/catalog/tour-validation.ts` (25 tests, dont « Visite manuelle »). `ValidationIssue` et `ValidationIssueCode` dans `@xplor/shared`. Couverture 100 %. Pas de route 422 ni d'écran (D-68).
 
 ### En cours
 
-- Reste du jalon M1 : schéma Prisma 5.6 à 5.8 (`Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, D-66), API-21/22/23/25, écrans admin, F-02 (sans traitement), F-03, F-04, F-05. La partie liste / CRUD / duplication de F-01 n'est pas commencée.
+- Reste du jalon M1 : schéma Prisma 5.6 à 5.8 (`Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, D-66), API-21/22/23/25, écrans admin, F-02 (sans traitement), F-04, F-05. La partie liste / CRUD / duplication de F-01 n'est pas commencée. F-03 : la fonction est en place ; la réponse 422 et l'affichage des problèmes dans l'admin restent à faire.
 
 ### Bloqué
 
@@ -62,7 +63,7 @@ Aucun.
 - Le sélecteur de langue, l'invitation et les autres écrans de la démo M0 ont été validés visuellement par le porteur le 29/09/2026 (`docs/DEMO_M0.md`). Les tests automatisés restent Vitest (jsdom) ou Playwright avec `/api` simulé : les scénarios back-office ne démarrent pas l'API.
 - Prisma 6 avertit que `package.json#prisma` (dont `prisma.seed`) est déprécié au profit de `prisma.config.ts` en Prisma 7 ; D-34 et D-41 conservent Prisma 6 et ce champ.
 - `.gitattributes` ne force LF au checkout de `docs/openapi.json` qu'une fois `git add --renormalize .` indexé par l'orchestrateur (critère 9).
-- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66, D-67). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
+- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66, D-67, D-68). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
 
 <details>
 <summary>Jalons terminés — M0</summary>
