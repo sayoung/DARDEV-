@@ -28,6 +28,7 @@ const ROUTES = [
   { path: '/api/v1/admin/tours/{id}', method: 'get' },
   { path: '/api/v1/admin/tours/{id}', method: 'patch' },
   { path: '/api/v1/admin/tours/{id}', method: 'delete' },
+  { path: '/api/v1/admin/tours/{id}/validate', method: 'post' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'get' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'post' },
   { path: '/api/v1/admin/tours/{tourId}/scenes/reorder', method: 'post' },
@@ -69,6 +70,12 @@ describe('document OpenAPI', () => {
     expect(createTour?.['403']).toBeDefined();
     const listTours = doc.paths?.['/api/v1/admin/tours']?.get?.responses;
     expect(listTours?.['403']).toBeDefined();
+    const validateTour = doc.paths?.['/api/v1/admin/tours/{id}/validate']?.post?.responses;
+    expect(validateTour?.['200']).toBeDefined();
+    expect(validateTour?.['401']).toBeDefined();
+    expect(validateTour?.['403']).toBeDefined();
+    expect(validateTour?.['404']).toBeDefined();
+    expect(body).toContain('SCENE_UNREACHABLE');
     const createScene = doc.paths?.['/api/v1/admin/tours/{tourId}/scenes']?.post?.responses;
     expect(createScene?.['422']).toBeDefined();
     expect(createScene?.['404']).toBeDefined();

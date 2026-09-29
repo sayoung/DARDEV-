@@ -34,6 +34,7 @@ import {
   TourListQuerySchema,
   TourResponseSchema,
   TourUpdateSchema,
+  TourValidationResponseSchema,
 } from '@xplor/shared';
 import { z, type ZodType } from 'zod';
 
@@ -372,6 +373,7 @@ registerCatalogCrud({
 });
 
 registerTourCrud();
+registerTourValidate();
 registerSceneCrud();
 registerHotspotList();
 registerHotspotItem();
@@ -556,6 +558,27 @@ function registerTourCrud(): void {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
       '404': jsonResponse('Visite introuvable ou déjà supprimée.', notFoundError),
+    },
+  });
+}
+
+function registerTourValidate(): void {
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/tours/{id}/validate',
+    summary: 'Valider une visite avant publication',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: z.object({ id: z.uuidv7() }) },
+    responses: {
+      '200': jsonResponse(
+        'Problèmes de publication. La liste est vide si la visite est publiable.',
+        TourValidationResponseSchema,
+      ),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
     },
   });
 }
@@ -786,10 +809,7 @@ function registerHotspotItem(): void {
       '400': jsonResponse('Identifiant ou corps refusé par HotspotUpdateSchema.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse(csrfOrRole, forbiddenError),
-      '404': jsonResponse(
-        'Hotspot inconnu, ou scène parente supprimée.',
-        hotspotMissingError,
-      ),
+      '404': jsonResponse('Hotspot inconnu, ou scène parente supprimée.', hotspotMissingError),
       '422': jsonResponse(
         'Cible absente, incohérente, ou média inconnu. Une visite cible en brouillon est acceptée.',
         hotspotTargetError,
@@ -810,10 +830,7 @@ function registerHotspotItem(): void {
       '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse(csrfOrRole, forbiddenError),
-      '404': jsonResponse(
-        'Hotspot inconnu, ou scène parente déjà supprimée.',
-        hotspotMissingError,
-      ),
+      '404': jsonResponse('Hotspot inconnu, ou scène parente déjà supprimée.', hotspotMissingError),
     },
   });
 }

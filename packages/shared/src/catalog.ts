@@ -351,3 +351,12 @@ export const ValidationIssueSchema = z.object({
   message: z.string(),
 });
 export type ValidationIssue = z.infer<typeof ValidationIssueSchema>;
+
+/**
+ * Réponse de `POST /admin/tours/:id/validate` (F-03).
+ * `issues` vide : la visite est publiable. La route ne publie pas.
+ */
+export const TourValidationResponseSchema = z.object({
+  issues: z.array(ValidationIssueSchema),
+});
+export type TourValidationResponse = z.infer<typeof TourValidationResponseSchema>;

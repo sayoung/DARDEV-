@@ -520,6 +520,16 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives (partie 3) :** suppression logique ; 404 `SCENE_NOT_FOUND` quand la scène parente est supprimée ; conserver les champs de l’ancien type ; PATCH partiel qui omettrait `type`.
 - **À valider (partie 3) :** oui (suppression physique ; 404 `HOTSPOT_NOT_FOUND` si le hotspot est inconnu ou si la scène ou la visite parente est supprimée ; champs des autres types remis à null ou `[]` dans la même écriture ; `contentVersion` +1)
 
+## D-74 — Route de validation de publication (F-03, partie 1)
+
+- **Date :** 29/09/2026
+- **Décision :** `POST /api/v1/admin/tours/:id/validate` répond toujours 200 `{ issues: ValidationIssue[] }`. La liste est vide quand la visite est publiable. Cette route ne publie pas et ne change pas `contentVersion`. Le 422 de publication reste pour la route `publish`, hors de ce lot. `TourPublicationService` charge l’instantané avec Prisma et appelle `validateTour` (`publication-rules.ts`) sans la modifier. `TourValidationResponseSchema` vit dans `@xplor/shared` (`catalog.ts`) : `{ issues }` est un tableau de `ValidationIssueSchema`.
+- **Instantané :** la visite absente ou déjà supprimée (`deletedAt` posé) répond 404 `{ error: { code: "TOUR_NOT_FOUND", message } }`, même format que API-22. Les scènes supprimées restent dans l’instantané (`deleted: true`) : un `SCENE_LINK` vers elles produit `SCENE_LINK_TARGET_DELETED` (D-68). `panoramaStatus` est le `processingStatus` de l’asset panorama. Les scènes sont lues par `weight` croissant, puis `createdAt`. Les hotspots le sont par `createdAt` croissant : l’ordre des problèmes est stable.
+- **Visites cibles :** les `targetTourId` des hotspots `TOUR_LINK`, autres que la visite courante, sont chargés en une requête, y compris si la cible est supprimée. Un identifiant inconnu n’est pas dans la map : `findTargetTour` renvoie `undefined`. `sceneIds` ne contient que les scènes vivantes de la cible. `status` et `deleted` viennent de la ligne `Tour`.
+- **Garde :** `SessionGuard`, `CsrfGuard`, `canManageContent`. ADMIN et EDITOR seulement. PARTNER et HOTEL_MANAGER reçoivent 403. Un identifiant qui n’est pas un UUID v7 répond 400. Aucun paquet npm ajouté. Pas d’écran admin.
+- **Alternatives :** répondre 422 dès que `issues` n’est pas vide (réservé à `publish`) ; 404 au format Nest `{ statusCode, message, error }` comme le CRUD des visites (D-71) ; omettre les scènes supprimées de l’instantané ; ne pas charger une visite cible déjà supprimée (`undefined` et `deleted: true` produisent le même `TOUR_LINK_TARGET_UNPUBLISHED`, mais seule la ligne chargée permet aussi `TOUR_LINK_SCENE_FOREIGN`).
+- **À valider :** oui (200 même quand la liste n’est pas vide ; 404 `TOUR_NOT_FOUND` ; scènes supprimées conservées ; visites cibles supprimées chargées ; `sceneIds` limité aux scènes vivantes)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

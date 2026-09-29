@@ -18,6 +18,7 @@ import {
   TourUpdateSchema,
   type Paginated,
   type TourResponse,
+  type TourValidationResponse,
 } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
@@ -29,12 +30,16 @@ import {
   parseTourListQuery,
   requireContentManager,
 } from './catalog-http.js';
+import { TourPublicationService } from './tour-publication.service.js';
 import { ToursService } from './tours.service.js';
 
 @Controller('admin/tours')
 @UseGuards(SessionGuard, CsrfGuard)
 export class ToursController {
-  constructor(@Inject(ToursService) private readonly tours: ToursService) {}
+  constructor(
+    @Inject(ToursService) private readonly tours: ToursService,
+    @Inject(TourPublicationService) private readonly publication: TourPublicationService,
+  ) {}
 
   @Get()
   list(
@@ -49,6 +54,16 @@ export class ToursController {
   get(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
     requireContentManager(request);
     return this.tours.get(parseResourceId(id));
+  }
+
+  @Post(':id/validate')
+  @HttpCode(HttpStatus.OK)
+  validate(
+    @Req() request: SessionRequest,
+    @Param('id') id: string,
+  ): Promise<TourValidationResponse> {
+    requireContentManager(request);
+    return this.publication.validate(parseResourceId(id));
   }
 
   @Post()
