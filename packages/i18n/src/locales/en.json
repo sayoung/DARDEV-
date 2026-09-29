@@ -1,0 +1,18 @@
+{
+  "common": {
+    "appName": "Xplor"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "email": "Email address",
+      "password": "Password",
+      "submit": "Sign in",
+      "error": "Incorrect credentials"
+    },
+    "logout": "Sign out"
+  },
+  "health": {
+    "ok": "Service available"
+  }
+}
