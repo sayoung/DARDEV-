@@ -11,17 +11,16 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 NF-09 — clore M0 et ouvrir M1 dans la documentation. Aucun code.
+**Exigence :** M1 F-01 — correction du refus relecteur : hotspot `URL` limité à http/https.
 
 Plan :
 
-1. Critère 11 de la Definition of Done M0 : « Démo validée par le porteur le 29/09/2026 ». Marquer la DoD M0 remplie.
-2. Déplacer le tableau DoD M0 et la liste « Fait » de M0 dans une section repliée « Jalons terminés — M0 ».
-3. Jalon en cours : M1 — Modèle de données (F-01, F-02 sans traitement, F-03, F-04, F-05, API-21/22/23/25). Tableau DoD M1 : les 8 critères de la section 10 du cahier des charges, tous « à faire ».
-4. `docs/DEMO_M0.md` : cocher la validation du porteur (29/09/2026).
-5. `docs/DECISIONS.md` : D-65 (modèle `Asset` minimal en M1 ; upload pré-signé et traitement en M2) et D-66 (`Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel` dans le schéma pour le seed ; CRUD et écrans en M5). `pnpm lint`, Prettier sur le Markdown. Aucun commit (orchestrateur).
+1. Remplacer `z.url()` par `z.httpUrl()` sur le hotspot `URL` (`javascript:` et `data:` refusés).
+2. Tests de refus pour ces schémas, et un cas `http` valide.
+3. `Paginated<T>` déduit par `z.infer` du schéma `paginated`. `PaginationQuery` reste sur des nombres déjà typés (`page` obligatoire).
+4. `pnpm lint`, `pnpm typecheck`, `pnpm --filter @xplor/shared test` (couverture de `catalog.ts` ≥ 90 %). Compléter D-67. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026) : les cinq points ci-dessus. Aucun code modifié.
+Réalisé (29/09/2026, Node 22.23.3) : `url` du hotspot `URL` passe par `z.httpUrl()`. Tests : `http` accepté ; `javascript:`, `data:` et `file:` refusés. `Paginated<T>` vient de `z.infer`. D-67 complétée. `pnpm lint` et `pnpm typecheck` verts. `pnpm --filter @xplor/shared test` : 63 tests verts, couverture de `catalog.ts` 100 % (lignes, branches, fonctions, instructions). Aucun code API ni front. Aucun commit (orchestrateur).
 
 ## Definition of Done — M1
 
@@ -42,11 +41,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### Fait
 
-Aucun pour M1. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **F-01** (schémas Zod seulement) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (63 tests du paquet). Pas de Prisma, pas d'API, pas d'écran. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
 
 ### En cours
 
-- Jalon M1 ouvert. Implémentation non commencée (F-01, F-02 sans traitement, F-03, F-04, F-05, API-21/22/23/25).
+- Reste du jalon M1 : schéma Prisma 5.1 à 5.8, API-21/22/23/25, écrans admin, F-02 (sans traitement), F-03, F-04, F-05. La partie liste / CRUD / duplication de F-01 n'est pas commencée.
 
 ### Bloqué
 
@@ -62,7 +61,7 @@ Aucun.
 - Le sélecteur de langue, l'invitation et les autres écrans de la démo M0 ont été validés visuellement par le porteur le 29/09/2026 (`docs/DEMO_M0.md`). Les tests automatisés restent Vitest (jsdom) ou Playwright avec `/api` simulé : les scénarios back-office ne démarrent pas l'API.
 - Prisma 6 avertit que `package.json#prisma` (dont `prisma.seed`) est déprécié au profit de `prisma.config.ts` en Prisma 7 ; D-34 et D-41 conservent Prisma 6 et ce champ.
 - `.gitattributes` ne force LF au checkout de `docs/openapi.json` qu'une fois `git add --renormalize .` indexé par l'orchestrateur (critère 9).
-- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
+- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66, D-67). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
 
 <details>
 <summary>Jalons terminés — M0</summary>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { LocalizedTextSchema, localize } from './localized-text.js';
+import { LocalizedTextSchema, localize, localizedText } from './localized-text.js';
 
 const french = 'Bonjour';
 const arabic = 'مرحبا';
@@ -12,6 +12,24 @@ describe('LocalizedTextSchema', () => {
     expect(LocalizedTextSchema.safeParse({ fr: '' }).success).toBe(false);
     expect(LocalizedTextSchema.safeParse({ ar: arabic }).success).toBe(false);
     expect(LocalizedTextSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('localizedText', () => {
+  it('limite fr, ar et en quand max est fourni', () => {
+    const schema = localizedText({ max: 500 });
+    const within = 'ا'.repeat(500);
+    expect(schema.safeParse({ fr: 'a'.repeat(500), ar: within, en: 'a'.repeat(500) }).success).toBe(
+      true,
+    );
+    expect(schema.safeParse({ fr: 'ok', ar: '' }).success).toBe(true);
+    expect(schema.safeParse({ fr: 'a'.repeat(501) }).success).toBe(false);
+    expect(schema.safeParse({ fr: 'ok', ar: 'ا'.repeat(501) }).success).toBe(false);
+    expect(schema.safeParse({ fr: 'ok', en: 'a'.repeat(501) }).success).toBe(false);
+  });
+
+  it('sans max, accepte un texte plus long que 500 caractères', () => {
+    expect(localizedText().safeParse({ fr: 'a'.repeat(501) }).success).toBe(true);
   });
 });
 
