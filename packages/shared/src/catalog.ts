@@ -176,6 +176,21 @@ export const SceneResponseSchema = z.object({
 });
 export type SceneResponse = z.infer<typeof SceneResponseSchema>;
 
+/**
+ * Corps de `POST .../scenes/reorder` (API-22).
+ * Le service exige l'ensemble exact des scènes non supprimées, sans doublon.
+ */
+export const SceneReorderRequestSchema = z.object({
+  sceneIds: z.array(idSchema),
+});
+export type SceneReorderRequest = z.infer<typeof SceneReorderRequestSchema>;
+
+/** Corps de `POST .../scenes/set-start` (API-22). */
+export const SetStartSceneRequestSchema = z.object({
+  sceneId: idSchema,
+});
+export type SetStartSceneRequest = z.infer<typeof SetStartSceneRequestSchema>;
+
 const hotspotPosition = {
   yaw: yawSchema,
   pitch: pitchSchema,

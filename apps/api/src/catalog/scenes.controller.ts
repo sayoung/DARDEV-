@@ -14,8 +14,11 @@ import {
 } from '@nestjs/common';
 import {
   SceneCreateSchema,
+  SceneReorderRequestSchema,
   SceneUpdateSchema,
+  SetStartSceneRequestSchema,
   type SceneResponse,
+  type TourResponse,
 } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
@@ -47,6 +50,34 @@ export class ScenesController {
       parseResourceId(tourId),
       parseBody(SceneCreateSchema, body),
       principal.userId,
+    );
+  }
+
+  @Post('tours/:tourId/scenes/reorder')
+  @HttpCode(HttpStatus.OK)
+  reorder(
+    @Req() request: SessionRequest,
+    @Param('tourId') tourId: string,
+    @Body() body: unknown,
+  ): Promise<SceneResponse[]> {
+    requireContentManager(request);
+    return this.scenes.reorder(
+      parseResourceId(tourId),
+      parseBody(SceneReorderRequestSchema, body).sceneIds,
+    );
+  }
+
+  @Post('tours/:tourId/scenes/set-start')
+  @HttpCode(HttpStatus.OK)
+  setStart(
+    @Req() request: SessionRequest,
+    @Param('tourId') tourId: string,
+    @Body() body: unknown,
+  ): Promise<TourResponse> {
+    requireContentManager(request);
+    return this.scenes.setStart(
+      parseResourceId(tourId),
+      parseBody(SetStartSceneRequestSchema, body).sceneId,
     );
   }
 
