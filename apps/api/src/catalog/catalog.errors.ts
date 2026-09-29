@@ -57,12 +57,55 @@ export const START_SCENE_FOREIGN = 'START_SCENE_FOREIGN';
 
 export const START_SCENE_FOREIGN_MESSAGE = "La scène de départ n'appartient pas à cette visite.";
 
-/** Référence de visite inconnue : 422 `{ error: { code, message } }`. */
+/**
+ * Cible d'un `SCENE_LINK` absente ou supprimée (API-23).
+ * Même code que `ValidationIssueCode.SCENE_LINK_TARGET_MISSING`.
+ * À la création, une scène supprimée utilise ce code (pas `SCENE_LINK_TARGET_DELETED`).
+ */
+export const SCENE_LINK_TARGET_MISSING = 'SCENE_LINK_TARGET_MISSING';
+
+export const SCENE_LINK_TARGET_MISSING_MESSAGE = "Le lien de scène n'a pas de scène cible.";
+
+/** `SCENE_LINK` vers la scène qui porte le hotspot (API-23). */
+export const SCENE_LINK_SELF = 'SCENE_LINK_SELF';
+
+export const SCENE_LINK_SELF_MESSAGE = 'Le lien de scène pointe vers sa propre scène.';
+
+/** `SCENE_LINK` vers une scène d'une autre visite (API-23). */
+export const SCENE_LINK_FOREIGN = 'SCENE_LINK_FOREIGN';
+
+export const SCENE_LINK_FOREIGN_MESSAGE = "La scène cible n'appartient pas à cette visite.";
+
+/** `TOUR_LINK` vers une visite absente ou supprimée (API-23). */
+export const TOUR_LINK_TARGET_MISSING = 'TOUR_LINK_TARGET_MISSING';
+
+export const TOUR_LINK_TARGET_MISSING_MESSAGE = "Le lien de visite n'a pas de visite cible.";
+
+/** `TOUR_LINK` vers la visite de la scène porteuse (API-23). */
+export const TOUR_LINK_SELF = 'TOUR_LINK_SELF';
+
+export const TOUR_LINK_SELF_MESSAGE = 'Le lien de visite pointe vers la visite courante.';
+
+/**
+ * `targetTourSceneId` hors des scènes non supprimées de la visite cible (API-23).
+ * Une visite cible en brouillon reste acceptée : le statut se contrôle à la publication.
+ */
+export const TOUR_LINK_SCENE_FOREIGN = 'TOUR_LINK_SCENE_FOREIGN';
+
+export const TOUR_LINK_SCENE_FOREIGN_MESSAGE =
+  "La scène d'arrivée n'appartient pas à la visite cible.";
+
+/** Un identifiant de `mediaAssetIds` ne correspond à aucun média (API-23). */
+export const MEDIA_ASSET_NOT_FOUND = 'MEDIA_ASSET_NOT_FOUND';
+
+export const MEDIA_ASSET_NOT_FOUND_MESSAGE = 'Un média est inconnu.';
+
+/** Référence inconnue ou incohérente : 422 `{ error: { code, message } }`. */
 export function referenceException(code: string, message: string): HttpException {
   return new HttpException({ error: { code, message } }, HttpStatus.UNPROCESSABLE_ENTITY);
 }
 
-/** Visite ou scène absente : 404 `{ error: { code, message } }` (API-22). */
+/** Visite ou scène absente : 404 `{ error: { code, message } }` (API-22, API-23). */
 export function missingException(code: string, message: string): HttpException {
   return new HttpException({ error: { code, message } }, HttpStatus.NOT_FOUND);
 }
