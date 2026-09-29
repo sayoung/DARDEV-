@@ -1,37 +1,17 @@
 # Démo M0 — Socle
 
-Scénario pour le porteur du projet. Il vérifie le livrable de fin de jalon : environnement en quatre commandes, puis connexion au back-office (cahier des charges, section 9). La CI verte se constate sur GitHub, pas dans ce parcours.
+Scénario pour le porteur du projet. Le parcours principal est local, sous Node 22 : environnement en quatre commandes, puis `pnpm dev`, puis connexion au back-office (cahier des charges, section 9). La variante « démo sans Docker local » (D-62) est le repli, en fin de document. La CI verte se constate sur GitHub ; elle reste une preuve complémentaire (run https://github.com/sayoung/DARDEV-/actions/runs/36580207347).
 
-Préparer le poste comme dans `docs/INSTALL.md` : `nvm use 22`, puis les deux fichiers `.env` (racine du dépôt et `apps/api/.env`). Sans moteur Docker (virtualisation désactivée), suivre la variante ci-dessous : `docker compose up -d` ne peut pas aboutir.
-
-## Variante — démo sans Docker local
-
-Tant que la virtualisation est désactivée sur le poste (D-62), les critères 1, 2 et 7 se lisent sur la CI. Le run de référence est https://github.com/sayoung/DARDEV-/actions/runs/36580207347 (commit `1eaf986`, étape « API smoke » verte).
-
-1. Ouvrir ce run. L'étape « API smoke » couvre `db:deploy` sur une base PostgreSQL 16 vierge, le seed, `GET /api/health` à 200 (`db`, `redis` et `storage` à `ok`), `openapi.json` à 200, la connexion admin, puis `/auth/me` à 200.
-2. Télécharger l'artefact `playwright-results` en bas de la page du run.
-3. Ouvrir [`docs/screenshots/login-ar.png`](screenshots/login-ar.png) pour le contrôle RTL (`lang=ar`, `dir=rtl` sur le formulaire de connexion).
-4. Navigation du back-office. Dans un terminal :
-
-```bash
-pnpm --filter @xplor/admin dev
-```
-
-Dans un second terminal, une fois http://localhost:5173 ouvert :
-
-```bash
-pnpm test:e2e
-```
-
-Hors CI, Playwright réutilise ce serveur (`reuseExistingServer`). Les scénarios de `e2e/` simulent `/api` (D-55) : l'API Nest n'a pas à tourner. Les sections 1 à 8 ci-dessous restent le parcours complet dès que Docker répond.
+Préparer le poste comme dans `docs/INSTALL.md` : `nvm use 22`, puis les deux fichiers `.env` (racine du dépôt et `apps/api/.env`). Docker répond sur ce poste depuis le 29/09/2026 : suivre les sections 1 à 8.
 
 Les libellés cités sont ceux du français. Le mot de passe des comptes seedés est la valeur de `SEED_DEFAULT_PASSWORD` dans `.env` (exemple de développement : `xplor-seed-dev-2026`).
 
 ## 1. Environnement
 
-À la racine du dépôt, dans cet ordre :
+À la racine du dépôt, Node 22, dans cet ordre :
 
 ```bash
+nvm use 22
 docker compose up -d
 pnpm install
 pnpm db:migrate
@@ -88,6 +68,8 @@ Dans les outils du navigateur, sur l'élément `<html>` :
 Le rôle affiché devient **مسؤول**. Le nom **Administrateur** ne change pas : c'est le nom du compte, pas une chaîne traduite. La feuille de style aligne le contenu avec `text-align: start` et les marges logiques (`margin-inline`, `padding-inline`) : en RTL, le bloc part du côté droit.
 
 La preuve RTL versionnée est [`docs/screenshots/login-ar.png`](screenshots/login-ar.png) : capture pleine page du formulaire de connexion ouvert avec `?lang=ar`. Le scénario Playwright `e2e/back-office.spec.ts` vérifie `lang="ar"` et `dir="rtl"` sur `<html>` avant d'enregistrer ce fichier.
+
+Le porteur contrôle visuellement chaque écran en arabe : connexion, mot de passe oublié, définition du mot de passe, accueil.
 
 Revenir au **Français** pour la suite (les libellés ci-dessous sont en français). Le choix est gardé dans `localStorage` sous la clé `xplor.lang`.
 
@@ -166,29 +148,62 @@ Le 10e mot de passe faux répond encore **401** (« Identifiants incorrects ») 
 
 Attendu : « Compte verrouillé. Réessayez dans 15 minutes. » Le compte reste verrouillé 15 minutes. Un mot de passe correct pendant ce délai affiche le même message.
 
+## Repli — démo sans Docker local (D-62)
+
+Si le moteur Docker ne répond pas, les critères 1, 2 et 7 se lisent sur la CI. Le run de référence est https://github.com/sayoung/DARDEV-/actions/runs/36580207347 (commit `1eaf986`, étape « API smoke » verte). La preuve locale du 29/09/2026 est celle du parcours principal (sections 1 à 8).
+
+1. Ouvrir ce run. L'étape « API smoke » couvre `db:deploy` sur une base PostgreSQL 16 vierge, le seed, `GET /api/health` à 200 (`db`, `redis` et `storage` à `ok`), `openapi.json` à 200, la connexion admin, puis `/auth/me` à 200.
+2. Télécharger l'artefact `playwright-results` en bas de la page du run.
+3. Ouvrir [`docs/screenshots/login-ar.png`](screenshots/login-ar.png) pour le contrôle RTL (`lang=ar`, `dir=rtl` sur le formulaire de connexion).
+4. Navigation du back-office. Dans un terminal :
+
+```bash
+pnpm --filter @xplor/admin dev
+```
+
+Dans un second terminal, une fois http://localhost:5173 ouvert :
+
+```bash
+pnpm test:e2e
+```
+
+Hors CI, Playwright réutilise ce serveur (`reuseExistingServer`). Les scénarios de `e2e/` simulent `/api` (D-55) : l'API Nest n'a pas à tourner. Les sections 1 à 8 sont le parcours complet sur le poste local.
+
 ## Résultat
 
-À cocher pendant la démo.
+Les cases cochées sont des preuves déjà obtenues le 29/09/2026. La source est `local` (Node 22.23.3) ou `CI` (run `36580207347`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347).
 
-- [ ] `docker compose up -d` : postgres, redis, minio et mailpit `healthy`, `minio-init` code 0
-- [ ] `pnpm install`
-- [ ] `pnpm db:migrate`
-- [ ] `pnpm db:seed` (quatre utilisateurs)
-- [ ] `pnpm dev`
-- [ ] Back-office http://localhost:5173
-- [ ] API http://localhost:3000
-- [ ] `GET /api/health` répond 200, `db`, `redis` et `storage` à `ok`
-- [ ] Mailpit http://localhost:8025
-- [ ] `GET /api/v1/openapi.json` répond le document OpenAPI 3.1.0
-- [ ] Connexion `admin@xplor.local` avec `SEED_DEFAULT_PASSWORD`
-- [ ] Arabe : `lang="ar"` et `dir="rtl"` (preuve versionnée : `docs/screenshots/login-ar.png`)
-- [ ] Mot de passe oublié, lien Mailpit, connexion avec le nouveau mot de passe
-- [ ] Invitation 201, lien Mailpit, acceptation, connexion du compte invité
-- [ ] `editor@xplor.local` : `POST /api/v1/admin/users/invitations` répond 403
-- [ ] 10e échec sur `manager@xplor.local` : identifiants incorrects ; tentative suivante : compte verrouillé 15 minutes
+- [x] Quatre commandes — local et CI. `docker compose up -d` : postgres, redis, minio et mailpit `healthy`, `minio-init` code 0 (local). `pnpm install` : workspace déjà installé, commande non rejouée (local). `pnpm db:migrate` : déjà synchronisé (local) ; `db:deploy` sur base vierge (CI). `pnpm db:seed` : « 4 utilisateurs de démonstration prêts », deux fois (local et CI).
+- [x] `pnpm dev` — local. API, back-office et worker démarrés (D-64). Santé, OpenAPI, login et `/auth/me` répondent ensuite sur `http://localhost:3000` et sur le proxy `http://localhost:5173`.
+- [x] `GET /api/health` répond 200, `db`, `redis` et `storage` à `ok` — local (`http://localhost:3000` et `http://localhost:5173`) et CI.
+- [x] `GET /api/v1/openapi.json` répond 200 — local (les deux adresses) et CI.
+- [x] Login et `/auth/me` 200 — local et CI. `scripts/ci-api-smoke.mjs` sort en 0 : `POST /api/v1/auth/login` 200 avec le cookie `xplor_sid`, `GET /api/v1/auth/me` 200, compte `admin@xplor.local`.
+- [x] Courriel de réinitialisation dans Mailpit — local. `POST /api/v1/auth/password/forgot` via `http://localhost:5173` : 202. `GET http://localhost:8025/api/v1/messages` : 200, message pour `editor@xplor.local`, corps contenant `/reset/`.
+- [x] `pnpm test:int` : 9 verts — local et CI (`auth.int.test.ts` 7, `seed.int.test.ts` 1, `migrations.int.test.ts` 1).
+- [x] CI verte — CI, run `36580207347` (commit `1eaf986`, job `ci` `109446061994`).
+
+Contrôles réservés au porteur. Cases vides.
+
+- [ ] Connexion dans le navigateur (section 3, http://localhost:5173, `admin@xplor.local`)
 
 Retours du porteur :
 
-```
+- [ ] Bascule en arabe et contrôle visuel RTL de chaque écran : connexion, mot de passe oublié, définition du mot de passe, accueil (section 4)
 
-```
+Retours du porteur :
+
+- [ ] Clic sur le lien Mailpit (sections 5 et 6)
+
+Retours du porteur :
+
+- [ ] Invitation d'un éditeur puis acceptation (section 6)
+
+Retours du porteur :
+
+- [ ] 403 pour `editor@xplor.local` sur `POST /api/v1/admin/users/invitations` (section 7)
+
+Retours du porteur :
+
+- [ ] Verrouillage après 10 échecs sur `manager@xplor.local` (section 8)
+
+Retours du porteur :
