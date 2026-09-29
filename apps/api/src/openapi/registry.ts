@@ -16,6 +16,8 @@ import {
   CityResponseSchema,
   CityUpdateSchema,
   ForgotPasswordRequestSchema,
+  HotspotCreateSchema,
+  HotspotResponseSchema,
   InviteUserRequestSchema,
   InviteUserResponseSchema,
   LoginRequestSchema,
@@ -38,10 +40,17 @@ import {
   CATEGORY_NOT_FOUND,
   CITY_NOT_FOUND,
   COVER_ASSET_NOT_FOUND,
+  MEDIA_ASSET_NOT_FOUND,
   PANORAMA_ASSET_NOT_FOUND,
+  SCENE_LINK_FOREIGN,
+  SCENE_LINK_SELF,
+  SCENE_LINK_TARGET_MISSING,
   SCENE_NOT_FOUND,
   SCENE_SET_MISMATCH,
   START_SCENE_FOREIGN,
+  TOUR_LINK_SCENE_FOREIGN,
+  TOUR_LINK_SELF,
+  TOUR_LINK_TARGET_MISSING,
   TOUR_NOT_FOUND,
 } from '../catalog/catalog.errors.js';
 import type { HealthBody } from '../health/health.service.js';
@@ -129,6 +138,20 @@ const sceneSetMismatchError = z.object({
 const startSceneForeignError = z.object({
   error: z.object({
     code: z.literal(START_SCENE_FOREIGN),
+    message: z.string(),
+  }),
+});
+const hotspotTargetError = z.object({
+  error: z.object({
+    code: z.enum([
+      SCENE_LINK_TARGET_MISSING,
+      SCENE_LINK_SELF,
+      SCENE_LINK_FOREIGN,
+      TOUR_LINK_TARGET_MISSING,
+      TOUR_LINK_SELF,
+      TOUR_LINK_SCENE_FOREIGN,
+      MEDIA_ASSET_NOT_FOUND,
+    ]),
     message: z.string(),
   }),
 });
@@ -342,6 +365,7 @@ registerCatalogCrud({
 
 registerTourCrud();
 registerSceneCrud();
+registerHotspotList();
 
 function registerCatalogCrud(resource: {
   collection: string;
@@ -677,6 +701,53 @@ function registerSceneCrud(): void {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse(csrfOrRole, forbiddenError),
       '404': jsonResponse('Scène introuvable ou déjà supprimée.', sceneMissingError),
+    },
+  });
+}
+
+function registerHotspotList(): void {
+  const collection = '/api/v1/admin/scenes/{sceneId}/hotspots';
+  const sceneParam = z.object({ sceneId: z.uuidv7() });
+  const roleDenied = 'Rôle autre que ADMIN ou EDITOR.';
+  const csrfOrRole = 'Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.';
+  registry.registerPath({
+    method: 'get',
+    path: collection,
+    summary: 'Lister les hotspots d’une scène',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: sceneParam },
+    responses: {
+      '200': jsonResponse(
+        'Hotspots de la scène, triés par date de création croissante.',
+        z.array(HotspotResponseSchema),
+      ),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+      '404': jsonResponse('Scène introuvable ou supprimée.', sceneMissingError),
+    },
+  });
+  registry.registerPath({
+    method: 'post',
+    path: collection,
+    summary: 'Créer un hotspot',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: sceneParam,
+      body: jsonBody(HotspotCreateSchema, 'Corps de création. Le type impose ses champs.'),
+    },
+    responses: {
+      '201': jsonResponse('Hotspot créé.', HotspotResponseSchema),
+      '400': jsonResponse('Identifiant ou corps refusé par HotspotCreateSchema.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(csrfOrRole, forbiddenError),
+      '404': jsonResponse('Scène introuvable ou supprimée.', sceneMissingError),
+      '422': jsonResponse(
+        'Cible absente, incohérente, ou média inconnu. Une visite cible en brouillon est acceptée.',
+        hotspotTargetError,
+      ),
     },
   });
 }

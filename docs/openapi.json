@@ -6638,6 +6638,1017 @@
           }
         }
       }
+    },
+    "/api/v1/admin/scenes/{sceneId}/hotspots": {
+      "get": {
+        "summary": "Lister les hotspots d’une scène",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "sceneId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hotspots de la scène, triés par date de création croissante.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "sceneId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "SCENE_LINK",
+                          "TOUR_LINK",
+                          "INFO",
+                          "MEDIA",
+                          "URL"
+                        ]
+                      },
+                      "yaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "pitch": {
+                        "type": "number",
+                        "minimum": -1.5707963267948966,
+                        "maximum": 1.5707963267948966
+                      },
+                      "label": {
+                        "type": "object",
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "targetSceneId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
+                      "targetTourId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
+                      "targetTourSceneId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
+                      },
+                      "body": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "url": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uri"
+                      },
+                      "arrivalYaw": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "mediaAssetIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "icon": {
+                        "type": "string",
+                        "enum": [
+                          "ARROW",
+                          "INFO",
+                          "PHOTO",
+                          "PLAY",
+                          "PORTAL"
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "sceneId",
+                      "type",
+                      "yaw",
+                      "pitch",
+                      "label",
+                      "targetSceneId",
+                      "targetTourId",
+                      "targetTourSceneId",
+                      "body",
+                      "url",
+                      "arrivalYaw",
+                      "mediaAssetIds",
+                      "icon",
+                      "createdAt",
+                      "updatedAt"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scène introuvable ou supprimée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "SCENE_NOT_FOUND"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un hotspot",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "sceneId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Corps de création. Le type impose ses champs.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "SCENE_LINK"
+                        ]
+                      },
+                      "yaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "pitch": {
+                        "type": "number",
+                        "minimum": -1.5707963267948966,
+                        "maximum": 1.5707963267948966
+                      },
+                      "label": {
+                        "type": "object",
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "arrivalYaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "targetSceneId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "icon": {
+                        "type": "string",
+                        "enum": [
+                          "ARROW",
+                          "INFO",
+                          "PHOTO",
+                          "PLAY",
+                          "PORTAL"
+                        ],
+                        "default": "ARROW"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "yaw",
+                      "pitch",
+                      "label",
+                      "targetSceneId"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "TOUR_LINK"
+                        ]
+                      },
+                      "yaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "pitch": {
+                        "type": "number",
+                        "minimum": -1.5707963267948966,
+                        "maximum": 1.5707963267948966
+                      },
+                      "label": {
+                        "type": "object",
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "arrivalYaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "targetTourId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "targetTourSceneId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "icon": {
+                        "type": "string",
+                        "enum": [
+                          "ARROW",
+                          "INFO",
+                          "PHOTO",
+                          "PLAY",
+                          "PORTAL"
+                        ],
+                        "default": "PORTAL"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "yaw",
+                      "pitch",
+                      "label",
+                      "targetTourId"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "INFO"
+                        ]
+                      },
+                      "yaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "pitch": {
+                        "type": "number",
+                        "minimum": -1.5707963267948966,
+                        "maximum": 1.5707963267948966
+                      },
+                      "label": {
+                        "type": "object",
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "arrivalYaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "body": {
+                        "type": "object",
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "icon": {
+                        "type": "string",
+                        "enum": [
+                          "ARROW",
+                          "INFO",
+                          "PHOTO",
+                          "PLAY",
+                          "PORTAL"
+                        ],
+                        "default": "INFO"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "yaw",
+                      "pitch",
+                      "label",
+                      "body"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "MEDIA"
+                        ]
+                      },
+                      "yaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "pitch": {
+                        "type": "number",
+                        "minimum": -1.5707963267948966,
+                        "maximum": 1.5707963267948966
+                      },
+                      "label": {
+                        "type": "object",
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "arrivalYaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "mediaAssetIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "minItems": 1
+                      },
+                      "icon": {
+                        "type": "string",
+                        "enum": [
+                          "ARROW",
+                          "INFO",
+                          "PHOTO",
+                          "PLAY",
+                          "PORTAL"
+                        ],
+                        "default": "PHOTO"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "yaw",
+                      "pitch",
+                      "label",
+                      "mediaAssetIds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "URL"
+                        ]
+                      },
+                      "yaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "pitch": {
+                        "type": "number",
+                        "minimum": -1.5707963267948966,
+                        "maximum": 1.5707963267948966
+                      },
+                      "label": {
+                        "type": "object",
+                        "properties": {
+                          "fr": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ar": {
+                            "type": "string"
+                          },
+                          "en": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "fr"
+                        ]
+                      },
+                      "arrivalYaw": {
+                        "type": "number",
+                        "minimum": -3.141592653589793,
+                        "maximum": 3.141592653589793
+                      },
+                      "url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "icon": {
+                        "type": "string",
+                        "enum": [
+                          "ARROW",
+                          "INFO",
+                          "PHOTO",
+                          "PLAY",
+                          "PORTAL"
+                        ],
+                        "default": "INFO"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "yaw",
+                      "pitch",
+                      "label",
+                      "url"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hotspot créé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "sceneId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "SCENE_LINK",
+                        "TOUR_LINK",
+                        "INFO",
+                        "MEDIA",
+                        "URL"
+                      ]
+                    },
+                    "yaw": {
+                      "type": "number",
+                      "minimum": -3.141592653589793,
+                      "maximum": 3.141592653589793
+                    },
+                    "pitch": {
+                      "type": "number",
+                      "minimum": -1.5707963267948966,
+                      "maximum": 1.5707963267948966
+                    },
+                    "label": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "targetSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "targetTourId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "targetTourSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "body": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uri"
+                    },
+                    "arrivalYaw": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": -3.141592653589793,
+                      "maximum": 3.141592653589793
+                    },
+                    "mediaAssetIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "icon": {
+                      "type": "string",
+                      "enum": [
+                        "ARROW",
+                        "INFO",
+                        "PHOTO",
+                        "PLAY",
+                        "PORTAL"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "sceneId",
+                    "type",
+                    "yaw",
+                    "pitch",
+                    "label",
+                    "targetSceneId",
+                    "targetTourId",
+                    "targetTourSceneId",
+                    "body",
+                    "url",
+                    "arrivalYaw",
+                    "mediaAssetIds",
+                    "icon",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant ou corps refusé par HotspotCreateSchema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scène introuvable ou supprimée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "SCENE_NOT_FOUND"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cible absente, incohérente, ou média inconnu. Une visite cible en brouillon est acceptée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "SCENE_LINK_TARGET_MISSING",
+                            "SCENE_LINK_SELF",
+                            "SCENE_LINK_FOREIGN",
+                            "TOUR_LINK_TARGET_MISSING",
+                            "TOUR_LINK_SELF",
+                            "TOUR_LINK_SCENE_FOREIGN",
+                            "MEDIA_ASSET_NOT_FOUND"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}
