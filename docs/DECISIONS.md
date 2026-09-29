@@ -313,6 +313,19 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** créer le dépôt sous une organisation GitHub `DARDEV` plutôt que sous le compte `sayoung`.
 - **À valider :** non
 
+## D-54 — Playwright pour les tests de bout en bout (F-90, DoD M0)
+
+- **Date :** 29/09/2026
+- **Décision :** `@playwright/test` 1.63.0 est une devDependency racine. `playwright.config.ts` ne lance que Chromium (`browserName: 'chromium'`), lit les tests dans `e2e/`, écrit dans `test-results/`, et ouvre `http://localhost:5173`. `webServer` exécute `pnpm --filter @xplor/admin dev` et réutilise un serveur déjà à l'écoute hors CI (`reuseExistingServer: !process.env.CI`). Le script racine est `pnpm test:e2e` (`playwright test`). Vitest exclut `e2e/**` (config racine, workspace, et projet `@xplor/admin`). Le `tsconfig.json` racine inclut `playwright.config.ts` et `e2e/**/*.ts` pour le lint et le typecheck. Le premier test, `e2e/smoke.spec.ts`, vérifie que `/` affiche le titre « Xplor » et que `html` a `lang=fr`. Il ne couvre pas un scénario métier. Le binaire Chromium s'installe avec `pnpm exec playwright install chromium` ; ce n'est pas un paquet npm. Firefox et WebKit ne sont pas installés.
+- **Alternatives :** Cypress ; les trois navigateurs de Playwright ; démarrer aussi l'API dans `webServer` pour le test de fumée.
+- **À valider :** oui (Chromium seul ; le test de fumée ne démarre pas l'API)
+
+| Paquet           | Raison                                                                                  | Licence    |
+| ---------------- | --------------------------------------------------------------------------------------- | ---------- |
+| @playwright/test | Tests E2E du back-office exigés par la Definition of Done de M0. 1.63.0, Chromium seul. | Apache-2.0 |
+
+`@types/node` (D-33, MIT, `^22.19.1`) est redéclaré en devDependency racine : le `tsconfig.json` racine typecheck `playwright.config.ts`, qui lit `process.env.CI`. pnpm n'expose pas les types d'un autre paquet du workspace à la racine.
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

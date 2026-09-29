@@ -1,5 +1,7 @@
 import { configDefaults, type TestProjectConfiguration } from 'vitest/config';
 
+const exclude = [...configDefaults.exclude, 'e2e/**'];
+
 const workspace: TestProjectConfiguration[] = [
   {
     test: {
@@ -7,6 +9,7 @@ const workspace: TestProjectConfiguration[] = [
       root: './packages/shared',
       environment: 'node',
       include: ['src/**/*.test.ts'],
+      exclude: [...exclude],
     },
   },
   {
@@ -15,6 +18,7 @@ const workspace: TestProjectConfiguration[] = [
       root: './packages/i18n',
       environment: 'node',
       include: ['src/**/*.test.ts'],
+      exclude: [...exclude],
     },
   },
   {
@@ -23,7 +27,7 @@ const workspace: TestProjectConfiguration[] = [
       root: './apps/api',
       environment: 'node',
       include: ['src/**/*.test.ts'],
-      exclude: [...configDefaults.exclude, '**/*.int.test.ts'],
+      exclude: [...exclude, '**/*.int.test.ts'],
     },
   },
   './apps/admin/vitest.config.ts',
@@ -33,6 +37,7 @@ const workspace: TestProjectConfiguration[] = [
       root: './apps/web',
       environment: 'happy-dom',
       include: ['src/**/*.test.ts'],
+      exclude: [...exclude],
     },
   },
   {
@@ -41,6 +46,7 @@ const workspace: TestProjectConfiguration[] = [
       root: './apps/kiosk',
       environment: 'happy-dom',
       include: ['src/**/*.test.ts'],
+      exclude: [...exclude],
     },
   },
   {
@@ -49,6 +55,7 @@ const workspace: TestProjectConfiguration[] = [
       root: './apps/worker',
       environment: 'node',
       include: ['src/**/*.test.ts'],
+      exclude: [...exclude],
     },
   },
 ];
