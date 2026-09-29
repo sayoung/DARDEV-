@@ -49,6 +49,7 @@ import { USER_REPOSITORY } from './user.repository.js';
     USER_LOOKUP,
     USER_REPOSITORY,
     USER_TOKEN_REPOSITORY,
+    UNIT_OF_WORK,
     PasswordService,
     CLOCK,
     SessionGuard,

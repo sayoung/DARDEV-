@@ -11,6 +11,8 @@ export type AuthUser = {
   role: Role;
   uiLang: Lang;
   active: boolean;
+  /** Null tant que le compte ne s'est jamais connecté. */
+  lastLoginAt: Date | null;
   failedLoginCount: number;
   lockedUntil: Date | null;
 };
@@ -38,12 +40,21 @@ export type NewInvitedUser = {
   uiLang: Lang;
 };
 
+/** Champs réécrits lorsqu'une invitation jamais acceptée est renvoyée. */
+export type InvitedProfileUpdate = {
+  name: string;
+  role: Role;
+  uiLang: Lang;
+};
+
 export interface UserRepository {
   findByEmail(email: string): Promise<AuthUser | null>;
   findById(id: string, db?: AuthTx): Promise<AuthUser | null>;
   updateLoginState(id: string, state: LoginStateUpdate): Promise<void>;
   updatePassword(id: string, state: PasswordUpdate, db?: AuthTx): Promise<void>;
-  createInvited(input: NewInvitedUser): Promise<AuthUser>;
+  createInvited(input: NewInvitedUser, db?: AuthTx): Promise<AuthUser>;
+  /** Met à jour le profil d'une invitation encore en attente. Ne change pas le mot de passe. */
+  updateInvited(id: string, profile: InvitedProfileUpdate, db?: AuthTx): Promise<AuthUser>;
   /** Pose le mot de passe choisi et passe `active` à true. */
   activate(id: string, passwordHash: string, db?: AuthTx): Promise<void>;
 }

@@ -10,11 +10,17 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { Test } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaClient } from '@prisma/client';
-import { MeResponseSchema, Role, type InviteUserRequest, type MeResponse } from '@xplor/shared';
+import {
+  InviteUserResponseSchema,
+  MeResponseSchema,
+  Role,
+  type InviteUserRequest,
+  type MeResponse,
+} from '@xplor/shared';
 import { Redis } from 'ioredis';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { ACCOUNT_LOCKED, INVALID_CREDENTIALS } from '../src/auth/auth.errors.js';
+import { ACCOUNT_LOCKED, INVALID_CREDENTIALS, TOKEN_INVALID } from '../src/auth/auth.errors.js';
 import { toPrismaRole } from '../src/auth/prisma-role.js';
 import { PasswordService } from '../src/auth/password.service.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-cookie.js';
@@ -214,6 +220,51 @@ describe('auth HTTP', () => {
     expect(requireSessionCookie(session).length).toBeGreaterThan(0);
   });
 
+  it('renouvelle une invitation jamais acceptée et n’accepte que le second lien', async () => {
+    const loggedIn = await postLogin(ADMIN_EMAIL, seedPassword);
+    const sessionId = requireSessionCookie(loggedIn);
+    const me = readMe((await getMe(sessionId)).body);
+    const invite: InviteUserRequest = {
+      email: INVITE_EMAIL,
+      name: 'Invité intégration',
+      role: Role.EDITOR,
+      uiLang: 'fr',
+    };
+
+    const first = await postInvite(sessionId, me.csrfToken, invite);
+    expect(first.statusCode).toBe(201);
+    const firstToken = tokenFromMail('invite');
+
+    const second = await postInvite(sessionId, me.csrfToken, {
+      ...invite,
+      name: 'Invité renouvelé',
+      role: Role.PARTNER,
+      uiLang: 'en',
+    });
+    expect(second.statusCode).toBe(201);
+    const firstBody = InviteUserResponseSchema.parse(parseJson(first.body));
+    const secondBody = InviteUserResponseSchema.parse(parseJson(second.body));
+    expect(secondBody).toEqual({
+      id: firstBody.id,
+      email: INVITE_EMAIL,
+      name: 'Invité renouvelé',
+      role: Role.PARTNER,
+    });
+    expect(await prisma.user.count({ where: { email: INVITE_EMAIL } })).toBe(1);
+
+    const secondToken = tokenFromMail('invite');
+    expect(secondToken).not.toBe(firstToken);
+
+    const stale = await postAccept(firstToken);
+    expect(stale.statusCode).toBe(400);
+    expect(readCode(stale.body)).toBe(TOKEN_INVALID);
+    expect(await isActive(INVITE_EMAIL)).toBe(false);
+
+    const accepted = await postAccept(secondToken);
+    expect(accepted.statusCode).toBe(204);
+    expect(await isActive(INVITE_EMAIL)).toBe(true);
+  });
+
   it('refuse POST /admin/users/invitations à un EDITOR', async () => {
     const loggedIn = await postLogin(EDITOR_EMAIL, seedPassword);
     expect(loggedIn.statusCode).toBe(200);
@@ -337,6 +388,32 @@ function requireRedis(): Redis {
     throw new Error('Redis non démarré');
   }
   return redis;
+}
+
+function postInvite(
+  sessionId: string,
+  csrfToken: string,
+  body: InviteUserRequest,
+): Promise<Injected> {
+  return application().inject({
+    method: 'POST',
+    url: '/api/v1/admin/users/invitations',
+    headers: {
+      'content-type': 'application/json',
+      cookie: sessionCookie(sessionId),
+      'x-csrf-token': csrfToken,
+    },
+    payload: JSON.stringify(body),
+  });
+}
+
+function postAccept(token: string): Promise<Injected> {
+  return application().inject({
+    method: 'POST',
+    url: '/api/v1/auth/invite/accept',
+    headers: { 'content-type': 'application/json' },
+    payload: JSON.stringify({ token, password: INVITE_PASSWORD }),
+  });
 }
 
 function postLogin(email: string, password: string): Promise<Injected> {

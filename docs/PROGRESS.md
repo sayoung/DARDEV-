@@ -9,16 +9,16 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** NF-09 — consigner la preuve provisoire des critères 1, 2 et 7 par l'étape CI « API smoke », tant que la virtualisation est désactivée.
+**Exigence :** F-90 — réinviter un compte inactif jamais connecté, écritures dans une transaction, courriel après.
 
 Plan :
 
-1. Lire le dernier run GitHub Actions (`gh run list`, `gh run view`) et le verdict de l'étape « API smoke ».
-2. Consigner D-62 dans `docs/DECISIONS.md` (date 29/09/2026, à valider : oui, porteur). Aucun code, aucun push.
-3. Si cette étape est verte, marquer les critères 1, 2 et 7 « prouvé en CI », et ajouter à `docs/DEMO_M0.md` la variante « démo sans Docker local ».
-4. Vérifier `pnpm lint` (Prettier sur le Markdown).
+1. Tests Vitest (faux) : réinvitation → 201, un nouveau courriel, ancien jeton `TOKEN_INVALID` ; compte actif ou déjà connecté → 409 ; échec du mailer puis nouvelle invitation → 201.
+2. `UsersService` : mise à jour `name`, `role`, `uiLang`, invalidation des jetons `INVITE`, nouveau jeton 48 h, dans `UnitOfWork` ; envoi SMTP ensuite.
+3. Scénario d'intégration : deux invitations de la même adresse, deux 201, seul le second lien est accepté.
+4. OpenAPI, D-63, retirer le risque d'invitation non transactionnelle. `pnpm lint`, `pnpm typecheck`, `pnpm test`, couverture de `src/users` ≥ 70 %.
 
-Réalisé : run `36569962273` (https://github.com/sayoung/DARDEV-/actions/runs/36569962273), commit `b100f8c`, job `ci` `109411207526`, étape « API smoke » verte (journal : health, openapi, login et me conformes). D-62 consignée. Critères 1, 2 et 7 marqués prouvés en CI ; variante « démo sans Docker local » dans `docs/DEMO_M0.md`. Aucun code, aucun push.
+Réalisé : réinvitation 201 pour un compte inactif jamais connecté ; 409 si le compte est actif ou a déjà une connexion ; échec SMTP puis nouvelle invitation 201. Écritures dans `UnitOfWork`, courriel après. Scénario ajouté dans `auth.int.test.ts` (non rejoué en local : moteur Docker injoignable). D-63 à valider. `pnpm lint`, `pnpm typecheck` et `pnpm exec vitest run --coverage` verts (188 tests). Couverture de `apps/api/src/users` : 100 %. Aucun commit (orchestrateur).
 
 ## Definition of Done — M0
 
@@ -76,6 +76,7 @@ Cahier des charges, section 9 (livrable) et section 10 (liste commune). Definiti
   - `MailModule` global, `SmtpMailer` (nodemailer, sans authentification vers Mailpit) et `FakeMailer`, `renderMail` (`mail.invite.*` / `mail.reset.*`, fr/ar/en), `ADMIN_BASE_URL` (défaut `http://localhost:5173`) (D-45).
   - `POST /api/v1/auth/password/forgot` (202, 5/min/IP) et `POST /api/v1/auth/password/reset` (204), publics ; `UserTokenRepository` ; 202 uniforme même si l'envoi échoue ; `TOKEN_INVALID` unique ; transaction puis destruction des sessions (D-46).
   - `POST /api/v1/admin/users/invitations` (ADMIN, 201, courriel `invite` dans `uiLang`) et `POST /api/v1/auth/invite/accept` (public, 204, 5/min/IP, sans session). Compte créé `active=false` ; 409 `EMAIL_TAKEN` ; jeton `INVITE` 48 h (D-47). CRUD utilisateurs et rattachement aux hôtels : hors de ce jalon.
+  - Réinvitation d'un compte `active=false` dont `lastLoginAt` est null : mise à jour de `name`, `role` et `uiLang`, invalidation des jetons `INVITE`, nouveau jeton 48 h, courriel après la transaction, 201 `InviteUserResponseSchema`. Un compte actif ou déjà connecté répond 409 (D-63). Couverture Vitest de `apps/api/src/users` à 70 %.
   - Écrans `/forgot`, `/reset/:token` et `/invite/:token` (routeur maison) ; `SetPasswordPage` partagée (`PasswordSchema`, confirmation identique) ; `TOKEN_INVALID`, `PASSWORD_TOO_COMMON` et `PASSWORD_INVALID` traduits ; succès vers la connexion avec un message (D-48).
   - `auth.int.test.ts` : application Nest sur Fastify (`app.inject`, cookie `xplor_sid`, `FakeMailer`), scénarios login, CSRF, logout 204, verrouillage, reset et invitation (D-51). Vert en CI (critère 5) ; pas relancé en local.
   - `@playwright/test` 1.63.0, `playwright.config.ts` (Chromium, `e2e`, `http://localhost:5173`), script `test:e2e`, `e2e/smoke.spec.ts` (D-54, D-58). Vitest exclut `e2e/**`.
@@ -99,7 +100,6 @@ Cahier des charges, section 9 (livrable) et section 10 (liste commune). Definiti
 - Quatre avis moderate restent sous le seuil CI : Vitest 3.2.7 et `@vitest/mocker` (GHSA-82fw-gwwq-j7x9, correctif en 4.1.11 ; D-29 maintient Vitest 3) et fastify 5.11.3 (GHSA-w2qp-rph6-63g4, GHSA-3m5p-2c4r-xxw2, correctif en 5.12.1 ; D-39 épingle 5.11.3).
 - En local, les healthchecks MinIO (`curl` sur `/minio/health/live`, D-61) et Mailpit (`wget` sur `/livez`) ne sont pas confirmés. En CI, `GET /api/health` a répondu 200 (run `36569962273`).
 - Le sélecteur de langue, la connexion, la réinitialisation et l'invitation n'ont pas été ouverts dans un navigateur graphique contre l'API (Vitest jsdom, ou Playwright avec `/api` simulé). Les scénarios back-office ne démarrent pas l'API.
-- Les écritures d'invitation (compte, invalidation, jeton, courriel) ne sont pas une seule transaction : un échec SMTP après la création laisse un compte inactif qui répond `EMAIL_TAKEN`.
 - Prisma 6 avertit que `package.json#prisma` (dont `prisma.seed`) est déprécié au profit de `prisma.config.ts` en Prisma 7 ; D-34 et D-41 conservent Prisma 6 et ce champ.
 - `.gitattributes` ne force LF au checkout de `docs/openapi.json` qu'une fois `git add --renormalize .` indexé par l'orchestrateur (critère 9).
-- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-62).
+- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-62, D-63).

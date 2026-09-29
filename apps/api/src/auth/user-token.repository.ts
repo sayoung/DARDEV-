@@ -26,11 +26,11 @@ export type NewUserToken = {
  * Remplacée par un faux dépôt dans les tests.
  */
 export interface UserTokenRepository {
-  create(input: NewUserToken): Promise<UserTokenRecord>;
+  create(input: NewUserToken, db?: AuthTx): Promise<UserTokenRecord>;
   findByHash(tokenHash: string): Promise<UserTokenRecord | null>;
   /** `true` seulement si `usedAt` était encore null. */
   markUsed(id: string, usedAt: Date, db?: AuthTx): Promise<boolean>;
-  invalidateUnused(userId: string, type: UserTokenKind): Promise<void>;
+  invalidateUnused(userId: string, type: UserTokenKind, db?: AuthTx): Promise<void>;
 }
 
 export const USER_TOKEN_REPOSITORY = Symbol('USER_TOKEN_REPOSITORY');
@@ -59,15 +59,16 @@ function toRecord(row: TokenRow): UserTokenRecord {
 export class PrismaUserTokenRepository implements UserTokenRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async create(input: NewUserToken): Promise<UserTokenRecord> {
-    const row = await this.prisma.userToken.create({
+  async create(input: NewUserToken, db?: AuthTx): Promise<UserTokenRecord> {
+    const args = {
       data: {
         userId: input.userId,
         type: input.type,
         tokenHash: input.tokenHash,
         expiresAt: input.expiresAt,
       },
-    });
+    };
+    const row = db ? await db.userToken.create(args) : await this.prisma.userToken.create(args);
     return toRecord(row);
   }
 
@@ -84,10 +85,15 @@ export class PrismaUserTokenRepository implements UserTokenRepository {
     return result.count === 1;
   }
 
-  async invalidateUnused(userId: string, type: UserTokenKind): Promise<void> {
-    await this.prisma.userToken.updateMany({
+  async invalidateUnused(userId: string, type: UserTokenKind, db?: AuthTx): Promise<void> {
+    const args = {
       where: { userId, type, usedAt: null },
       data: { usedAt: new Date() },
-    });
+    };
+    if (db) {
+      await db.userToken.updateMany(args);
+      return;
+    }
+    await this.prisma.userToken.updateMany(args);
   }
 }

@@ -7,6 +7,7 @@ import { toPrismaRole, toSharedRole } from './prisma-role.js';
 import { type AuthTx } from './unit-of-work.js';
 import {
   type AuthUser,
+  type InvitedProfileUpdate,
   type LoginStateUpdate,
   type NewInvitedUser,
   type PasswordUpdate,
@@ -21,6 +22,7 @@ const authUserSelect = {
   role: true,
   uiLang: true,
   active: true,
+  lastLoginAt: true,
   failedLoginCount: true,
   lockedUntil: true,
 } as const;
@@ -33,6 +35,7 @@ type UserRow = {
   role: PrismaRole;
   uiLang: string;
   active: boolean;
+  lastLoginAt: Date | null;
   failedLoginCount: number;
   lockedUntil: Date | null;
 };
@@ -56,6 +59,7 @@ function toAuthUser(user: UserRow): AuthUser {
     role: toSharedRole(user.role),
     uiLang: toUiLang(user.uiLang),
     active: user.active,
+    lastLoginAt: user.lastLoginAt,
     failedLoginCount: user.failedLoginCount,
     lockedUntil: user.lockedUntil,
   };
@@ -106,8 +110,8 @@ export class PrismaUserRepository implements UserRepository {
     await this.prisma.user.update(args);
   }
 
-  async createInvited(input: NewInvitedUser): Promise<AuthUser> {
-    const user = await this.prisma.user.create({
+  async createInvited(input: NewInvitedUser, db?: AuthTx): Promise<AuthUser> {
+    const args = {
       data: {
         email: input.email,
         name: input.name,
@@ -117,7 +121,22 @@ export class PrismaUserRepository implements UserRepository {
         active: false,
       },
       select: authUserSelect,
-    });
+    };
+    const user = db ? await db.user.create(args) : await this.prisma.user.create(args);
+    return toAuthUser(user);
+  }
+
+  async updateInvited(id: string, profile: InvitedProfileUpdate, db?: AuthTx): Promise<AuthUser> {
+    const args = {
+      where: { id },
+      data: {
+        name: profile.name,
+        role: toPrismaRole(profile.role),
+        uiLang: profile.uiLang,
+      },
+      select: authUserSelect,
+    };
+    const user = db ? await db.user.update(args) : await this.prisma.user.update(args);
     return toAuthUser(user);
   }
 

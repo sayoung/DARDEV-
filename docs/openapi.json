@@ -929,7 +929,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "Compte à créer, inactif jusqu’à l’acceptation.",
+          "description": "Compte à créer, ou invitation à renouveler si le compte est inactif et n’a jamais été connecté.",
           "content": {
             "application/json": {
               "schema": {
@@ -973,7 +973,7 @@
         },
         "responses": {
           "201": {
-            "description": "Compte créé. Le courriel d’invitation est envoyé.",
+            "description": "Compte créé ou invitation renouvelée. Le courriel est envoyé après l’enregistrement.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1099,7 +1099,7 @@
             }
           },
           "409": {
-            "description": "Un compte existe déjà pour cette adresse.",
+            "description": "Un compte actif, ou déjà connecté au moins une fois, existe pour cette adresse.",
             "content": {
               "application/json": {
                 "schema": {

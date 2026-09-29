@@ -20,6 +20,7 @@ import {
   type NewInvitedUser,
   type PasswordUpdate,
   type AuthUser,
+  type InvitedProfileUpdate,
   type UserRepository,
 } from './user.repository.js';
 import {
@@ -48,6 +49,7 @@ function account(overrides: Partial<AuthUser> = {}): AuthUser {
     role: Role.EDITOR,
     uiLang: 'fr',
     active: true,
+    lastLoginAt: null,
     failedLoginCount: 0,
     lockedUntil: null,
     ...overrides,
@@ -122,11 +124,24 @@ class MemoryUsers implements UserRepository {
       role: input.role,
       uiLang: input.uiLang,
       active: false,
+      lastLoginAt: null,
       failedLoginCount: 0,
       lockedUntil: null,
     };
     this.byEmail.set(input.email, user);
     return Promise.resolve(user);
+  }
+
+  updateInvited(id: string, profile: InvitedProfileUpdate): Promise<AuthUser> {
+    for (const user of this.byEmail.values()) {
+      if (user.id === id) {
+        user.name = profile.name;
+        user.role = profile.role;
+        user.uiLang = profile.uiLang;
+        return Promise.resolve(user);
+      }
+    }
+    return Promise.reject(new Error('compte absent'));
   }
 
   activate(id: string, passwordHash: string): Promise<void> {

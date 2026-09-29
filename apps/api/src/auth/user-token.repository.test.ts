@@ -136,4 +136,50 @@ describe('PrismaUserTokenRepository', () => {
       expect(args.data.usedAt).toBeInstanceOf(Date);
     }
   });
+
+  it('crée et invalide sur le client de transaction', async () => {
+    const { repository, calls } = repositoryFor(row);
+    const txCalls: { op: string; args: unknown }[] = [];
+    const tx = {
+      userToken: {
+        create: (args: unknown) => {
+          txCalls.push({ op: 'create', args });
+          return Promise.resolve(row);
+        },
+        updateMany: (args: unknown) => {
+          txCalls.push({ op: 'updateMany', args });
+          return Promise.resolve({ count: 1 });
+        },
+      },
+    };
+    const expiresAt = new Date('2026-09-29T13:00:00.000Z');
+
+    await repository.create(
+      {
+        userId: 'user-1',
+        type: 'INVITE',
+        tokenHash: row.tokenHash,
+        expiresAt,
+      },
+      tx as unknown as AuthTx,
+    );
+    await repository.invalidateUnused('user-1', 'INVITE', tx as unknown as AuthTx);
+
+    expect(calls).toEqual([]);
+    expect(txCalls[0]).toEqual({
+      op: 'create',
+      args: {
+        data: {
+          userId: 'user-1',
+          type: 'INVITE',
+          tokenHash: row.tokenHash,
+          expiresAt,
+        },
+      },
+    });
+    expect(txCalls[1]).toMatchObject({
+      op: 'updateMany',
+      args: { where: { userId: 'user-1', type: 'INVITE', usedAt: null } },
+    });
+  });
 });
