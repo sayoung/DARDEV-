@@ -1,6 +1,12 @@
 {
   "common": {
-    "appName": "Xplor"
+    "appName": "Xplor",
+    "language": {
+      "label": "اللغة",
+      "fr": "Français",
+      "ar": "العربية",
+      "en": "English"
+    }
   },
   "auth": {
     "login": {

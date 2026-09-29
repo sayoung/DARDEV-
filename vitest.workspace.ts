@@ -25,6 +25,7 @@ const workspace: TestProjectConfiguration[] = [
       include: ['src/**/*.test.ts'],
     },
   },
+  './apps/admin/vitest.config.ts',
   {
     test: {
       name: '@xplor/web',

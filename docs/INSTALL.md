@@ -39,14 +39,17 @@ docker compose ps
 
 `postgres`, `redis`, `minio` et `mailpit` doivent être `healthy`. `minio-init` doit s'être terminé avec le code 0.
 
-## Applications web, kiosque et worker (NF-08)
+## Applications (NF-08)
 
-| Application     | Paquet          | Commande                          | Port                                         |
-| --------------- | --------------- | --------------------------------- | -------------------------------------------- |
-| Visionneuse web | `@xplor/web`    | `pnpm --filter @xplor/web dev`    | **5174** (Vite, `strictPort`)                |
-| Kiosque         | `@xplor/kiosk`  | `pnpm --filter @xplor/kiosk dev`  | **5175** (Vite, `strictPort`)                |
-| Worker          | `@xplor/worker` | `pnpm --filter @xplor/worker dev` | aucun (processus Node, pas encore de BullMQ) |
+| Application     | Paquet          | Commande                          | Port                                                                                        |
+| --------------- | --------------- | --------------------------------- | ------------------------------------------------------------------------------------------- |
+| Back-office     | `@xplor/admin`  | `pnpm --filter @xplor/admin dev`  | **5173** (Vite, `strictPort` ; le proxy de dev renvoie `/api` vers `http://localhost:3000`) |
+| Visionneuse web | `@xplor/web`    | `pnpm --filter @xplor/web dev`    | **5174** (Vite, `strictPort`)                                                               |
+| Kiosque         | `@xplor/kiosk`  | `pnpm --filter @xplor/kiosk dev`  | **5175** (Vite, `strictPort`)                                                               |
+| Worker          | `@xplor/worker` | `pnpm --filter @xplor/worker dev` | aucun (processus Node, pas encore de BullMQ)                                                |
 
-`pnpm dev` à la racine lance ces processus avec l'API. La langue d'affichage du web et du kiosque vient de `?lang=` (`fr` par défaut, `ar`, `en`). Exemple : `http://localhost:5174/?lang=ar` pose `lang="ar"` et `dir="rtl"`.
+`pnpm dev` à la racine lance l'API, le back-office, le web, le kiosque et le worker (`--parallel`, D-42). La langue d'affichage du web et du kiosque vient de `?lang=` (`fr` par défaut, `ar`, `en`). Exemple : `http://localhost:5174/?lang=ar` pose `lang="ar"` et `dir="rtl"`.
+
+Le back-office lit d'abord `?lang=`, puis la clé `localStorage` `xplor.lang`, sinon le français. Le sélecteur fr/ar/en change la langue sans recharger la page et enregistre ce choix. Exemple : `http://localhost:5173/?lang=ar` pose `lang="ar"` et `dir="rtl"`.
 
 Le worker lit `REDIS_URL` (fichier `.env` à la racine, sinon la variable d'environnement). Au démarrage il écrit `worker prêt` sur la sortie standard.
