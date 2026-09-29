@@ -14,7 +14,15 @@
       "email": "Email address",
       "password": "Password",
       "submit": "Sign in",
-      "error": "Incorrect credentials"
+      "error": "Incorrect credentials",
+      "locked": "Account locked. Try again in 15 minutes.",
+      "failed": "Sign-in failed. Try again."
+    },
+    "role": {
+      "ADMIN": "Administrator",
+      "EDITOR": "Editor",
+      "HOTEL_MANAGER": "Hotel manager",
+      "PARTNER": "Partner"
     },
     "logout": "Sign out"
   },

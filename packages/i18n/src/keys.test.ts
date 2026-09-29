@@ -1,3 +1,4 @@
+import { Role } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import { dir, isRtl, resources } from './index.js';
@@ -65,6 +66,16 @@ describe('clés i18n', () => {
 
   it('expose les trois fichiers via resources', () => {
     expect(resources).toEqual(locales);
+  });
+
+  it('traduit chaque rôle sans reprendre le code d’énumération', () => {
+    for (const role of Object.values(Role)) {
+      for (const lang of ['fr', 'ar', 'en'] as const) {
+        const label = resources[lang].auth.role[role];
+        expect(label).not.toBe(role);
+        expect(label.trim().length).toBeGreaterThan(0);
+      }
+    }
   });
 });
 
