@@ -5,6 +5,11 @@ export function canManageContent(principal: Principal): boolean {
   return principal.role === Role.ADMIN || principal.role === Role.EDITOR;
 }
 
+/** ADMIN et EDITOR gèrent les villes et les catégories (API-25). */
+export function canManageCatalog(principal: Principal): boolean {
+  return principal.role === Role.ADMIN || principal.role === Role.EDITOR;
+}
+
 /** Seul ADMIN crée et administre les comptes (F-90). */
 export function canManageUsers(principal: Principal): boolean {
   return principal.role === Role.ADMIN;

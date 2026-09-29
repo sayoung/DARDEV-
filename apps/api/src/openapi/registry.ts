@@ -9,6 +9,12 @@ import {
 } from '@asteasolutions/zod-to-openapi';
 import {
   AcceptInviteRequestSchema,
+  CategoryCreateSchema,
+  CategoryResponseSchema,
+  CategoryUpdateSchema,
+  CityCreateSchema,
+  CityResponseSchema,
+  CityUpdateSchema,
   ForgotPasswordRequestSchema,
   InviteUserRequestSchema,
   InviteUserResponseSchema,
@@ -63,6 +69,13 @@ const emailTakenError = codedError(409, 'EMAIL_TAKEN');
 const badRequestError = nestError(400);
 const unauthorizedError = nestError(401);
 const forbiddenError = nestError(403);
+const notFoundError = nestError(404);
+const inUseError = z.object({
+  error: z.object({
+    code: z.literal('IN_USE'),
+    message: z.string(),
+  }),
+});
 
 const passwordChangeError = z.union([
   tokenInvalidError,
@@ -252,6 +265,112 @@ registry.registerPath({
     ),
   },
 });
+
+registerCatalogCrud({
+  collection: '/api/v1/admin/cities',
+  singular: 'ville',
+  plural: 'villes',
+  create: CityCreateSchema,
+  update: CityUpdateSchema,
+  response: CityResponseSchema,
+});
+
+registerCatalogCrud({
+  collection: '/api/v1/admin/categories',
+  singular: 'catégorie',
+  plural: 'catégories',
+  create: CategoryCreateSchema,
+  update: CategoryUpdateSchema,
+  response: CategoryResponseSchema,
+});
+
+function registerCatalogCrud(resource: {
+  collection: string;
+  singular: string;
+  plural: string;
+  create: ZodType;
+  update: ZodType;
+  response: ZodType;
+}): void {
+  const item = `${resource.collection}/{id}`;
+  const idParam = z.object({ id: z.uuidv7() });
+  registry.registerPath({
+    method: 'get',
+    path: resource.collection,
+    summary: `Lister les ${resource.plural}`,
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    responses: {
+      '200': jsonResponse(`Liste des ${resource.plural}.`, z.array(resource.response)),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+    },
+  });
+  registry.registerPath({
+    method: 'get',
+    path: item,
+    summary: `Lire une ${resource.singular}`,
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse(`${resource.singular} trouvée.`, resource.response),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
+    },
+  });
+  registry.registerPath({
+    method: 'post',
+    path: resource.collection,
+    summary: `Créer une ${resource.singular}`,
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { body: jsonBody(resource.create, `Corps de création d'une ${resource.singular}.`) },
+    responses: {
+      '201': jsonResponse(`${resource.singular} créée.`, resource.response),
+      '400': jsonResponse('Corps refusé par le schéma Zod.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+    },
+  });
+  registry.registerPath({
+    method: 'patch',
+    path: item,
+    summary: `Remplacer une ${resource.singular}`,
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(resource.update, 'Mêmes champs que la création (remplacement complet).'),
+    },
+    responses: {
+      '200': jsonResponse(`${resource.singular} mise à jour.`, resource.response),
+      '400': jsonResponse('Identifiant ou corps refusé.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
+    },
+  });
+  registry.registerPath({
+    method: 'delete',
+    path: item,
+    summary: `Supprimer une ${resource.singular}`,
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '204': { description: `${resource.singular} supprimée. Corps vide.` },
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
+      '409': jsonResponse(
+        'Encore utilisée par une visite (IN_USE).',
+        inUseError,
+      ),
+    },
+  });
+}
 
 /** Document OpenAPI 3.1 produit à partir du registre. */
 export function buildOpenApiDocument(): ReturnType<OpenApiGeneratorV31['generateDocument']> {

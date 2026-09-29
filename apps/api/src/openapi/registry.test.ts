@@ -15,6 +15,14 @@ const ROUTES = [
   { path: '/api/v1/auth/password/reset', method: 'post' },
   { path: '/api/v1/auth/invite/accept', method: 'post' },
   { path: '/api/v1/admin/users/invitations', method: 'post' },
+  { path: '/api/v1/admin/cities', method: 'get' },
+  { path: '/api/v1/admin/cities', method: 'post' },
+  { path: '/api/v1/admin/cities/{id}', method: 'get' },
+  { path: '/api/v1/admin/cities/{id}', method: 'patch' },
+  { path: '/api/v1/admin/cities/{id}', method: 'delete' },
+  { path: '/api/v1/admin/categories', method: 'get' },
+  { path: '/api/v1/admin/categories', method: 'post' },
+  { path: '/api/v1/admin/categories/{id}', method: 'delete' },
 ] as const;
 
 describe('document OpenAPI', () => {
@@ -35,6 +43,7 @@ describe('document OpenAPI', () => {
     expect(body).toContain('ACCOUNT_LOCKED');
     expect(body).toContain('TOKEN_INVALID');
     expect(body).toContain('EMAIL_TAKEN');
+    expect(body).toContain('IN_USE');
 
     const invitations = doc.paths?.['/api/v1/admin/users/invitations']?.post?.responses;
     expect(invitations?.['403']).toBeDefined();

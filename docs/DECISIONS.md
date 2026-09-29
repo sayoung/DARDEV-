@@ -457,6 +457,14 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** une classe Nest injectée dès maintenant (elle tirerait Prisma dans le test) ; un code distinct pour une visite cible inconnue ; exiger l'atteignabilité des scènes supprimées ; messages traduits dans `@xplor/i18n` (l'interface admin reste en français, F-04).
 - **À valider :** oui
 
+## D-69 — CRUD des villes et des catégories (API-25)
+
+- **Date :** 29/09/2026
+- **Décision :** `CatalogModule` expose GET, POST, PATCH et DELETE sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Les contrôleurs valident avec les schémas Zod déjà dans `@xplor/shared` (`safeParse`, 400 sans détail, comme l'auth). La lecture est ouverte à toute session. L'écriture passe par `canManageCatalog` (ADMIN et EDITOR), distincte de `canManageContent` qui vise les visites. Le PATCH remplace toute la ressource (D-67). La liste est un tableau JSON trié sur `name.fr`, sans pagination : API-25 ne la demande pas, contrairement à API-21. GET `/:id` fait partie du CRUD. Une ville est « utilisée » dès qu'une ligne `Tour` la référence, y compris si `deletedAt` est posé (`onDelete: Restrict`). Une catégorie l'est dès qu'une ligne `TourCategory` existe. Le DELETE répond alors 409 `{ error: { code: "IN_USE", message } }`, format du cahier section 7. Les erreurs d'auth du socle M0 restent `{ statusCode, code, message }` : les aligner n'est pas dans ce lot. Un identifiant qui n'est pas un UUID v7 répond 400 ; une ligne absente répond 404 Nest.
+- **Seed :** upsert sur des UUID v7 fixes. Villes Rabat, Salé, Kénitra, Témara, région `Rabat-Salé-Kénitra`, centres WGS84 approximatifs (Rabat 34.02088, −6.84165 ; Salé 34.03723, −6.79846 ; Kénitra 34.26101, −6.5802 ; Témara 33.92866, −6.90656). Catégories : Monuments (`landmark`, `#1F6F8B`, comme l'exemple de manifeste), Médina, Plages, Gastronomie, Nature, Artisanat, `weight` de 1 à 6. Traductions arabes et anglaises proposées (Salé → Sale, Kénitra → Kenitra, Témara → Temara ; Médina → Medina ; Gastronomie → المطبخ / Gastronomy ; Artisanat → الصناعة التقليدية / Crafts).
+- **Alternatives :** réutiliser `canManageContent` sans règle dédiée ; liste paginée via `PaginationQuery` ; 409 au format `{ statusCode, code, message }` du socle ; ignorer les visites à `deletedAt` ; slug unique à la place d'UUID fixes pour le seed.
+- **À valider :** oui (coordonnées, icônes, couleurs, traductions, poids). Le format 409 suit le cahier et la consigne du jalon.
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

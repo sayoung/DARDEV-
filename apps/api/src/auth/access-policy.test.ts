@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canAccessHotel,
+  canManageCatalog,
   canManageContent,
   canManageUsers,
   canViewRawStats,
@@ -25,6 +26,18 @@ describe('canManageContent', () => {
   it('refuse HOTEL_MANAGER et PARTNER', () => {
     expect(canManageContent(principal(Role.HOTEL_MANAGER, [HOTEL_A]))).toBe(false);
     expect(canManageContent(principal(Role.PARTNER, [HOTEL_A]))).toBe(false);
+  });
+});
+
+describe('canManageCatalog', () => {
+  it('autorise ADMIN et EDITOR', () => {
+    expect(canManageCatalog(principal(Role.ADMIN))).toBe(true);
+    expect(canManageCatalog(principal(Role.EDITOR))).toBe(true);
+  });
+
+  it('refuse HOTEL_MANAGER et PARTNER', () => {
+    expect(canManageCatalog(principal(Role.HOTEL_MANAGER, [HOTEL_A]))).toBe(false);
+    expect(canManageCatalog(principal(Role.PARTNER, [HOTEL_A]))).toBe(false);
   });
 });
 
