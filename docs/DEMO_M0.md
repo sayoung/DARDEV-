@@ -6,7 +6,7 @@ Préparer le poste comme dans `docs/INSTALL.md` : `nvm use 22`, puis les deux fi
 
 ## Variante — démo sans Docker local
 
-Tant que la virtualisation est désactivée sur le poste (D-62), les critères 1, 2 et 7 se lisent sur la CI. Le run de référence est https://github.com/sayoung/DARDEV-/actions/runs/36569962273 (commit `b100f8c`, étape « API smoke » verte).
+Tant que la virtualisation est désactivée sur le poste (D-62), les critères 1, 2 et 7 se lisent sur la CI. Le run de référence est https://github.com/sayoung/DARDEV-/actions/runs/36580207347 (commit `1eaf986`, étape « API smoke » verte).
 
 1. Ouvrir ce run. L'étape « API smoke » couvre `db:deploy` sur une base PostgreSQL 16 vierge, le seed, `GET /api/health` à 200 (`db`, `redis` et `storage` à `ok`), `openapi.json` à 200, la connexion admin, puis `/auth/me` à 200.
 2. Télécharger l'artefact `playwright-results` en bas de la page du run.
