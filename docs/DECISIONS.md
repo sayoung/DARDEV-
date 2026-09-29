@@ -312,6 +312,7 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 
 - **Date :** 29/09/2026
 - **Décision :** L'URL indiquée par le porteur est `https://github.com/sayoung/DARDEV-.git`. Le workflow `.github/workflows/ci.yml` ne s'exécute qu'après un push sur `main` ou `develop`. Cette session n'ajoute pas de remote et ne pousse pas : l'orchestrateur réserve les commandes git qui modifient le dépôt. « CI verte » reste bloquée jusqu'à ce push.
+- **Complément (29/09/2026) :** le porteur a confirmé le remote et le push. `gh auth status` : compte `sayoung`, actif, scopes `gist`, `read:org`, `repo`. `gh run list --repo sayoung/DARDEV- --branch develop --limit 5` ne renvoie qu'un run, `36555554248` (push, 29/09/2026 10:26 UTC), conclusion `failure`. URL : `https://github.com/sayoung/DARDEV-/actions/runs/36555554248`. Le dépôt distant existe. Cette session ne pousse toujours pas.
 - **Alternatives :** créer le dépôt sous une organisation GitHub `DARDEV` plutôt que sous le compte `sayoung`.
 - **À valider :** non
 
@@ -339,8 +340,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 
 - **Date :** 29/09/2026
 - **Décision :** Après `pnpm test:int`, le job unique de `.github/workflows/ci.yml` installe Chromium avec `pnpm exec playwright install --with-deps chromium` (bibliothèques système du runner `ubuntu-latest` ; Firefox et WebKit restent absents, D-54), lance `pnpm test:e2e` avec `CI=true` (le serveur Vite n'est pas réutilisé, D-54), puis publie `test-results/` via `actions/upload-artifact@v4` (`name: playwright-results`, `if: always()`, `include-hidden-files: true`). Le jeton du workflow reste limité à `contents: read` : `actions/upload-artifact@v4` s'authentifie avec `ACTIONS_RUNTIME_TOKEN` et ne demande aucune permission du `GITHUB_TOKEN`. `include-hidden-files` est requis parce que `upload-artifact@v4` ignore les fichiers cachés et que Playwright écrit `test-results/.last-run.json` même quand tous les tests passent. Aucun paquet npm n'est ajouté. L'exécution distante attend le push (D-53).
+- **Complément (29/09/2026) :** le push de `develop` a eu lieu. Le run `36555554248` s'arrête avant Playwright, à `pnpm test:int`. L'artefact `playwright-results` n'a pas été publié. La correction du graphe Nest est D-57.
 - **Alternatives :** `playwright install chromium` sans `--with-deps` (les bibliothèques manquent sur une image Ubuntu nue) ; n'envoyer l'artefact qu'en cas d'échec ; omettre `include-hidden-files` (un run vert ne publie que `.last-run.json`, que l'action ignore).
 - **À valider :** oui (`include-hidden-files` ; l'ordre des étapes, `--with-deps chromium`, `CI=true` et l'artefact `playwright-results` sont imposés par la consigne)
+
+## D-57 — Injection Nest explicite sous Vitest (NF-08, CI)
+
+- **Date :** 29/09/2026
+- **Décision :** Le run `36555554248` échoue à l'étape « Tests d'intégration » (`pnpm test:int`). Journal : `Nest can't resolve dependencies of the AuthController (?, Symbol(ENV))`. L'argument d'index 0 est indéfini au runtime. Vitest 3 transforme le TypeScript avec esbuild, qui n'émet pas `design:paramtypes`. Les décorateurs `@Inject(...)` restent, eux, enregistrés dans `self:paramtypes`. `nest build` (tsc, `emitDecoratorMetadata`) n'est pas touché : le binaire de production résout encore les types. Les constructeurs du graphe `AppModule` qui injectaient une classe sans jeton déclarent maintenant `@Inject` : `AuthController` (`AuthService`), `UsersController` (`UsersService`), `HealthController` (`HealthService`), `PrismaUserRepository`, `PrismaUserLookup`, `PrismaUserTokenRepository`, `PrismaUnitOfWork` et `DbHealthProbe` (`PrismaService`). `apps/api/src/app.module.test.ts` compile `AppModule.forRoot` sous Vitest et résout ces trois contrôleurs, sans PostgreSQL. Aucun paquet npm. Le workflow `.github/workflows/ci.yml` n'est pas modifié. Le run corrigé n'a pas été relancé : pas de push.
+- **Constat du run `36555554248` :** job unique `ci` (`109363717843`) en échec. lint vert, typecheck vert, test:int échec, e2e ignoré, test unitaire ignoré, audit ignoré. L'étape « Publier les résultats Playwright » se termine avec l'avertissement `No files were found with the provided path: test-results/. No artifacts will be uploaded.` L'artefact `playwright-results` est absent (liste d'artefacts vide).
+- **Alternatives :** ajouter `unplugin-swc` (ou `@swc/core`) avec `decoratorMetadata: true` pour que Vitest émette `design:paramtypes` ; lancer `test:int` sur le JavaScript produit par `nest build`.
+- **À valider :** oui (`@Inject` explicite plutôt qu'un second compilateur)
 
 ## Encore à valider (cahier des charges, section 11.2)
 

@@ -39,7 +39,7 @@ const FIVE_PER_MINUTE = { default: { limit: 5, ttl: 60_000 } };
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly auth: AuthService,
+    @Inject(AuthService) private readonly auth: AuthService,
     @Inject(ENV) private readonly env: Pick<Env, 'NODE_ENV'>,
   ) {}
 

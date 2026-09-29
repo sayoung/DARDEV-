@@ -27,7 +27,7 @@ export function createS3Client(env: Env): S3Client {
 
 @Injectable()
 export class DbHealthProbe implements HealthProbe {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async run(): Promise<void> {
     await this.prisma.$queryRaw`SELECT 1`;

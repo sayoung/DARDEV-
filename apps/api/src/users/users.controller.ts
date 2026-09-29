@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpException,
   HttpStatus,
+  Inject,
   Post,
   Req,
   UseGuards,
@@ -21,7 +22,7 @@ import { UsersService } from './users.service.js';
 
 @Controller('admin/users')
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(@Inject(UsersService) private readonly users: UsersService) {}
 
   @Post('invitations')
   @HttpCode(HttpStatus.CREATED)
