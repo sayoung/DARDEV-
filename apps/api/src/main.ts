@@ -4,11 +4,13 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import fastifyCookie from '@fastify/cookie';
 import { RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 
 import { AppModule } from './app.module.js';
+import { SESSION_COOKIE_NAME } from './auth/session-cookie.js';
 import { loadEnv } from './config/env.js';
 
 function loadLocalEnvFile(): void {
@@ -26,6 +28,17 @@ async function bootstrap(): Promise<void> {
     AppModule.forRoot(env),
     new FastifyAdapter(),
   );
+  await app.register(fastifyCookie);
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .decorate('sessionCookie', {
+      name: SESSION_COOKIE_NAME,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: env.NODE_ENV === 'production',
+      path: '/',
+    });
   app.setGlobalPrefix('api/v1', {
     exclude: [{ path: 'api/health', method: RequestMethod.GET }],
   });

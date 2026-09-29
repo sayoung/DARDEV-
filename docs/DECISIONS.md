@@ -165,6 +165,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | ioredis              | Client Redis unique pour le `PING` du healthcheck, fermé à l'arrêt de `RedisModule`. 6.0.0.   | MIT        |
 | @aws-sdk/client-s3   | `HeadBucket` du healthcheck vers MinIO (`S3_ENDPOINT`, `forcePathStyle`). 3.1142.0.            | Apache-2.0 |
 
+## D-39 — Sessions, cookie `xplor_sid` et CSRF (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `@fastify/cookie` 11.1.2 (majeure compatible avec Fastify 5) est enregistré dans `main.ts`. Le cookie `xplor_sid` est `httpOnly`, `SameSite=Lax`, `path: '/'`, et `Secure` seulement si `NODE_ENV=production`. Sa valeur est l'identifiant opaque (32 octets en base64url), non signée : l'état reste dans Redis (`sess:<id>`, TTL d'inactivité 8 h renouvelé par `touch`, set `user-sess:<userId>`). `SESSION_SECRET` reste exigé par l'environnement et n'est pas encore consommé. `fastify` est épinglé à 5.11.3, la version déjà exigée par `@nestjs/platform-fastify` : deux copies (5.11.3 et 5.12.5) empêchaient l'augmentation de types du plugin cookie de s'appliquer à l'instance Nest. `InMemorySessionStore` n'est pas branché dans Nest : il sert aux tests. `SessionGuard` et `CsrfGuard` ne sont pas des guards globaux, pour que `GET /api/health` reste public. `Principal.hotelIds` est vide tant que `UserHotel` n'existe pas (M1). La comparaison CSRF utilise `crypto.timingSafeEqual` ; deux jetons de longueurs différentes sont refusés (403), car `timingSafeEqual` lèverait.
+- **Alternatives :** signer le cookie avec `SESSION_SECRET` ; guard global et liste d'exclusion pour `/api/health` ; `ioredis-mock` pour exercer `RedisSessionStore`.
+- **À valider :** oui (cookie non signé ; guards non globaux)
+
+| Paquet          | Raison                                                                                          | Licence |
+| --------------- | ----------------------------------------------------------------------------------------------- | ------- |
+| @fastify/cookie | Lire et poser le cookie de session `xplor_sid` (httpOnly, SameSite=Lax). 11.1.2, Fastify 5.   | MIT     |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
