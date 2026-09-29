@@ -44,6 +44,23 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 propre 
 - **Alternatives :** archiver le code Drupal dans ce dépôt (`legacy-drupal/` ou branche `legacy-drupal`).
 - **À valider :** non
 
+## D-29 — Dépendances de validation et de qualité (NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** outillage de qualité à la racine et schémas partagés dans `@xplor/shared`. Versions majeures tenues à ce que demandent NF-08 et la section 4.1 du cahier : ESLint 9 (le registre npm propose déjà la 10), TypeScript 5 (la 7 est publiée, et `typescript-eslint` 8 n'accepte pas TypeScript ≥ 6.1), Vitest 3 (dernière majeure qui charge encore `vitest.workspace.ts`).
+- **Alternatives :** prendre les dernières majeures du registre (ESLint 10, TypeScript 7, Vitest 5) et remplacer `vitest.workspace.ts` par `test.projects`.
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+|---|---|---|
+| zod | Schémas de validation partagés entre l'API et les fronts (`LocalizedTextSchema`, langues). | MIT |
+| eslint | Analyse statique ESLint 9, configuration plate `eslint.config.mjs`. | MIT |
+| @eslint/js | Règles recommandées ESLint, socle de la config plate. | MIT |
+| typescript-eslint | Règles TypeScript en mode `strict-type-checked`, dont `@typescript-eslint/no-explicit-any` en erreur. | MIT |
+| prettier | Formatage commun (`.prettierrc`, `.prettierignore`). | MIT |
+| vitest | Tests unitaires, fichier de workspace `vitest.workspace.ts`. | MIT |
+| typescript | `tsc --noEmit`, TypeScript 5 imposé par la pile. | Apache-2.0 |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
