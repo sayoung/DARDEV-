@@ -352,6 +352,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** ajouter `unplugin-swc` (ou `@swc/core`) avec `decoratorMetadata: true` pour que Vitest émette `design:paramtypes` ; lancer `test:int` sur le JavaScript produit par `nest build`.
 - **À valider :** oui (`@Inject` explicite plutôt qu'un second compilateur)
 
+## D-58 — Test de fumée sans proxy vers l'API (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `e2e/smoke.spec.ts` enregistre `page.route` sur `GET /api/v1/auth/me` avant `page.goto`. La réponse est 401 avec le corps `{ code: 'UNAUTHENTICATED' }`. Le navigateur ne joint donc pas le proxy Vite (`/api` → `http://localhost:3000`), qui journalisait `ECONNREFUSED` tant que l'API n'était pas démarrée. Le titre attendu est `resources.fr.common.appName` (`@xplor/i18n`). Aucune aide partagée : `e2e/back-office.spec.ts` répond 401 sans corps sur cette route (D-55) et son `codedError` ne connaît que `INVALID_CREDENTIALS` et `ACCOUNT_LOCKED`. Aucun paquet npm.
+- **Alternatives :** réutiliser le 401 sans corps du back-office ; extraire un helper commun ; démarrer l'API dans `webServer`.
+- **À valider :** oui (corps `{ code: 'UNAUTHENTICATED' }` plutôt que le 401 vide de D-55)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
