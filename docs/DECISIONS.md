@@ -326,6 +326,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 
 `@types/node` (D-33, MIT, `^22.19.1`) est redéclaré en devDependency racine : le `tsconfig.json` racine typecheck `playwright.config.ts`, qui lit `process.env.CI`. pnpm n'expose pas les types d'un autre paquet du workspace à la racine.
 
+## D-55 — Spec Playwright du back-office et imports workspace (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `e2e/back-office.spec.ts` importe `@xplor/shared` et `@xplor/i18n` par leur nom de paquet. Le `tsconfig.json` racine déclare `paths` vers `packages/shared/src/index.ts` et `packages/i18n/src/index.ts`, plus `resolveJsonModule` (les locales sont des JSON). Aucun paquet npm n'est ajouté : pnpm n'installe pas ces paquets à la racine, et Playwright résout les `paths` du `tsconfig.json` le plus proche. Les corps simulés qui ont un schéma partagé passent par `MeResponseSchema.parse`. Les requêtes de formulaire passent par `LoginRequestSchema` et `ForgotPasswordRequestSchema`. Les réponses 401 `INVALID_CREDENTIALS` et 423 `ACCOUNT_LOCKED` reprennent le corps Nest `{ statusCode, code, message }` : ces codes n'ont pas de schéma Zod dans `@xplor/shared` (ils sont locaux au registre OpenAPI). `GET /auth/me` anonyme, `POST /auth/logout` et `POST /auth/password/forgot` n'ont pas de corps JSON (401, 204, 202). La capture `docs/screenshots/login-ar.png` est produite par le scénario `?lang=ar` et citée dans `docs/DEMO_M0.md`.
+- **Alternatives :** déclarer `@xplor/shared` et `@xplor/i18n` en devDependencies racine (`workspace:*`), ce qui modifierait `pnpm-lock.yaml` ; importer les sources par chemin relatif.
+- **À valider :** oui (alias `paths` à la racine ; pas de schéma partagé pour les corps d'erreur)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
