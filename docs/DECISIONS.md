@@ -114,6 +114,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | prisma | CLI : `migrate`, `generate`, `validate`. Version 6 pour garder `DATABASE_URL` dans le schéma. | Apache-2.0 |
 | @prisma/client | Client Prisma utilisé par `PrismaService` au démarrage NestJS. | Apache-2.0 |
 
+## D-35 — Couverture de `AccessPolicy` (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `@vitest/coverage-v8` 3.2.7 (même majeure que Vitest, D-29) est le fournisseur de `vitest --coverage`. La configuration racine `vitest.config.ts` mesure `apps/api/src/auth/access-policy.ts` et exige 100 % (lignes, branches, fonctions, instructions). Ce fichier est inclus dans le `tsconfig.json` racine, comme `vitest.workspace.ts`, pour le typecheck et ESLint. Le fichier de workspace reste en place (D-29).
+- **Alternatives :** `@vitest/coverage-istanbul` ; pas de seuil tant que la couverture globale des modules métier (NF-08, ≥ 70 %) n'est pas en place.
+- **À valider :** oui
+
+| Paquet | Raison | Licence |
+|---|---|---|
+| @vitest/coverage-v8 | Fournisseur V8 de `vitest --coverage`, pour vérifier `access-policy.ts` à 100 %. | MIT |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
