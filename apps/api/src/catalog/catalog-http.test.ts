@@ -1,9 +1,15 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { CityCreateSchema, Role, type Principal } from '@xplor/shared';
+import { CityCreateSchema, Role, TourStatus, type Principal } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import type { SessionRequest } from '../auth/session-request.js';
-import { parseBody, parseResourceId, requireCatalogWriter } from './catalog-http.js';
+import {
+  parseBody,
+  parseResourceId,
+  parseTourListQuery,
+  requireCatalogWriter,
+  requireContentManager,
+} from './catalog-http.js';
 
 const CITY_ID = '01990000-0000-7000-8000-000000000001';
 
@@ -35,6 +41,55 @@ describe('requireCatalogWriter', () => {
     expect(() => {
       requireCatalogWriter(request(principal(Role.HOTEL_MANAGER)));
     }).toThrow(ForbiddenException);
+  });
+});
+
+describe('requireContentManager', () => {
+  it('laisse passer ADMIN et EDITOR et renvoie le principal', () => {
+    const admin = principal(Role.ADMIN);
+    expect(requireContentManager(request(admin))).toEqual(admin);
+    expect(requireContentManager(request(principal(Role.EDITOR))).role).toBe(Role.EDITOR);
+  });
+
+  it('refuse une session sans principal, PARTNER et HOTEL_MANAGER', () => {
+    expect(() => {
+      requireContentManager(request());
+    }).toThrow(ForbiddenException);
+    expect(() => {
+      requireContentManager(request(principal(Role.PARTNER)));
+    }).toThrow(ForbiddenException);
+    expect(() => {
+      requireContentManager(request(principal(Role.HOTEL_MANAGER)));
+    }).toThrow(ForbiddenException);
+  });
+});
+
+describe('parseTourListQuery', () => {
+  it('pose page à 1 et pageSize à 20 quand la query est vide', () => {
+    expect(parseTourListQuery({})).toEqual({ page: 1, pageSize: 20 });
+  });
+
+  it('convertit les chaînes numériques et garde les filtres', () => {
+    expect(
+      parseTourListQuery({
+        page: '2',
+        pageSize: ['10', '20'],
+        status: TourStatus.DRAFT,
+        cityId: CITY_ID,
+        q: 'kasbah',
+      }),
+    ).toEqual({
+      page: 2,
+      pageSize: 10,
+      status: TourStatus.DRAFT,
+      cityId: CITY_ID,
+      q: 'kasbah',
+    });
+  });
+
+  it('refuse une page qui n’est pas un entier', () => {
+    expect(() => parseTourListQuery({ page: '1.5' })).toThrow(BadRequestException);
+    expect(() => parseTourListQuery({ status: 'ARCHIVED' })).toThrow(BadRequestException);
   });
 });
 

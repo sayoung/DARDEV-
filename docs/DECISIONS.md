@@ -475,6 +475,19 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `Restrict` sur `Selection.hotel` (bloquerait toute suppression physique d'un hôtel qui a sa sélection) ; `Cascade` sur `Kiosk.hotel` (effacerait les appareils alors que le cahier prévoit `deletedAt`) ; `Cascade` sur `SelectionItem.tour` ; `UserHotel` avec un UUID en plus de la clé composite ; omettre `deletedAt` jusqu'au CRUD M5.
 - **À valider :** oui (coordonnées fictives, couleur, dates de contrat, type d'appareil `TOUCH_AND_HEADSET`)
 
+## D-71 — CRUD des visites (API-21, partie 1)
+
+- **Date :** 29/09/2026
+- **Décision :** `GET`, `POST`, `PATCH` et `DELETE` sur `/api/v1/admin/tours`. Lecture et écriture passent par `canManageContent` : ADMIN et EDITOR seulement. PARTNER et HOTEL_MANAGER reçoivent 403, y compris en lecture (à la différence d’API-25, où la lecture du catalogue est ouverte). Les routes publish, unpublish, validate, duplicate, share-token, qr.svg, graph et preview-token restent hors de ce lot.
+- **Création :** le corps est `TourCreateSchema`. Le service impose `status = DRAFT` (D-26) et `publicShare = false` (D-05). `createdById` est l’utilisateur de la session. `contentVersion` reste au défaut Prisma, 1. `shareToken` est `crypto.randomBytes(16).toString('base64url')` : 22 caractères, sans nouveau paquet. D-67 prévoyait `nanoid` ; la consigne de ce lot l’écarte. Les `categoryIds` en double sont ignorés, l’ordre de première occurrence est conservé. Les jointures sont insérées dans la transaction de création.
+- **Mise à jour :** `TourUpdateSchema` remplace les champs éditables. `categoryIds` efface puis recrée toutes les lignes `TourCategory` dans la même transaction. `status`, `publicShare`, `shareToken` et `createdById` ne changent pas. `contentVersion` est incrémenté de 1 (cahier, 5.2). Les scènes et les hotspots incrémenteront cette version avec API-22 et API-23.
+- **Suppression :** `deletedAt` est posé, la réponse est 204. La ligne reste : une ville ou une catégorie encore référencée par une visite supprimée répond toujours 409 `IN_USE` (D-69).
+- **Liste :** `deletedAt` vide. Filtres `status`, `cityId`, `categoryId` (au moins une jointure) et `q` (contient le titre `fr`, insensible à la casse ; une chaîne vide ou blanche ne filtre pas). Tri `createdAt` décroissant, puis `id`. `page` absent vaut 1 ; `pageSize` défaut 20 (`PaginationQuery`). Les query strings sont converties en nombres dans le contrôleur : le schéma partagé ne coince pas les chaînes (D-67).
+- **Détail :** `categoryIds` dans l’ordre des UUID v7 de `TourCategory` (ordre d’insertion). `sceneCount` compte les scènes dont `deletedAt` est vide (même règle que le graphe de publication, D-68). `TourResponse` n’expose pas `publishedAt`, `startSceneId`, `deletedAt` ni les horodatages.
+- **Erreurs :** ville, catégorie ou vignette inconnue → 422 `{ error: { code, message } }` avec `CITY_NOT_FOUND`, `CATEGORY_NOT_FOUND` ou `COVER_ASSET_NOT_FOUND`, dans cet ordre. Visite absente ou déjà supprimée → 404. Identifiant qui n’est pas un UUID v7 → 400. Une clé étrangère apparue entre la vérification et l’écriture relance la même vérification.
+- **Alternatives :** `nanoid` (écarté par la consigne) ; lecture ouverte aux quatre rôles comme API-25 ; `contentVersion` figé jusqu’à la publication ; compter aussi les scènes supprimées ; tri sur le titre français ; laisser un `categoryId` répété échouer sur la contrainte d’unicité.
+- **À valider :** oui (jeton base64url plutôt que nanoid ; incrément de `contentVersion` dès le PATCH ; `q` vide ignoré ; scènes supprimées exclues du compteur)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

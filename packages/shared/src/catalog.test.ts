@@ -11,11 +11,14 @@ import {
   HotspotCreateSchema,
   HotspotIcon,
   HotspotType,
+  PaginatedTourResponseSchema,
   PaginationQuerySchema,
   ProcessingStatus,
   SceneCreateSchema,
   SceneUpdateSchema,
   TourCreateSchema,
+  TourListQuerySchema,
+  TourResponseSchema,
   TourStatus,
   TourUpdateSchema,
   ValidationIssueCode,
@@ -33,6 +36,7 @@ const id = {
   tour: '01990000-0000-7000-8000-000000000006',
   media: '01990000-0000-7000-8000-000000000007',
   categoryResponse: '01990000-0000-7000-8000-000000000008',
+  user: '01990000-0000-7000-8000-000000000009',
 } as const;
 
 const uuidV4 = '01990000-0000-4000-8000-000000000001';
@@ -188,6 +192,70 @@ describe('TourUpdateSchema', () => {
 
   it('refuse une latitude hors bornes', () => {
     expect(TourUpdateSchema.safeParse({ ...tour, lat: 90.1 }).success).toBe(false);
+  });
+});
+
+const tourResponse = {
+  id: id.tour,
+  ...tour,
+  status: TourStatus.DRAFT,
+  publicShare: false,
+  shareToken: 'abcdefghijklmnopqrstuv',
+  sceneCount: 0,
+  createdById: id.user,
+  contentVersion: 1,
+};
+
+describe('TourResponseSchema', () => {
+  it('renvoie la visite, son statut et le nombre de scènes', () => {
+    expect(TourResponseSchema.parse(tourResponse)).toEqual(tourResponse);
+  });
+
+  it('refuse un jeton de partage qui n’a pas 22 caractères', () => {
+    expect(TourResponseSchema.safeParse({ ...tourResponse, shareToken: 'court' }).success).toBe(
+      false,
+    );
+  });
+
+  it('refuse un nombre de scènes négatif', () => {
+    expect(TourResponseSchema.safeParse({ ...tourResponse, sceneCount: -1 }).success).toBe(false);
+  });
+});
+
+describe('TourListQuerySchema', () => {
+  it('pose page à 1 et pageSize à 20 quand ils sont omis', () => {
+    expect(TourListQuerySchema.parse({})).toEqual({ page: 1, pageSize: 20 });
+  });
+
+  it('accepte les filtres de la liste', () => {
+    expect(
+      TourListQuerySchema.parse({
+        page: 2,
+        pageSize: 10,
+        status: TourStatus.PUBLISHED,
+        cityId: id.city,
+        categoryId: id.category,
+        q: 'kasbah',
+      }),
+    ).toEqual({
+      page: 2,
+      pageSize: 10,
+      status: TourStatus.PUBLISHED,
+      cityId: id.city,
+      categoryId: id.category,
+      q: 'kasbah',
+    });
+  });
+
+  it('refuse un statut inconnu', () => {
+    expect(TourListQuerySchema.safeParse({ status: 'ARCHIVED' }).success).toBe(false);
+  });
+});
+
+describe('PaginatedTourResponseSchema', () => {
+  it('décrit une page de visites', () => {
+    const page = { items: [tourResponse], page: 1, pageSize: 20, total: 1 };
+    expect(PaginatedTourResponseSchema.parse(page)).toEqual(page);
   });
 });
 

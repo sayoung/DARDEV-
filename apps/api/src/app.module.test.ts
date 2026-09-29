@@ -7,6 +7,7 @@ import { AppModule } from './app.module.js';
 import { AuthController } from './auth/auth.controller.js';
 import { CategoriesController } from './catalog/categories.controller.js';
 import { CitiesController } from './catalog/cities.controller.js';
+import { ToursController } from './catalog/tours.controller.js';
 import { loadEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { UsersController } from './users/users.controller.js';
@@ -37,6 +38,7 @@ describe('AppModule', () => {
     expect(moduleRef.get(UsersController)).toBeInstanceOf(UsersController);
     expect(moduleRef.get(CitiesController)).toBeInstanceOf(CitiesController);
     expect(moduleRef.get(CategoriesController)).toBeInstanceOf(CategoriesController);
+    expect(moduleRef.get(ToursController)).toBeInstanceOf(ToursController);
     expect(moduleRef.get(HealthController)).toBeInstanceOf(HealthController);
     await moduleRef.close();
   });

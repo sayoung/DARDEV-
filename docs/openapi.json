@@ -2919,6 +2919,1686 @@
           }
         }
       }
+    },
+    "/api/v1/admin/tours": {
+      "get": {
+        "summary": "Lister les visites",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "required": false,
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "PUBLISHED"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "cityId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "categoryId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page de visites non supprimées.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "title": {
+                            "type": "object",
+                            "properties": {
+                              "fr": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "ar": {
+                                "type": "string"
+                              },
+                              "en": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "fr"
+                            ]
+                          },
+                          "summary": {
+                            "type": "object",
+                            "properties": {
+                              "fr": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              },
+                              "ar": {
+                                "type": "string",
+                                "maxLength": 500
+                              },
+                              "en": {
+                                "type": "string",
+                                "maxLength": 500
+                              }
+                            },
+                            "required": [
+                              "fr"
+                            ]
+                          },
+                          "description": {
+                            "type": "object",
+                            "properties": {
+                              "fr": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "ar": {
+                                "type": "string"
+                              },
+                              "en": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "fr"
+                            ]
+                          },
+                          "cityId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "categoryIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "minItems": 1
+                          },
+                          "coverAssetId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "durationMinutes": {
+                            "type": "integer"
+                          },
+                          "lat": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                          },
+                          "lng": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                          },
+                          "practicalInfo": {
+                            "type": "object",
+                            "properties": {
+                              "fr": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "ar": {
+                                "type": "string"
+                              },
+                              "en": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "fr"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "DRAFT",
+                              "PUBLISHED"
+                            ]
+                          },
+                          "publicShare": {
+                            "type": "boolean"
+                          },
+                          "shareToken": {
+                            "type": "string",
+                            "minLength": 22,
+                            "maxLength": 22
+                          },
+                          "sceneCount": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "createdById": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "contentVersion": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "summary",
+                          "cityId",
+                          "categoryIds",
+                          "coverAssetId",
+                          "status",
+                          "publicShare",
+                          "shareToken",
+                          "sceneCount",
+                          "createdById",
+                          "contentVersion"
+                        ]
+                      }
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 100
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "page",
+                    "pageSize",
+                    "total"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de liste refusés.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer une visite",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Corps de création. Le statut et le partage ne sont pas saisis.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "en": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  },
+                  "summary": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      "ar": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "en": {
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  },
+                  "description": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "en": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  },
+                  "cityId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "categoryIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1
+                  },
+                  "coverAssetId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "durationMinutes": {
+                    "type": "integer"
+                  },
+                  "lat": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "lng": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  "practicalInfo": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "en": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "summary",
+                  "cityId",
+                  "categoryIds",
+                  "coverAssetId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Visite créée en brouillon, partage public désactivé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "ar": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "en": {
+                          "type": "string",
+                          "maxLength": 500
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "description": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "cityId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "categoryIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "minItems": 1
+                    },
+                    "coverAssetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "durationMinutes": {
+                      "type": "integer"
+                    },
+                    "lat": {
+                      "type": "number",
+                      "minimum": -90,
+                      "maximum": 90
+                    },
+                    "lng": {
+                      "type": "number",
+                      "minimum": -180,
+                      "maximum": 180
+                    },
+                    "practicalInfo": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "DRAFT",
+                        "PUBLISHED"
+                      ]
+                    },
+                    "publicShare": {
+                      "type": "boolean"
+                    },
+                    "shareToken": {
+                      "type": "string",
+                      "minLength": 22,
+                      "maxLength": 22
+                    },
+                    "sceneCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "createdById": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "contentVersion": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "summary",
+                    "cityId",
+                    "categoryIds",
+                    "coverAssetId",
+                    "status",
+                    "publicShare",
+                    "shareToken",
+                    "sceneCount",
+                    "createdById",
+                    "contentVersion"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corps refusé par TourCreateSchema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ville, catégorie ou vignette inconnue.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "CITY_NOT_FOUND",
+                            "CATEGORY_NOT_FOUND",
+                            "COVER_ASSET_NOT_FOUND"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tours/{id}": {
+      "get": {
+        "summary": "Lire une visite",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visite trouvée, avec ses catégories et le nombre de scènes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "ar": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "en": {
+                          "type": "string",
+                          "maxLength": 500
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "description": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "cityId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "categoryIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "minItems": 1
+                    },
+                    "coverAssetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "durationMinutes": {
+                      "type": "integer"
+                    },
+                    "lat": {
+                      "type": "number",
+                      "minimum": -90,
+                      "maximum": 90
+                    },
+                    "lng": {
+                      "type": "number",
+                      "minimum": -180,
+                      "maximum": 180
+                    },
+                    "practicalInfo": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "DRAFT",
+                        "PUBLISHED"
+                      ]
+                    },
+                    "publicShare": {
+                      "type": "boolean"
+                    },
+                    "shareToken": {
+                      "type": "string",
+                      "minLength": 22,
+                      "maxLength": 22
+                    },
+                    "sceneCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "createdById": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "contentVersion": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "summary",
+                    "cityId",
+                    "categoryIds",
+                    "coverAssetId",
+                    "status",
+                    "publicShare",
+                    "shareToken",
+                    "sceneCount",
+                    "createdById",
+                    "contentVersion"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Visite introuvable ou supprimée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Remplacer une visite",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Mêmes champs que la création. categoryIds remplace l’ensemble.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "en": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  },
+                  "summary": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      "ar": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "en": {
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  },
+                  "description": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "en": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  },
+                  "cityId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "categoryIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1
+                  },
+                  "coverAssetId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "durationMinutes": {
+                    "type": "integer"
+                  },
+                  "lat": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "lng": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  "practicalInfo": {
+                    "type": "object",
+                    "properties": {
+                      "fr": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "ar": {
+                        "type": "string"
+                      },
+                      "en": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fr"
+                    ]
+                  }
+                },
+                "required": [
+                  "title",
+                  "summary",
+                  "cityId",
+                  "categoryIds",
+                  "coverAssetId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Visite mise à jour.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "ar": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "en": {
+                          "type": "string",
+                          "maxLength": 500
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "description": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "cityId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "categoryIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "minItems": 1
+                    },
+                    "coverAssetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "durationMinutes": {
+                      "type": "integer"
+                    },
+                    "lat": {
+                      "type": "number",
+                      "minimum": -90,
+                      "maximum": 90
+                    },
+                    "lng": {
+                      "type": "number",
+                      "minimum": -180,
+                      "maximum": 180
+                    },
+                    "practicalInfo": {
+                      "type": "object",
+                      "properties": {
+                        "fr": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "ar": {
+                          "type": "string"
+                        },
+                        "en": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "fr"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "DRAFT",
+                        "PUBLISHED"
+                      ]
+                    },
+                    "publicShare": {
+                      "type": "boolean"
+                    },
+                    "shareToken": {
+                      "type": "string",
+                      "minLength": 22,
+                      "maxLength": 22
+                    },
+                    "sceneCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "createdById": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "contentVersion": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "summary",
+                    "cityId",
+                    "categoryIds",
+                    "coverAssetId",
+                    "status",
+                    "publicShare",
+                    "shareToken",
+                    "sceneCount",
+                    "createdById",
+                    "contentVersion"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant ou corps refusé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Visite introuvable ou supprimée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ville, catégorie ou vignette inconnue.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "CITY_NOT_FOUND",
+                            "CATEGORY_NOT_FOUND",
+                            "COVER_ASSET_NOT_FOUND"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer une visite",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Suppression logique (deletedAt). Corps vide."
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Visite introuvable ou déjà supprimée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}

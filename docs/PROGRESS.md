@@ -11,19 +11,18 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 — schéma Prisma 5.6 à 5.8 (`Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, D-66).
+**Exigence :** M1 API-21 partie 1 — CRUD des visites (`/api/v1/admin/tours`). Hors de ce lot : publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token.
 
 Plan :
 
-1. Modèles et enums dans `schema.prisma` (UUID v7, `createdAt` / `updatedAt`, index sur les clés étrangères, `deletedAt` sur `Hotel` et `Kiosk`). `onDelete` consigné en D-70. Ne pas modifier les migrations déjà présentes.
-2. `prisma migrate dev --name hotels_kiosks` sous Node 22, Docker démarré.
-3. Seed idempotent : 1 hôtel à Rabat (FIVE, RENTAL, langues fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`.
-4. Étendre `test/migrations.int.test.ts` et `test/seed.int.test.ts` (1 hôtel, 1 kiosque, 1 rattachement après deux seeds).
-5. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`, `pnpm db:seed` deux fois. Aucun commit (orchestrateur).
+1. `TourResponse`, `Paginated<TourResponse>` et `TourListQuery` dans `@xplor/shared` (`PaginationQuery` plus filtres `status`, `cityId`, `categoryId`, `q`).
+2. `ToursController` fin → `ToursService` → Prisma. Lecture et écriture via `canManageContent` (ADMIN, EDITOR). Création en `DRAFT` (D-26), `publicShare` false (D-05), `shareToken` par `crypto.randomBytes` (22 caractères), `createdById` = session. PATCH : `categoryIds` remplace `TourCategory` dans une transaction. DELETE : `deletedAt`, 204. Ville, catégorie ou vignette inconnue → 422 `{ error: { code, message } }`. Visite absente ou supprimée → 404.
+3. OpenAPI régénéré. Tests unitaires du service et `test/tours.int.test.ts` (401, 403 CSRF, 403 PARTNER et HOTEL_MANAGER, brouillon sans partage, filtre par ville, 404 après suppression, 422 ville inconnue).
+4. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : modèles `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel` et migration `20260929183235_hotels_kiosks` (D-70). Les migrations précédentes ne sont pas modifiées. Seed idempotent : hôtel 5 étoiles en location à Rabat, sélection vide, kiosque « Hall principal » `PENDING`, rattachement de `manager@xplor.local`. `pnpm lint`, `pnpm typecheck` et `pnpm test` (281) verts. `pnpm test:int` (14) vert, dont les tables et le seed lancé deux fois. `pnpm db:seed` deux fois sur la base de dev. Le `Principal` ne charge pas encore les hôtels. Aucun commit (orchestrateur).
+Réalisé (29/09/2026, Node 22.23.3) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/tours` (D-71). Création en `DRAFT`, `publicShare` false, `shareToken` de 22 caractères (`crypto.randomBytes`), `createdById` = session. Liste paginée (ville, catégorie, statut, titre fr) sans les visites supprimées. PATCH remplace `TourCategory` dans une transaction. DELETE pose `deletedAt` (204). 422 `CITY_NOT_FOUND` / `CATEGORY_NOT_FOUND` / `COVER_ASSET_NOT_FOUND`. Lecture et écriture : ADMIN et EDITOR (`canManageContent`). `pnpm lint`, `pnpm typecheck` et `pnpm test` (301) verts. `pnpm test:int` (21) vert, dont 7 tests HTTP des visites. OpenAPI régénéré. Couverture de `catalog.ts` : 100 % (70 tests du paquet). Aucun commit (orchestrateur).
 
-API-25 (session précédente) : CRUD villes et catégories en place. Voir la section « Fait ».
+Le schéma 5.6 à 5.8 et API-25 sont dans la section « Fait ».
 
 ## Definition of Done — M1
 
@@ -44,14 +43,15 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### Fait
 
-- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (63 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). L'API des visites et les écrans restent à faire. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `TourResponse`, `PaginatedTourResponse` et `TourListQuery` complètent le contrat de liste (D-71). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (70 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). Le CRUD des visites est en place (API-21, partie 1). Duplication, dépublication et écrans restent à faire. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **API-21, partie 1** (CRUD des visites, D-71) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/tours`. Liste paginée (`status`, `cityId`, `categoryId`, `q` sur le titre fr), détail avec `categoryIds` et `sceneCount`. Création en `DRAFT` (D-26), `publicShare` false (D-05), `shareToken` émis par le service, `createdById` = session. Suppression logique. 422 si la ville, une catégorie ou la vignette est inconnue. ADMIN et EDITOR seulement. OpenAPI à jour. Hors de ce lot : publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token. Pas d'écran admin.
 - **F-03** (règles de publication, fonction pure) : `validateTour` dans `apps/api/src/catalog/tour-validation.ts` (25 tests, dont « Visite manuelle »). `ValidationIssue` et `ValidationIssueCode` dans `@xplor/shared`. Couverture 100 %. Pas de route 422 ni d'écran (D-68).
 - **API-25** (CRUD villes et catégories) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Lecture pour toute session ; écriture ADMIN et EDITOR (`canManageCatalog`). 409 `IN_USE` au format du cahier. Seed fr/ar/en. OpenAPI à jour. Pas d'écran admin (D-69).
 - **Schéma 5.6 à 5.8** (D-66, D-70) : `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, migration `20260929183235_hotels_kiosks`. Seed : 1 hôtel à Rabat (FIVE, RENTAL, fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`. CRUD et écrans restent en M5. La session ne charge pas encore `hotelIds`.
 
 ### En cours
 
-- Reste du jalon M1 : API-21/22/23, écrans admin (y compris villes et catégories), F-02 (sans traitement), F-04, F-05, et les 3 visites liées du seed. La partie liste / CRUD / duplication de F-01 n'est pas commencée. F-03 : la fonction est en place ; la réponse 422 et l'affichage des problèmes dans l'admin restent à faire. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD (publish, unpublish, validate, duplicate, share-token, qr.svg, graph, preview-token), API-22/23, écrans admin (y compris villes, catégories et visites), F-02 (sans traitement), F-04, F-05, et les 3 visites liées du seed. F-01 : liste et CRUD des visites sont en place ; duplication et dépublication restent. F-03 : la fonction est en place ; la réponse 422 de publication et l'affichage des problèmes dans l'admin restent à faire. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 
