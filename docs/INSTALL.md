@@ -2,7 +2,7 @@
 
 ## Prérequis
 
-- Docker Desktop, backend WSL2
+- Docker Desktop, backend WSL2. Si le moteur ne démarre pas, suivre « Dépannage : moteur Docker injoignable » ci-dessous.
 - Node.js 22. `package.json` exige `>=22 <23` et `.nvmrc` contient `22`. Si le Node du terminal est une autre version : `nvm use 22` (ou `nvm use`, qui lit `.nvmrc`) avant `pnpm install`, `pnpm dev` et les tests.
 - pnpm 9 (le champ `packageManager` fixe pnpm 9.15.9)
 
@@ -76,6 +76,43 @@ docker compose ps
 ```
 
 `postgres`, `redis`, `minio` et `mailpit` doivent être `healthy`. `minio-init` doit s'être terminé avec le code 0.
+
+## Dépannage : moteur Docker injoignable
+
+Docker Desktop (backend WSL2) a besoin de la virtualisation matérielle et des fonctionnalités Windows « Plateforme d'ordinateur virtuel » et « Sous-système Windows pour Linux ». Sans elles, le client `docker` peut répondre alors que le moteur reste injoignable.
+
+### Symptômes
+
+- Journal du moteur : `Virtual Machine Platform not enabled`.
+- Journal du moteur : `No virtualization available`.
+- `docker version` sans section Server (le client seul répond ; souvent `500 Internal Server Error` sur le pipe `dockerDesktopLinuxEngine`).
+- `wsl --status` indique que la virtualisation est désactivée. Message observé sur ce poste : « WSL2 ne peut pas démarrer, car la virtualisation n'est pas activée sur cet ordinateur. »
+
+### Contrôle
+
+Gestionnaire des tâches > Performances > Processeur. La ligne doit indiquer « Virtualisation : Activé ».
+
+### Actions
+
+1. Activer Intel VT-x ou AMD-V (SVM) dans le BIOS/UEFI.
+2. Dans PowerShell lancé en administrateur :
+
+```powershell
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+```
+
+3. Redémarrer l'ordinateur.
+4. Puis :
+
+```powershell
+wsl --update
+wsl --status
+```
+
+`wsl --status` ne doit plus indiquer que la virtualisation est désactivée.
+
+5. Relancer Docker Desktop, puis vérifier que `docker version` affiche une section Server.
 
 ## Applications (NF-08)
 
