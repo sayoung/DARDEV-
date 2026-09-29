@@ -44,6 +44,15 @@ import { USER_REPOSITORY } from './user.repository.js';
     SessionGuard,
     CsrfGuard,
   ],
-  exports: [SESSION_STORE, USER_LOOKUP, SessionGuard, CsrfGuard],
+  exports: [
+    SESSION_STORE,
+    USER_LOOKUP,
+    USER_REPOSITORY,
+    USER_TOKEN_REPOSITORY,
+    PasswordService,
+    CLOCK,
+    SessionGuard,
+    CsrfGuard,
+  ],
 })
 export class AuthModule {}

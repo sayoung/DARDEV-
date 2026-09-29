@@ -162,6 +162,32 @@ export class AuthService {
     });
     await this.sessions.destroyAllForUser(record.userId);
   }
+
+  /**
+   * Accepte une invitation : mot de passe choisi, compte activé, jeton consommé.
+   * N'ouvre pas de session.
+   */
+  async acceptInvite(token: string, password: string): Promise<void> {
+    const now = this.clock();
+    const record = await this.tokens.findByHash(hashToken(token));
+    if (record === null || record.type !== 'INVITE' || checkToken(record, now) !== 'OK') {
+      throw tokenInvalid();
+    }
+    const user = await this.users.findById(record.userId);
+    if (!user) {
+      await this.tokens.markUsed(record.id, now);
+      throw tokenInvalid();
+    }
+    assertNewPassword(password);
+    await this.unitOfWork.run(async (db) => {
+      const consumed = await this.tokens.markUsed(record.id, now, db);
+      if (!consumed) {
+        throw tokenInvalid();
+      }
+      const passwordHash = await this.passwords.hash(password);
+      await this.users.activate(record.userId, passwordHash, db);
+    });
+  }
 }
 
 function toMe(user: AuthUser, csrfToken: string): MeResponse {

@@ -58,7 +58,9 @@ const GUARDS_METADATA = '__guards__';
 /** Clé de métadonnée Nest pour `@HttpCode` (`HTTP_CODE_METADATA`). */
 const HTTP_CODE_METADATA = '__httpCode__';
 
-function handler(name: 'login' | 'logout' | 'me' | 'forgotPassword' | 'resetPassword'): object {
+function handler(
+  name: 'login' | 'logout' | 'me' | 'forgotPassword' | 'resetPassword' | 'acceptInvite',
+): object {
   const value: unknown = Object.getOwnPropertyDescriptor(AuthController.prototype, name)?.value;
   if (typeof value !== 'function') {
     throw new Error(`Méthode absente : ${name}`);
@@ -285,5 +287,41 @@ describe('AuthController', () => {
     await expect(
       controller.resetPassword({ token: '', password: 'x'.repeat(12) }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('répond 204 pour accept, limité à 5 par minute, sans session ni CSRF', async () => {
+    const accepted = controllerFor({
+      acceptInvite: () => Promise.resolve(),
+    });
+    const invalid = controllerFor({
+      acceptInvite: () => Promise.reject(new AuthRequestError(TOKEN_INVALID)),
+    });
+    const body = { token: 'jeton-opaque', password: 'x'.repeat(12) };
+
+    await expect(accepted.acceptInvite(body)).resolves.toBeUndefined();
+    await expect(invalid.acceptInvite(body)).rejects.toMatchObject({
+      status: 400,
+      response: { code: TOKEN_INVALID },
+    });
+
+    const accept = handler('acceptInvite');
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, accept)).toBe(204);
+    expect(Reflect.getMetadata('path', accept)).toBe('invite/accept');
+    expect(Reflect.getMetadata(GUARDS_METADATA, accept)).toEqual([ThrottlerGuard]);
+    expect(Reflect.getMetadata('THROTTLER:LIMITdefault', accept)).toBe(5);
+    expect(Reflect.getMetadata('THROTTLER:TTLdefault', accept)).toBe(60_000);
+  });
+
+  it('traduit un mot de passe d’invitation trop court en PASSWORD_INVALID', async () => {
+    const controller = controllerFor({
+      acceptInvite: () => Promise.reject(new Error('ne doit pas être appelé')),
+    });
+
+    await expect(
+      controller.acceptInvite({ token: 'jeton', password: 'court' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      response: { code: PASSWORD_INVALID },
+    });
   });
 });

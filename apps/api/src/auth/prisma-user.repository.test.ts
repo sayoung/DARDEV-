@@ -191,4 +191,92 @@ describe('PrismaUserRepository', () => {
       },
     ]);
   });
+
+  it('crée un compte invité inactif et l’active', async () => {
+    const calls: { op: string; args: unknown }[] = [];
+    const created = {
+      ...row,
+      email: 'nouveau@xplor.test',
+      name: 'Nouveau',
+      passwordHash: 'hash-secret',
+      role: PrismaRole.EDITOR,
+      uiLang: 'ar',
+      active: false,
+      failedLoginCount: 0,
+    };
+    const prisma = {
+      user: {
+        create: (args: unknown) => {
+          calls.push({ op: 'create', args });
+          return Promise.resolve(created);
+        },
+        update: (args: unknown) => {
+          calls.push({ op: 'update', args });
+          return Promise.resolve(created);
+        },
+      },
+    };
+    const repository = new PrismaUserRepository(prisma as unknown as PrismaService);
+
+    await expect(
+      repository.createInvited({
+        email: 'nouveau@xplor.test',
+        name: 'Nouveau',
+        passwordHash: 'hash-secret',
+        role: Role.EDITOR,
+        uiLang: 'ar',
+      }),
+    ).resolves.toMatchObject({
+      email: 'nouveau@xplor.test',
+      name: 'Nouveau',
+      passwordHash: 'hash-secret',
+      role: Role.EDITOR,
+      uiLang: 'ar',
+      active: false,
+    });
+    expect(calls[0]).toEqual({
+      op: 'create',
+      args: {
+        data: {
+          email: 'nouveau@xplor.test',
+          name: 'Nouveau',
+          passwordHash: 'hash-secret',
+          role: PrismaRole.EDITOR,
+          uiLang: 'ar',
+          active: false,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          passwordHash: true,
+          role: true,
+          uiLang: true,
+          active: true,
+          failedLoginCount: true,
+          lockedUntil: true,
+        },
+      },
+    });
+
+    const txCalls: unknown[] = [];
+    const tx = {
+      user: {
+        update: (args: unknown) => {
+          txCalls.push(args);
+          return Promise.resolve(created);
+        },
+      },
+    };
+    await repository.activate('user-1', 'hash-choisi', tx as unknown as AuthTx);
+    await repository.activate('user-1', 'hash-direct');
+
+    expect(txCalls).toEqual([
+      { where: { id: 'user-1' }, data: { passwordHash: 'hash-choisi', active: true } },
+    ]);
+    expect(calls[1]).toEqual({
+      op: 'update',
+      args: { where: { id: 'user-1' }, data: { passwordHash: 'hash-direct', active: true } },
+    });
+  });
 });
