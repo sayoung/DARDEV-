@@ -4,12 +4,24 @@ import {
   ProcessingStatus as PrismaProcessingStatus,
   TourStatus as PrismaTourStatus,
 } from '@prisma/client';
-import { ValidationIssueCode, type ValidationIssue } from '@xplor/shared';
+import {
+  TourResponseSchema,
+  TourStatus,
+  ValidationIssueCode,
+  type TourResponse,
+  type ValidationIssue,
+} from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import { PrismaService } from '../prisma/prisma.service.js';
-import { TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE } from './catalog.errors.js';
+import {
+  TOUR_NOT_FOUND,
+  TOUR_NOT_FOUND_MESSAGE,
+  TOUR_NOT_PUBLISHABLE,
+  TOUR_NOT_PUBLISHABLE_MESSAGE,
+} from './catalog.errors.js';
 import { TourPublicationService } from './tour-publication.service.js';
+import { ToursService } from './tours.service.js';
 
 const VISITE = '01990000-0000-7000-8000-000000000010';
 const PORTE = '01990000-0000-7000-8000-000000000021';
@@ -50,23 +62,45 @@ interface StoredScene {
   hotspots: StoredHotspot[];
 }
 
+interface TourWrite {
+  where: { id: string };
+  data: {
+    status?: PrismaTourStatus;
+    publishedAt?: Date;
+    contentVersion?: { increment: number };
+  };
+}
+
 interface StoredTour {
   id: string;
   startSceneId: string | null;
   status: PrismaTourStatus;
   deletedAt: Date | null;
+  publishedAt: Date | null;
+  contentVersion: number;
 }
+
+const CITY = '01990000-0000-7000-8000-000000000061';
+const CATEGORY = '01990000-0000-7000-8000-000000000062';
+const COVER = '01990000-0000-7000-8000-000000000063';
+const AUTHOR = '01990000-0000-7000-8000-000000000064';
 
 function harness(): {
   service: TourPublicationService;
   addTour: (tour: StoredTour) => void;
   addScene: (scene: StoredScene) => void;
   addHotspot: (sceneId: string, hotspot: StoredHotspot) => void;
+  writes: TourWrite[];
+  reads: string[];
+  tourAt: (id: string) => StoredTour;
 } {
   const tours = new Map<string, StoredTour>();
   const scenes = new Map<string, StoredScene>();
+  const writes: TourWrite[] = [];
+  const reads: string[] = [];
 
   const prisma = {
+    $transaction: (run: (tx: unknown) => Promise<unknown>): Promise<unknown> => run(prisma),
     tour: {
       findFirst: (args: {
         where: { id?: string; deletedAt?: null };
@@ -132,11 +166,51 @@ function harness(): {
         }
         return Promise.resolve(rows);
       },
+      update: (args: TourWrite): Promise<StoredTour> => {
+        writes.push(args);
+        const tour = tours.get(args.where.id);
+        if (tour === undefined) {
+          return Promise.reject(new Error(`mise à jour sans ligne: ${args.where.id}`));
+        }
+        if (args.data.status !== undefined) {
+          tour.status = args.data.status;
+        }
+        if (args.data.publishedAt !== undefined) {
+          tour.publishedAt = args.data.publishedAt;
+        }
+        if (args.data.contentVersion !== undefined) {
+          tour.contentVersion += args.data.contentVersion.increment;
+        }
+        return Promise.resolve(tour);
+      },
+    },
+  };
+
+  const toursService = {
+    get: (id: string): Promise<TourResponse> => {
+      reads.push(id);
+      const tour = tours.get(id);
+      if (tour === undefined) {
+        return Promise.reject(new Error(`lecture inattendue: ${id}`));
+      }
+      return Promise.resolve(tourResponse(tour));
     },
   };
 
   return {
-    service: new TourPublicationService(prisma as unknown as PrismaService),
+    service: new TourPublicationService(
+      prisma as unknown as PrismaService,
+      toursService as unknown as ToursService,
+    ),
+    writes,
+    reads,
+    tourAt: (id) => {
+      const tour = tours.get(id);
+      if (tour === undefined) {
+        throw new Error(`visite inconnue: ${id}`);
+      }
+      return tour;
+    },
     addTour: (tour) => {
       tours.set(tour.id, tour);
     },
@@ -235,14 +309,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function storedTour(
   id: string,
   startSceneId: string | null,
-  extras: Partial<Pick<StoredTour, 'status' | 'deletedAt'>> = {},
+  extras: Partial<Pick<StoredTour, 'status' | 'deletedAt' | 'publishedAt' | 'contentVersion'>> = {},
 ): StoredTour {
   return {
     id,
     startSceneId,
     status: extras.status ?? PrismaTourStatus.DRAFT,
     deletedAt: extras.deletedAt ?? null,
+    publishedAt: extras.publishedAt ?? null,
+    contentVersion: extras.contentVersion ?? 1,
   };
+}
+
+function tourResponse(tour: StoredTour): TourResponse {
+  return TourResponseSchema.parse({
+    id: tour.id,
+    title: { fr: 'Visite manuelle' },
+    summary: { fr: 'Porte, jardin et remparts' },
+    cityId: CITY,
+    categoryIds: [CATEGORY],
+    coverAssetId: COVER,
+    status: tour.status === PrismaTourStatus.PUBLISHED ? TourStatus.PUBLISHED : TourStatus.DRAFT,
+    publicShare: false,
+    shareToken: 'abcdefghijklmnopqrstuv',
+    sceneCount: 3,
+    createdById: AUTHOR,
+    contentVersion: tour.contentVersion,
+  });
 }
 
 function storedScene(
@@ -301,6 +394,28 @@ function issue(
     sceneId,
     ...(hotspotId === undefined ? {} : { hotspotId }),
   };
+}
+
+async function expectUnprocessable(
+  run: () => Promise<unknown>,
+  issues: ValidationIssue[],
+): Promise<void> {
+  const error = await run().then(
+    () => null,
+    (caught: unknown) => caught,
+  );
+  expect(error).toBeInstanceOf(HttpException);
+  if (!(error instanceof HttpException)) {
+    return;
+  }
+  expect(error.getStatus()).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+  expect(error.getResponse()).toEqual({
+    error: {
+      code: TOUR_NOT_PUBLISHABLE,
+      message: TOUR_NOT_PUBLISHABLE_MESSAGE,
+      issues,
+    },
+  });
 }
 
 async function expectNotFound(run: () => Promise<unknown>): Promise<void> {
@@ -428,4 +543,101 @@ describe('TourPublicationService', () => {
       issue(ValidationIssueCode.TOUR_LINK_SCENE_FOREIGN, SCENE_FOREIGN, PORTE, removed),
     ]);
   });
+
+  it('refuse de publier la Visite manuelle incomplète sans écrire', async () => {
+    const { service, addTour, addScene, addHotspot, writes, reads, tourAt } = harness();
+    addManualTour({ addTour, addScene, addHotspot }, false);
+    const before = tourAt(VISITE).contentVersion;
+
+    await expectUnprocessable(
+      () => service.publish(VISITE),
+      [issue(ValidationIssueCode.SCENE_UNREACHABLE, UNREACHABLE, REMPARTS)],
+    );
+    expect(writes).toEqual([]);
+    expect(reads).toEqual([]);
+    expect(tourAt(VISITE).contentVersion).toBe(before);
+    expect(tourAt(VISITE).status).toBe(PrismaTourStatus.DRAFT);
+    expect(tourAt(VISITE).publishedAt).toBeNull();
+  });
+
+  it('publie une visite valide et incrémente contentVersion', async () => {
+    const { service, addTour, addScene, addHotspot, writes, reads } = harness();
+    addManualTour({ addTour, addScene, addHotspot }, true);
+
+    const published = await service.publish(VISITE);
+    expect(writes).toHaveLength(1);
+    const write = writes[0];
+    expect(write?.where).toEqual({ id: VISITE });
+    expect(write?.data.status).toBe(PrismaTourStatus.PUBLISHED);
+    expect(write?.data.publishedAt).toBeInstanceOf(Date);
+    expect(write?.data.contentVersion).toEqual({ increment: 1 });
+    expect(Object.keys(write?.data ?? {})).toEqual(['status', 'publishedAt', 'contentVersion']);
+    expect(reads).toEqual([VISITE]);
+    expect(published.status).toBe(TourStatus.PUBLISHED);
+    expect(published.contentVersion).toBe(2);
+  });
+
+  it('répond 404 à la publication si la visite est absente ou supprimée', async () => {
+    const { service, addTour, writes } = harness();
+    await expectNotFound(() => service.publish(UNKNOWN));
+    addTour(storedTour(VISITE, PORTE, { deletedAt: new Date() }));
+    await expectNotFound(() => service.publish(VISITE));
+    expect(writes).toEqual([]);
+  });
+
+  it('dépublie en brouillon et conserve publishedAt', async () => {
+    const publishedAt = new Date('2026-09-29T12:00:00.000Z');
+    const { service, addTour, writes, reads, tourAt } = harness();
+    addTour(
+      storedTour(VISITE, PORTE, {
+        status: PrismaTourStatus.PUBLISHED,
+        publishedAt,
+        contentVersion: 4,
+      }),
+    );
+
+    const draft = await service.unpublish(VISITE);
+    expect(writes).toEqual([
+      {
+        where: { id: VISITE },
+        data: {
+          status: PrismaTourStatus.DRAFT,
+          contentVersion: { increment: 1 },
+        },
+      },
+    ]);
+    expect(reads).toEqual([VISITE]);
+    expect(draft.status).toBe(TourStatus.DRAFT);
+    expect(draft.contentVersion).toBe(5);
+    expect(tourAt(VISITE).publishedAt).toEqual(publishedAt);
+  });
+
+  it('répond 404 à la dépublication si la visite est absente ou supprimée', async () => {
+    const { service, addTour, writes } = harness();
+    await expectNotFound(() => service.unpublish(UNKNOWN));
+    addTour(storedTour(VISITE, null, { deletedAt: new Date(), publishedAt: new Date() }));
+    await expectNotFound(() => service.unpublish(VISITE));
+    expect(writes).toEqual([]);
+  });
 });
+
+function addManualTour(
+  tools: {
+    addTour: (tour: StoredTour) => void;
+    addScene: (scene: StoredScene) => void;
+    addHotspot: (sceneId: string, hotspot: StoredHotspot) => void;
+  },
+  linked: boolean,
+): void {
+  tools.addTour(storedTour(VISITE, PORTE));
+  tools.addScene(storedScene(PORTE, VISITE, 0));
+  tools.addScene(storedScene(JARDIN, VISITE, 1));
+  tools.addScene(storedScene(REMPARTS, VISITE, 2));
+  tools.addHotspot(PORTE, sceneLink(LINK_PORTE, JARDIN, new Date('2026-09-29T00:00:00.000Z')));
+  if (linked) {
+    tools.addHotspot(
+      JARDIN,
+      sceneLink(LINK_JARDIN, REMPARTS, new Date('2026-09-29T00:00:01.000Z')),
+    );
+  }
+}

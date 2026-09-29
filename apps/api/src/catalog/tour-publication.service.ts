@@ -10,11 +10,19 @@ import {
   ProcessingStatus,
   TourStatus,
   TourValidationResponseSchema,
+  type TourResponse,
   type TourValidationResponse,
+  type ValidationIssue,
 } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
-import { TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE, missingException } from './catalog.errors.js';
+import {
+  TOUR_NOT_FOUND,
+  TOUR_NOT_FOUND_MESSAGE,
+  missingException,
+  notPublishableException,
+} from './catalog.errors.js';
+import { ToursService } from './tours.service.js';
 import {
   validateTour,
   type FindTargetTour,
@@ -84,32 +92,91 @@ const targetTourSelect = {
 
 type TargetTourRow = Prisma.TourGetPayload<{ select: typeof targetTourSelect }>;
 
+type PublicationClient = PrismaService | Prisma.TransactionClient;
+
 /**
  * Charge l'instantané Prisma et appelle `validateTour` (F-03).
  * La fonction pure n'est pas modifiée : elle ne lit pas la base.
+ * `publish` écrit le statut, `publishedAt` et `contentVersion` dans une transaction.
+ * `unpublish` repasse en brouillon et conserve `publishedAt`.
  */
 @Injectable()
 export class TourPublicationService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(ToursService) private readonly tours: ToursService,
+  ) {}
 
   async validate(id: string): Promise<TourValidationResponse> {
-    const row = await this.prisma.tour.findFirst({
+    const issues = await this.issuesFor(this.prisma, id);
+    return TourValidationResponseSchema.parse({ issues });
+  }
+
+  /** 422 sans écriture si la visite n'est pas publiable. Sinon 200 `TourResponse`. */
+  async publish(id: string): Promise<TourResponse> {
+    await this.prisma.$transaction(async (tx) => {
+      const issues = await this.issuesFor(tx, id);
+      if (issues.length > 0) {
+        throw notPublishableException(issues);
+      }
+      await tx.tour.update({
+        where: { id },
+        data: {
+          status: PrismaTourStatus.PUBLISHED,
+          publishedAt: new Date(),
+          contentVersion: { increment: 1 },
+        },
+      });
+    });
+    return this.tours.get(id);
+  }
+
+  /** Repasse en brouillon. `publishedAt` n'est pas modifié. */
+  async unpublish(id: string): Promise<TourResponse> {
+    await this.prisma.$transaction(async (tx) => {
+      const row = await tx.tour.findFirst({
+        where: { id, deletedAt: null },
+        select: { id: true },
+      });
+      if (row === null) {
+        throw missingException(TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE);
+      }
+      await tx.tour.update({
+        where: { id },
+        data: {
+          status: PrismaTourStatus.DRAFT,
+          contentVersion: { increment: 1 },
+        },
+      });
+    });
+    return this.tours.get(id);
+  }
+
+  private async issuesFor(client: PublicationClient, id: string): Promise<ValidationIssue[]> {
+    const row = await this.loadSnapshot(client, id);
+    const targets = await this.loadTargets(client, targetTourIds(row));
+    return validateTour(toSnapshot(row), targets);
+  }
+
+  private async loadSnapshot(client: PublicationClient, id: string): Promise<TourSnapshotRow> {
+    const row = await client.tour.findFirst({
       where: { id, deletedAt: null },
       select: tourSnapshotSelect,
     });
     if (row === null) {
       throw missingException(TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE);
     }
-    const targets = await this.loadTargets(targetTourIds(row));
-    const issues = validateTour(toSnapshot(row), targets);
-    return TourValidationResponseSchema.parse({ issues });
+    return row;
   }
 
-  private async loadTargets(ids: readonly string[]): Promise<FindTargetTour> {
+  private async loadTargets(
+    client: PublicationClient,
+    ids: readonly string[],
+  ): Promise<FindTargetTour> {
     if (ids.length === 0) {
       return () => undefined;
     }
-    const rows = await this.prisma.tour.findMany({
+    const rows = await client.tour.findMany({
       where: { id: { in: [...ids] } },
       select: targetTourSelect,
     });

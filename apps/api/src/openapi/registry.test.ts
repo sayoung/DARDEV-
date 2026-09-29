@@ -29,6 +29,8 @@ const ROUTES = [
   { path: '/api/v1/admin/tours/{id}', method: 'patch' },
   { path: '/api/v1/admin/tours/{id}', method: 'delete' },
   { path: '/api/v1/admin/tours/{id}/validate', method: 'post' },
+  { path: '/api/v1/admin/tours/{id}/publish', method: 'post' },
+  { path: '/api/v1/admin/tours/{id}/unpublish', method: 'post' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'get' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'post' },
   { path: '/api/v1/admin/tours/{tourId}/scenes/reorder', method: 'post' },
@@ -76,6 +78,14 @@ describe('document OpenAPI', () => {
     expect(validateTour?.['403']).toBeDefined();
     expect(validateTour?.['404']).toBeDefined();
     expect(body).toContain('SCENE_UNREACHABLE');
+    const publishTour = doc.paths?.['/api/v1/admin/tours/{id}/publish']?.post?.responses;
+    expect(publishTour?.['200']).toBeDefined();
+    expect(publishTour?.['403']).toBeDefined();
+    expect(publishTour?.['422']).toBeDefined();
+    const unpublishTour = doc.paths?.['/api/v1/admin/tours/{id}/unpublish']?.post?.responses;
+    expect(unpublishTour?.['200']).toBeDefined();
+    expect(unpublishTour?.['404']).toBeDefined();
+    expect(body).toContain('TOUR_NOT_PUBLISHABLE');
     const createScene = doc.paths?.['/api/v1/admin/tours/{tourId}/scenes']?.post?.responses;
     expect(createScene?.['422']).toBeDefined();
     expect(createScene?.['404']).toBeDefined();

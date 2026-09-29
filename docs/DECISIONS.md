@@ -520,7 +520,7 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives (partie 3) :** suppression logique ; 404 `SCENE_NOT_FOUND` quand la scène parente est supprimée ; conserver les champs de l’ancien type ; PATCH partiel qui omettrait `type`.
 - **À valider (partie 3) :** oui (suppression physique ; 404 `HOTSPOT_NOT_FOUND` si le hotspot est inconnu ou si la scène ou la visite parente est supprimée ; champs des autres types remis à null ou `[]` dans la même écriture ; `contentVersion` +1)
 
-## D-74 — Route de validation de publication (F-03, partie 1)
+## D-74 — Validation et publication des visites (F-03)
 
 - **Date :** 29/09/2026
 - **Décision :** `POST /api/v1/admin/tours/:id/validate` répond toujours 200 `{ issues: ValidationIssue[] }`. La liste est vide quand la visite est publiable. Cette route ne publie pas et ne change pas `contentVersion`. Le 422 de publication reste pour la route `publish`, hors de ce lot. `TourPublicationService` charge l’instantané avec Prisma et appelle `validateTour` (`publication-rules.ts`) sans la modifier. `TourValidationResponseSchema` vit dans `@xplor/shared` (`catalog.ts`) : `{ issues }` est un tableau de `ValidationIssueSchema`.
@@ -529,6 +529,11 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Garde :** `SessionGuard`, `CsrfGuard`, `canManageContent`. ADMIN et EDITOR seulement. PARTNER et HOTEL_MANAGER reçoivent 403. Un identifiant qui n’est pas un UUID v7 répond 400. Aucun paquet npm ajouté. Pas d’écran admin.
 - **Alternatives :** répondre 422 dès que `issues` n’est pas vide (réservé à `publish`) ; 404 au format Nest `{ statusCode, message, error }` comme le CRUD des visites (D-71) ; omettre les scènes supprimées de l’instantané ; ne pas charger une visite cible déjà supprimée (`undefined` et `deleted: true` produisent le même `TOUR_LINK_TARGET_UNPUBLISHED`, mais seule la ligne chargée permet aussi `TOUR_LINK_SCENE_FOREIGN`).
 - **À valider :** oui (200 même quand la liste n’est pas vide ; 404 `TOUR_NOT_FOUND` ; scènes supprimées conservées ; visites cibles supprimées chargées ; `sceneIds` limité aux scènes vivantes)
+- **Complément (30/09/2026) — partie 2, publication et dépublication :** `POST /api/v1/admin/tours/:id/publish` et `POST /api/v1/admin/tours/:id/unpublish`. Même garde que `validate` : `SessionGuard`, `CsrfGuard`, `canManageContent` (ADMIN et EDITOR). PARTNER et HOTEL_MANAGER reçoivent 403. Visite absente ou supprimée : 404 `TOUR_NOT_FOUND`. Aucun paquet npm ajouté. Pas d’écran admin.
+- **Publication :** la validation (`validateTour`, instantané inchangé) et l’écriture tiennent dans la même transaction. Si `issues` n’est pas vide, 422 `{ error: { code: "TOUR_NOT_PUBLISHABLE", message, issues: ValidationIssue[] } }` et la transaction n’écrit rien (`status`, `publishedAt` et `contentVersion` restent). Sinon : `status` = `PUBLISHED`, `publishedAt` = maintenant, `contentVersion` +1. Réponse 200 : `TourResponse`, le même corps que `GET /admin/tours/:id`, lu après la transaction. `status` est déjà sur `TourResponseSchema` (D-71) ; `publishedAt` reste hors de ce schéma.
+- **Dépublication :** `status` = `DRAFT`, `publishedAt` conservé, `contentVersion` +1, dans une transaction. Réponse 200 : `TourResponse`. Pas de contrôle des règles de publication.
+- **Alternatives (partie 2) :** refuser la publication hors transaction, après la lecture ; répondre 409 si la visite est déjà publiée ; effacer `publishedAt` à la dépublication ; inclure `publishedAt` dans `TourResponse`.
+- **À valider (partie 2) :** oui (422 avec `issues` et sans écriture ; `publishedAt` posé à chaque publication réussie ; dépublication qui conserve `publishedAt` et incrémente `contentVersion` ; `TourResponse` déjà porteur de `status`)
 
 ## Encore à valider (cahier des charges, section 11.2)
 
