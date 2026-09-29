@@ -101,6 +101,11 @@ export const MEDIA_ASSET_NOT_FOUND = 'MEDIA_ASSET_NOT_FOUND';
 
 export const MEDIA_ASSET_NOT_FOUND_MESSAGE = 'Un média est inconnu.';
 
+/** Média inconnu à la lecture de la médiathèque (F-05). */
+export const ASSET_NOT_FOUND = 'ASSET_NOT_FOUND';
+
+export const ASSET_NOT_FOUND_MESSAGE = 'Ce média est inconnu.';
+
 /**
  * Hotspot inconnu, ou scène parente absente, supprimée, ou rattachée à une visite supprimée (API-23).
  */

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AssetKind,
+  AssetListQuerySchema,
+  AssetResponseSchema,
   CategoryCreateSchema,
   CategoryResponseSchema,
   CategoryUpdateSchema,
@@ -13,6 +15,7 @@ import {
   HotspotResponseSchema,
   HotspotType,
   HotspotUpdateSchema,
+  PaginatedAssetResponseSchema,
   PaginatedTourResponseSchema,
   PaginationQuerySchema,
   ProcessingStatus,
@@ -643,6 +646,74 @@ describe('HotspotResponseSchema', () => {
 
   it('refuse un type inconnu', () => {
     expect(HotspotResponseSchema.safeParse({ ...base, type: 'NOT_A_TYPE' }).success).toBe(false);
+  });
+});
+
+describe('AssetResponseSchema', () => {
+  const createdAt = '2026-09-29T12:00:00.000Z';
+  const asset = {
+    id: id.cover,
+    kind: AssetKind.IMAGE,
+    mimeType: 'image/jpeg',
+    sizeBytes: 128,
+    width: 4000,
+    height: 2000,
+    processingStatus: ProcessingStatus.READY,
+    copyright: 'Libre de droits',
+    createdAt,
+  };
+
+  it('accepte un média dont les dimensions et le copyright sont connus', () => {
+    expect(AssetResponseSchema.parse(asset)).toEqual(asset);
+  });
+
+  it('accepte width, height et copyright à null', () => {
+    const unknown = { ...asset, width: null, height: null, copyright: null };
+    expect(AssetResponseSchema.parse(unknown)).toEqual(unknown);
+  });
+
+  it('refuse un kind inconnu ou une taille négative', () => {
+    expect(AssetResponseSchema.safeParse({ ...asset, kind: 'GIF' }).success).toBe(false);
+    expect(AssetResponseSchema.safeParse({ ...asset, sizeBytes: -1 }).success).toBe(false);
+  });
+});
+
+describe('AssetListQuerySchema', () => {
+  it('pose page à 1 et pageSize à 20, sans filtre kind', () => {
+    expect(AssetListQuerySchema.parse({})).toEqual({ page: 1, pageSize: 20 });
+  });
+
+  it('accepte un kind connu et refuse un kind inconnu', () => {
+    expect(AssetListQuerySchema.parse({ page: 1, kind: AssetKind.PANORAMA })).toEqual({
+      page: 1,
+      pageSize: 20,
+      kind: AssetKind.PANORAMA,
+    });
+    expect(AssetListQuerySchema.safeParse({ page: 1, kind: 'GIF' }).success).toBe(false);
+  });
+});
+
+describe('PaginatedAssetResponseSchema', () => {
+  it('accepte une page de médias', () => {
+    const page = {
+      items: [
+        {
+          id: id.cover,
+          kind: AssetKind.AUDIO,
+          mimeType: 'audio/mpeg',
+          sizeBytes: 20,
+          width: null,
+          height: null,
+          processingStatus: ProcessingStatus.PENDING,
+          copyright: null,
+          createdAt: '2026-09-29T12:00:00.000Z',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    };
+    expect(PaginatedAssetResponseSchema.parse(page)).toEqual(page);
   });
 });
 

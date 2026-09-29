@@ -281,6 +281,24 @@ export const HotspotResponseSchema = z.object({
 });
 export type HotspotResponse = z.infer<typeof HotspotResponseSchema>;
 
+/**
+ * Média renvoyé en lecture seule (F-05).
+ * `width`, `height` et `copyright` valent `null` tant qu'ils ne sont pas connus.
+ * `createdAt` est une date ISO 8601. L'upload reste en M2 (API-24).
+ */
+export const AssetResponseSchema = z.object({
+  id: idSchema,
+  kind: z.enum(AssetKind),
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().int().min(0),
+  width: z.number().int().min(0).nullable(),
+  height: z.number().int().min(0).nullable(),
+  processingStatus: z.enum(ProcessingStatus),
+  copyright: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+});
+export type AssetResponse = z.infer<typeof AssetResponseSchema>;
+
 /** Paramètres de liste (F-01). Nombres déjà typés : `page` ≥ 1, `pageSize` 1…100, défaut 20. */
 export const PaginationQuerySchema = z.object({
   page: z.number().int().min(1),
@@ -302,6 +320,16 @@ export const TourListQuerySchema = PaginationQuerySchema.extend({
 });
 export type TourListQuery = z.infer<typeof TourListQuerySchema>;
 
+/**
+ * Liste admin des médias (F-05). `page` absent vaut 1.
+ * `kind` filtre sur la nature du fichier. Les chaînes de query sont converties avant ce schéma.
+ */
+export const AssetListQuerySchema = PaginationQuerySchema.extend({
+  page: z.number().int().min(1).default(1),
+  kind: z.enum(AssetKind).optional(),
+});
+export type AssetListQuery = z.infer<typeof AssetListQuerySchema>;
+
 /** Schéma d'une page dont chaque élément suit `itemSchema`. */
 export function paginated<Item extends z.ZodType>(itemSchema: Item) {
   return z.object({
@@ -318,6 +346,10 @@ export type Paginated<T> = z.infer<ReturnType<typeof paginated<z.ZodType<T>>>>;
 /** Page de visites (API-21). */
 export const PaginatedTourResponseSchema = paginated(TourResponseSchema);
 export type PaginatedTourResponse = Paginated<TourResponse>;
+
+/** Page de médias (F-05). */
+export const PaginatedAssetResponseSchema = paginated(AssetResponseSchema);
+export type PaginatedAssetResponse = Paginated<AssetResponse>;
 
 /**
  * Code d'un refus de publication (cahier 5.4, F-03).

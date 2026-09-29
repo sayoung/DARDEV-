@@ -9,6 +9,8 @@ import {
 } from '@asteasolutions/zod-to-openapi';
 import {
   AcceptInviteRequestSchema,
+  AssetListQuerySchema,
+  AssetResponseSchema,
   CategoryCreateSchema,
   CategoryResponseSchema,
   CategoryUpdateSchema,
@@ -23,6 +25,7 @@ import {
   InviteUserResponseSchema,
   LoginRequestSchema,
   MeResponseSchema,
+  PaginatedAssetResponseSchema,
   PaginatedTourResponseSchema,
   ResetPasswordRequestSchema,
   SceneCreateSchema,
@@ -40,6 +43,7 @@ import {
 import { z, type ZodType } from 'zod';
 
 import {
+  ASSET_NOT_FOUND,
   CATEGORY_NOT_FOUND,
   CITY_NOT_FOUND,
   COVER_ASSET_NOT_FOUND,
@@ -113,6 +117,12 @@ const inUseError = z.object({
 const referenceError = z.object({
   error: z.object({
     code: z.enum([CITY_NOT_FOUND, CATEGORY_NOT_FOUND, COVER_ASSET_NOT_FOUND]),
+    message: z.string(),
+  }),
+});
+const assetMissingError = z.object({
+  error: z.object({
+    code: z.literal(ASSET_NOT_FOUND),
     message: z.string(),
   }),
 });
@@ -381,6 +391,7 @@ registerCatalogCrud({
   response: CategoryResponseSchema,
 });
 
+registerAssetReads();
 registerTourCrud();
 registerTourValidate();
 registerTourPublish();
@@ -470,6 +481,44 @@ function registerCatalogCrud(resource: {
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
       '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
       '409': jsonResponse('Encore utilisée par une visite (IN_USE).', inUseError),
+    },
+  });
+}
+
+function registerAssetReads(): void {
+  const collection = '/api/v1/admin/assets';
+  const item = `${collection}/{id}`;
+  const roleDenied = 'Rôle autre que ADMIN ou EDITOR.';
+  registry.registerPath({
+    method: 'get',
+    path: collection,
+    summary: 'Lister les médias',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { query: AssetListQuerySchema },
+    responses: {
+      '200': jsonResponse(
+        'Page de médias, triée par date de création décroissante.',
+        PaginatedAssetResponseSchema,
+      ),
+      '400': jsonResponse('Paramètres de liste refusés.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+    },
+  });
+  registry.registerPath({
+    method: 'get',
+    path: item,
+    summary: 'Lire un média',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: z.object({ id: z.uuidv7() }) },
+    responses: {
+      '200': jsonResponse('Média trouvé.', AssetResponseSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+      '404': jsonResponse('Média introuvable.', assetMissingError),
     },
   });
 }

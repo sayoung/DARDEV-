@@ -16,6 +16,8 @@ export {
 } from './auth.js';
 export {
   AssetKind,
+  AssetListQuerySchema,
+  AssetResponseSchema,
   CategoryCreateSchema,
   CategoryResponseSchema,
   CategoryUpdateSchema,
@@ -27,6 +29,7 @@ export {
   HotspotResponseSchema,
   HotspotType,
   HotspotUpdateSchema,
+  PaginatedAssetResponseSchema,
   PaginatedTourResponseSchema,
   PaginationQuerySchema,
   ProcessingStatus,
@@ -44,6 +47,8 @@ export {
   ValidationIssueCode,
   ValidationIssueSchema,
   paginated,
+  type AssetListQuery,
+  type AssetResponse,
   type CategoryCreate,
   type CategoryResponse,
   type CategoryUpdate,
@@ -54,6 +59,7 @@ export {
   type HotspotResponse,
   type HotspotUpdate,
   type Paginated,
+  type PaginatedAssetResponse,
   type PaginatedTourResponse,
   type PaginationQuery,
   type SceneCreate,

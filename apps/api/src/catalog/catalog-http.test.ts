@@ -1,9 +1,10 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { CityCreateSchema, Role, TourStatus, type Principal } from '@xplor/shared';
+import { AssetKind, CityCreateSchema, Role, TourStatus, type Principal } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import type { SessionRequest } from '../auth/session-request.js';
 import {
+  parseAssetListQuery,
   parseBody,
   parseResourceId,
   parseTourListQuery,
@@ -90,6 +91,30 @@ describe('parseTourListQuery', () => {
   it('refuse une page qui n’est pas un entier', () => {
     expect(() => parseTourListQuery({ page: '1.5' })).toThrow(BadRequestException);
     expect(() => parseTourListQuery({ status: 'ARCHIVED' })).toThrow(BadRequestException);
+  });
+});
+
+describe('parseAssetListQuery', () => {
+  it('pose page à 1 et pageSize à 20 quand la query est vide', () => {
+    expect(parseAssetListQuery({})).toEqual({ page: 1, pageSize: 20 });
+  });
+
+  it('convertit les chaînes numériques et garde le kind', () => {
+    expect(
+      parseAssetListQuery({
+        page: '2',
+        pageSize: ['10', '20'],
+        kind: [AssetKind.AUDIO, AssetKind.IMAGE],
+      }),
+    ).toEqual({
+      page: 2,
+      pageSize: 10,
+      kind: AssetKind.AUDIO,
+    });
+  });
+
+  it('refuse un kind inconnu', () => {
+    expect(() => parseAssetListQuery({ kind: 'GIF' })).toThrow(BadRequestException);
   });
 });
 

@@ -23,6 +23,8 @@ const ROUTES = [
   { path: '/api/v1/admin/categories', method: 'get' },
   { path: '/api/v1/admin/categories', method: 'post' },
   { path: '/api/v1/admin/categories/{id}', method: 'delete' },
+  { path: '/api/v1/admin/assets', method: 'get' },
+  { path: '/api/v1/admin/assets/{id}', method: 'get' },
   { path: '/api/v1/admin/tours', method: 'get' },
   { path: '/api/v1/admin/tours', method: 'post' },
   { path: '/api/v1/admin/tours/{id}', method: 'get' },
@@ -71,6 +73,16 @@ describe('document OpenAPI', () => {
     const createTour = doc.paths?.['/api/v1/admin/tours']?.post?.responses;
     expect(createTour?.['422']).toBeDefined();
     expect(createTour?.['403']).toBeDefined();
+    const listAssets = doc.paths?.['/api/v1/admin/assets']?.get?.responses;
+    expect(listAssets?.['200']).toBeDefined();
+    expect(listAssets?.['401']).toBeDefined();
+    expect(listAssets?.['403']).toBeDefined();
+    expect(doc.paths?.['/api/v1/admin/assets']?.post).toBeUndefined();
+    const readAsset = doc.paths?.['/api/v1/admin/assets/{id}']?.get?.responses;
+    expect(readAsset?.['200']).toBeDefined();
+    expect(readAsset?.['404']).toBeDefined();
+    expect(doc.paths?.['/api/v1/admin/assets/{id}']?.delete).toBeUndefined();
+    expect(body).toContain('ASSET_NOT_FOUND');
     const listTours = doc.paths?.['/api/v1/admin/tours']?.get?.responses;
     expect(listTours?.['403']).toBeDefined();
     const validateTour = doc.paths?.['/api/v1/admin/tours/{id}/validate']?.post?.responses;
