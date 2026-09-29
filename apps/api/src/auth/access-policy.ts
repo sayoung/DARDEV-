@@ -1,6 +1,6 @@
 import { Role, type Principal } from '@xplor/shared';
 
-/** ADMIN et EDITOR gèrent les visites, scènes et médias. */
+/** ADMIN et EDITOR lisent et écrivent les visites (API-21), les scènes et les médias. */
 export function canManageContent(principal: Principal): boolean {
   return principal.role === Role.ADMIN || principal.role === Role.EDITOR;
 }

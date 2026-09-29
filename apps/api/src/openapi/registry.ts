@@ -20,10 +20,20 @@ import {
   InviteUserResponseSchema,
   LoginRequestSchema,
   MeResponseSchema,
+  PaginatedTourResponseSchema,
   ResetPasswordRequestSchema,
+  TourCreateSchema,
+  TourListQuerySchema,
+  TourResponseSchema,
+  TourUpdateSchema,
 } from '@xplor/shared';
 import { z, type ZodType } from 'zod';
 
+import {
+  CATEGORY_NOT_FOUND,
+  CITY_NOT_FOUND,
+  COVER_ASSET_NOT_FOUND,
+} from '../catalog/catalog.errors.js';
 import type { HealthBody } from '../health/health.service.js';
 
 const SESSION_COOKIE = 'sessionCookie';
@@ -73,6 +83,12 @@ const notFoundError = nestError(404);
 const inUseError = z.object({
   error: z.object({
     code: z.literal('IN_USE'),
+    message: z.string(),
+  }),
+});
+const referenceError = z.object({
+  error: z.object({
+    code: z.enum([CITY_NOT_FOUND, CATEGORY_NOT_FOUND, COVER_ASSET_NOT_FOUND]),
     message: z.string(),
   }),
 });
@@ -284,6 +300,8 @@ registerCatalogCrud({
   response: CategoryResponseSchema,
 });
 
+registerTourCrud();
+
 function registerCatalogCrud(resource: {
   collection: string;
   singular: string;
@@ -364,10 +382,106 @@ function registerCatalogCrud(resource: {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
       '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
-      '409': jsonResponse(
-        'Encore utilisée par une visite (IN_USE).',
-        inUseError,
+      '409': jsonResponse('Encore utilisée par une visite (IN_USE).', inUseError),
+    },
+  });
+}
+
+function registerTourCrud(): void {
+  const collection = '/api/v1/admin/tours';
+  const item = `${collection}/{id}`;
+  const idParam = z.object({ id: z.uuidv7() });
+  const roleDenied = 'Rôle autre que ADMIN ou EDITOR.';
+  registry.registerPath({
+    method: 'get',
+    path: collection,
+    summary: 'Lister les visites',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { query: TourListQuerySchema },
+    responses: {
+      '200': jsonResponse('Page de visites non supprimées.', PaginatedTourResponseSchema),
+      '400': jsonResponse('Paramètres de liste refusés.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+    },
+  });
+  registry.registerPath({
+    method: 'get',
+    path: item,
+    summary: 'Lire une visite',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse(
+        'Visite trouvée, avec ses catégories et le nombre de scènes.',
+        TourResponseSchema,
       ),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', notFoundError),
+    },
+  });
+  registry.registerPath({
+    method: 'post',
+    path: collection,
+    summary: 'Créer une visite',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      body: jsonBody(
+        TourCreateSchema,
+        'Corps de création. Le statut et le partage ne sont pas saisis.',
+      ),
+    },
+    responses: {
+      '201': jsonResponse(
+        'Visite créée en brouillon, partage public désactivé.',
+        TourResponseSchema,
+      ),
+      '400': jsonResponse('Corps refusé par TourCreateSchema.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '422': jsonResponse('Ville, catégorie ou vignette inconnue.', referenceError),
+    },
+  });
+  registry.registerPath({
+    method: 'patch',
+    path: item,
+    summary: 'Remplacer une visite',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(
+        TourUpdateSchema,
+        'Mêmes champs que la création. categoryIds remplace l’ensemble.',
+      ),
+    },
+    responses: {
+      '200': jsonResponse('Visite mise à jour.', TourResponseSchema),
+      '400': jsonResponse('Identifiant ou corps refusé.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', notFoundError),
+      '422': jsonResponse('Ville, catégorie ou vignette inconnue.', referenceError),
+    },
+  });
+  registry.registerPath({
+    method: 'delete',
+    path: item,
+    summary: 'Supprimer une visite',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '204': { description: 'Suppression logique (deletedAt). Corps vide.' },
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse('Visite introuvable ou déjà supprimée.', notFoundError),
     },
   });
 }

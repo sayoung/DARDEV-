@@ -117,6 +117,25 @@ export type TourCreate = z.infer<typeof TourCreateSchema>;
 export const TourUpdateSchema = z.object(tourShape);
 export type TourUpdate = z.infer<typeof TourUpdateSchema>;
 
+/**
+ * Visite renvoyée par l'API admin (API-21).
+ * `publishedAt` et `startSceneId` restent hors de ce schéma : les routes
+ * de publication et de scènes ne font pas partie de ce lot.
+ */
+export const TourResponseSchema = z.object({
+  id: idSchema,
+  ...tourShape,
+  status: z.enum(TourStatus),
+  publicShare: z.boolean(),
+  /** 22 caractères, émis par le service (`crypto.randomBytes`). */
+  shareToken: z.string().length(22),
+  /** Scènes dont `deletedAt` est vide. */
+  sceneCount: z.number().int().min(0),
+  createdById: idSchema,
+  contentVersion: z.number().int().min(1),
+});
+export type TourResponse = z.infer<typeof TourResponseSchema>;
+
 const sceneShape = {
   title: LocalizedTextSchema,
   caption: LocalizedTextSchema.optional(),
@@ -191,6 +210,20 @@ export const PaginationQuerySchema = z.object({
 });
 export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;
 
+/**
+ * Liste admin des visites (API-21). `page` absent vaut 1.
+ * Les chaînes de query sont converties en nombres avant ce schéma (D-67).
+ */
+export const TourListQuerySchema = PaginationQuerySchema.extend({
+  page: z.number().int().min(1).default(1),
+  status: z.enum(TourStatus).optional(),
+  cityId: idSchema.optional(),
+  categoryId: idSchema.optional(),
+  /** Recherche sur le titre français. Une chaîne vide ne filtre pas. */
+  q: z.string().optional(),
+});
+export type TourListQuery = z.infer<typeof TourListQuerySchema>;
+
 /** Schéma d'une page dont chaque élément suit `itemSchema`. */
 export function paginated<Item extends z.ZodType>(itemSchema: Item) {
   return z.object({
@@ -203,6 +236,10 @@ export function paginated<Item extends z.ZodType>(itemSchema: Item) {
 
 /** Page de résultats. Déduit du schéma pour rester aligné sur `paginated`. */
 export type Paginated<T> = z.infer<ReturnType<typeof paginated<z.ZodType<T>>>>;
+
+/** Page de visites (API-21). */
+export const PaginatedTourResponseSchema = paginated(TourResponseSchema);
+export type PaginatedTourResponse = Paginated<TourResponse>;
 
 /**
  * Code d'un refus de publication (cahier 5.4, F-03).

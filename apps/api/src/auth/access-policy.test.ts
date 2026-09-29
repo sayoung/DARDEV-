@@ -18,7 +18,7 @@ function principal(role: Role, hotelIds: string[] = []): Principal {
 }
 
 describe('canManageContent', () => {
-  it('autorise ADMIN et EDITOR', () => {
+  it('autorise ADMIN et EDITOR à lire et à écrire les visites (API-21)', () => {
     expect(canManageContent(principal(Role.ADMIN))).toBe(true);
     expect(canManageContent(principal(Role.EDITOR))).toBe(true);
   });

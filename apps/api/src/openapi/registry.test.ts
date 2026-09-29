@@ -23,6 +23,11 @@ const ROUTES = [
   { path: '/api/v1/admin/categories', method: 'get' },
   { path: '/api/v1/admin/categories', method: 'post' },
   { path: '/api/v1/admin/categories/{id}', method: 'delete' },
+  { path: '/api/v1/admin/tours', method: 'get' },
+  { path: '/api/v1/admin/tours', method: 'post' },
+  { path: '/api/v1/admin/tours/{id}', method: 'get' },
+  { path: '/api/v1/admin/tours/{id}', method: 'patch' },
+  { path: '/api/v1/admin/tours/{id}', method: 'delete' },
 ] as const;
 
 describe('document OpenAPI', () => {
@@ -44,6 +49,13 @@ describe('document OpenAPI', () => {
     expect(body).toContain('TOKEN_INVALID');
     expect(body).toContain('EMAIL_TAKEN');
     expect(body).toContain('IN_USE');
+    expect(body).toContain('CITY_NOT_FOUND');
+
+    const createTour = doc.paths?.['/api/v1/admin/tours']?.post?.responses;
+    expect(createTour?.['422']).toBeDefined();
+    expect(createTour?.['403']).toBeDefined();
+    const listTours = doc.paths?.['/api/v1/admin/tours']?.get?.responses;
+    expect(listTours?.['403']).toBeDefined();
 
     const invitations = doc.paths?.['/api/v1/admin/users/invitations']?.post?.responses;
     expect(invitations?.['403']).toBeDefined();
