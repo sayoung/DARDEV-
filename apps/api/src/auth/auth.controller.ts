@@ -14,12 +14,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { LoginRequestSchema, type MeResponse } from '@xplor/shared';
+import {
+  ForgotPasswordRequestSchema,
+  LoginRequestSchema,
+  ResetPasswordRequestSchema,
+  type MeResponse,
+} from '@xplor/shared';
 import type { FastifyReply } from 'fastify';
+import type { ZodError } from 'zod';
 
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
-import { AuthRejectedError } from './auth.errors.js';
+import { AuthRejectedError, AuthRequestError, PASSWORD_INVALID } from './auth.errors.js';
 import { AuthService } from './auth.service.js';
 import { CsrfGuard } from './csrf.guard.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from './session-cookie.js';
@@ -27,7 +33,7 @@ import type { SessionRequest } from './session-request.js';
 import { SessionGuard } from './session.guard.js';
 
 /** 5 requêtes par minute et par IP (NF-01). Le guard n'est pas global. */
-const LOGIN_THROTTLE = { default: { limit: 5, ttl: 60_000 } };
+const FIVE_PER_MINUTE = { default: { limit: 5, ttl: 60_000 } };
 
 @Controller('auth')
 export class AuthController {
@@ -38,7 +44,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle(LOGIN_THROTTLE)
+  @Throttle(FIVE_PER_MINUTE)
   @UseGuards(ThrottlerGuard)
   async login(
     @Body() body: unknown,
@@ -87,17 +93,54 @@ export class AuthController {
     }
   }
 
+  @Post('password/forgot')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle(FIVE_PER_MINUTE)
+  @UseGuards(ThrottlerGuard)
+  async forgotPassword(@Body() body: unknown): Promise<void> {
+    const parsed = ForgotPasswordRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException();
+    }
+    await this.auth.forgotPassword(parsed.data.email);
+  }
+
+  @Post('password/reset')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resetPassword(@Body() body: unknown): Promise<void> {
+    const parsed = ResetPasswordRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw resetSchemaError(parsed.error);
+    }
+    try {
+      await this.auth.resetPassword(parsed.data.token, parsed.data.password);
+    } catch (error: unknown) {
+      rethrowAsHttp(error);
+    }
+  }
+
   private cookieOptions() {
     return sessionCookieOptions(this.env.NODE_ENV === 'production');
   }
 }
 
 function rethrowAsHttp(error: unknown): never {
-  if (error instanceof AuthRejectedError) {
+  if (error instanceof AuthRejectedError || error instanceof AuthRequestError) {
     throw new HttpException(
       { statusCode: error.statusCode, code: error.code, message: error.code },
       error.statusCode,
     );
   }
   throw error;
+}
+
+function resetSchemaError(error: ZodError): HttpException {
+  const passwordIssue = error.issues.some((issue) => issue.path[0] === 'password');
+  if (passwordIssue) {
+    return new HttpException(
+      { statusCode: 400, code: PASSWORD_INVALID, message: PASSWORD_INVALID },
+      HttpStatus.BAD_REQUEST,
+    );
+  }
+  return new BadRequestException();
 }

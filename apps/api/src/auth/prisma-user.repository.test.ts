@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { PrismaUserRepository } from './prisma-user.repository.js';
+import type { AuthTx } from './unit-of-work.js';
 
 type StoredUser = {
   id: string;
@@ -123,5 +124,37 @@ describe('PrismaUserRepository', () => {
       const args = first.args as { data: Record<string, unknown> };
       expect(args.data).not.toHaveProperty('lastLoginAt');
     }
+  });
+
+  it('écrit le mot de passe sur Prisma, ou sur le client de transaction', async () => {
+    const { repository, calls } = repositoryFor(row);
+    const txCalls: unknown[] = [];
+    const tx = {
+      user: {
+        update: (args: unknown) => {
+          txCalls.push(args);
+          return Promise.resolve(row);
+        },
+      },
+    };
+    const state = { passwordHash: 'hash-neuf', failedLoginCount: 0, lockedUntil: null };
+
+    await repository.updatePassword('user-1', state);
+    await repository.updatePassword(
+      'user-1',
+      { ...state, passwordHash: 'hash-tx' },
+      tx as unknown as AuthTx,
+    );
+
+    expect(calls[0]).toMatchObject({
+      op: 'update',
+      args: { where: { id: 'user-1' }, data: state },
+    });
+    expect(txCalls).toEqual([
+      {
+        where: { id: 'user-1' },
+        data: { passwordHash: 'hash-tx', failedLoginCount: 0, lockedUntil: null },
+      },
+    ]);
   });
 });

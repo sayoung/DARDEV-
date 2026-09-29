@@ -246,6 +246,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | nodemailer        | Envoi SMTP vers Mailpit (`SMTP_HOST`, `SMTP_PORT`, sans authentification). 10.0.12.                     | MIT-0   |
 | @types/nodemailer | Déclarations TypeScript de nodemailer (`createTransport`, options SMTP). 8.0.2, devDependency de l'API. | MIT     |
 
+## D-46 — Réinitialisation du mot de passe (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `POST /api/v1/auth/password/forgot` répond toujours **202**, que l'adresse soit inconnue, le compte inactif, ou le courriel envoyé. Le corps est vide. Cela évite d'énumérer les comptes. Seul un compte actif déclenche l'envoi. L'email est normalisé (trim, minuscules), comme au login (D-40). Les jetons `PASSWORD_RESET` encore inutilisés de ce compte sont invalidés **avant** d'en créer un nouveau : `invalidateUnused` pose `usedAt` sur la ligne existante. Une nouvelle demande refuse donc l'ancien jeton. Le jeton en clair voyage seulement dans le lien `ADMIN_BASE_URL/reset/<token>` ; la base ne reçoit que l'empreinte SHA-256 (D-44). `POST /api/v1/auth/password/reset` répond **204**. Les deux routes sont publiques : pas de `SessionGuard`, pas de `CsrfGuard`. Seul `forgot` est limité à 5 requêtes par minute et par IP, avec le même `@nestjs/throttler` en mémoire que le login (D-40). `checkToken` qui renvoie `NOT_FOUND`, `EXPIRED` ou `USED` produit le même 400 `TOKEN_INVALID`, y compris pour un jeton d'invitation présenté ici. `validateNewPassword` produit 400 `PASSWORD_TOO_COMMON` ou `PASSWORD_INVALID` (échec de `PasswordSchema`) ; le jeton n'est pas consommé. Le schéma `ResetPasswordRequestSchema` réutilise `PasswordSchema` : un mot de passe trop court est refusé par le contrôleur avec `PASSWORD_INVALID` avant le service. Ensuite, une transaction Prisma interactive hache en argon2id puis écrit `passwordHash`, `usedAt = now`, `failedLoginCount = 0` et `lockedUntil = null`. `SessionStore.destroyAllForUser` n'est appelé qu'après le commit. Aucun paquet ajouté.
+- **Alternatives :** répondre 200 avec un message identique ; supprimer les anciens jetons au lieu de poser `usedAt` ; hacher hors de la transaction puis n'y mettre que les deux écritures ; limiter aussi `password/reset` ; distinguer 400 selon que le jeton est expiré ou inconnu.
+- **À valider :** oui (réponse 202 uniforme ; invalidation par `usedAt` ; hachage argon2id tenu dans la transaction interactive)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

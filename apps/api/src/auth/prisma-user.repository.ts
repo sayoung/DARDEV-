@@ -4,7 +4,13 @@ import { LANGS, type Lang } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { toSharedRole } from './prisma-role.js';
-import { type AuthUser, type LoginStateUpdate, type UserRepository } from './user.repository.js';
+import { type AuthTx } from './unit-of-work.js';
+import {
+  type AuthUser,
+  type LoginStateUpdate,
+  type PasswordUpdate,
+  type UserRepository,
+} from './user.repository.js';
 
 const authUserSelect = {
   id: true,
@@ -83,5 +89,21 @@ export class PrismaUserRepository implements UserRepository {
         ...(state.lastLoginAt !== undefined ? { lastLoginAt: state.lastLoginAt } : {}),
       },
     });
+  }
+
+  async updatePassword(id: string, state: PasswordUpdate, db?: AuthTx): Promise<void> {
+    const args = {
+      where: { id },
+      data: {
+        passwordHash: state.passwordHash,
+        failedLoginCount: state.failedLoginCount,
+        lockedUntil: state.lockedUntil,
+      },
+    };
+    if (db) {
+      await db.user.update(args);
+      return;
+    }
+    await this.prisma.user.update(args);
   }
 }
