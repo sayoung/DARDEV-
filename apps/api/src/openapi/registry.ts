@@ -384,6 +384,7 @@ registerCatalogCrud({
 registerTourCrud();
 registerTourValidate();
 registerTourPublish();
+registerTourDuplicate();
 registerSceneCrud();
 registerHotspotList();
 registerHotspotItem();
@@ -630,6 +631,27 @@ function registerTourPublish(): void {
       '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse(denied, forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+    },
+  });
+}
+
+function registerTourDuplicate(): void {
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/tours/{id}/duplicate',
+    summary: 'Dupliquer une visite',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: z.object({ id: z.uuidv7() }) },
+    responses: {
+      '201': jsonResponse(
+        'Copie en brouillon. Le titre français est suffixé de « (copie) ». Les scènes non supprimées et leurs hotspots sont recopiés ; les liens de scène pointent vers les copies.',
+        TourResponseSchema,
+      ),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
       '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
     },
   });

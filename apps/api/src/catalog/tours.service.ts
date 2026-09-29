@@ -1,8 +1,14 @@
 import { randomBytes } from 'node:crypto';
 
 import { Inject, Injectable, NotFoundException, type HttpException } from '@nestjs/common';
-import { Prisma, TourStatus as PrismaTourStatus } from '@prisma/client';
 import {
+  HotspotType as PrismaHotspotType,
+  Prisma,
+  TourStatus as PrismaTourStatus,
+} from '@prisma/client';
+import {
+  HotspotType,
+  LocalizedTextSchema,
   TourResponseSchema,
   TourStatus,
   type Paginated,
@@ -20,11 +26,15 @@ import {
   CITY_NOT_FOUND_MESSAGE,
   COVER_ASSET_NOT_FOUND,
   COVER_ASSET_NOT_FOUND_MESSAGE,
+  TOUR_NOT_FOUND,
+  TOUR_NOT_FOUND_MESSAGE,
   isForeignKeyViolation,
   isRecordMissing,
+  missingException,
   referenceException,
 } from './catalog.errors.js';
 import { localizedToJson } from './localized-json.js';
+import { duplicateFrenchTitle, remapDuplicateLinks } from './tour-duplicate.js';
 
 /** 16 octets en base64url, sans padding : 22 caractères (colonne `VarChar(22)`). */
 const SHARE_TOKEN_BYTES = 16;
@@ -37,6 +47,21 @@ const tourInclude = {
   _count: {
     select: {
       scenes: { where: { deletedAt: null } },
+    },
+  },
+} satisfies Prisma.TourInclude;
+
+/** Scènes vivantes seulement, dans l'ordre d'affichage, avec leurs hotspots. */
+const duplicateInclude = {
+  categories: {
+    select: { categoryId: true },
+    orderBy: { id: 'asc' as const },
+  },
+  scenes: {
+    where: { deletedAt: null },
+    orderBy: [{ weight: 'asc' as const }, { createdAt: 'asc' as const }],
+    include: {
+      hotspots: { orderBy: { createdAt: 'asc' as const } },
     },
   },
 } satisfies Prisma.TourInclude;
@@ -116,6 +141,122 @@ export class ToursService {
     }
   }
 
+  /**
+   * Copie la visite, ses catégories, ses scènes non supprimées et leurs hotspots.
+   * Une seule transaction. La source n'est pas modifiée.
+   */
+  async duplicate(id: string, createdById: string): Promise<TourResponse> {
+    return await this.prisma.$transaction(async (tx) => {
+      const source = await tx.tour.findFirst({
+        where: { id, deletedAt: null },
+        include: duplicateInclude,
+      });
+      if (source === null) {
+        throw missingException(TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE);
+      }
+
+      const created = await tx.tour.create({
+        data: {
+          title: localizedToJson(duplicateFrenchTitle(LocalizedTextSchema.parse(source.title))),
+          summary: copyRequiredJson(source.summary),
+          description: copyJson(source.description),
+          cityId: source.cityId,
+          coverAssetId: source.coverAssetId,
+          durationMinutes: source.durationMinutes,
+          lat: source.lat,
+          lng: source.lng,
+          practicalInfo: copyJson(source.practicalInfo),
+          status: PrismaTourStatus.DRAFT,
+          publicShare: false,
+          shareToken: createShareToken(),
+          createdById,
+        },
+      });
+      await insertCategories(
+        tx,
+        created.id,
+        source.categories.map((link) => link.categoryId),
+      );
+
+      const copies = new Map<string, string>();
+      for (const scene of source.scenes) {
+        const copy = await tx.scene.create({
+          data: {
+            tourId: created.id,
+            title: copyRequiredJson(scene.title),
+            caption: copyJson(scene.caption),
+            panoramaAssetId: scene.panoramaAssetId,
+            initialYaw: scene.initialYaw,
+            initialPitch: scene.initialPitch,
+            initialZoom: scene.initialZoom,
+            narration: copyJson(scene.narration),
+            ambientAssetId: scene.ambientAssetId,
+            mapX: scene.mapX,
+            mapY: scene.mapY,
+            weight: scene.weight,
+            createdById,
+          },
+        });
+        copies.set(scene.id, copy.id);
+      }
+
+      const links = remapDuplicateLinks(
+        source.startSceneId,
+        source.scenes.flatMap((scene) =>
+          scene.hotspots.map((hotspot) => ({
+            id: hotspot.id,
+            type: toHotspotType(hotspot.type),
+            targetSceneId: hotspot.targetSceneId,
+            targetTourId: hotspot.targetTourId,
+            targetTourSceneId: hotspot.targetTourSceneId,
+          })),
+        ),
+        copies,
+      );
+      const remapped = new Map(links.hotspots.map((hotspot) => [hotspot.id, hotspot]));
+
+      for (const scene of source.scenes) {
+        const sceneId = copies.get(scene.id);
+        if (sceneId === undefined) {
+          throw new Error('scène copiée absente');
+        }
+        for (const hotspot of scene.hotspots) {
+          const link = remapped.get(hotspot.id);
+          if (link === undefined) {
+            throw new Error('hotspot remappé absent');
+          }
+          await tx.hotspot.create({
+            data: {
+              sceneId,
+              type: hotspot.type,
+              yaw: hotspot.yaw,
+              pitch: hotspot.pitch,
+              label: copyRequiredJson(hotspot.label),
+              targetSceneId: link.targetSceneId,
+              targetTourId: link.targetTourId,
+              targetTourSceneId: link.targetTourSceneId,
+              body: copyJson(hotspot.body),
+              mediaAssetIds: [...hotspot.mediaAssetIds],
+              url: hotspot.url,
+              icon: hotspot.icon,
+              arrivalYaw: hotspot.arrivalYaw,
+              createdById,
+            },
+          });
+        }
+      }
+
+      if (links.startSceneId !== null) {
+        await tx.tour.update({
+          where: { id: created.id },
+          data: { startSceneId: links.startSceneId },
+        });
+      }
+
+      return toTour(await loadRow(tx, created.id));
+    });
+  }
+
   /** Suppression logique. La ligne reste, pour les clés étrangères `Restrict` (D-69). */
   async remove(id: string): Promise<void> {
     await this.get(id);
@@ -174,6 +315,25 @@ type TourClient = PrismaService | Prisma.TransactionClient;
 
 function createShareToken(): string {
   return randomBytes(SHARE_TOKEN_BYTES).toString('base64url');
+}
+
+/** Valeur JSON lue par Prisma, recopiée telle quelle. `null` reste SQL NULL. */
+function copyJson(value: Prisma.JsonValue): Prisma.InputJsonValue | typeof Prisma.DbNull {
+  if (value === null) {
+    return Prisma.DbNull;
+  }
+  return value;
+}
+
+function copyRequiredJson(value: Prisma.JsonValue): Prisma.InputJsonValue {
+  if (value === null) {
+    throw new Error('champ JSON obligatoire absent');
+  }
+  return value;
+}
+
+function toHotspotType(type: PrismaHotspotType): HotspotType {
+  return HotspotType[type];
 }
 
 function uniqueIds(ids: readonly string[]): string[] {

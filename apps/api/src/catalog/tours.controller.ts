@@ -80,6 +80,13 @@ export class ToursController {
     return this.publication.unpublish(parseResourceId(id));
   }
 
+  @Post(':id/duplicate')
+  @HttpCode(HttpStatus.CREATED)
+  duplicate(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
+    const principal = requireContentManager(request);
+    return this.tours.duplicate(parseResourceId(id), principal.userId);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Req() request: SessionRequest, @Body() body: unknown): Promise<TourResponse> {
