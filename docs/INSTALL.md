@@ -59,9 +59,12 @@ pnpm test:int
 
 ## Tests de bout en bout
 
-`pnpm test:e2e` est le nom prévu pour Playwright (`AGENTS.md`, accessibilité NF-05). Au jalon M0, la racine `package.json` ne déclare pas ce script et le dépôt n'a pas de configuration Playwright. La commande ne lance donc pas de parcours.
+`pnpm test:e2e` lance Playwright (`@playwright/test`, Chromium seulement) contre le back-office. Le premier parcours est un test de fumée : `http://localhost:5173/` s'affiche et `html` a `lang="fr"`. Playwright démarre `pnpm --filter @xplor/admin dev` si le port 5173 est libre. Hors CI, un serveur déjà lancé sur ce port est réutilisé.
+
+Installer le navigateur une fois, puis lancer les tests :
 
 ```bash
+pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
