@@ -30,6 +30,8 @@ const ROUTES = [
   { path: '/api/v1/admin/tours/{id}', method: 'delete' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'get' },
   { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'post' },
+  { path: '/api/v1/admin/tours/{tourId}/scenes/reorder', method: 'post' },
+  { path: '/api/v1/admin/tours/{tourId}/scenes/set-start', method: 'post' },
   { path: '/api/v1/admin/scenes/{id}', method: 'get' },
   { path: '/api/v1/admin/scenes/{id}', method: 'patch' },
   { path: '/api/v1/admin/scenes/{id}', method: 'delete' },
@@ -69,6 +71,14 @@ describe('document OpenAPI', () => {
     const deleteScene = doc.paths?.['/api/v1/admin/scenes/{id}']?.delete?.responses;
     expect(deleteScene?.['204']).toBeDefined();
     expect(deleteScene?.['404']).toBeDefined();
+    const reorder = doc.paths?.['/api/v1/admin/tours/{tourId}/scenes/reorder']?.post?.responses;
+    expect(reorder?.['200']).toBeDefined();
+    expect(reorder?.['422']).toBeDefined();
+    const setStart = doc.paths?.['/api/v1/admin/tours/{tourId}/scenes/set-start']?.post?.responses;
+    expect(setStart?.['200']).toBeDefined();
+    expect(setStart?.['422']).toBeDefined();
+    expect(body).toContain('SCENE_SET_MISMATCH');
+    expect(body).toContain('START_SCENE_FOREIGN');
 
     const invitations = doc.paths?.['/api/v1/admin/users/invitations']?.post?.responses;
     expect(invitations?.['403']).toBeDefined();

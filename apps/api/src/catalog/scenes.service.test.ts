@@ -1,6 +1,6 @@
 import { HttpException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { SceneCreate } from '@xplor/shared';
+import { TourStatus, type SceneCreate, type TourResponse } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -9,12 +9,19 @@ import {
   PANORAMA_ASSET_NOT_FOUND_MESSAGE,
   SCENE_NOT_FOUND,
   SCENE_NOT_FOUND_MESSAGE,
+  SCENE_SET_MISMATCH,
+  SCENE_SET_MISMATCH_MESSAGE,
+  START_SCENE_FOREIGN,
+  START_SCENE_FOREIGN_MESSAGE,
   TOUR_NOT_FOUND,
   TOUR_NOT_FOUND_MESSAGE,
+  missingException,
 } from './catalog.errors.js';
 import { ScenesService } from './scenes.service.js';
+import type { ToursService } from './tours.service.js';
 
 const TOUR_ID = '01990000-0000-7000-8000-000000000006';
+const OTHER_TOUR_ID = '01990000-0000-7000-8000-00000000000b';
 const PANORAMA_ID = '01990000-0000-7000-8000-000000000004';
 const PANORAMA_B = '01990000-0000-7000-8000-000000000014';
 const USER_ID = '01990000-0000-7000-8000-000000000009';
@@ -73,6 +80,7 @@ function harness(): {
 } {
   const tours = new Map<string, StoredTour>([
     [TOUR_ID, { id: TOUR_ID, startSceneId: null, contentVersion: 1, deletedAt: null }],
+    [OTHER_TOUR_ID, { id: OTHER_TOUR_ID, startSceneId: null, contentVersion: 1, deletedAt: null }],
   ]);
   const scenes = new Map<string, StoredScene>();
   const assets = new Set<string>([PANORAMA_ID, PANORAMA_B]);
@@ -175,11 +183,11 @@ function harness(): {
         orderBy,
       }: {
         where: SceneWhere;
-        orderBy: { weight?: 'asc' | 'desc'; createdAt?: 'asc' | 'desc' }[];
+        orderBy?: { weight?: 'asc' | 'desc'; createdAt?: 'asc' | 'desc' }[];
       }): Promise<ReturnType<typeof view>[]> => {
         const rows = [...scenes.values()]
           .filter((scene) => matches(scene, where))
-          .sort((left, right) => compareScenes(left, right, orderBy));
+          .sort((left, right) => (orderBy === undefined ? 0 : compareScenes(left, right, orderBy)));
         return Promise.resolve(rows.map((scene) => view(scene)));
       },
       create: ({ data }: { data: Record<string, unknown> }): Promise<{ id: string }> => {
@@ -235,8 +243,37 @@ function harness(): {
     $transaction: <T>(fn: (tx: unknown) => Promise<T>): Promise<T> => fn(prisma),
   };
 
+  const toursApi = {
+    get: (id: string): Promise<TourResponse> => {
+      const tour = tours.get(id);
+      if (tour === undefined || tour.deletedAt !== null) {
+        return Promise.reject(missingException(TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE));
+      }
+      const sceneCount = [...scenes.values()].filter(
+        (scene) => scene.tourId === id && scene.deletedAt === null,
+      ).length;
+      return Promise.resolve({
+        id: tour.id,
+        title: { fr: 'Visite' },
+        summary: { fr: 'Résumé' },
+        cityId: '01990000-0000-7000-8000-000000000001',
+        categoryIds: ['01990000-0000-7000-8000-000000000002'],
+        coverAssetId: '01990000-0000-7000-8000-000000000003',
+        status: TourStatus.DRAFT,
+        publicShare: false,
+        shareToken: 'aaaaaaaaaaaaaaaaaaaaaa',
+        sceneCount,
+        createdById: USER_ID,
+        contentVersion: tour.contentVersion,
+      });
+    },
+  };
+
   return {
-    service: new ScenesService(prisma as unknown as PrismaService),
+    service: new ScenesService(
+      prisma as unknown as PrismaService,
+      toursApi as unknown as ToursService,
+    ),
     tours,
     scenes,
     assets,
@@ -563,6 +600,98 @@ describe('ScenesService', () => {
       message: SCENE_NOT_FOUND_MESSAGE,
     });
     expect(scenes.get(created.id)?.deletedAt).toBeNull();
+  });
+
+  it('réordonne les scènes et ignore une scène supprimée', async () => {
+    const { service, tours, scenes } = harness();
+    const porteScene = await service.create(TOUR_ID, { ...porte, weight: 5 }, USER_ID);
+    const jardin = await service.create(
+      TOUR_ID,
+      { ...porte, title: { fr: 'Jardin' }, weight: 1 },
+      USER_ID,
+    );
+    const remparts = await service.create(
+      TOUR_ID,
+      { ...porte, title: { fr: 'Remparts' }, weight: 9 },
+      USER_ID,
+    );
+
+    await expect(readHttp(service.reorder(TOUR_ID, [porteScene.id]))).resolves.toEqual({
+      status: 422,
+      code: SCENE_SET_MISMATCH,
+      message: SCENE_SET_MISMATCH_MESSAGE,
+    });
+    await expect(
+      readHttp(service.reorder(TOUR_ID, [porteScene.id, porteScene.id, jardin.id])),
+    ).resolves.toEqual({
+      status: 422,
+      code: SCENE_SET_MISMATCH,
+      message: SCENE_SET_MISMATCH_MESSAGE,
+    });
+    const foreign = await service.create(OTHER_TOUR_ID, porte, USER_ID);
+    await expect(
+      readHttp(service.reorder(TOUR_ID, [porteScene.id, foreign.id, remparts.id])),
+    ).resolves.toEqual({
+      status: 422,
+      code: SCENE_SET_MISMATCH,
+      message: SCENE_SET_MISMATCH_MESSAGE,
+    });
+    expect(scenes.get(porteScene.id)?.weight).toBe(5);
+    expect(tours.get(TOUR_ID)?.contentVersion).toBe(4);
+
+    const ordered = await service.reorder(TOUR_ID, [remparts.id, porteScene.id, jardin.id]);
+    expect(ordered.map((scene) => scene.id)).toEqual([remparts.id, porteScene.id, jardin.id]);
+    expect(ordered.map((scene) => scene.weight)).toEqual([0, 1, 2]);
+    expect(tours.get(TOUR_ID)?.contentVersion).toBe(5);
+
+    await service.remove(jardin.id);
+    const remaining = await service.reorder(TOUR_ID, [porteScene.id, remparts.id]);
+    expect(remaining.map((scene) => scene.id)).toEqual([porteScene.id, remparts.id]);
+    expect(remaining.map((scene) => scene.weight)).toEqual([0, 1]);
+    await expect(
+      readHttp(service.reorder(TOUR_ID, [porteScene.id, remparts.id, jardin.id])),
+    ).resolves.toEqual({
+      status: 422,
+      code: SCENE_SET_MISMATCH,
+      message: SCENE_SET_MISMATCH_MESSAGE,
+    });
+  });
+
+  it('pose la scène de départ et refuse une scène étrangère ou supprimée', async () => {
+    const { service, tours } = harness();
+    const first = await service.create(TOUR_ID, porte, USER_ID);
+    const second = await service.create(
+      TOUR_ID,
+      { ...porte, title: { fr: 'Jardin' }, weight: 1 },
+      USER_ID,
+    );
+    const tour = await service.setStart(TOUR_ID, second.id);
+    expect(tour.id).toBe(TOUR_ID);
+    expect(tour.sceneCount).toBe(2);
+    expect(tour.contentVersion).toBe(4);
+    expect(tours.get(TOUR_ID)?.startSceneId).toBe(second.id);
+
+    const foreign = await service.create(OTHER_TOUR_ID, porte, USER_ID);
+    await expect(readHttp(service.setStart(TOUR_ID, foreign.id))).resolves.toEqual({
+      status: 422,
+      code: START_SCENE_FOREIGN,
+      message: START_SCENE_FOREIGN_MESSAGE,
+    });
+    await expect(readHttp(service.setStart(TOUR_ID, UNKNOWN_ID))).resolves.toEqual({
+      status: 422,
+      code: START_SCENE_FOREIGN,
+      message: START_SCENE_FOREIGN_MESSAGE,
+    });
+    expect(tours.get(TOUR_ID)?.startSceneId).toBe(second.id);
+    expect(tours.get(TOUR_ID)?.contentVersion).toBe(4);
+
+    await service.remove(first.id);
+    await expect(readHttp(service.setStart(TOUR_ID, first.id))).resolves.toEqual({
+      status: 422,
+      code: START_SCENE_FOREIGN,
+      message: START_SCENE_FOREIGN_MESSAGE,
+    });
+    expect(tours.get(TOUR_ID)?.startSceneId).toBe(second.id);
   });
 });
 

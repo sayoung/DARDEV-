@@ -5,6 +5,7 @@ import {
   type SceneCreate,
   type SceneResponse,
   type SceneUpdate,
+  type TourResponse,
 } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -13,6 +14,10 @@ import {
   PANORAMA_ASSET_NOT_FOUND_MESSAGE,
   SCENE_NOT_FOUND,
   SCENE_NOT_FOUND_MESSAGE,
+  SCENE_SET_MISMATCH,
+  SCENE_SET_MISMATCH_MESSAGE,
+  START_SCENE_FOREIGN,
+  START_SCENE_FOREIGN_MESSAGE,
   TOUR_NOT_FOUND,
   TOUR_NOT_FOUND_MESSAGE,
   isForeignKeyViolation,
@@ -21,6 +26,7 @@ import {
   referenceException,
 } from './catalog.errors.js';
 import { localizedToJson } from './localized-json.js';
+import { ToursService } from './tours.service.js';
 
 const sceneInclude = {
   tour: {
@@ -40,7 +46,10 @@ interface ActiveTour {
 
 @Injectable()
 export class ScenesService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(ToursService) private readonly tours: ToursService,
+  ) {}
 
   async list(tourId: string): Promise<SceneResponse[]> {
     await this.loadActiveTour(tourId);
@@ -120,6 +129,70 @@ export class ScenesService {
     }
   }
 
+  /**
+   * `weight` devient l'index dans `sceneIds`.
+   * La liste doit être exactement les scènes non supprimées, sans doublon.
+   */
+  async reorder(tourId: string, sceneIds: readonly string[]): Promise<SceneResponse[]> {
+    await this.loadActiveTour(tourId);
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const tour = await this.loadActiveTour(tourId, tx);
+        await this.assertExactSet(tour.id, sceneIds, tx);
+        for (const [index, sceneId] of sceneIds.entries()) {
+          await tx.scene.update({
+            where: { id: sceneId },
+            data: { weight: index },
+          });
+        }
+        await tx.tour.update({
+          where: { id: tour.id },
+          data: { contentVersion: { increment: 1 } },
+        });
+        const rows = await tx.scene.findMany({
+          where: { tourId: tour.id, deletedAt: null },
+          include: sceneInclude,
+          orderBy: [{ weight: 'asc' }, { createdAt: 'asc' }],
+        });
+        return rows.map((row) => toScene(row));
+      });
+    } catch (error: unknown) {
+      if (isHttpException(error)) {
+        throw error;
+      }
+      if (isRecordMissing(error) || isForeignKeyViolation(error)) {
+        await this.loadActiveTour(tourId);
+        await this.assertExactSet(tourId, sceneIds);
+      }
+      throw error;
+    }
+  }
+
+  /** Pose `startSceneId`. Une scène hors de la visite, ou supprimée, répond 422. */
+  async setStart(tourId: string, sceneId: string): Promise<TourResponse> {
+    await this.loadActiveTour(tourId);
+    await this.assertBelongs(tourId, sceneId);
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const tour = await this.loadActiveTour(tourId, tx);
+        await this.assertBelongs(tour.id, sceneId, tx);
+        await tx.tour.update({
+          where: { id: tour.id },
+          data: {
+            startSceneId: sceneId,
+            contentVersion: { increment: 1 },
+          },
+        });
+      });
+    } catch (error: unknown) {
+      await rethrowReferenceOrMissing(error, TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE, async () => {
+        await this.loadActiveTour(tourId);
+        await this.assertBelongs(tourId, sceneId);
+      });
+    }
+    return this.tours.get(tourId);
+  }
+
   /** Suppression logique. Si c'était la scène de départ, `startSceneId` revient à null. */
   async remove(id: string): Promise<void> {
     await this.loadActive(id);
@@ -168,6 +241,34 @@ export class ScenesService {
     return row;
   }
 
+  private async assertExactSet(
+    tourId: string,
+    sceneIds: readonly string[],
+    client: SceneClient = this.prisma,
+  ): Promise<void> {
+    const rows = await client.scene.findMany({
+      where: { tourId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!exactSceneIds(rows.map((row) => row.id), sceneIds)) {
+      throw referenceException(SCENE_SET_MISMATCH, SCENE_SET_MISMATCH_MESSAGE);
+    }
+  }
+
+  private async assertBelongs(
+    tourId: string,
+    sceneId: string,
+    client: SceneClient = this.prisma,
+  ): Promise<void> {
+    const scene = await client.scene.findFirst({
+      where: { id: sceneId, tourId, deletedAt: null },
+      select: { id: true },
+    });
+    if (scene === null) {
+      throw referenceException(START_SCENE_FOREIGN, START_SCENE_FOREIGN_MESSAGE);
+    }
+  }
+
   private async assertPanorama(id: string): Promise<void> {
     const asset = await this.prisma.asset.findUnique({
       where: { id },
@@ -199,6 +300,23 @@ function sceneScalars(input: SceneCreate): {
     initialZoom: input.initialZoom,
     weight: input.weight,
   };
+}
+
+function exactSceneIds(activeIds: readonly string[], requested: readonly string[]): boolean {
+  if (requested.length !== activeIds.length) {
+    return false;
+  }
+  const requestedSet = new Set(requested);
+  if (requestedSet.size !== requested.length) {
+    return false;
+  }
+  const active = new Set(activeIds);
+  for (const id of requested) {
+    if (!active.has(id)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function toScene(row: SceneRow): SceneResponse {

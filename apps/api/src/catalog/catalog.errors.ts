@@ -43,6 +43,20 @@ export const PANORAMA_ASSET_NOT_FOUND = 'PANORAMA_ASSET_NOT_FOUND';
 
 export const PANORAMA_ASSET_NOT_FOUND_MESSAGE = 'Ce panorama est inconnu.';
 
+/** La liste de réordonnancement n'est pas l'ensemble des scènes non supprimées (API-22). */
+export const SCENE_SET_MISMATCH = 'SCENE_SET_MISMATCH';
+
+export const SCENE_SET_MISMATCH_MESSAGE =
+  'La liste ne contient pas exactement les scènes de la visite.';
+
+/**
+ * Scène de départ inconnue, supprimée ou rattachée à une autre visite (API-22).
+ * Même code que `ValidationIssueCode.START_SCENE_FOREIGN`.
+ */
+export const START_SCENE_FOREIGN = 'START_SCENE_FOREIGN';
+
+export const START_SCENE_FOREIGN_MESSAGE = "La scène de départ n'appartient pas à cette visite.";
+
 /** Référence de visite inconnue : 422 `{ error: { code, message } }`. */
 export function referenceException(code: string, message: string): HttpException {
   return new HttpException({ error: { code, message } }, HttpStatus.UNPROCESSABLE_ENTITY);

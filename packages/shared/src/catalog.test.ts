@@ -15,8 +15,10 @@ import {
   PaginationQuerySchema,
   ProcessingStatus,
   SceneCreateSchema,
+  SceneReorderRequestSchema,
   SceneResponseSchema,
   SceneUpdateSchema,
+  SetStartSceneRequestSchema,
   TourCreateSchema,
   TourListQuerySchema,
   TourResponseSchema,
@@ -342,6 +344,33 @@ describe('SceneUpdateSchema', () => {
     expect(SceneUpdateSchema.safeParse({ ...scene, initialYaw: Math.PI + 0.01 }).success).toBe(
       false,
     );
+  });
+});
+
+describe('SceneReorderRequestSchema', () => {
+  it('accepte une liste d’UUID v7, y compris vide ou avec un doublon', () => {
+    expect(SceneReorderRequestSchema.parse({ sceneIds: [id.scene, id.tour] })).toEqual({
+      sceneIds: [id.scene, id.tour],
+    });
+    expect(SceneReorderRequestSchema.parse({ sceneIds: [] })).toEqual({ sceneIds: [] });
+    expect(SceneReorderRequestSchema.parse({ sceneIds: [id.scene, id.scene] }).sceneIds).toEqual([
+      id.scene,
+      id.scene,
+    ]);
+  });
+
+  it('refuse un UUID qui n’est pas v7', () => {
+    expect(SceneReorderRequestSchema.safeParse({ sceneIds: [uuidV4] }).success).toBe(false);
+  });
+});
+
+describe('SetStartSceneRequestSchema', () => {
+  it('accepte l’identifiant de la scène de départ', () => {
+    expect(SetStartSceneRequestSchema.parse({ sceneId: id.scene })).toEqual({ sceneId: id.scene });
+  });
+
+  it('refuse un UUID qui n’est pas v7', () => {
+    expect(SetStartSceneRequestSchema.safeParse({ sceneId: uuidV4 }).success).toBe(false);
   });
 });
 

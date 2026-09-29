@@ -1,5 +1,5 @@
 /**
- * CRUD HTTP des scènes (API-22, partie 1).
+ * CRUD HTTP des scènes, réordonnancement et scène de départ (API-22).
  * PostgreSQL : `DATABASE_URL_TEST`. Redis : `REDIS_URL`.
  */
 import 'reflect-metadata';
@@ -34,6 +34,10 @@ import {
   PANORAMA_ASSET_NOT_FOUND_MESSAGE,
   SCENE_NOT_FOUND,
   SCENE_NOT_FOUND_MESSAGE,
+  SCENE_SET_MISMATCH,
+  SCENE_SET_MISMATCH_MESSAGE,
+  START_SCENE_FOREIGN,
+  START_SCENE_FOREIGN_MESSAGE,
 } from '../src/catalog/catalog.errors.js';
 import { loadEnv, type Env } from '../src/config/env.js';
 import { REDIS } from '../src/redis/redis.module.js';
@@ -262,6 +266,125 @@ describe('scènes HTTP', () => {
     expect(list.statusCode).toBe(200);
     expect(parseJson(list.body)).toEqual([]);
   });
+
+  it('réordonne les scènes et refuse une liste incomplète', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const porte = await createScene(editor, ready.tour.id, {
+      title: { fr: 'La porte' },
+      panoramaAssetId: ready.panoramaAssetId,
+      weight: 5,
+    });
+    const jardin = await createScene(editor, ready.tour.id, {
+      title: { fr: 'Le jardin' },
+      panoramaAssetId: ready.panoramaAssetId,
+      weight: 1,
+    });
+    const remparts = await createScene(editor, ready.tour.id, {
+      title: { fr: 'Les remparts' },
+      panoramaAssetId: ready.panoramaAssetId,
+      weight: 9,
+    });
+
+    const incomplete = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/scenes/reorder`,
+      editor,
+      { sceneIds: [porte.id] },
+    );
+    expect(incomplete.statusCode).toBe(422);
+    expect(parseJson(incomplete.body)).toEqual({
+      error: { code: SCENE_SET_MISMATCH, message: SCENE_SET_MISMATCH_MESSAGE },
+    });
+    expect(await weightOf(porte.id)).toBe(5);
+    expect(await weightOf(jardin.id)).toBe(1);
+    expect(await weightOf(remparts.id)).toBe(9);
+
+    const reordered = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/scenes/reorder`,
+      editor,
+      { sceneIds: [remparts.id, porte.id, jardin.id] },
+    );
+    expect(reordered.statusCode).toBe(200);
+    const scenes = parseSceneList(reordered.body);
+    expect(scenes.map((scene) => scene.id)).toEqual([remparts.id, porte.id, jardin.id]);
+    expect(scenes.map((scene) => scene.weight)).toEqual([0, 1, 2]);
+    expect(await weightOf(remparts.id)).toBe(0);
+    expect(await weightOf(porte.id)).toBe(1);
+    expect(await weightOf(jardin.id)).toBe(2);
+    const tour = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(tour.contentVersion).toBe(5);
+  });
+
+  it('pose la scène de départ et refuse une scène d’une autre visite', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const other = await prepare(editor);
+    const first = await createScene(editor, ready.tour.id, {
+      title: { fr: 'La porte' },
+      panoramaAssetId: ready.panoramaAssetId,
+      weight: 0,
+    });
+    const second = await createScene(editor, ready.tour.id, {
+      title: { fr: 'Le jardin' },
+      panoramaAssetId: ready.panoramaAssetId,
+      weight: 1,
+    });
+    const foreign = await createScene(editor, other.tour.id, {
+      title: { fr: 'Ailleurs' },
+      panoramaAssetId: other.panoramaAssetId,
+      weight: 0,
+    });
+    const before = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(before.startSceneId).toBe(first.id);
+
+    const updated = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/scenes/set-start`,
+      editor,
+      { sceneId: second.id },
+    );
+    expect(updated.statusCode).toBe(200);
+    const tour = TourResponseSchema.parse(parseJson(updated.body));
+    expect(tour.id).toBe(ready.tour.id);
+    expect(tour.contentVersion).toBe(4);
+    const row = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(row.startSceneId).toBe(second.id);
+    expect(row.contentVersion).toBe(4);
+
+    const rejected = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/scenes/set-start`,
+      editor,
+      { sceneId: foreign.id },
+    );
+    expect(rejected.statusCode).toBe(422);
+    expect(parseJson(rejected.body)).toEqual({
+      error: { code: START_SCENE_FOREIGN, message: START_SCENE_FOREIGN_MESSAGE },
+    });
+    const after = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(after.startSceneId).toBe(second.id);
+    expect(after.contentVersion).toBe(4);
+  });
+
+  it('refuse reorder et set-start à HOTEL_MANAGER', async () => {
+    const manager = await login(MANAGER_EMAIL);
+    const reorder = await send(
+      'POST',
+      `/api/v1/admin/tours/${UNKNOWN_ID}/scenes/reorder`,
+      manager,
+      { sceneIds: [] },
+    );
+    expect(reorder.statusCode).toBe(403);
+    const setStart = await send(
+      'POST',
+      `/api/v1/admin/tours/${UNKNOWN_ID}/scenes/set-start`,
+      manager,
+      { sceneId: UNKNOWN_ID },
+    );
+    expect(setStart.statusCode).toBe(403);
+  });
 });
 
 interface Session {
@@ -322,6 +445,19 @@ async function createTour(editor: Session, body: TourCreate): Promise<TourRespon
   const response = await send('POST', '/api/v1/admin/tours', editor, body);
   expect(response.statusCode).toBe(201);
   return TourResponseSchema.parse(parseJson(response.body));
+}
+
+async function weightOf(id: string): Promise<number> {
+  const row = await prisma.scene.findUniqueOrThrow({ where: { id } });
+  return row.weight;
+}
+
+function parseSceneList(body: string): SceneResponse[] {
+  const parsed = parseJson(body);
+  if (!Array.isArray(parsed)) {
+    throw new Error('liste de scènes attendue');
+  }
+  return parsed.map((item) => SceneResponseSchema.parse(item));
 }
 
 async function createScene(
