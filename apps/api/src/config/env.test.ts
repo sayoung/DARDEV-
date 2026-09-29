@@ -14,6 +14,7 @@ function exampleEnv(): Record<string, string | undefined> {
     SMTP_HOST: 'localhost',
     SMTP_PORT: '1025',
     SESSION_SECRET: 'dev-only-session-secret-not-for-production',
+    ADMIN_BASE_URL: 'http://localhost:5173',
   };
 }
 
@@ -31,6 +32,7 @@ describe('loadEnv', () => {
     expect(env.SMTP_HOST).toBe('localhost');
     expect(env.SMTP_PORT).toBe(1025);
     expect(env.SESSION_SECRET).toBe('dev-only-session-secret-not-for-production');
+    expect(env.ADMIN_BASE_URL).toBe('http://localhost:5173');
 
     const withoutPort = exampleEnv();
     delete withoutPort.PORT;
@@ -40,6 +42,18 @@ describe('loadEnv', () => {
   it('rejects a SESSION_SECRET that is too short', () => {
     expect(() => loadEnv({ ...exampleEnv(), SESSION_SECRET: 'a'.repeat(31) })).toThrow(
       /SESSION_SECRET/,
+    );
+  });
+
+  it('defaults ADMIN_BASE_URL to the back-office and rejects a non-URL', () => {
+    const source = exampleEnv();
+    delete source.ADMIN_BASE_URL;
+    expect(loadEnv(source).ADMIN_BASE_URL).toBe('http://localhost:5173');
+    expect(
+      loadEnv({ ...exampleEnv(), ADMIN_BASE_URL: 'https://admin.xplor.local' }).ADMIN_BASE_URL,
+    ).toBe('https://admin.xplor.local');
+    expect(() => loadEnv({ ...exampleEnv(), ADMIN_BASE_URL: 'not-a-url' })).toThrow(
+      /ADMIN_BASE_URL/,
     );
   });
 

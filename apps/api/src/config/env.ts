@@ -16,6 +16,7 @@ const envKeys = [
   'SMTP_HOST',
   'SMTP_PORT',
   'SESSION_SECRET',
+  'ADMIN_BASE_URL',
 ] as const;
 
 export const envSchema = z.object({
@@ -30,6 +31,7 @@ export const envSchema = z.object({
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: portSchema,
   SESSION_SECRET: z.string().min(32),
+  ADMIN_BASE_URL: z.url().default('http://localhost:5173'),
 });
 
 export type Env = z.infer<typeof envSchema>;

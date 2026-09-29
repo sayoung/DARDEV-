@@ -28,5 +28,17 @@
   },
   "health": {
     "ok": "Service available"
+  },
+  "mail": {
+    "invite": {
+      "subject": "Invitation to join Xplor",
+      "text": "You are invited to join Xplor. Set your password by opening this link (valid for 48 hours): {link}",
+      "html": "<p>You are invited to join Xplor.</p><p><a href=\"{link}\">Set your password</a> (link valid for 48 hours).</p>"
+    },
+    "reset": {
+      "subject": "Reset your Xplor password",
+      "text": "To choose a new password, open this link (valid for 1 hour): {link}",
+      "html": "<p><a href=\"{link}\">Choose a new password</a> (link valid for 1 hour).</p>"
+    }
   }
 }
