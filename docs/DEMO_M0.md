@@ -2,7 +2,28 @@
 
 Scénario pour le porteur du projet. Il vérifie le livrable de fin de jalon : environnement en quatre commandes, puis connexion au back-office (cahier des charges, section 9). La CI verte se constate sur GitHub, pas dans ce parcours.
 
-Préparer le poste comme dans `docs/INSTALL.md` : `nvm use 22`, puis les deux fichiers `.env` (racine du dépôt et `apps/api/.env`). Sans Docker Desktop (WSL2), s'arrêter après la lecture : `docker compose up -d` ne peut pas aboutir.
+Préparer le poste comme dans `docs/INSTALL.md` : `nvm use 22`, puis les deux fichiers `.env` (racine du dépôt et `apps/api/.env`). Sans moteur Docker (virtualisation désactivée), suivre la variante ci-dessous : `docker compose up -d` ne peut pas aboutir.
+
+## Variante — démo sans Docker local
+
+Tant que la virtualisation est désactivée sur le poste (D-62), les critères 1, 2 et 7 se lisent sur la CI. Le run de référence est https://github.com/sayoung/DARDEV-/actions/runs/36569962273 (commit `b100f8c`, étape « API smoke » verte).
+
+1. Ouvrir ce run. L'étape « API smoke » couvre `db:deploy` sur une base PostgreSQL 16 vierge, le seed, `GET /api/health` à 200 (`db`, `redis` et `storage` à `ok`), `openapi.json` à 200, la connexion admin, puis `/auth/me` à 200.
+2. Télécharger l'artefact `playwright-results` en bas de la page du run.
+3. Ouvrir [`docs/screenshots/login-ar.png`](screenshots/login-ar.png) pour le contrôle RTL (`lang=ar`, `dir=rtl` sur le formulaire de connexion).
+4. Navigation du back-office. Dans un terminal :
+
+```bash
+pnpm --filter @xplor/admin dev
+```
+
+Dans un second terminal, une fois http://localhost:5173 ouvert :
+
+```bash
+pnpm test:e2e
+```
+
+Hors CI, Playwright réutilise ce serveur (`reuseExistingServer`). Les scénarios de `e2e/` simulent `/api` (D-55) : l'API Nest n'a pas à tourner. Les sections 1 à 8 ci-dessous restent le parcours complet dès que Docker répond.
 
 Les libellés cités sont ceux du français. Le mot de passe des comptes seedés est la valeur de `SEED_DEFAULT_PASSWORD` dans `.env` (exemple de développement : `xplor-seed-dev-2026`).
 

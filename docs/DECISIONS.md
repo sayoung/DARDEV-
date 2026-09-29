@@ -378,8 +378,8 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** passer Prisma en 7 ou 8 (écarté par D-34) ; abaisser `--audit-level` ; ignorer l'avis ; attendre prisma/prisma#30052.
 - **À valider :** oui (override plutôt que d'attendre la publication Prisma)
 
-| Paquet ou ressource | Raison                                                                                                              | Licence      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------ |
+| Paquet ou ressource | Raison                                                                                                                                           | Licence      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
 | deepmerge-ts        | Forcé en 8.0.2 par `pnpm.overrides` pour fermer GHSA-ggr8-5vv4-36mx. Transitif de `@prisma/config`, pas une dépendance directe de l'application. | BSD-3-Clause |
 
 ## D-61 — Image MinIO construite depuis les releases GitHub (NF-08, CI)
@@ -389,11 +389,19 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `quay.io/minio/minio` (pull anonyme désactivé) ; image commerciale `quay.io/minio/aistor/minio` ; un autre serveur S3.
 - **À valider :** oui (binaires AGPL figés, linux-amd64 seulement ; healthcheck `curl`)
 
-| Paquet ou ressource                          | Raison                                                                                          | Licence    |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
-| minio `RELEASE.2025-09-07T16-13-09Z`         | Binaire serveur, les images Docker Hub et le pull anonyme Quay ayant disparu.                   | AGPL-3.0   |
-| mc `RELEASE.2025-08-13T08-35-41Z`            | Client pour créer le bucket `xplor` dans Compose et dans l'étape « API smoke ».                 | AGPL-3.0   |
-| `debian:bookworm-slim`                       | Image de base déjà sur Docker Hub, pour embarquer ces deux binaires.                           | DFSG      |
+| Paquet ou ressource                  | Raison                                                                          | Licence  |
+| ------------------------------------ | ------------------------------------------------------------------------------- | -------- |
+| minio `RELEASE.2025-09-07T16-13-09Z` | Binaire serveur, les images Docker Hub et le pull anonyme Quay ayant disparu.   | AGPL-3.0 |
+| mc `RELEASE.2025-08-13T08-35-41Z`    | Client pour créer le bucket `xplor` dans Compose et dans l'étape « API smoke ». | AGPL-3.0 |
+| `debian:bookworm-slim`               | Image de base déjà sur Docker Hub, pour embarquer ces deux binaires.            | DFSG     |
+
+## D-62 — Preuve provisoire des critères 1, 2 et 7 par l'étape CI « API smoke » (NF-09)
+
+- **Date :** 29/09/2026
+- **Décision :** Tant que la virtualisation est désactivée sur le poste du porteur, le moteur Docker ne démarre pas (D-52 ; section Bloqué de `docs/PROGRESS.md`). L'étape CI « API smoke » (D-59, image `xplor-minio:2025-09-07` de D-61) sert alors de preuve provisoire des critères 1, 2 et 7 de la Definition of Done de M0. Sur le service `postgres:16` du job, base `xplor` vierge en début de job (distincte de `xplor_test`), elle applique les migrations par `pnpm --filter @xplor/api db:deploy`, lance `db:seed`, puis `scripts/ci-api-smoke.mjs` exige `GET /api/health` à 200 avec `checks.db`, `checks.redis` et `checks.storage` à `ok`, `GET /api/v1/openapi.json` à 200, une vraie connexion `POST /api/v1/auth/login` du compte `admin@xplor.local` (`SEED_DEFAULT_PASSWORD`), puis `GET /api/v1/auth/me` à 200 avec le cookie `xplor_sid`. La preuve locale (quatre commandes, services `healthy`, connexion dans le navigateur contre l'API) reste due dès que Docker répond. Aucun code modifié par cette décision.
+- **Complément (29/09/2026) :** le run `36569962273` (commit `b100f8c`, https://github.com/sayoung/DARDEV-/actions/runs/36569962273, job `ci` `109411207526`) a l'étape « API smoke » verte. Journal : « API smoke : health, openapi, login et me sont conformes. » Artefact `playwright-results` présent. Les critères 1, 2 et 7 de `docs/PROGRESS.md` citent ce run comme preuve provisoire.
+- **Alternatives :** attendre l'activation d'Intel VT-x ou d'AMD-V (SVM) dans le BIOS/UEFI ; jouer la démo sur un autre poste où Docker démarre.
+- **À valider :** oui (porteur)
 
 ## Encore à valider (cahier des charges, section 11.2)
 
