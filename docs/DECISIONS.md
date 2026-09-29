@@ -101,6 +101,19 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | rxjs | Dépendance de pair de `@nestjs/common`. | Apache-2.0 |
 | @types/node | Types Node 22 (`process.env`, `process.loadEnvFile`). | MIT |
 
+## D-34 — Prisma 6 et migration initiale sans base (NF-09)
+
+- **Date :** 29/09/2026
+- **Décision :** `apps/api` utilise Prisma 6.19.3 (`prisma` en devDependency, `@prisma/client` en dépendance). Le bloc `datasource` reste dans `schema.prisma` avec `url = env("DATABASE_URL")`, comme l'exige NF-09. Prisma 7 et 8 (8.0.0-rc au registre) déplacent cette URL hors du schéma : ils ne sont pas retenus. L'enum `Role` du schéma reprend les quatre valeurs de `@xplor/shared` ; un test Vitest vérifie qu'elles restent identiques. Le modèle `User` couvre la section 5.10 plus `failedLoginCount` et `lockedUntil`. `Hotel` et `UserHotel` attendent M1. L'identifiant est un UUID v7 produit par le client Prisma (`@default(uuid(7))`) et stocké en `UUID` : PostgreSQL 16 n'a pas `uuidv7()`. `postinstall` et `prebuild` lancent `prisma generate`, pour que le client existe après l'installation et avant `nest build`.
+- **Génération hors Docker :** la migration `prisma/migrations/20260929022909_init_users/migration.sql` a été produite par `prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`, sans base. Docker Desktop est absent, donc `prisma migrate dev` n'a pas été exécuté. Cette migration doit être revalidée par `prisma migrate dev` dès que Docker sera installé, avant de la considérer comme fusionnée. Ne pas l'éditer à la main une fois revalidée.
+- **Alternatives :** Prisma 7+ avec `prisma.config.ts` ; rédiger le SQL à la main ; attendre Docker pour `prisma migrate dev --name init_users`.
+- **À valider :** oui
+
+| Paquet | Raison | Licence |
+|---|---|---|
+| prisma | CLI : `migrate`, `generate`, `validate`. Version 6 pour garder `DATABASE_URL` dans le schéma. | Apache-2.0 |
+| @prisma/client | Client Prisma utilisé par `PrismaService` au démarrage NestJS. | Apache-2.0 |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
