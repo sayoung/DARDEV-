@@ -149,7 +149,7 @@ registry.registerPath({
   tags: ['Auth'],
   security: sessionAndCsrfSecurity,
   responses: {
-    '200': { description: 'Session détruite et cookie retiré. Corps vide.' },
+    '204': { description: 'Session détruite et cookie retiré. Corps vide.' },
     '401': jsonResponse('Session absente.', unauthorizedError),
     '403': jsonResponse('Jeton CSRF refusé.', forbiddenError),
   },

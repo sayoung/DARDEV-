@@ -206,6 +206,7 @@ describe('AuthController', () => {
     expect(Reflect.getMetadata('THROTTLER:LIMITdefault', login)).toBe(5);
     expect(Reflect.getMetadata('THROTTLER:TTLdefault', login)).toBe(60_000);
     expect(Reflect.getMetadata(GUARDS_METADATA, logout)).toEqual([SessionGuard, CsrfGuard]);
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, logout)).toBe(204);
     expect(Reflect.getMetadata(GUARDS_METADATA, meHandler)).toEqual([SessionGuard]);
   });
 

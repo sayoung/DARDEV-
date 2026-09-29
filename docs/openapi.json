@@ -344,7 +344,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Session détruite et cookie retiré. Corps vide."
           },
           "401": {

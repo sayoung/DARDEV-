@@ -65,7 +65,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(SessionGuard, CsrfGuard)
   async logout(
     @Req() request: SessionRequest,
