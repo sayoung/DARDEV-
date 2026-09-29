@@ -1,5 +1,5 @@
 /**
- * Validation de publication (F-03, partie 1).
+ * Validation, publication et dépublication (F-03).
  * PostgreSQL : `DATABASE_URL_TEST`. Redis : `REDIS_URL`.
  */
 import 'reflect-metadata';
@@ -16,6 +16,7 @@ import {
   MeResponseSchema,
   SceneResponseSchema,
   TourResponseSchema,
+  TourStatus,
   TourValidationResponseSchema,
   ValidationIssueCode,
   type CategoryCreate,
@@ -31,7 +32,12 @@ import { AppModule } from '../src/app.module.js';
 import { toPrismaRole } from '../src/auth/prisma-role.js';
 import { PasswordService } from '../src/auth/password.service.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-cookie.js';
-import { TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE } from '../src/catalog/catalog.errors.js';
+import {
+  TOUR_NOT_FOUND,
+  TOUR_NOT_FOUND_MESSAGE,
+  TOUR_NOT_PUBLISHABLE,
+  TOUR_NOT_PUBLISHABLE_MESSAGE,
+} from '../src/catalog/catalog.errors.js';
 import { loadEnv, type Env } from '../src/config/env.js';
 import { REDIS } from '../src/redis/redis.module.js';
 import { buildSeedUsers } from '../src/seed/seed-users.js';
@@ -195,6 +201,91 @@ describe('validation de publication', () => {
     const open = await send('POST', `/api/v1/admin/tours/${ready.tour.id}/validate`, editor);
     expect(open.statusCode).toBe(200);
     expect(TourValidationResponseSchema.parse(parseJson(open.body))).toEqual({ issues: [] });
+  });
+});
+
+describe('publication et dépublication', () => {
+  it('refuse PARTNER', async () => {
+    const partner = await login(PARTNER_EMAIL);
+    const publish = await send('POST', `/api/v1/admin/tours/${UNKNOWN_ID}/publish`, partner);
+    expect(publish.statusCode).toBe(403);
+    const unpublish = await send('POST', `/api/v1/admin/tours/${UNKNOWN_ID}/unpublish`, partner);
+    expect(unpublish.statusCode).toBe(403);
+  });
+
+  it('publie la Visite manuelle une fois corrigée, puis la dépublie', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const porte = await createScene(editor, ready.tour.id, 'Porte', ready.panoramaAssetId, 0);
+    const jardin = await createScene(editor, ready.tour.id, 'Jardin', ready.panoramaAssetId, 1);
+    const remparts = await createScene(editor, ready.tour.id, 'Remparts', ready.panoramaAssetId, 2);
+    const gate = await send('POST', `/api/v1/admin/scenes/${porte.id}/hotspots`, editor, {
+      type: 'SCENE_LINK',
+      yaw: 0.2,
+      pitch: 0,
+      label: { fr: 'Vers le jardin' },
+      targetSceneId: jardin.id,
+    });
+    expect(gate.statusCode).toBe(201);
+
+    const before = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    const blocked = await send('POST', `/api/v1/admin/tours/${ready.tour.id}/publish`, editor);
+    expect(blocked.statusCode).toBe(422);
+    expect(parseJson(blocked.body)).toEqual({
+      error: {
+        code: TOUR_NOT_PUBLISHABLE,
+        message: TOUR_NOT_PUBLISHABLE_MESSAGE,
+        issues: [
+          {
+            code: ValidationIssueCode.SCENE_UNREACHABLE,
+            sceneId: remparts.id,
+            message: UNREACHABLE,
+          },
+        ],
+      },
+    });
+    const unchanged = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(unchanged.status).toBe(TourStatus.DRAFT);
+    expect(unchanged.publishedAt).toBeNull();
+    expect(unchanged.contentVersion).toBe(before.contentVersion);
+
+    const link = await send('POST', `/api/v1/admin/scenes/${jardin.id}/hotspots`, editor, {
+      type: 'SCENE_LINK',
+      yaw: 1,
+      pitch: 0,
+      label: { fr: 'Vers les remparts' },
+      targetSceneId: remparts.id,
+    });
+    expect(link.statusCode).toBe(201);
+
+    const readyToPublish = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    const publishedResponse = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/publish`,
+      editor,
+    );
+    expect(publishedResponse.statusCode).toBe(200);
+    const published = TourResponseSchema.parse(parseJson(publishedResponse.body));
+    expect(published.status).toBe(TourStatus.PUBLISHED);
+    expect(published.contentVersion).toBe(readyToPublish.contentVersion + 1);
+    const stored = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(stored.status).toBe(TourStatus.PUBLISHED);
+    expect(stored.publishedAt).toBeInstanceOf(Date);
+    expect(stored.contentVersion).toBe(published.contentVersion);
+
+    const unpublishedResponse = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/unpublish`,
+      editor,
+    );
+    expect(unpublishedResponse.statusCode).toBe(200);
+    const draft = TourResponseSchema.parse(parseJson(unpublishedResponse.body));
+    expect(draft.status).toBe(TourStatus.DRAFT);
+    expect(draft.contentVersion).toBe(published.contentVersion + 1);
+    const after = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(after.status).toBe(TourStatus.DRAFT);
+    expect(after.publishedAt).toEqual(stored.publishedAt);
+    expect(after.contentVersion).toBe(draft.contentVersion);
   });
 });
 

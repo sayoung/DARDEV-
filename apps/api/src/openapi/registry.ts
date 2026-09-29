@@ -35,6 +35,7 @@ import {
   TourResponseSchema,
   TourUpdateSchema,
   TourValidationResponseSchema,
+  ValidationIssueSchema,
 } from '@xplor/shared';
 import { z, type ZodType } from 'zod';
 
@@ -55,6 +56,7 @@ import {
   TOUR_LINK_SELF,
   TOUR_LINK_TARGET_MISSING,
   TOUR_NOT_FOUND,
+  TOUR_NOT_PUBLISHABLE,
 } from '../catalog/catalog.errors.js';
 import type { HealthBody } from '../health/health.service.js';
 
@@ -118,6 +120,13 @@ const tourMissingError = z.object({
   error: z.object({
     code: z.literal(TOUR_NOT_FOUND),
     message: z.string(),
+  }),
+});
+const tourNotPublishableError = z.object({
+  error: z.object({
+    code: z.literal(TOUR_NOT_PUBLISHABLE),
+    message: z.string(),
+    issues: z.array(ValidationIssueSchema),
   }),
 });
 const sceneMissingError = z.object({
@@ -374,6 +383,7 @@ registerCatalogCrud({
 
 registerTourCrud();
 registerTourValidate();
+registerTourPublish();
 registerSceneCrud();
 registerHotspotList();
 registerHotspotItem();
@@ -578,6 +588,48 @@ function registerTourValidate(): void {
       '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+    },
+  });
+}
+
+function registerTourPublish(): void {
+  const idParam = z.object({ id: z.uuidv7() });
+  const denied = 'Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.';
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/tours/{id}/publish',
+    summary: 'Publier une visite',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Visite publiée.', TourResponseSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(denied, forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+      '422': jsonResponse(
+        'La visite ne satisfait pas les règles de publication.',
+        tourNotPublishableError,
+      ),
+    },
+  });
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/tours/{id}/unpublish',
+    summary: 'Dépublier une visite',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse(
+        'Visite repassée en brouillon. publishedAt est conservé.',
+        TourResponseSchema,
+      ),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(denied, forbiddenError),
       '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
     },
   });

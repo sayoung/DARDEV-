@@ -66,6 +66,20 @@ export class ToursController {
     return this.publication.validate(parseResourceId(id));
   }
 
+  @Post(':id/publish')
+  @HttpCode(HttpStatus.OK)
+  publish(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
+    requireContentManager(request);
+    return this.publication.publish(parseResourceId(id));
+  }
+
+  @Post(':id/unpublish')
+  @HttpCode(HttpStatus.OK)
+  unpublish(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
+    requireContentManager(request);
+    return this.publication.unpublish(parseResourceId(id));
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Req() request: SessionRequest, @Body() body: unknown): Promise<TourResponse> {

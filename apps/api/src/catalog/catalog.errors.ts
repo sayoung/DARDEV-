@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { ValidationIssue } from '@xplor/shared';
 
 /** Ville ou catégorie encore référencée par une visite (API-25). */
 export const IN_USE = 'IN_USE';
@@ -115,6 +116,25 @@ export function referenceException(code: string, message: string): HttpException
 /** Visite, scène ou hotspot absent : 404 `{ error: { code, message } }` (API-22, API-23). */
 export function missingException(code: string, message: string): HttpException {
   return new HttpException({ error: { code, message } }, HttpStatus.NOT_FOUND);
+}
+
+/** La visite ne satisfait pas les règles de publication (F-03). */
+export const TOUR_NOT_PUBLISHABLE = 'TOUR_NOT_PUBLISHABLE';
+
+export const TOUR_NOT_PUBLISHABLE_MESSAGE = 'Cette visite ne peut pas être publiée.';
+
+/** 422 `{ error: { code, message, issues } }`. Aucune écriture n'accompagne ce refus. */
+export function notPublishableException(issues: readonly ValidationIssue[]): HttpException {
+  return new HttpException(
+    {
+      error: {
+        code: TOUR_NOT_PUBLISHABLE,
+        message: TOUR_NOT_PUBLISHABLE_MESSAGE,
+        issues,
+      },
+    },
+    HttpStatus.UNPROCESSABLE_ENTITY,
+  );
 }
 
 /** `onDelete: Restrict` : Prisma répond P2003 si une clé étrangère tient encore. */
