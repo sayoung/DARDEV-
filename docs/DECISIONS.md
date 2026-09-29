@@ -333,6 +333,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** déclarer `@xplor/shared` et `@xplor/i18n` en devDependencies racine (`workspace:*`), ce qui modifierait `pnpm-lock.yaml` ; importer les sources par chemin relatif.
 - **À valider :** oui (alias `paths` à la racine ; pas de schéma partagé pour les corps d'erreur)
 
+## D-56 — Playwright dans la CI (NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** Après `pnpm test:int`, le job unique de `.github/workflows/ci.yml` installe Chromium avec `pnpm exec playwright install --with-deps chromium` (bibliothèques système du runner `ubuntu-latest` ; Firefox et WebKit restent absents, D-54), lance `pnpm test:e2e` avec `CI=true` (le serveur Vite n'est pas réutilisé, D-54), puis publie `test-results/` via `actions/upload-artifact@v4` (`name: playwright-results`, `if: always()`, `include-hidden-files: true`). Le jeton du workflow garde `contents: read` et reçoit `actions: write` : sans cette permission, l'envoi d'artefact échoue quand `permissions` est restreint. `include-hidden-files` est requis parce que `upload-artifact@v4` ignore les fichiers cachés et que Playwright écrit `test-results/.last-run.json` même quand tous les tests passent. Aucun paquet npm n'est ajouté. L'exécution distante attend le push (D-53).
+- **Alternatives :** `playwright install chromium` sans `--with-deps` (les bibliothèques manquent sur une image Ubuntu nue) ; n'envoyer l'artefact qu'en cas d'échec ; omettre `actions: write` (l'étape d'artefact échoue) ; omettre `include-hidden-files` (un run vert ne publie que `.last-run.json`, que l'action ignore).
+- **À valider :** oui (`actions: write` et `include-hidden-files` ; l'ordre des étapes, `--with-deps chromium`, `CI=true` et l'artefact `playwright-results` sont imposés par la consigne)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

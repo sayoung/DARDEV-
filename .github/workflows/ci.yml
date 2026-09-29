@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   ci:
@@ -77,6 +78,22 @@ jobs:
           DATABASE_URL_TEST: postgresql://xplor:xplor@localhost:5432/xplor_test
           REDIS_URL: redis://localhost:6379
           SEED_DEFAULT_PASSWORD: xplor-seed-dev-2026
+
+      - name: Installer Chromium pour Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Tests de bout en bout
+        run: pnpm test:e2e
+        env:
+          CI: "true"
+
+      - name: Publier les résultats Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          include-hidden-files: true
 
       - name: Tests
         run: pnpm test
