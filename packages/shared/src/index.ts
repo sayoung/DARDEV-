@@ -14,8 +14,46 @@ export {
   type MeResponse,
   type ResetPasswordRequest,
 } from './auth.js';
+export {
+  AssetKind,
+  CategoryCreateSchema,
+  CategoryResponseSchema,
+  CategoryUpdateSchema,
+  CityCreateSchema,
+  CityResponseSchema,
+  CityUpdateSchema,
+  HotspotCreateSchema,
+  HotspotIcon,
+  HotspotType,
+  PaginationQuerySchema,
+  ProcessingStatus,
+  SceneCreateSchema,
+  SceneUpdateSchema,
+  TourCreateSchema,
+  TourStatus,
+  TourUpdateSchema,
+  paginated,
+  type CategoryCreate,
+  type CategoryResponse,
+  type CategoryUpdate,
+  type CityCreate,
+  type CityResponse,
+  type CityUpdate,
+  type HotspotCreate,
+  type Paginated,
+  type PaginationQuery,
+  type SceneCreate,
+  type SceneUpdate,
+  type TourCreate,
+  type TourUpdate,
+} from './catalog.js';
 export { LANGS, type Lang } from './lang.js';
-export { LocalizedTextSchema, localize, type LocalizedText } from './localized-text.js';
+export {
+  LocalizedTextSchema,
+  localize,
+  localizedText,
+  type LocalizedText,
+} from './localized-text.js';
 export { PasswordSchema } from './password.js';
 export { type Principal } from './principal.js';
 export { Role } from './role.js';

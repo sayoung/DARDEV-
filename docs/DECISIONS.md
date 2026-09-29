@@ -438,6 +438,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** n'ajouter ces modèles qu'en M5, avec le CRUD ; livrer aussi leurs écrans en M1.
 - **À valider :** oui
 
+## D-67 — Schémas Zod du contenu (F-01)
+
+- **Date :** 29/09/2026
+- **Décision :** Les schémas de contenu vivent dans `@xplor/shared` (`src/catalog.ts`), sans route ni écran. `localizedText({ max })` est la fabrique de `LocalizedText` : sans `max`, le comportement reste celui de `LocalizedTextSchema` (`fr` obligatoire et non vide, `ar` et `en` facultatifs, y compris la chaîne vide). Avec `max`, la limite s'applique à `fr`, `ar` et `en`. Le `summary` d'une visite utilise 500. Les identifiants sont des UUID v7 (`z.uuidv7()`). Create et Update ont les mêmes champs obligatoires (remplacement complet, pas un PATCH). `CityResponse` et `CategoryResponse` ajoutent `id`. `HotspotCreate` est le corps de création, sans `sceneId` (il viendra de la route) : union discriminée sur `type`, avec les champs exigés en 5.4. Le graphe (même visite, scène différente, visite cible publiée) reste au service de validation F-03. Icône par défaut : `SCENE_LINK` → `ARROW`, `TOUR_LINK` → `PORTAL`, `INFO` → `INFO`, `MEDIA` → `PHOTO`, `URL` → `INFO`. `yaw`, `initialYaw` et `arrivalYaw` sont dans [−π, π] ; `pitch` et `initialPitch` dans [−π/2, π/2]. `mediaAssetIds` contient au moins un UUID v7. `url` suit `z.url()`. `durationMinutes` et `weight` sont des entiers, sans contrainte de signe. La couleur est `#` suivi de 6 chiffres hexadécimaux. `PaginationQuery` valide des nombres déjà typés (`page` ≥ 1, `pageSize` de 1 à 100, défaut 20). `paginated(item)` décrit `{ items, page, pageSize, total }`. Aucun paquet npm ajouté. Le script `test` de `@xplor/shared` utilise Vitest et `@vitest/coverage-v8`, déjà inscrits (D-29, D-35).
+- **Alternatives :** Update partiel ; `sceneId` dans le corps ; UUID de toute version ; icône sans défaut ; `page` coercé depuis une chaîne de query ; `durationMinutes` strictement positif.
+- **À valider :** oui
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

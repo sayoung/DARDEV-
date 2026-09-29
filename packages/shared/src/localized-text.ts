@@ -2,11 +2,25 @@ import { z } from 'zod';
 
 import { LANGS, type Lang } from './lang.js';
 
-export const LocalizedTextSchema = z.object({
-  fr: z.string().min(1),
-  ar: z.string().optional(),
-  en: z.string().optional(),
-});
+/**
+ * Texte traduisible (cahier, section 5). `fr` est obligatoire et non vide.
+ * `max`, s'il est fourni, limite chacune des trois langues (ex. `summary` ≤ 500).
+ */
+export function localizedText(options?: { max?: number }) {
+  const max = options?.max;
+  const field = (required: boolean) => {
+    const base = required ? z.string().min(1) : z.string();
+    return max === undefined ? base : base.max(max);
+  };
+  return z.object({
+    fr: field(true),
+    ar: field(false).optional(),
+    en: field(false).optional(),
+  });
+}
+
+/** Texte traduisible sans limite de longueur. */
+export const LocalizedTextSchema = localizedText();
 
 export type LocalizedText = z.infer<typeof LocalizedTextSchema>;
 
