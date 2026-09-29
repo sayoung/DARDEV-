@@ -9,18 +9,18 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** NF-08 — brancher Playwright dans `.github/workflows/ci.yml`.
+**Exigence :** NF-08 — corriger le refus du relecteur sur les permissions du workflow Playwright.
 
 Plan :
 
-1. Après l'étape `pnpm test:int`, ajouter `pnpm exec playwright install --with-deps chromium`, puis `pnpm test:e2e` avec `CI=true`, puis `actions/upload-artifact@v4` (`name: playwright-results`, `path: test-results/`, `if: always()`).
-2. Consulter D-56 : Chromium seul, dépendances système seulement sur le runner Ubuntu, artefact même si les tests échouent.
-3. Mettre à jour le critère 5 de la Definition of Done : scénarios listés, verts en local, exécution distante en attente du push GitHub. Retirer des Risques toute mention que `pnpm test:e2e` n'existe pas ou que le workflow ne le lance pas.
-4. Vérifier le YAML (actionlint s'il est disponible, sinon relecture) ; `pnpm lint` et `pnpm test:e2e` sous Node 22.
+1. Dans `.github/workflows/ci.yml`, supprimer `actions: write` et garder uniquement `permissions: contents: read`.
+2. Dans D-56, retirer la phrase qui affirme que l'artefact échoue sans `actions: write`, retirer « omettre actions: write » des alternatives et « actions: write » du champ « À valider ». Conserver `include-hidden-files: true` et sa justification.
+3. Dans la ligne Réalisé, retirer « Permission `actions: write` ajoutée (D-56) ».
+4. Relancer actionlint et `pnpm lint`.
 
 Aucune commande git qui modifie le dépôt.
 
-Réalisé : après `pnpm test:int`, le job CI installe Chromium (`pnpm exec playwright install --with-deps chromium`), lance `pnpm test:e2e` avec `CI=true`, puis publie `test-results/` (`actions/upload-artifact@v4`, `name: playwright-results`, `if: always()`, `include-hidden-files: true` pour `.last-run.json`). Permission `actions: write` ajoutée (D-56). actionlint 1.7.7 : aucune erreur. Sous Node 22.23.3 : `pnpm lint` et `pnpm test:e2e` (7 tests) passent. Scénarios verts en local : fumée (`/`, `html lang=fr`) ; connexion (nom, rôle, déconnexion `X-CSRF-Token`) ; 401 `INVALID_CREDENTIALS` ; 423 `ACCOUNT_LOCKED` ; confirmation `/forgot` ; `/reset/abc` avec deux mots de passe différents ; `?lang=ar` (`lang=ar`, `dir=rtl`). L'exécution distante attend le push GitHub (D-53). Le test de fumée laisse encore le proxy Vite journaliser `ECONNREFUSED` sur `/api/v1/auth/me`. Aucune commande git.
+Réalisé : après `pnpm test:int`, le job CI installe Chromium (`pnpm exec playwright install --with-deps chromium`), lance `pnpm test:e2e` avec `CI=true`, puis publie `test-results/` (`actions/upload-artifact@v4`, `name: playwright-results`, `if: always()`, `include-hidden-files: true` pour `.last-run.json`). Le workflow ne déclare que `permissions: contents: read` (D-56) : `actions/upload-artifact@v4` s'authentifie avec `ACTIONS_RUNTIME_TOKEN`. actionlint 1.7.7 : aucune erreur. Sous Node 22.23.3 : `pnpm lint` et `pnpm test:e2e` (7 tests) passent. Scénarios verts en local : fumée (`/`, `html lang=fr`) ; connexion (nom, rôle, déconnexion `X-CSRF-Token`) ; 401 `INVALID_CREDENTIALS` ; 423 `ACCOUNT_LOCKED` ; confirmation `/forgot` ; `/reset/abc` avec deux mots de passe différents ; `?lang=ar` (`lang=ar`, `dir=rtl`). L'exécution distante attend le push GitHub (D-53). Le test de fumée laisse encore le proxy Vite journaliser `ECONNREFUSED` sur `/api/v1/auth/me`. Aucune commande git.
 
 ## Definition of Done — M0
 
