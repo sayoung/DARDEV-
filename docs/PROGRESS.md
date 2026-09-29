@@ -18,7 +18,7 @@ Plan :
 3. Scénario d'intégration : deux invitations de la même adresse, deux 201, seul le second lien est accepté.
 4. OpenAPI, D-63, retirer le risque d'invitation non transactionnelle. `pnpm lint`, `pnpm typecheck`, `pnpm test`, couverture de `src/users` ≥ 70 %.
 
-Réalisé : réinvitation 201 pour un compte inactif jamais connecté ; 409 si le compte est actif ou a déjà une connexion ; échec SMTP puis nouvelle invitation 201. Écritures dans `UnitOfWork`, courriel après. Scénario ajouté dans `auth.int.test.ts` (non rejoué en local : moteur Docker injoignable). D-63 à valider. `pnpm lint`, `pnpm typecheck` et `pnpm exec vitest run --coverage` verts (188 tests). Couverture de `apps/api/src/users` : 100 %. Aucun commit (orchestrateur).
+Réalisé : réinvitation 201 pour un compte inactif jamais connecté ; 409 si le compte est actif ou a déjà une connexion ; échec SMTP puis nouvelle invitation 201. Écritures dans `UnitOfWork`, courriel après. Scénario ajouté dans `auth.int.test.ts` (non rejoué en local : moteur Docker injoignable). D-63 à valider. Risque retiré de la section Risques. Rejoué le 29/09/2026 (Node 22.23.3) : `pnpm lint`, `pnpm typecheck` et `pnpm exec vitest run --coverage` verts (188 tests). Couverture de `apps/api/src/users` : 100 % (lignes, branches, fonctions, instructions). Aucun commit (orchestrateur).
 
 ## Definition of Done — M0
 
