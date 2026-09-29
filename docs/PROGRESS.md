@@ -11,17 +11,16 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 F-01 — schémas Zod du contenu dans `@xplor/shared`. Aucun code API ni front.
+**Exigence :** M1 F-01 — correction du refus relecteur : hotspot `URL` limité à http/https.
 
 Plan :
 
-1. Fabrique `localizedText({ max?: number })` : la limite s'applique à `fr`, `ar` et `en`. `summary` utilise 500. `LocalizedTextSchema` reste le cas sans limite.
-2. Enums `TourStatus`, `HotspotType`, `HotspotIcon`, `AssetKind`, `ProcessingStatus`.
-3. Schémas City, Category, Tour, Scene (create / update, et response pour ville et catégorie), `HotspotCreate` (union discriminée sur `type`, yaw −π…π, pitch −π/2…π/2), `PaginationQuery` et `paginated`.
-4. Tests : un cas valide et un cas refusé par schéma, dont `SCENE_LINK` sans `targetSceneId`, couleur invalide, résumé arabe de 501 caractères.
-5. `pnpm lint`, `pnpm typecheck`, `pnpm --filter @xplor/shared test` (couverture de `catalog.ts` ≥ 90 %). Décision D-67. Aucun commit (orchestrateur).
+1. Remplacer `z.url()` par `z.httpUrl()` sur le hotspot `URL` (`javascript:` et `data:` refusés).
+2. Tests de refus pour ces schémas, et un cas `http` valide.
+3. `Paginated<T>` déduit par `z.infer` du schéma `paginated`. `PaginationQuery` reste sur des nombres déjà typés (`page` obligatoire).
+4. `pnpm lint`, `pnpm typecheck`, `pnpm --filter @xplor/shared test` (couverture de `catalog.ts` ≥ 90 %). Compléter D-67. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : `packages/shared/src/catalog.ts` et `catalog.test.ts`, fabrique `localizedText` dans `localized-text.ts`, exports dans `src/index.ts`. `pnpm lint` et `pnpm typecheck` verts. `pnpm --filter @xplor/shared test` : 62 tests verts, couverture de `catalog.ts` 100 % (lignes, branches, fonctions, instructions). D-67. Aucun code API ni front. Aucun commit (orchestrateur).
+Réalisé (29/09/2026, Node 22.23.3) : `url` du hotspot `URL` passe par `z.httpUrl()`. Tests : `http` accepté ; `javascript:`, `data:` et `file:` refusés. `Paginated<T>` vient de `z.infer`. D-67 complétée. `pnpm lint` et `pnpm typecheck` verts. `pnpm --filter @xplor/shared test` : 63 tests verts, couverture de `catalog.ts` 100 % (lignes, branches, fonctions, instructions). Aucun code API ni front. Aucun commit (orchestrateur).
 
 ## Definition of Done — M1
 
@@ -42,7 +41,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### Fait
 
-- **F-01** (schémas Zod seulement) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate`, `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). Couverture de `catalog.ts` : 100 %. Pas de Prisma, pas d'API, pas d'écran. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
+- **F-01** (schémas Zod seulement) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (63 tests du paquet). Pas de Prisma, pas d'API, pas d'écran. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
 
 ### En cours
 

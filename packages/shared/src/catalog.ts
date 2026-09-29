@@ -177,7 +177,8 @@ export const HotspotCreateSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(HotspotType.URL),
     ...hotspotPosition,
-    url: z.url(),
+    // `z.url()` accepte `javascript:` et `data:` (XSS stocké dans le viewer).
+    url: z.httpUrl(),
     icon: z.enum(HotspotIcon).default(HotspotIcon.INFO),
   }),
 ]);
@@ -190,14 +191,6 @@ export const PaginationQuerySchema = z.object({
 });
 export type PaginationQuery = z.infer<typeof PaginationQuerySchema>;
 
-/** Page de résultats. `T` est le type d'un élément. */
-export type Paginated<T> = {
-  items: T[];
-  page: number;
-  pageSize: number;
-  total: number;
-};
-
 /** Schéma d'une page dont chaque élément suit `itemSchema`. */
 export function paginated<Item extends z.ZodType>(itemSchema: Item) {
   return z.object({
@@ -207,3 +200,6 @@ export function paginated<Item extends z.ZodType>(itemSchema: Item) {
     total: z.number().int().min(0),
   });
 }
+
+/** Page de résultats. Déduit du schéma pour rester aligné sur `paginated`. */
+export type Paginated<T> = z.infer<ReturnType<typeof paginated<z.ZodType<T>>>>;

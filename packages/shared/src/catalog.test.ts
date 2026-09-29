@@ -350,14 +350,31 @@ describe('HotspotCreateSchema', () => {
     expect(HotspotCreateSchema.parse(link)).toEqual({ ...link, icon: HotspotIcon.INFO });
   });
 
-  it('refuse une URL invalide', () => {
-    expect(
-      HotspotCreateSchema.safeParse({
-        type: HotspotType.URL,
-        ...position,
-        url: 'pas une url',
-      }).success,
-    ).toBe(false);
+  it('accepte aussi une URL http', () => {
+    const link = {
+      type: HotspotType.URL,
+      ...position,
+      url: 'http://visit.ma/page',
+    };
+    expect(HotspotCreateSchema.parse(link)).toEqual({ ...link, icon: HotspotIcon.INFO });
+  });
+
+  it('refuse une URL qui n’est pas http ou https', () => {
+    for (const url of [
+      'pas une url',
+      'javascript:alert(1)',
+      'JAVASCRIPT:alert(1)',
+      'data:text/html,<script>alert(1)</script>',
+      'file:///etc/passwd',
+    ]) {
+      expect(
+        HotspotCreateSchema.safeParse({
+          type: HotspotType.URL,
+          ...position,
+          url,
+        }).success,
+      ).toBe(false);
+    }
   });
 });
 
