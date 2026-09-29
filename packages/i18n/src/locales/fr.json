@@ -14,7 +14,8 @@
       "email": "Adresse e-mail",
       "password": "Mot de passe",
       "submit": "Se connecter",
-      "error": "Identifiants incorrects"
+      "error": "Identifiants incorrects",
+      "locked": "Compte verrouillé. Réessayez dans 15 minutes."
     },
     "logout": "Se déconnecter"
   },

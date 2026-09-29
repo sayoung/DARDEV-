@@ -2,11 +2,23 @@ import { LANGS, type Lang } from '@xplor/shared';
 import { useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AuthProvider, useAuth } from './auth/AuthProvider.js';
+import { HomePage } from './auth/HomePage.js';
+import { LoginPage } from './auth/LoginPage.js';
 import { i18n } from './i18n.js';
 import { applyDocumentLang, LANG_STORAGE_KEY, resolveLang } from './lang.js';
 
 export function App() {
+  return (
+    <AuthProvider>
+      <AdminShell />
+    </AuthProvider>
+  );
+}
+
+function AdminShell() {
   const { t } = useTranslation();
+  const auth = useAuth();
   const [lang, setLang] = useState<Lang>(() =>
     resolveLang(window.location.search, localStorage.getItem(LANG_STORAGE_KEY)),
   );
@@ -25,7 +37,7 @@ export function App() {
   }
 
   return (
-    <main>
+    <main aria-busy={auth.state.status === 'loading'}>
       <h1>{t('common.appName')}</h1>
       <nav aria-label={t('common.language.label')}>
         <ul className="language-list">
@@ -45,6 +57,8 @@ export function App() {
           ))}
         </ul>
       </nav>
+      {auth.state.status === 'authenticated' ? <HomePage /> : null}
+      {auth.state.status === 'anonymous' ? <LoginPage /> : null}
     </main>
   );
 }

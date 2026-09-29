@@ -14,7 +14,8 @@
       "email": "Email address",
       "password": "Password",
       "submit": "Sign in",
-      "error": "Incorrect credentials"
+      "error": "Incorrect credentials",
+      "locked": "Account locked. Try again in 15 minutes."
     },
     "logout": "Sign out"
   },

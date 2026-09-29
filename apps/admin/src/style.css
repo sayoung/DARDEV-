@@ -26,3 +26,27 @@ h1 {
 .language-list button[aria-pressed='true'] {
   font-weight: 700;
 }
+
+.auth-form,
+.home-session {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 0.75rem;
+  margin-block-start: 1.5rem;
+  max-inline-size: 24rem;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  inline-size: 100%;
+}
+
+.auth-alert,
+.home-session p {
+  margin-block: 0;
+  margin-inline: 0;
+}

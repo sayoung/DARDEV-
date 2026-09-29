@@ -219,6 +219,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 
 `vite`, `typescript` et `vitest` (D-29, D-36) sont redéclarés comme dépendances directes de `@xplor/admin`, comme pour le web et le kiosque.
 
+## D-43 — Session du back-office (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** Le client `apps/admin` appelle `/api/v1/auth/login`, `/api/v1/auth/logout` et `/api/v1/auth/me` (préfixe global de l'API) en `credentials: 'include'`, pour que le cookie `xplor_sid` reste sur la même origine que le proxy Vite. Le jeton CSRF est gardé en mémoire de module, uniquement après un `MeResponseSchema` réussi (`login` ou `me`). Il est envoyé dans `X-CSRF-Token` pour toute méthode autre que GET, HEAD ou OPTIONS, et retiré après un logout réussi. Il n'est pas écrit dans `localStorage`. Au chargement, un échec de `GET /auth/me` affiche le formulaire sans alerte. Le code d'erreur est lu sur `code` (corps actuel de `HttpException`), sinon sur `error.code` (enveloppe du cahier). 401 `INVALID_CREDENTIALS` affiche `auth.login.error` ; 423 `ACCOUNT_LOCKED` affiche `auth.login.locked`. Le rôle sur l'accueil est la valeur `Role` renvoyée par l'API. Aucun paquet ajouté.
+- **Alternatives :** stocker le jeton dans `sessionStorage` ; ne l'envoyer que sur logout ; basculer la langue de l'interface sur `uiLang` du profil ; n'accepter que l'enveloppe `error.code`.
+- **À valider :** oui (jeton CSRF en mémoire de module ; rôle affiché comme valeur d'énumération ; lecture des deux formes de corps d'erreur)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
