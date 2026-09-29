@@ -12,7 +12,7 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-it('migrate deploy crée les tables User et UserToken et les enums Role et UserTokenType', async () => {
+it('migrate deploy crée les tables utilisateurs et le modèle de contenu, et les enums Role et UserTokenType', async () => {
   const tables = await prisma.$queryRaw<Array<{ table_name: string }>>`
     SELECT table_name
     FROM information_schema.tables
@@ -21,7 +21,19 @@ it('migrate deploy crée les tables User et UserToken et les enums Role et UserT
   `;
   const tableNames = tables.map((row) => row.table_name);
 
-  expect(tableNames).toEqual(expect.arrayContaining(['User', 'UserToken']));
+  expect(tableNames).toEqual(
+    expect.arrayContaining([
+      'User',
+      'UserToken',
+      'City',
+      'Category',
+      'Asset',
+      'Tour',
+      'TourCategory',
+      'Scene',
+      'Hotspot',
+    ]),
+  );
 
   const enums = await prisma.$queryRaw<Array<{ typname: string }>>`
     SELECT typname
