@@ -33,6 +33,7 @@ model User {
   toursCreated     Tour[]      @relation("TourCreatedBy")
   scenesCreated    Scene[]     @relation("SceneCreatedBy")
   hotspotsCreated  Hotspot[]   @relation("HotspotCreatedBy")
+  hotels           UserHotel[]
 }
 
 enum UserTokenType {
@@ -101,6 +102,7 @@ model City {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tours     Tour[]
+  hotels    Hotel[]
 }
 
 /// Catégorie de visite (cahier, 5.1). Suppression physique.
@@ -135,6 +137,7 @@ model Asset {
   coverOf          Tour[]           @relation("TourCover")
   panoramas        Scene[]          @relation("ScenePanorama")
   ambientOf        Scene[]          @relation("SceneAmbient")
+  hotelLogos       Hotel[]          @relation("HotelLogo")
 }
 
 /// Visite virtuelle (cahier, 5.2). Suppression logique via deletedAt.
@@ -168,8 +171,10 @@ model Tour {
   createdBy       User           @relation("TourCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  scenes          Scene[]        @relation("TourScenes")
-  targetedBy      Hotspot[]      @relation("HotspotTargetTour")
+  scenes             Scene[]         @relation("TourScenes")
+  targetedBy         Hotspot[]       @relation("HotspotTargetTour")
+  featuredSelections Selection[]     @relation("SelectionFeaturedTour")
+  selectionItems     SelectionItem[]
 
   @@index([cityId])
   @@index([coverAssetId])
@@ -259,4 +264,130 @@ model Hotspot {
   @@index([targetTourId])
   @@index([targetTourSceneId])
   @@index([createdById])
+}
+
+enum HotelStars {
+  FOUR
+  FIVE
+  LUXURY
+}
+
+enum ContractType {
+  SALE
+  RENTAL
+}
+
+/// Hôtel client (cahier, 5.6). Suppression logique via deletedAt.
+model Hotel {
+  id                 String       @id @default(uuid(7)) @db.Uuid
+  name               String
+  stars              HotelStars
+  cityId             String       @db.Uuid
+  city               City         @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  address            String
+  phone              String
+  email              String
+  logoAssetId        String?      @db.Uuid
+  logoAsset          Asset?       @relation("HotelLogo", fields: [logoAssetId], references: [id], onDelete: SetNull)
+  /// Couleur d'accent `#` + 6 hexadécimaux, contrôlée par Zod.
+  brandColor         String
+  /// Codes de langue ; le premier est la langue par défaut.
+  languages          String[]     @default(["fr"])
+  contractType       ContractType
+  contractStart      DateTime
+  contractEnd        DateTime
+  /// PIN de l'écran technique, haché argon2. Null tant qu'aucun PIN n'est défini.
+  maintenancePinHash String?
+  active             Boolean      @default(true)
+  deletedAt          DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  selection          Selection?
+  kiosks             Kiosk[]
+  managers           UserHotel[]
+
+  @@index([cityId])
+  @@index([logoAssetId])
+}
+
+/// Sélection de visites d'un hôtel (cahier, 5.7). Une seule par hôtel en phase 1.
+model Selection {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  hotelId        String          @unique @db.Uuid
+  hotel          Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  featuredTourId String?         @db.Uuid
+  featuredTour   Tour?           @relation("SelectionFeaturedTour", fields: [featuredTourId], references: [id], onDelete: SetNull)
+  attractTourIds String[]        @default([])
+  version        Int             @default(1)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  items          SelectionItem[]
+
+  @@index([featuredTourId])
+}
+
+/// Ligne ordonnée de la sélection. Suppression physique avec la sélection.
+model SelectionItem {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  selectionId String    @db.Uuid
+  selection   Selection @relation(fields: [selectionId], references: [id], onDelete: Cascade)
+  tourId      String    @db.Uuid
+  tour        Tour      @relation(fields: [tourId], references: [id], onDelete: Restrict)
+  position    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([selectionId, tourId])
+  @@index([selectionId])
+  @@index([tourId])
+}
+
+enum KioskDeviceType {
+  TOUCH_SCREEN
+  VR_HEADSET
+  TOUCH_AND_HEADSET
+}
+
+enum KioskStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+/// Kiosque (cahier, 5.8). Suppression logique via deletedAt.
+model Kiosk {
+  id                    String          @id @default(uuid(7)) @db.Uuid
+  label                 String
+  hotelId               String          @db.Uuid
+  hotel                 Hotel           @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  deviceType            KioskDeviceType
+  status                KioskStatus     @default(PENDING)
+  enrollmentCode        String?         @unique @db.VarChar(8)
+  enrollmentExpiresAt   DateTime?
+  /// Empreinte SHA-256 du jeton d'appareil. Le jeton en clair n'est jamais stocké.
+  tokenHash             String?         @unique
+  lastHeartbeatAt       DateTime?
+  lastIp                String?
+  appVersion            String?
+  syncedManifestVersion String?
+  storageFreeMb         Int?
+  idleTimeoutSeconds    Int             @default(90)
+  deletedAt             DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([hotelId])
+}
+
+/// Rattachement gestionnaire ↔ hôtel (cahier, 5.10). Clé composite.
+model UserHotel {
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hotelId   String   @db.Uuid
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, hotelId])
+  @@index([hotelId])
 }

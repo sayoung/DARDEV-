@@ -11,17 +11,19 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 29/09/2026  
-**Exigence :** M1 API-25 — CRUD des villes et des catégories.
+**Exigence :** M1 — schéma Prisma 5.6 à 5.8 (`Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, D-66).
 
 Plan :
 
-1. `canManageCatalog` dans `AccessPolicy` (ADMIN et EDITOR) et tests dans `access-policy.test.ts`. Lecture : toute session. Écriture : cette règle.
-2. `CatalogModule` : `CitiesController` / `CategoriesController` fins, `CitiesService` / `CategoriesService`, Prisma hors des contrôleurs. `SessionGuard` et `CsrfGuard` sur toutes les routes. Corps validés par les schémas Zod de `@xplor/shared` (même `safeParse` que l'auth).
-3. DELETE d'une ville ou d'une catégorie encore liée à une visite : 409 `IN_USE`, corps `{ error: { code, message } }`.
-4. OpenAPI régénéré (`docs/openapi.json`). Tests unitaires des services ; `test/catalog.int.test.ts` (401, 403 CSRF, 403 PARTNER et HOTEL_MANAGER, 201/200/204 EDITOR, 409 ville utilisée).
-5. Seed idempotent : Rabat, Salé, Kénitra, Témara ; Monuments, Médina, Plages, Gastronomie, Nature, Artisanat (fr, ar, en). Puis `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`, `pnpm db:seed` deux fois. Aucun commit (orchestrateur).
+1. Modèles et enums dans `schema.prisma` (UUID v7, `createdAt` / `updatedAt`, index sur les clés étrangères, `deletedAt` sur `Hotel` et `Kiosk`). `onDelete` consigné en D-70. Ne pas modifier les migrations déjà présentes.
+2. `prisma migrate dev --name hotels_kiosks` sous Node 22, Docker démarré.
+3. Seed idempotent : 1 hôtel à Rabat (FIVE, RENTAL, langues fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`.
+4. Étendre `test/migrations.int.test.ts` et `test/seed.int.test.ts` (1 hôtel, 1 kiosque, 1 rattachement après deux seeds).
+5. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`, `pnpm db:seed` deux fois. Aucun commit (orchestrateur).
 
-Réalisé (29/09/2026, Node 22.23.3) : `CatalogModule` (`CitiesController` / `CategoriesController` → services → Prisma). `canManageCatalog` (ADMIN, EDITOR). DELETE 409 `{ error: { code: "IN_USE", message } }` si une visite ou une jointure tient encore la ligne. OpenAPI régénéré. Seed : 4 villes et 6 catégories, upsert sur UUID v7 fixes (D-69). `pnpm lint`, `pnpm typecheck` et `pnpm test` (281) verts. `pnpm test:int` (14) vert, dont `catalog.int.test.ts` (5) et le seed lancé deux fois. `pnpm db:seed` deux fois sur la base de dev : 4 villes, 6 catégories. Aucun commit (orchestrateur).
+Réalisé (29/09/2026, Node 22.23.3) : modèles `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel` et migration `20260929183235_hotels_kiosks` (D-70). Les migrations précédentes ne sont pas modifiées. Seed idempotent : hôtel 5 étoiles en location à Rabat, sélection vide, kiosque « Hall principal » `PENDING`, rattachement de `manager@xplor.local`. `pnpm lint`, `pnpm typecheck` et `pnpm test` (281) verts. `pnpm test:int` (14) vert, dont les tables et le seed lancé deux fois. `pnpm db:seed` deux fois sur la base de dev. Le `Principal` ne charge pas encore les hôtels. Aucun commit (orchestrateur).
+
+API-25 (session précédente) : CRUD villes et catégories en place. Voir la section « Fait ».
 
 ## Definition of Done — M1
 
@@ -45,10 +47,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : `localizedText({ max })`, enums de contenu, schémas City, Category, Tour, Scene, `HotspotCreate` (`url` en `z.httpUrl()`, http/https seulement), `PaginationQuery` et `paginated` dans `@xplor/shared` (`src/catalog.ts`, tests `src/catalog.test.ts`). `Paginated<T>` est inféré du schéma. Couverture de `catalog.ts` : 100 % (63 tests du paquet). Schéma Prisma : `City`, `Category`, `Asset` (minimal, D-65), `Tour`, `TourCategory`, `Scene`, `Hotspot`, migration `20260929172452_content_model` (D-67). L'API des visites et les écrans restent à faire. Le détail du socle M0 est dans la section repliée « Jalons terminés — M0 ».
 - **F-03** (règles de publication, fonction pure) : `validateTour` dans `apps/api/src/catalog/tour-validation.ts` (25 tests, dont « Visite manuelle »). `ValidationIssue` et `ValidationIssueCode` dans `@xplor/shared`. Couverture 100 %. Pas de route 422 ni d'écran (D-68).
 - **API-25** (CRUD villes et catégories) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Lecture pour toute session ; écriture ADMIN et EDITOR (`canManageCatalog`). 409 `IN_USE` au format du cahier. Seed fr/ar/en. OpenAPI à jour. Pas d'écran admin (D-69).
+- **Schéma 5.6 à 5.8** (D-66, D-70) : `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, migration `20260929183235_hotels_kiosks`. Seed : 1 hôtel à Rabat (FIVE, RENTAL, fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`. CRUD et écrans restent en M5. La session ne charge pas encore `hotelIds`.
 
 ### En cours
 
-- Reste du jalon M1 : schéma Prisma 5.6 à 5.8 (`Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, D-66), API-21/22/23, écrans admin (y compris villes et catégories), F-02 (sans traitement), F-04, F-05. La partie liste / CRUD / duplication de F-01 n'est pas commencée. F-03 : la fonction est en place ; la réponse 422 et l'affichage des problèmes dans l'admin restent à faire.
+- Reste du jalon M1 : API-21/22/23, écrans admin (y compris villes et catégories), F-02 (sans traitement), F-04, F-05, et les 3 visites liées du seed. La partie liste / CRUD / duplication de F-01 n'est pas commencée. F-03 : la fonction est en place ; la réponse 422 et l'affichage des problèmes dans l'admin restent à faire. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 
@@ -64,7 +67,7 @@ Aucun.
 - Le sélecteur de langue, l'invitation et les autres écrans de la démo M0 ont été validés visuellement par le porteur le 29/09/2026 (`docs/DEMO_M0.md`). Les tests automatisés restent Vitest (jsdom) ou Playwright avec `/api` simulé : les scénarios back-office ne démarrent pas l'API.
 - Prisma 6 avertit que `package.json#prisma` (dont `prisma.seed`) est déprécié au profit de `prisma.config.ts` en Prisma 7 ; D-34 et D-41 conservent Prisma 6 et ce champ.
 - `.gitattributes` ne force LF au checkout de `docs/openapi.json` qu'une fois `git add --renormalize .` indexé par l'orchestrateur (critère 9).
-- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66, D-67, D-68, D-69). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
+- Décisions encore à valider : voir `docs/DECISIONS.md` (D-37, D-38, D-39, D-40, D-44, D-45, D-46, D-47, D-48, D-49, D-51, D-54, D-55, D-61, D-63, D-64, D-65, D-66, D-67, D-68, D-69, D-70). D-62 : question de validation sans objet pour les critères 1, 7 et 10.
 
 <details>
 <summary>Jalons terminés — M0</summary>

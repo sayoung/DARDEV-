@@ -1,6 +1,6 @@
 /**
- * Comptes de démonstration (NF-09) et référentiels API-25.
- * Hôtel, kiosque et visites de démonstration restent à faire dans M1.
+ * Comptes de démonstration (NF-09), référentiels API-25 et hôtel de démonstration (D-66).
+ * Les visites de démonstration restent à faire dans M1.
  */
 import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -11,6 +11,7 @@ import { Role } from '@xplor/shared';
 
 import { PasswordService } from '../src/auth/password.service.js';
 import { seedCatalog, SEED_CATEGORIES, SEED_CITIES } from '../src/seed/seed-catalog.js';
+import { seedHotels } from '../src/seed/seed-hotels.js';
 import { buildSeedUsers, type SeedUser } from '../src/seed/seed-users.js';
 
 const PRISMA_ROLE: Record<Role, PrismaRole> = {
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
       await upsertSeedUser(prisma, user);
     }
     await seedCatalog(prisma);
+    await seedHotels(prisma);
   } finally {
     await prisma.$disconnect();
   }
@@ -71,6 +73,7 @@ async function main(): Promise<void> {
   console.log(
     `${String(SEED_CITIES.length)} villes et ${String(SEED_CATEGORIES.length)} catégories de démonstration prêtes.`,
   );
+  console.log('1 hôtel, 1 sélection, 1 kiosque et 1 rattachement de démonstration prêts.');
 }
 
 void main().catch((error: unknown) => {
