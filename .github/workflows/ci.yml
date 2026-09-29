@@ -78,14 +78,16 @@ jobs:
           REDIS_URL: redis://localhost:6379
           SEED_DEFAULT_PASSWORD: xplor-seed-dev-2026
 
-      # D-59. Identifiants de développement (.env.example), pas des secrets.
+      # D-59, image construite en D-61 (Docker Hub ne sert plus minio/minio).
+      # Identifiants de développement (.env.example), pas des secrets.
       - name: API smoke
         run: |
           set -euo pipefail
+          docker build -t xplor-minio:2025-09-07 docker/minio
           docker run -d --name minio -p 9000:9000 \
             -e MINIO_ROOT_USER=xplor \
             -e MINIO_ROOT_PASSWORD=xplor-dev-secret \
-            minio/minio server /data
+            xplor-minio:2025-09-07 server /data
           ready=0
           for _ in $(seq 1 30); do
             if curl -sf http://127.0.0.1:9000/minio/health/live >/dev/null; then
@@ -101,9 +103,9 @@ jobs:
           fi
           bucket_ok=0
           for _ in $(seq 1 15); do
-            if docker run --rm --network container:minio \
+            if docker run --rm --network container:minio --entrypoint mc \
               -e MC_HOST_local=http://xplor:xplor-dev-secret@127.0.0.1:9000 \
-              minio/mc mb --ignore-existing local/xplor; then
+              xplor-minio:2025-09-07 mb --ignore-existing local/xplor; then
               bucket_ok=1
               break
             fi

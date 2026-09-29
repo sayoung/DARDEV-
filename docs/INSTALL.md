@@ -39,7 +39,7 @@ pnpm db:seed
 | -------- | -------------------- | -------------------------- | --------------------------------------------------------------------------------------------------- |
 | postgres | `postgres:16-alpine` | 5432                       | volume `postgres_data` ; bases `xplor` (`POSTGRES_DB`) et `xplor_test` (`docker/postgres/init.sql`) |
 | redis    | `redis:7-alpine`     | 6379                       | volume `redis_data`                                                                                 |
-| minio    | `minio/minio`        | 9000 (API), 9001 (console) | volume `minio_data` ; le service `minio-init` (`minio/mc`) crée le bucket `xplor` puis s'arrête     |
+| minio    | `xplor-minio:2025-09-07` (build `docker/minio`, D-61) | 9000 (API), 9001 (console) | volume `minio_data` ; le service `minio-init` (même image, client `mc`) crée le bucket `xplor` puis s'arrête |
 | mailpit  | `axllent/mailpit`    | 1025 (SMTP), 8025 (web)    | volume `mailpit_data`                                                                               |
 
 `pnpm db:migrate` lance `prisma migrate dev` dans `@xplor/api`. `pnpm db:deploy` applique les migrations versionnées (`prisma migrate deploy`). `pnpm db:generate` régénère le client. La migration `init_users` est déjà dans le dépôt ; elle a été produite sans base locale (D-34) et doit être revalidée par `pnpm db:migrate` dès que Docker sera disponible. `pnpm db:seed` crée ou met à jour quatre utilisateurs actifs (un par rôle) avec le mot de passe `SEED_DEFAULT_PASSWORD`. L'hôtel, le kiosque et les visites de démonstration sont prévus au jalon M1.
