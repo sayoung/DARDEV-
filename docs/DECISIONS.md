@@ -504,6 +504,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** 404 au format Nest `{ statusCode, message, error }` comme API-21 ; promouvoir la scène de poids suivant comme départ ; refuser un asset dont le `kind` n’est pas `PANORAMA` ; trier `createdAt` en décroissant ; laisser `contentVersion` inchangé jusqu’à API-23 ; refuser les doublons dans `SceneReorderRequestSchema` ; répondre 404 plutôt que 422 pour une scène inconnue au `set-start` ; inclure `startSceneId` dans `TourResponse`.
 - **À valider :** oui (codes 404, tri croissant, incrément de `contentVersion`, asset accepté quel que soit son `kind` ; poids = index à partir de 0 ; 422 `SCENE_SET_MISMATCH` ; 422 `START_SCENE_FOREIGN` pour une scène inconnue, supprimée ou d’une autre visite ; `TourResponse` sans `startSceneId`)
 
+## D-73 — Hotspots (API-23, partie 1, contrats)
+
+- **Date :** 29/09/2026
+- **Décision :** Les contrats de hotspot restent dans `@xplor/shared` (`catalog.ts`). Ce lot n’ajoute aucune route, aucun service, aucun écran. `HotspotUpdateSchema` est la même union discriminée sur `type` que `HotspotCreateSchema` : chaque variante exige ses champs requis (cahier 5.4), `arrivalYaw` et `targetTourSceneId` restent facultatifs, l’icône garde le défaut du type (D-67). Le `type` fait partie du corps : un remplacement peut passer de `SCENE_LINK` à `INFO`, ou l’inverse. `url` reste `z.httpUrl()` (`http` ou `https` seulement). `HotspotResponseSchema` est un objet plat : `id` et `sceneId` en UUID v7, `type`, `yaw`, `pitch`, `label` (`LocalizedText`), `icon`, `createdAt` et `updatedAt` en ISO 8601. `targetSceneId`, `targetTourId`, `targetTourSceneId`, `body`, `url` et `arrivalYaw` sont nullables (la clé est présente, la valeur peut être `null`). `url` non nulle reste `http` ou `https`. `mediaAssetIds` est un `string[]`, éventuellement vide : la création continue d’exiger au moins un UUID v7, la réponse reflète le `String[]` Prisma sans reclouer l’identifiant. `HotspotUpdate` et `HotspotResponse` sont `z.infer`, exportés par `index.ts`. Aucun paquet npm ajouté.
+- **Alternatives :** un PATCH partiel qui omettrait `type` ; une réponse elle-même en union discriminée (les champs absents omis plutôt que `null`) ; exiger un UUID v7 dans `mediaAssetIds` de la réponse ; rendre `arrivalYaw` obligatoire au remplacement.
+- **À valider :** oui (réponse plate à champs nullables ; `mediaAssetIds` en chaînes, pas en UUID v7 ; remplacement complet avec changement de type)
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

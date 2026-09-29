@@ -199,12 +199,12 @@ const hotspotPosition = {
 };
 
 /**
- * Corps de création d'un hotspot (API-23).
- * `sceneId` vient de la route. L'union impose les champs du type (cahier, 5.4).
- * L'appartenance au graphe de la visite est vérifiée plus tard (F-03).
+ * Variantes d'un hotspot (cahier, 5.4). Création et remplacement partagent
+ * cette union : le corps porte `type`, donc un remplacement peut en changer.
  * Icône par défaut : ARROW, PORTAL, INFO, PHOTO, INFO selon le type (D-67).
+ * `z.url()` accepte `javascript:` et `data:` (XSS stocké dans le viewer).
  */
-export const HotspotCreateSchema = z.discriminatedUnion('type', [
+const hotspotVariants = [
   z.object({
     type: z.literal(HotspotType.SCENE_LINK),
     ...hotspotPosition,
@@ -233,12 +233,53 @@ export const HotspotCreateSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(HotspotType.URL),
     ...hotspotPosition,
-    // `z.url()` accepte `javascript:` et `data:` (XSS stocké dans le viewer).
     url: z.httpUrl(),
     icon: z.enum(HotspotIcon).default(HotspotIcon.INFO),
   }),
-]);
+] as const;
+
+/**
+ * Corps de création d'un hotspot (API-23).
+ * `sceneId` vient de la route. L'union impose les champs du type.
+ * L'appartenance au graphe de la visite est vérifiée plus tard (F-03).
+ */
+export const HotspotCreateSchema = z.discriminatedUnion('type', hotspotVariants);
 export type HotspotCreate = z.infer<typeof HotspotCreateSchema>;
+
+/**
+ * Remplacement d'un hotspot (API-23, D-73).
+ * Mêmes variantes que la création : tous les champs requis du type choisi.
+ * Le `type` fait partie du corps, il peut donc changer.
+ */
+export const HotspotUpdateSchema = z.discriminatedUnion('type', hotspotVariants);
+export type HotspotUpdate = z.infer<typeof HotspotUpdateSchema>;
+
+/**
+ * Hotspot renvoyé par l'API admin (API-23, D-73).
+ * Les champs propres à une variante sont nullables : la réponse est plate.
+ * `mediaAssetIds` est un tableau de chaînes, vide hors d'un hotspot `MEDIA`.
+ * `url`, lorsqu'elle est présente, reste `http` ou `https`.
+ * `createdAt` et `updatedAt` sont des dates ISO 8601.
+ */
+export const HotspotResponseSchema = z.object({
+  id: idSchema,
+  sceneId: idSchema,
+  type: z.enum(HotspotType),
+  yaw: yawSchema,
+  pitch: pitchSchema,
+  label: LocalizedTextSchema,
+  targetSceneId: idSchema.nullable(),
+  targetTourId: idSchema.nullable(),
+  targetTourSceneId: idSchema.nullable(),
+  body: LocalizedTextSchema.nullable(),
+  url: z.httpUrl().nullable(),
+  arrivalYaw: yawSchema.nullable(),
+  mediaAssetIds: z.array(z.string()),
+  icon: z.enum(HotspotIcon),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type HotspotResponse = z.infer<typeof HotspotResponseSchema>;
 
 /** Paramètres de liste (F-01). Nombres déjà typés : `page` ≥ 1, `pageSize` 1…100, défaut 20. */
 export const PaginationQuerySchema = z.object({
