@@ -1,6 +1,7 @@
 import { Module, type DynamicModule } from '@nestjs/common';
 
 import { AuthModule } from './auth/auth.module.js';
+import { CatalogModule } from './catalog/catalog.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { type Env } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
@@ -22,6 +23,7 @@ export class AppModule {
         MailModule,
         AuthModule,
         UsersModule,
+        CatalogModule,
         HealthModule,
         OpenApiModule,
       ],

@@ -5,10 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { PrismaClient } from '@prisma/client';
-import { Role } from '@xplor/shared';
+import { LocalizedTextSchema, Role } from '@xplor/shared';
 import { afterAll, expect, it } from 'vitest';
 
 import { PasswordService } from '../src/auth/password.service.js';
+import { SEED_CATEGORIES, SEED_CITIES } from '../src/seed/seed-catalog.js';
 import { readDatabaseUrlTest, resetDb } from './global-setup.js';
 
 const execFileAsync = promisify(execFile);
@@ -43,6 +44,30 @@ it('deux exécutions du seed laissent quatre utilisateurs actifs, un par rôle',
   const passwords = new PasswordService();
   for (const user of users) {
     expect(await passwords.verify(user.passwordHash, password)).toBe(true);
+  }
+
+  const cities = await prisma.city.findMany();
+  const categories = await prisma.category.findMany();
+  expect(cities.map((city) => city.id).sort()).toEqual(SEED_CITIES.map((city) => city.id).sort());
+  expect(categories.map((category) => category.id).sort()).toEqual(
+    SEED_CATEGORIES.map((category) => category.id).sort(),
+  );
+  for (const city of cities) {
+    const expected = SEED_CITIES.find((item) => item.id === city.id);
+    if (expected === undefined) {
+      throw new Error(`ville absente du référentiel de seed : ${city.id}`);
+    }
+    expect(LocalizedTextSchema.parse(city.name)).toEqual(expected.name);
+  }
+  for (const category of categories) {
+    const expected = SEED_CATEGORIES.find((item) => item.id === category.id);
+    if (expected === undefined) {
+      throw new Error(`catégorie absente du référentiel de seed : ${category.id}`);
+    }
+    expect(LocalizedTextSchema.parse(category.name)).toEqual(expected.name);
+    expect(category.icon).toBe(expected.icon);
+    expect(category.color).toBe(expected.color);
+    expect(category.weight).toBe(expected.weight);
   }
 });
 
