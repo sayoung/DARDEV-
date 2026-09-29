@@ -15,6 +15,7 @@ import {
   PaginationQuerySchema,
   ProcessingStatus,
   SceneCreateSchema,
+  SceneResponseSchema,
   SceneUpdateSchema,
   TourCreateSchema,
   TourListQuerySchema,
@@ -284,6 +285,41 @@ describe('SceneCreateSchema', () => {
   it('refuse un zoom hors de 0…100', () => {
     expect(SceneCreateSchema.safeParse({ ...scene, initialZoom: 101 }).success).toBe(false);
     expect(SceneCreateSchema.safeParse({ ...scene, initialZoom: -1 }).success).toBe(false);
+  });
+});
+
+describe('SceneResponseSchema', () => {
+  const createdAt = '2026-09-29T18:00:00.000Z';
+  const sceneResponse = {
+    id: id.scene,
+    tourId: id.tour,
+    title: { fr: 'La porte' },
+    panoramaAssetId: id.panorama,
+    initialYaw: 0,
+    initialPitch: 0,
+    initialZoom: 50,
+    weight: 1,
+    hotspotCount: 0,
+    createdAt,
+    updatedAt: createdAt,
+  };
+
+  it('accepte une scène sans légende', () => {
+    expect(SceneResponseSchema.parse(sceneResponse)).toEqual(sceneResponse);
+  });
+
+  it('accepte une légende', () => {
+    const withCaption = { ...sceneResponse, caption: { fr: 'Entrée' } };
+    expect(SceneResponseSchema.parse(withCaption).caption).toEqual({ fr: 'Entrée' });
+  });
+
+  it('refuse un compteur négatif ou une date invalide', () => {
+    expect(SceneResponseSchema.safeParse({ ...sceneResponse, hotspotCount: -1 }).success).toBe(
+      false,
+    );
+    expect(SceneResponseSchema.safeParse({ ...sceneResponse, createdAt: 'hier' }).success).toBe(
+      false,
+    );
   });
 });
 

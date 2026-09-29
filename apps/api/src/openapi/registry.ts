@@ -22,6 +22,9 @@ import {
   MeResponseSchema,
   PaginatedTourResponseSchema,
   ResetPasswordRequestSchema,
+  SceneCreateSchema,
+  SceneResponseSchema,
+  SceneUpdateSchema,
   TourCreateSchema,
   TourListQuerySchema,
   TourResponseSchema,
@@ -33,6 +36,9 @@ import {
   CATEGORY_NOT_FOUND,
   CITY_NOT_FOUND,
   COVER_ASSET_NOT_FOUND,
+  PANORAMA_ASSET_NOT_FOUND,
+  SCENE_NOT_FOUND,
+  TOUR_NOT_FOUND,
 } from '../catalog/catalog.errors.js';
 import type { HealthBody } from '../health/health.service.js';
 
@@ -89,6 +95,24 @@ const inUseError = z.object({
 const referenceError = z.object({
   error: z.object({
     code: z.enum([CITY_NOT_FOUND, CATEGORY_NOT_FOUND, COVER_ASSET_NOT_FOUND]),
+    message: z.string(),
+  }),
+});
+const tourMissingError = z.object({
+  error: z.object({
+    code: z.literal(TOUR_NOT_FOUND),
+    message: z.string(),
+  }),
+});
+const sceneMissingError = z.object({
+  error: z.object({
+    code: z.literal(SCENE_NOT_FOUND),
+    message: z.string(),
+  }),
+});
+const panoramaMissingError = z.object({
+  error: z.object({
+    code: z.literal(PANORAMA_ASSET_NOT_FOUND),
     message: z.string(),
   }),
 });
@@ -301,6 +325,7 @@ registerCatalogCrud({
 });
 
 registerTourCrud();
+registerSceneCrud();
 
 function registerCatalogCrud(resource: {
   collection: string;
@@ -482,6 +507,107 @@ function registerTourCrud(): void {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
       '404': jsonResponse('Visite introuvable ou déjà supprimée.', notFoundError),
+    },
+  });
+}
+
+function registerSceneCrud(): void {
+  const collection = '/api/v1/admin/tours/{tourId}/scenes';
+  const item = '/api/v1/admin/scenes/{id}';
+  const tourParam = z.object({ tourId: z.uuidv7() });
+  const idParam = z.object({ id: z.uuidv7() });
+  const roleDenied = 'Rôle autre que ADMIN ou EDITOR.';
+  const csrfOrRole = 'Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.';
+  registry.registerPath({
+    method: 'get',
+    path: collection,
+    summary: 'Lister les scènes d’une visite',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: tourParam },
+    responses: {
+      '200': jsonResponse(
+        'Scènes non supprimées, triées par poids puis par date de création.',
+        z.array(SceneResponseSchema),
+      ),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+    },
+  });
+  registry.registerPath({
+    method: 'post',
+    path: collection,
+    summary: 'Créer une scène',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: tourParam,
+      body: jsonBody(
+        SceneCreateSchema,
+        'Corps de création. La première scène devient la scène de départ.',
+      ),
+    },
+    responses: {
+      '201': jsonResponse('Scène créée.', SceneResponseSchema),
+      '400': jsonResponse('Identifiant ou corps refusé par SceneCreateSchema.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(csrfOrRole, forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+      '422': jsonResponse('Panorama inconnu.', panoramaMissingError),
+    },
+  });
+  registry.registerPath({
+    method: 'get',
+    path: item,
+    summary: 'Lire une scène',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Scène trouvée, avec le nombre de hotspots.', SceneResponseSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+      '404': jsonResponse('Scène introuvable ou supprimée.', sceneMissingError),
+    },
+  });
+  registry.registerPath({
+    method: 'patch',
+    path: item,
+    summary: 'Remplacer une scène',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(SceneUpdateSchema, 'Mêmes champs que la création (remplacement complet).'),
+    },
+    responses: {
+      '200': jsonResponse('Scène mise à jour.', SceneResponseSchema),
+      '400': jsonResponse('Identifiant ou corps refusé.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(csrfOrRole, forbiddenError),
+      '404': jsonResponse('Scène introuvable ou supprimée.', sceneMissingError),
+      '422': jsonResponse('Panorama inconnu.', panoramaMissingError),
+    },
+  });
+  registry.registerPath({
+    method: 'delete',
+    path: item,
+    summary: 'Supprimer une scène',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '204': {
+        description:
+          'Suppression logique (deletedAt). Si c’était la scène de départ, startSceneId revient à null. Corps vide.',
+      },
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(csrfOrRole, forbiddenError),
+      '404': jsonResponse('Scène introuvable ou déjà supprimée.', sceneMissingError),
     },
   });
 }

@@ -28,6 +28,11 @@ const ROUTES = [
   { path: '/api/v1/admin/tours/{id}', method: 'get' },
   { path: '/api/v1/admin/tours/{id}', method: 'patch' },
   { path: '/api/v1/admin/tours/{id}', method: 'delete' },
+  { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'get' },
+  { path: '/api/v1/admin/tours/{tourId}/scenes', method: 'post' },
+  { path: '/api/v1/admin/scenes/{id}', method: 'get' },
+  { path: '/api/v1/admin/scenes/{id}', method: 'patch' },
+  { path: '/api/v1/admin/scenes/{id}', method: 'delete' },
 ] as const;
 
 describe('document OpenAPI', () => {
@@ -50,12 +55,20 @@ describe('document OpenAPI', () => {
     expect(body).toContain('EMAIL_TAKEN');
     expect(body).toContain('IN_USE');
     expect(body).toContain('CITY_NOT_FOUND');
+    expect(body).toContain('PANORAMA_ASSET_NOT_FOUND');
+    expect(body).toContain('SCENE_NOT_FOUND');
 
     const createTour = doc.paths?.['/api/v1/admin/tours']?.post?.responses;
     expect(createTour?.['422']).toBeDefined();
     expect(createTour?.['403']).toBeDefined();
     const listTours = doc.paths?.['/api/v1/admin/tours']?.get?.responses;
     expect(listTours?.['403']).toBeDefined();
+    const createScene = doc.paths?.['/api/v1/admin/tours/{tourId}/scenes']?.post?.responses;
+    expect(createScene?.['422']).toBeDefined();
+    expect(createScene?.['404']).toBeDefined();
+    const deleteScene = doc.paths?.['/api/v1/admin/scenes/{id}']?.delete?.responses;
+    expect(deleteScene?.['204']).toBeDefined();
+    expect(deleteScene?.['404']).toBeDefined();
 
     const invitations = doc.paths?.['/api/v1/admin/users/invitations']?.post?.responses;
     expect(invitations?.['403']).toBeDefined();

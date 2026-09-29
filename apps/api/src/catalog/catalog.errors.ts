@@ -28,9 +28,29 @@ export const COVER_ASSET_NOT_FOUND = 'COVER_ASSET_NOT_FOUND';
 
 export const COVER_ASSET_NOT_FOUND_MESSAGE = 'Cette vignette est inconnue.';
 
+/** Visite inconnue ou supprimée (API-22). */
+export const TOUR_NOT_FOUND = 'TOUR_NOT_FOUND';
+
+export const TOUR_NOT_FOUND_MESSAGE = 'Cette visite est inconnue.';
+
+/** Scène inconnue ou supprimée, ou visite parente supprimée (API-22). */
+export const SCENE_NOT_FOUND = 'SCENE_NOT_FOUND';
+
+export const SCENE_NOT_FOUND_MESSAGE = 'Cette scène est inconnue.';
+
+/** Panorama inconnu au moment de créer ou de modifier une scène (API-22). */
+export const PANORAMA_ASSET_NOT_FOUND = 'PANORAMA_ASSET_NOT_FOUND';
+
+export const PANORAMA_ASSET_NOT_FOUND_MESSAGE = 'Ce panorama est inconnu.';
+
 /** Référence de visite inconnue : 422 `{ error: { code, message } }`. */
 export function referenceException(code: string, message: string): HttpException {
   return new HttpException({ error: { code, message } }, HttpStatus.UNPROCESSABLE_ENTITY);
+}
+
+/** Visite ou scène absente : 404 `{ error: { code, message } }` (API-22). */
+export function missingException(code: string, message: string): HttpException {
+  return new HttpException({ error: { code, message } }, HttpStatus.NOT_FOUND);
 }
 
 /** `onDelete: Restrict` : Prisma répond P2003 si une clé étrangère tient encore. */
