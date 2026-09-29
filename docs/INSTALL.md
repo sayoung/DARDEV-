@@ -30,6 +30,19 @@ pnpm db:seed
 
 `pnpm db:migrate` lance `prisma migrate dev` dans `@xplor/api`. `pnpm db:deploy` applique les migrations versionnées (`prisma migrate deploy`). `pnpm db:generate` régénère le client. La migration `init_users` est déjà dans le dépôt ; elle a été produite sans base locale (D-34) et doit être revalidée par `pnpm db:migrate` dès que Docker sera disponible. `pnpm db:seed` crée ou met à jour quatre utilisateurs actifs (un par rôle) avec le mot de passe `SEED_DEFAULT_PASSWORD`. L'hôtel, le kiosque et les visites de démonstration sont prévus au jalon M1.
 
+## Tests d'intégration API (NF-08)
+
+`pnpm test` lance les tests unitaires et ignore les fichiers `*.int.test.ts`.
+
+`pnpm test:int` (identique à `pnpm --filter @xplor/api test:int`) lance le projet Vitest `api-int` contre PostgreSQL. Le `globalSetup` lit `DATABASE_URL_TEST` (fichier `.env` à la racine, ou variable déjà exportée). Si la variable est absente, ou si la base est injoignable, la commande s'arrête avec un message explicite et n'exécute pas les tests. Sinon elle applique `prisma migrate deploy` sur cette base. `resetDb()` vide ensuite les tables, sauf `_prisma_migrations`.
+
+La base `xplor_test` est créée par `docker/postgres/init.sql` au premier démarrage d'un volume Postgres vide. Le test de seed a besoin de `SEED_DEFAULT_PASSWORD` (valeur de développement de `.env.example`, pas un secret).
+
+```bash
+docker compose up -d
+pnpm test:int
+```
+
 ## Contrôle
 
 ```bash
