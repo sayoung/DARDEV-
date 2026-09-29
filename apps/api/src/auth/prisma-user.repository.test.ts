@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { PrismaUserRepository } from './prisma-user.repository.js';
+import type { AuthTx } from './unit-of-work.js';
 
 type StoredUser = {
   id: string;
@@ -86,6 +87,40 @@ describe('PrismaUserRepository', () => {
     });
   });
 
+  it('lit le compte sur le client de transaction', async () => {
+    const { repository } = repositoryFor(null);
+    const txCalls: unknown[] = [];
+    const tx = {
+      user: {
+        findUnique: (args: unknown) => {
+          txCalls.push(args);
+          return Promise.resolve(row);
+        },
+      },
+    };
+
+    await expect(repository.findById('user-1', tx as unknown as AuthTx)).resolves.toMatchObject({
+      id: 'user-1',
+      active: true,
+    });
+    expect(txCalls).toEqual([
+      {
+        where: { id: 'user-1' },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          passwordHash: true,
+          role: true,
+          uiLang: true,
+          active: true,
+          failedLoginCount: true,
+          lockedUntil: true,
+        },
+      },
+    ]);
+  });
+
   it('renvoie null si le compte est absent', async () => {
     const { repository } = repositoryFor(null);
 
@@ -123,5 +158,37 @@ describe('PrismaUserRepository', () => {
       const args = first.args as { data: Record<string, unknown> };
       expect(args.data).not.toHaveProperty('lastLoginAt');
     }
+  });
+
+  it('écrit le mot de passe sur Prisma, ou sur le client de transaction', async () => {
+    const { repository, calls } = repositoryFor(row);
+    const txCalls: unknown[] = [];
+    const tx = {
+      user: {
+        update: (args: unknown) => {
+          txCalls.push(args);
+          return Promise.resolve(row);
+        },
+      },
+    };
+    const state = { passwordHash: 'hash-neuf', failedLoginCount: 0, lockedUntil: null };
+
+    await repository.updatePassword('user-1', state);
+    await repository.updatePassword(
+      'user-1',
+      { ...state, passwordHash: 'hash-tx' },
+      tx as unknown as AuthTx,
+    );
+
+    expect(calls[0]).toMatchObject({
+      op: 'update',
+      args: { where: { id: 'user-1' }, data: state },
+    });
+    expect(txCalls).toEqual([
+      {
+        where: { id: 'user-1' },
+        data: { passwordHash: 'hash-tx', failedLoginCount: 0, lockedUntil: null },
+      },
+    ]);
   });
 });

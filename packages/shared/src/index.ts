@@ -1,8 +1,12 @@
 export {
+  ForgotPasswordRequestSchema,
   LoginRequestSchema,
   MeResponseSchema,
+  ResetPasswordRequestSchema,
+  type ForgotPasswordRequest,
   type LoginRequest,
   type MeResponse,
+  type ResetPasswordRequest,
 } from './auth.js';
 export { LANGS, type Lang } from './lang.js';
 export { LocalizedTextSchema, localize, type LocalizedText } from './localized-text.js';

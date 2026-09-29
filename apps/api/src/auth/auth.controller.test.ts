@@ -8,7 +8,15 @@ import { describe, expect, it } from 'vitest';
 
 import { AuthController } from './auth.controller.js';
 import { AuthModule } from './auth.module.js';
-import { ACCOUNT_LOCKED, AuthRejectedError, INVALID_CREDENTIALS } from './auth.errors.js';
+import {
+  ACCOUNT_LOCKED,
+  AuthRejectedError,
+  AuthRequestError,
+  INVALID_CREDENTIALS,
+  PASSWORD_INVALID,
+  PASSWORD_TOO_COMMON,
+  TOKEN_INVALID,
+} from './auth.errors.js';
 import type { AuthService, LoginResult } from './auth.service.js';
 import { CsrfGuard } from './csrf.guard.js';
 import { SESSION_COOKIE_NAME, type SessionCookieOptions } from './session-cookie.js';
@@ -47,7 +55,10 @@ function replySpy(): { reply: FastifyReply; cookies: CookieCall[] } {
 /** Clé de métadonnée Nest pour `@UseGuards` (`GUARDS_METADATA`). */
 const GUARDS_METADATA = '__guards__';
 
-function handler(name: 'login' | 'logout' | 'me'): object {
+/** Clé de métadonnée Nest pour `@HttpCode` (`HTTP_CODE_METADATA`). */
+const HTTP_CODE_METADATA = '__httpCode__';
+
+function handler(name: 'login' | 'logout' | 'me' | 'forgotPassword' | 'resetPassword'): object {
   const value: unknown = Object.getOwnPropertyDescriptor(AuthController.prototype, name)?.value;
   if (typeof value !== 'function') {
     throw new Error(`Méthode absente : ${name}`);
@@ -194,5 +205,85 @@ describe('AuthController', () => {
     expect(Reflect.getMetadata('THROTTLER:TTLdefault', login)).toBe(60_000);
     expect(Reflect.getMetadata(GUARDS_METADATA, logout)).toEqual([SessionGuard, CsrfGuard]);
     expect(Reflect.getMetadata(GUARDS_METADATA, meHandler)).toEqual([SessionGuard]);
+  });
+
+  it('répond 202 pour forgot, limité à 5 par minute, sans session ni CSRF', async () => {
+    const emails: string[] = [];
+    const controller = controllerFor({
+      forgotPassword: (email: string) => {
+        emails.push(email);
+        return Promise.resolve();
+      },
+    });
+
+    await expect(controller.forgotPassword({ email: 'ada@xplor.test' })).resolves.toBeUndefined();
+    expect(emails).toEqual(['ada@xplor.test']);
+
+    const forgot = handler('forgotPassword');
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, forgot)).toBe(202);
+    expect(Reflect.getMetadata(GUARDS_METADATA, forgot)).toEqual([ThrottlerGuard]);
+    expect(Reflect.getMetadata('THROTTLER:LIMITdefault', forgot)).toBe(5);
+    expect(Reflect.getMetadata('THROTTLER:TTLdefault', forgot)).toBe(60_000);
+  });
+
+  it('refuse un corps de forgot invalide', async () => {
+    const controller = controllerFor({
+      forgotPassword: () => Promise.reject(new Error('ne doit pas être appelé')),
+    });
+
+    await expect(controller.forgotPassword({ email: 'pas-un-email' })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
+  it('répond 202 même lorsque le service rejette l’envoi', async () => {
+    const controller = controllerFor({
+      forgotPassword: () => Promise.reject(new Error('smtp')),
+    });
+
+    await expect(controller.forgotPassword({ email: 'ada@xplor.test' })).resolves.toBeUndefined();
+  });
+
+  it('répond 204 pour reset et traduit TOKEN_INVALID et PASSWORD_TOO_COMMON', async () => {
+    const accepted = controllerFor({
+      resetPassword: () => Promise.resolve(),
+    });
+    const invalid = controllerFor({
+      resetPassword: () => Promise.reject(new AuthRequestError(TOKEN_INVALID)),
+    });
+    const common = controllerFor({
+      resetPassword: () => Promise.reject(new AuthRequestError(PASSWORD_TOO_COMMON)),
+    });
+    const body = { token: 'jeton-opaque', password: 'x'.repeat(12) };
+
+    await expect(accepted.resetPassword(body)).resolves.toBeUndefined();
+    await expect(invalid.resetPassword(body)).rejects.toMatchObject({
+      status: 400,
+      response: { code: TOKEN_INVALID },
+    });
+    await expect(common.resetPassword(body)).rejects.toMatchObject({
+      status: 400,
+      response: { code: PASSWORD_TOO_COMMON },
+    });
+
+    const reset = handler('resetPassword');
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, reset)).toBe(204);
+    expect(Reflect.getMetadata(GUARDS_METADATA, reset)).toBeUndefined();
+  });
+
+  it('traduit un mot de passe trop court en PASSWORD_INVALID et un jeton vide en 400', async () => {
+    const controller = controllerFor({
+      resetPassword: () => Promise.reject(new Error('ne doit pas être appelé')),
+    });
+
+    await expect(
+      controller.resetPassword({ token: 'jeton', password: 'court' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      response: { code: PASSWORD_INVALID },
+    });
+    await expect(
+      controller.resetPassword({ token: '', password: 'x'.repeat(12) }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

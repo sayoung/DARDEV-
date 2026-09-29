@@ -12,7 +12,9 @@ import { PrismaUserRepository } from './prisma-user.repository.js';
 import { asSessionRedis, RedisSessionStore } from './redis-session.store.js';
 import { SessionGuard } from './session.guard.js';
 import { SESSION_STORE } from './session-store.js';
+import { PrismaUnitOfWork, UNIT_OF_WORK } from './unit-of-work.js';
 import { USER_LOOKUP } from './user-lookup.js';
+import { PrismaUserTokenRepository, USER_TOKEN_REPOSITORY } from './user-token.repository.js';
 import { USER_REPOSITORY } from './user.repository.js';
 
 @Module({
@@ -32,6 +34,10 @@ import { USER_REPOSITORY } from './user.repository.js';
     { provide: USER_LOOKUP, useExisting: PrismaUserLookup },
     PrismaUserRepository,
     { provide: USER_REPOSITORY, useExisting: PrismaUserRepository },
+    PrismaUserTokenRepository,
+    { provide: USER_TOKEN_REPOSITORY, useExisting: PrismaUserTokenRepository },
+    PrismaUnitOfWork,
+    { provide: UNIT_OF_WORK, useExisting: PrismaUnitOfWork },
     PasswordService,
     { provide: CLOCK, useValue: (): Date => new Date() },
     AuthService,
