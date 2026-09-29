@@ -268,6 +268,18 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** `react-router-dom` ; afficher la confirmation d'oubli même si le réseau échoue ; message de succès seulement dans l'état React, perdu au rafraîchissement.
 - **À valider :** oui (routeur maison ; paramètre `notice` ; confirmation uniquement sur réponse acceptée)
 
+## D-49 — Documentation OpenAPI depuis les schémas Zod (NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** Le document OpenAPI 3.1 est produit par `@asteasolutions/zod-to-openapi` 9.1.0 (`OpenApiGeneratorV31`) dans `apps/api/src/openapi/registry.ts`. Les corps de `login`, `me`, mot de passe oublié, réinitialisation, invitation et acceptation sont les schémas Zod de `@xplor/shared`, pas des DTO recopiés. Le script `pnpm --filter @xplor/api openapi` écrit `docs/openapi.json`. Un test compare ce fichier au document régénéré. `GET /api/v1/openapi.json` renvoie le document lorsque `NODE_ENV` vaut `development` ou `test`, et répond 404 en `production`. Le cookie `xplor_sid` et l'en-tête `X-CSRF-Token` sont des schémas de sécurité `apiKey`. `@nestjs/swagger`, cité en section 4.1 du cahier, n'est pas ajouté : il décrirait les mêmes corps une seconde fois, en classes. L'interface `/api/docs` de la section 6 n'est pas servie dans ce jalon.
+- **Complément (relecture) :** `.gitattributes` force `docs/openapi.json` en `text eol=lf`. Avec `core.autocrlf=true`, Git réécrit sinon le fichier en CRLF au checkout et le test d'identité échoue. Le test remplace aussi les `\r\n` par `\n` avant la comparaison. `git add --renormalize` n'a pas été lancé : l'orchestrateur gère git.
+- **Alternatives :** `@nestjs/swagger` ; paquet `zod-openapi` (samchungy) ; ne pas répondre 404 en production et ne pas enregistrer la route.
+- **À valider :** oui (pas d'interface Swagger ; JSON public hors production ; 404 plutôt qu'une route absente)
+
+| Paquet                         | Raison                                                                                     | Licence |
+| ------------------------------ | ------------------------------------------------------------------------------------------ | ------- |
+| @asteasolutions/zod-to-openapi | OpenAPI 3.1 depuis les schémas Zod 4 de `@xplor/shared`, sans redéclarer les corps. 9.1.0. | MIT     |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
