@@ -10,10 +10,13 @@ import {
   HotspotType,
   type HotspotCreate,
   type HotspotResponse,
+  type HotspotUpdate,
 } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
+  HOTSPOT_NOT_FOUND,
+  HOTSPOT_NOT_FOUND_MESSAGE,
   MEDIA_ASSET_NOT_FOUND,
   MEDIA_ASSET_NOT_FOUND_MESSAGE,
   SCENE_LINK_FOREIGN,
@@ -39,7 +42,7 @@ import { localizedToJson } from './localized-json.js';
 
 /**
  * Corps d'écriture. `HotspotUpdate` est la même union que `HotspotCreate` :
- * le PATCH appellera `assertTargets` sans conversion.
+ * création et remplacement appellent `assertTargets` sans conversion.
  */
 type HotspotWrite = HotspotCreate;
 
@@ -118,8 +121,70 @@ export class HotspotsService {
   }
 
   /**
+   * Remplacement complet. Les champs des autres types sont remis à null ou `[]`
+   * dans la même écriture. `sceneId` et `createdById` ne changent pas.
+   */
+  async update(id: string, input: HotspotUpdate): Promise<HotspotResponse> {
+    const current = await this.loadActiveHotspot(id);
+    await this.assertTargets(current.parent, input);
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const row = await this.loadActiveHotspot(id, tx);
+        await this.assertTargets(row.parent, input, tx);
+        await tx.hotspot.update({
+          where: { id },
+          data: hotspotReplacement(input),
+        });
+        await tx.tour.update({
+          where: { id: row.parent.tourId },
+          data: { contentVersion: { increment: 1 } },
+        });
+        const updated = await tx.hotspot.findFirst({ where: { id } });
+        if (updated === null) {
+          throw missingException(HOTSPOT_NOT_FOUND, HOTSPOT_NOT_FOUND_MESSAGE);
+        }
+        return toHotspot(updated);
+      });
+    } catch (error: unknown) {
+      return await rethrowReferenceOrMissing(
+        error,
+        HOTSPOT_NOT_FOUND,
+        HOTSPOT_NOT_FOUND_MESSAGE,
+        async () => {
+          const row = await this.loadActiveHotspot(id);
+          await this.assertTargets(row.parent, input);
+        },
+      );
+    }
+  }
+
+  /** Suppression physique. La visite parente gagne 1 de `contentVersion`. */
+  async remove(id: string): Promise<void> {
+    await this.loadActiveHotspot(id);
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const row = await this.loadActiveHotspot(id, tx);
+        await tx.hotspot.delete({ where: { id } });
+        await tx.tour.update({
+          where: { id: row.parent.tourId },
+          data: { contentVersion: { increment: 1 } },
+        });
+      });
+    } catch (error: unknown) {
+      await rethrowReferenceOrMissing(
+        error,
+        HOTSPOT_NOT_FOUND,
+        HOTSPOT_NOT_FOUND_MESSAGE,
+        async () => {
+          await this.loadActiveHotspot(id);
+        },
+      );
+    }
+  }
+
+  /**
    * Cibles et médias d'un hotspot.
-   * Appelée à la création ; le PATCH passera le même corps (`HotspotUpdate`).
+   * Création et remplacement passent le même corps (`HotspotCreate` ou `HotspotUpdate`).
    * Une visite cible en brouillon est acceptée.
    */
   private async assertTargets(
@@ -216,6 +281,32 @@ export class HotspotsService {
     }
     return { id: row.id, tourId: row.tourId };
   }
+
+  /**
+   * Hotspot dont la scène parente est encore active.
+   * Une scène ou une visite parente supprimée répond le même 404 que l'absence.
+   */
+  private async loadActiveHotspot(
+    id: string,
+    client: HotspotClient = this.prisma,
+  ): Promise<{ id: string; parent: ActiveScene }> {
+    const row = await client.hotspot.findFirst({
+      where: { id },
+      select: { id: true, sceneId: true },
+    });
+    if (row === null) {
+      throw missingException(HOTSPOT_NOT_FOUND, HOTSPOT_NOT_FOUND_MESSAGE);
+    }
+    try {
+      const parent = await this.loadActiveScene(row.sceneId, client);
+      return { id: row.id, parent };
+    } catch (error: unknown) {
+      if (isHttpException(error) && error.getStatus() === 404) {
+        throw missingException(HOTSPOT_NOT_FOUND, HOTSPOT_NOT_FOUND_MESSAGE);
+      }
+      throw error;
+    }
+  }
 }
 
 function hotspotScalars(
@@ -226,6 +317,26 @@ function hotspotScalars(
   return {
     sceneId,
     createdById,
+    ...hotspotReplacement(input),
+  };
+}
+
+/** Champs remplacés. Les autres variantes sont effacées dans la même écriture. */
+function hotspotReplacement(input: HotspotWrite): {
+  type: PrismaHotspotType;
+  yaw: number;
+  pitch: number;
+  label: Prisma.InputJsonValue;
+  icon: PrismaHotspotIcon;
+  arrivalYaw: number | null;
+  targetSceneId: string | null;
+  targetTourId: string | null;
+  targetTourSceneId: string | null;
+  body: Prisma.InputJsonValue | typeof Prisma.DbNull;
+  mediaAssetIds: string[];
+  url: string | null;
+} {
+  return {
     type: PRISMA_TYPE[input.type],
     yaw: input.yaw,
     pitch: input.pitch,
@@ -236,12 +347,14 @@ function hotspotScalars(
   };
 }
 
-function variantFields(
-  input: HotspotWrite,
-): Pick<
-  Prisma.HotspotUncheckedCreateInput,
-  'targetSceneId' | 'targetTourId' | 'targetTourSceneId' | 'body' | 'mediaAssetIds' | 'url'
-> {
+function variantFields(input: HotspotWrite): {
+  targetSceneId: string | null;
+  targetTourId: string | null;
+  targetTourSceneId: string | null;
+  body: Prisma.InputJsonValue | typeof Prisma.DbNull;
+  mediaAssetIds: string[];
+  url: string | null;
+} {
   if (input.type === HotspotType.SCENE_LINK) {
     return {
       targetSceneId: input.targetSceneId,

@@ -1,5 +1,5 @@
 /**
- * Liste et création HTTP des hotspots (API-23, partie 2).
+ * Hotspots HTTP (API-23) : liste, création, remplacement et suppression.
  * PostgreSQL : `DATABASE_URL_TEST`. Redis : `REDIS_URL`.
  */
 import 'reflect-metadata';
@@ -32,6 +32,8 @@ import { toPrismaRole } from '../src/auth/prisma-role.js';
 import { PasswordService } from '../src/auth/password.service.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-cookie.js';
 import {
+  HOTSPOT_NOT_FOUND,
+  HOTSPOT_NOT_FOUND_MESSAGE,
   SCENE_LINK_FOREIGN,
   SCENE_LINK_FOREIGN_MESSAGE,
   SCENE_LINK_SELF,
@@ -52,6 +54,7 @@ const MISSING_REDIS_URL =
 
 const EDITOR_EMAIL = 'editor@xplor.local';
 const PARTNER_EMAIL = 'partner@xplor.local';
+const MANAGER_EMAIL = 'manager@xplor.local';
 const UNKNOWN_ID = '01990000-0000-7000-8000-0000000000aa';
 
 const cityBody: CityCreate = {
@@ -136,8 +139,20 @@ describe('hotspots HTTP', () => {
       headers: { 'content-type': 'application/json' },
       payload: '{}',
     });
+    const patch = await application().inject({
+      method: 'PATCH',
+      url: `/api/v1/admin/hotspots/${UNKNOWN_ID}`,
+      headers: { 'content-type': 'application/json' },
+      payload: '{}',
+    });
+    const remove = await application().inject({
+      method: 'DELETE',
+      url: `/api/v1/admin/hotspots/${UNKNOWN_ID}`,
+    });
     expect(list.statusCode).toBe(401);
     expect(create.statusCode).toBe(401);
+    expect(patch.statusCode).toBe(401);
+    expect(remove.statusCode).toBe(401);
   });
 
   it('répond 403 sans jeton CSRF', async () => {
@@ -151,7 +166,23 @@ describe('hotspots HTTP', () => {
       },
       payload: '{}',
     });
+    const patch = await application().inject({
+      method: 'PATCH',
+      url: `/api/v1/admin/hotspots/${UNKNOWN_ID}`,
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie(session.sessionId),
+      },
+      payload: '{}',
+    });
+    const remove = await application().inject({
+      method: 'DELETE',
+      url: `/api/v1/admin/hotspots/${UNKNOWN_ID}`,
+      headers: { cookie: sessionCookie(session.sessionId) },
+    });
     expect(response.statusCode).toBe(403);
+    expect(patch.statusCode).toBe(403);
+    expect(remove.statusCode).toBe(403);
   });
 
   it('refuse la lecture et l’écriture à PARTNER', async () => {
@@ -166,6 +197,10 @@ describe('hotspots HTTP', () => {
       type: 'INFO',
     });
     expect(write.statusCode).toBe(403);
+    const patch = await send('PATCH', `/api/v1/admin/hotspots/${UNKNOWN_ID}`, partner, infoBody);
+    expect(patch.statusCode).toBe(403);
+    const remove = await send('DELETE', `/api/v1/admin/hotspots/${UNKNOWN_ID}`, partner);
+    expect(remove.statusCode).toBe(403);
   });
 
   it('crée un SCENE_LINK et le GET le renvoie', async () => {
@@ -276,7 +311,167 @@ describe('hotspots HTTP', () => {
       error: { code: SCENE_NOT_FOUND, message: SCENE_NOT_FOUND_MESSAGE },
     });
   });
+
+  it('passe un SCENE_LINK en INFO et remet targetSceneId à null', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const garden = await createScene(editor, ready.tour.id, {
+      title: { fr: 'Le jardin' },
+      panoramaAssetId: ready.panoramaAssetId,
+      weight: 1,
+    });
+    const created = HotspotResponseSchema.parse(
+      parseJson(
+        (
+          await send('POST', `/api/v1/admin/scenes/${ready.gate.id}/hotspots`, editor, {
+            type: 'SCENE_LINK',
+            yaw: 0.4,
+            pitch: -0.2,
+            label: { fr: 'Vers le jardin' },
+            targetSceneId: garden.id,
+          })
+        ).body,
+      ),
+    );
+    const before = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+
+    const response = await send('PATCH', `/api/v1/admin/hotspots/${created.id}`, editor, infoBody);
+    expect(response.statusCode).toBe(200);
+    const updated = HotspotResponseSchema.parse(parseJson(response.body));
+    expect(updated).toMatchObject({
+      id: created.id,
+      sceneId: ready.gate.id,
+      type: 'INFO',
+      yaw: 0.1,
+      pitch: 0,
+      label: { fr: 'Notice' },
+      targetSceneId: null,
+      targetTourId: null,
+      targetTourSceneId: null,
+      body: { fr: 'Texte' },
+      url: null,
+      arrivalYaw: null,
+      mediaAssetIds: [],
+      icon: 'INFO',
+    });
+    const row = await prisma.hotspot.findUniqueOrThrow({ where: { id: created.id } });
+    expect(row.targetSceneId).toBeNull();
+    expect(row.type).toBe('INFO');
+    expect(row.createdById).toBe(editor.userId);
+    const tour = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(tour.contentVersion).toBe(before.contentVersion + 1);
+  });
+
+  it('répond 422 SCENE_LINK_SELF au remplacement', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const garden = await createScene(editor, ready.tour.id, {
+      title: { fr: 'Le jardin' },
+      panoramaAssetId: ready.panoramaAssetId,
+      weight: 1,
+    });
+    const created = HotspotResponseSchema.parse(
+      parseJson(
+        (
+          await send('POST', `/api/v1/admin/scenes/${ready.gate.id}/hotspots`, editor, {
+            type: 'SCENE_LINK',
+            yaw: 0,
+            pitch: 0,
+            label: { fr: 'Vers le jardin' },
+            targetSceneId: garden.id,
+          })
+        ).body,
+      ),
+    );
+    const before = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+
+    const self = await send('PATCH', `/api/v1/admin/hotspots/${created.id}`, editor, {
+      type: 'SCENE_LINK',
+      yaw: 0,
+      pitch: 0,
+      label: { fr: 'Soi' },
+      targetSceneId: ready.gate.id,
+    });
+    expect(self.statusCode).toBe(422);
+    expect(parseJson(self.body)).toEqual({
+      error: { code: SCENE_LINK_SELF, message: SCENE_LINK_SELF_MESSAGE },
+    });
+    const row = await prisma.hotspot.findUniqueOrThrow({ where: { id: created.id } });
+    expect(row.type).toBe('SCENE_LINK');
+    expect(row.targetSceneId).toBe(garden.id);
+    const tour = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(tour.contentVersion).toBe(before.contentVersion);
+  });
+
+  it('supprime le hotspot (204) puis répond 404 au second DELETE', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const created = HotspotResponseSchema.parse(
+      parseJson(
+        (await send('POST', `/api/v1/admin/scenes/${ready.gate.id}/hotspots`, editor, infoBody))
+          .body,
+      ),
+    );
+    const before = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+
+    const removed = await send('DELETE', `/api/v1/admin/hotspots/${created.id}`, editor);
+    expect(removed.statusCode).toBe(204);
+    expect(removed.body).toBe('');
+    expect(await prisma.hotspot.findUnique({ where: { id: created.id } })).toBeNull();
+    const tour = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(tour.contentVersion).toBe(before.contentVersion + 1);
+
+    const again = await send('DELETE', `/api/v1/admin/hotspots/${created.id}`, editor);
+    expect(again.statusCode).toBe(404);
+    expect(parseJson(again.body)).toEqual({
+      error: { code: HOTSPOT_NOT_FOUND, message: HOTSPOT_NOT_FOUND_MESSAGE },
+    });
+  });
+
+  it('refuse PATCH et DELETE à HOTEL_MANAGER', async () => {
+    const manager = await login(MANAGER_EMAIL);
+    const patch = await send('PATCH', `/api/v1/admin/hotspots/${UNKNOWN_ID}`, manager, infoBody);
+    expect(patch.statusCode).toBe(403);
+    const removed = await send('DELETE', `/api/v1/admin/hotspots/${UNKNOWN_ID}`, manager);
+    expect(removed.statusCode).toBe(403);
+  });
+
+  it('répond 404 HOTSPOT_NOT_FOUND si la scène parente est supprimée', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const created = HotspotResponseSchema.parse(
+      parseJson(
+        (await send('POST', `/api/v1/admin/scenes/${ready.gate.id}/hotspots`, editor, infoBody))
+          .body,
+      ),
+    );
+    const removedScene = await send('DELETE', `/api/v1/admin/scenes/${ready.gate.id}`, editor);
+    expect(removedScene.statusCode).toBe(204);
+    const before = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+
+    const patch = await send('PATCH', `/api/v1/admin/hotspots/${created.id}`, editor, infoBody);
+    expect(patch.statusCode).toBe(404);
+    expect(parseJson(patch.body)).toEqual({
+      error: { code: HOTSPOT_NOT_FOUND, message: HOTSPOT_NOT_FOUND_MESSAGE },
+    });
+    const remove = await send('DELETE', `/api/v1/admin/hotspots/${created.id}`, editor);
+    expect(remove.statusCode).toBe(404);
+    expect(parseJson(remove.body)).toEqual({
+      error: { code: HOTSPOT_NOT_FOUND, message: HOTSPOT_NOT_FOUND_MESSAGE },
+    });
+    expect(await prisma.hotspot.findUnique({ where: { id: created.id } })).not.toBeNull();
+    const tour = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
+    expect(tour.contentVersion).toBe(before.contentVersion);
+  });
 });
+
+const infoBody = {
+  type: 'INFO',
+  yaw: 0.1,
+  pitch: 0,
+  label: { fr: 'Notice' },
+  body: { fr: 'Texte' },
+};
 
 interface Ready {
   tour: TourResponse;

@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
+  HOTSPOT_NOT_FOUND,
+  HOTSPOT_NOT_FOUND_MESSAGE,
   MEDIA_ASSET_NOT_FOUND,
   MEDIA_ASSET_NOT_FOUND_MESSAGE,
   SCENE_LINK_FOREIGN,
@@ -83,6 +85,7 @@ function harness(): {
   hotspots: Map<string, StoredHotspot>;
   setCreatedAt: (id: string, at: Date) => void;
   failNextCreate: (error: Error, beforeReject?: () => void) => void;
+  failNextUpdate: (error: Error, beforeReject?: () => void) => void;
 } {
   const tours = new Map<string, StoredTour>([
     [TOUR_A, { id: TOUR_A, deletedAt: null, contentVersion: 1 }],
@@ -102,6 +105,8 @@ function harness(): {
   let seq = 0x100;
   let createError: Error | null = null;
   let beforeCreateReject: (() => void) | null = null;
+  let updateError: Error | null = null;
+  let beforeUpdateReject: (() => void) | null = null;
 
   function nextId(): string {
     seq += 1;
@@ -234,6 +239,59 @@ function harness(): {
         hotspots.set(id, row);
         return Promise.resolve({ id });
       },
+      update: ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: {
+          type: string;
+          yaw: number;
+          pitch: number;
+          label: Prisma.InputJsonValue;
+          icon: string;
+          arrivalYaw: number | null;
+          targetSceneId: string | null;
+          targetTourId: string | null;
+          targetTourSceneId: string | null;
+          body: unknown;
+          mediaAssetIds: string[];
+          url: string | null;
+        };
+      }): Promise<{ id: string }> => {
+        const row = hotspots.get(where.id);
+        if (row === undefined) {
+          return Promise.reject(missingRecord());
+        }
+        if (updateError !== null) {
+          const error = updateError;
+          const before = beforeUpdateReject;
+          updateError = null;
+          beforeUpdateReject = null;
+          before?.();
+          return Promise.reject(error);
+        }
+        row.type = data.type;
+        row.yaw = data.yaw;
+        row.pitch = data.pitch;
+        row.label = data.label;
+        row.icon = data.icon;
+        row.arrivalYaw = data.arrivalYaw;
+        row.targetSceneId = data.targetSceneId;
+        row.targetTourId = data.targetTourId;
+        row.targetTourSceneId = data.targetTourSceneId;
+        row.body = readBody(data.body);
+        row.mediaAssetIds = [...data.mediaAssetIds];
+        row.url = data.url;
+        row.updatedAt = new Date(row.updatedAt.getTime() + 60_000);
+        return Promise.resolve({ id: row.id });
+      },
+      delete: ({ where }: { where: { id: string } }): Promise<{ id: string }> => {
+        if (!hotspots.delete(where.id)) {
+          return Promise.reject(missingRecord());
+        }
+        return Promise.resolve({ id: where.id });
+      },
     },
     $transaction: <T>(fn: (tx: unknown) => Promise<T>): Promise<T> => fn(prisma),
   };
@@ -253,6 +311,10 @@ function harness(): {
     failNextCreate: (error: Error, beforeReject?: () => void) => {
       createError = error;
       beforeCreateReject = beforeReject ?? null;
+    },
+    failNextUpdate: (error: Error, beforeReject?: () => void) => {
+      updateError = error;
+      beforeUpdateReject = beforeReject ?? null;
     },
   };
 }
@@ -598,4 +660,185 @@ describe('HotspotsService', () => {
       SCENE_NOT_FOUND_MESSAGE,
     );
   });
+
+  it('passe de SCENE_LINK à INFO et efface les champs des autres types', async () => {
+    const { service, tours, hotspots } = harness();
+    const created = await service.create(SCENE_A, sceneLink(SCENE_B), USER_ID);
+    const updated = await service.update(created.id, {
+      type: HotspotType.INFO,
+      yaw: 0.2,
+      pitch: 0.1,
+      label: { fr: 'Notice' },
+      body: { fr: 'Texte' },
+      icon: HotspotIcon.INFO,
+    });
+    expect(updated).toMatchObject({
+      id: created.id,
+      sceneId: SCENE_A,
+      type: HotspotType.INFO,
+      yaw: 0.2,
+      pitch: 0.1,
+      targetSceneId: null,
+      targetTourId: null,
+      targetTourSceneId: null,
+      body: { fr: 'Texte' },
+      url: null,
+      arrivalYaw: null,
+      mediaAssetIds: [],
+      icon: HotspotIcon.INFO,
+    });
+    expect(updated.updatedAt).not.toBe(created.updatedAt);
+    expect(hotspots.get(created.id)?.createdById).toBe(USER_ID);
+    expect(tours.get(TOUR_A)?.contentVersion).toBe(3);
+
+    const media = await service.create(
+      SCENE_A,
+      {
+        type: HotspotType.MEDIA,
+        yaw: 1,
+        pitch: 0,
+        label: { fr: 'Photo' },
+        mediaAssetIds: [MEDIA_ID, MEDIA_B],
+        icon: HotspotIcon.PHOTO,
+      },
+      USER_ID,
+    );
+    const asUrl = await service.update(media.id, {
+      type: HotspotType.URL,
+      yaw: 0,
+      pitch: 0,
+      label: { fr: 'Site' },
+      url: 'https://example.com/visite',
+      icon: HotspotIcon.INFO,
+    });
+    expect(asUrl.mediaAssetIds).toEqual([]);
+    expect(asUrl.url).toBe('https://example.com/visite');
+    expect(asUrl.body).toBeNull();
+    expect(hotspots.get(media.id)?.mediaAssetIds).toEqual([]);
+    expect(tours.get(TOUR_A)?.contentVersion).toBe(5);
+  });
+
+  it('répond 422 SCENE_LINK_SELF au remplacement sans écrire', async () => {
+    const { service, tours, hotspots } = harness();
+    const created = await service.create(SCENE_A, sceneLink(SCENE_B), USER_ID);
+    await expectRefusal(
+      () => service.update(created.id, sceneLink(SCENE_A)),
+      422,
+      SCENE_LINK_SELF,
+      SCENE_LINK_SELF_MESSAGE,
+    );
+    expect(hotspots.get(created.id)?.targetSceneId).toBe(SCENE_B);
+    expect(hotspots.get(created.id)?.type).toBe(HotspotType.SCENE_LINK);
+    expect(tours.get(TOUR_A)?.contentVersion).toBe(2);
+  });
+
+  it('répond 404 HOTSPOT_NOT_FOUND si le hotspot est inconnu ou la scène parente est inactive', async () => {
+    const missing = harness();
+    await expectRefusal(
+      () => missing.service.update(UNKNOWN_ID, infoHotspot()),
+      404,
+      HOTSPOT_NOT_FOUND,
+      HOTSPOT_NOT_FOUND_MESSAGE,
+    );
+    await expectRefusal(
+      () => missing.service.remove(UNKNOWN_ID),
+      404,
+      HOTSPOT_NOT_FOUND,
+      HOTSPOT_NOT_FOUND_MESSAGE,
+    );
+
+    const deletedScene = harness();
+    const onScene = await deletedScene.service.create(SCENE_A, sceneLink(SCENE_B), USER_ID);
+    const scene = deletedScene.scenes.get(SCENE_A);
+    if (scene !== undefined) {
+      scene.deletedAt = new Date();
+    }
+    await expectRefusal(
+      () => deletedScene.service.update(onScene.id, infoHotspot()),
+      404,
+      HOTSPOT_NOT_FOUND,
+      HOTSPOT_NOT_FOUND_MESSAGE,
+    );
+    await expectRefusal(
+      () => deletedScene.service.remove(onScene.id),
+      404,
+      HOTSPOT_NOT_FOUND,
+      HOTSPOT_NOT_FOUND_MESSAGE,
+    );
+    expect(deletedScene.hotspots.has(onScene.id)).toBe(true);
+    expect(deletedScene.tours.get(TOUR_A)?.contentVersion).toBe(2);
+
+    const deletedTour = harness();
+    const onTour = await deletedTour.service.create(SCENE_A, sceneLink(SCENE_B), USER_ID);
+    const tour = deletedTour.tours.get(TOUR_A);
+    if (tour !== undefined) {
+      tour.deletedAt = new Date();
+    }
+    await expectRefusal(
+      () => deletedTour.service.remove(onTour.id),
+      404,
+      HOTSPOT_NOT_FOUND,
+      HOTSPOT_NOT_FOUND_MESSAGE,
+    );
+    expect(deletedTour.hotspots.has(onTour.id)).toBe(true);
+  });
+
+  it('supprime le hotspot et incrémente contentVersion', async () => {
+    const { service, tours, hotspots } = harness();
+    const created = await service.create(SCENE_A, sceneLink(SCENE_B), USER_ID);
+    await service.remove(created.id);
+    expect(hotspots.has(created.id)).toBe(false);
+    expect(tours.get(TOUR_A)?.contentVersion).toBe(3);
+    expect(tours.get(TOUR_B)?.contentVersion).toBe(1);
+    await expectRefusal(
+      () => service.remove(created.id),
+      404,
+      HOTSPOT_NOT_FOUND,
+      HOTSPOT_NOT_FOUND_MESSAGE,
+    );
+  });
+
+  it('relance le contrôle si la cible disparaît pendant le remplacement', async () => {
+    const { service, scenes, hotspots, tours, failNextUpdate } = harness();
+    const created = await service.create(SCENE_A, sceneLink(SCENE_B), USER_ID);
+    failNextUpdate(foreignKey(), () => {
+      const scene = scenes.get(SCENE_B);
+      if (scene !== undefined) {
+        scene.deletedAt = new Date();
+      }
+    });
+    await expectRefusal(
+      () => service.update(created.id, sceneLink(SCENE_B)),
+      422,
+      SCENE_LINK_TARGET_MISSING,
+      SCENE_LINK_TARGET_MISSING_MESSAGE,
+    );
+    expect(hotspots.get(created.id)?.targetSceneId).toBe(SCENE_B);
+    expect(tours.get(TOUR_A)?.contentVersion).toBe(2);
+
+    const target = scenes.get(SCENE_B);
+    if (target !== undefined) {
+      target.deletedAt = null;
+    }
+    failNextUpdate(missingRecord(), () => {
+      hotspots.delete(created.id);
+    });
+    await expectRefusal(
+      () => service.update(created.id, sceneLink(SCENE_B)),
+      404,
+      HOTSPOT_NOT_FOUND,
+      HOTSPOT_NOT_FOUND_MESSAGE,
+    );
+  });
 });
+
+function infoHotspot(): HotspotCreate {
+  return {
+    type: HotspotType.INFO,
+    yaw: 0,
+    pitch: 0,
+    label: { fr: 'Notice' },
+    body: { fr: 'Texte' },
+    icon: HotspotIcon.INFO,
+  };
+}

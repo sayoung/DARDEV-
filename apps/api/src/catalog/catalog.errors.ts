@@ -100,12 +100,19 @@ export const MEDIA_ASSET_NOT_FOUND = 'MEDIA_ASSET_NOT_FOUND';
 
 export const MEDIA_ASSET_NOT_FOUND_MESSAGE = 'Un média est inconnu.';
 
+/**
+ * Hotspot inconnu, ou scène parente absente, supprimée, ou rattachée à une visite supprimée (API-23).
+ */
+export const HOTSPOT_NOT_FOUND = 'HOTSPOT_NOT_FOUND';
+
+export const HOTSPOT_NOT_FOUND_MESSAGE = 'Ce hotspot est inconnu.';
+
 /** Référence inconnue ou incohérente : 422 `{ error: { code, message } }`. */
 export function referenceException(code: string, message: string): HttpException {
   return new HttpException({ error: { code, message } }, HttpStatus.UNPROCESSABLE_ENTITY);
 }
 
-/** Visite ou scène absente : 404 `{ error: { code, message } }` (API-22, API-23). */
+/** Visite, scène ou hotspot absent : 404 `{ error: { code, message } }` (API-22, API-23). */
 export function missingException(code: string, message: string): HttpException {
   return new HttpException({ error: { code, message } }, HttpStatus.NOT_FOUND);
 }

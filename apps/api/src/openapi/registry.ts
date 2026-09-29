@@ -18,6 +18,7 @@ import {
   ForgotPasswordRequestSchema,
   HotspotCreateSchema,
   HotspotResponseSchema,
+  HotspotUpdateSchema,
   InviteUserRequestSchema,
   InviteUserResponseSchema,
   LoginRequestSchema,
@@ -40,6 +41,7 @@ import {
   CATEGORY_NOT_FOUND,
   CITY_NOT_FOUND,
   COVER_ASSET_NOT_FOUND,
+  HOTSPOT_NOT_FOUND,
   MEDIA_ASSET_NOT_FOUND,
   PANORAMA_ASSET_NOT_FOUND,
   SCENE_LINK_FOREIGN,
@@ -138,6 +140,12 @@ const sceneSetMismatchError = z.object({
 const startSceneForeignError = z.object({
   error: z.object({
     code: z.literal(START_SCENE_FOREIGN),
+    message: z.string(),
+  }),
+});
+const hotspotMissingError = z.object({
+  error: z.object({
+    code: z.literal(HOTSPOT_NOT_FOUND),
     message: z.string(),
   }),
 });
@@ -366,6 +374,7 @@ registerCatalogCrud({
 registerTourCrud();
 registerSceneCrud();
 registerHotspotList();
+registerHotspotItem();
 
 function registerCatalogCrud(resource: {
   collection: string;
@@ -747,6 +756,63 @@ function registerHotspotList(): void {
       '422': jsonResponse(
         'Cible absente, incohérente, ou média inconnu. Une visite cible en brouillon est acceptée.',
         hotspotTargetError,
+      ),
+    },
+  });
+}
+
+function registerHotspotItem(): void {
+  const item = '/api/v1/admin/hotspots/{id}';
+  const idParam = z.object({ id: z.uuidv7() });
+  const csrfOrRole = 'Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.';
+  registry.registerPath({
+    method: 'patch',
+    path: item,
+    summary: 'Remplacer un hotspot',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(
+        HotspotUpdateSchema,
+        'Mêmes champs que la création. Le type peut changer ; les champs des autres types sont effacés.',
+      ),
+    },
+    responses: {
+      '200': jsonResponse(
+        'Hotspot mis à jour. Les champs des autres types valent null, ou un tableau vide pour mediaAssetIds.',
+        HotspotResponseSchema,
+      ),
+      '400': jsonResponse('Identifiant ou corps refusé par HotspotUpdateSchema.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(csrfOrRole, forbiddenError),
+      '404': jsonResponse(
+        'Hotspot inconnu, ou scène parente supprimée.',
+        hotspotMissingError,
+      ),
+      '422': jsonResponse(
+        'Cible absente, incohérente, ou média inconnu. Une visite cible en brouillon est acceptée.',
+        hotspotTargetError,
+      ),
+    },
+  });
+  registry.registerPath({
+    method: 'delete',
+    path: item,
+    summary: 'Supprimer un hotspot',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '204': {
+        description: 'Suppression physique. Corps vide.',
+      },
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(csrfOrRole, forbiddenError),
+      '404': jsonResponse(
+        'Hotspot inconnu, ou scène parente déjà supprimée.',
+        hotspotMissingError,
       ),
     },
   });
