@@ -171,7 +171,7 @@ Hors CI, Playwright réutilise ce serveur (`reuseExistingServer`). Les scénario
 
 ## Résultat
 
-Les cases cochées sont des preuves déjà obtenues le 29/09/2026. La source est `local` (Node 22.23.3) ou `CI` (run `36580207347`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347).
+Les cases cochées sont des preuves déjà obtenues le 29/09/2026. La source est `local` (Node 22.23.3) ou `CI` (run `36580207347`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347). La validation du porteur est datée du 29/09/2026.
 
 - [x] Quatre commandes — local et CI. `docker compose up -d` : postgres, redis, minio et mailpit `healthy`, `minio-init` code 0 (local). `pnpm install` : workspace déjà installé, commande non rejouée (local). `pnpm db:migrate` : déjà synchronisé (local) ; `db:deploy` sur base vierge (CI). `pnpm db:seed` : « 4 utilisateurs de démonstration prêts », deux fois (local et CI).
 - [x] `pnpm dev` — local. API, back-office et worker démarrés (D-64). Santé, OpenAPI, login et `/auth/me` répondent ensuite sur `http://localhost:3000` et sur le proxy `http://localhost:5173`.
@@ -182,28 +182,28 @@ Les cases cochées sont des preuves déjà obtenues le 29/09/2026. La source est
 - [x] `pnpm test:int` : 9 verts — local et CI (`auth.int.test.ts` 7, `seed.int.test.ts` 1, `migrations.int.test.ts` 1).
 - [x] CI verte — CI, run `36580207347` (commit `1eaf986`, job `ci` `109446061994`).
 
-Contrôles réservés au porteur. Cases vides.
+Contrôles du porteur, validés le 29/09/2026.
 
-- [ ] Connexion dans le navigateur (section 3, http://localhost:5173, `admin@xplor.local`)
+- [x] Connexion dans le navigateur (section 3, http://localhost:5173, `admin@xplor.local`)
 
-Retours du porteur :
+Retours du porteur : validé le 29/09/2026.
 
-- [ ] Bascule en arabe et contrôle visuel RTL de chaque écran : connexion, mot de passe oublié, définition du mot de passe, accueil (section 4)
+- [x] Bascule en arabe et contrôle visuel RTL de chaque écran : connexion, mot de passe oublié, définition du mot de passe, accueil (section 4)
 
-Retours du porteur :
+Retours du porteur : validé le 29/09/2026.
 
-- [ ] Clic sur le lien Mailpit (sections 5 et 6)
+- [x] Clic sur le lien Mailpit (sections 5 et 6)
 
-Retours du porteur :
+Retours du porteur : validé le 29/09/2026.
 
-- [ ] Invitation d'un éditeur puis acceptation (section 6)
+- [x] Invitation d'un éditeur puis acceptation (section 6)
 
-Retours du porteur :
+Retours du porteur : validé le 29/09/2026.
 
-- [ ] 403 pour `editor@xplor.local` sur `POST /api/v1/admin/users/invitations` (section 7)
+- [x] 403 pour `editor@xplor.local` sur `POST /api/v1/admin/users/invitations` (section 7)
 
-Retours du porteur :
+Retours du porteur : validé le 29/09/2026.
 
-- [ ] Verrouillage après 10 échecs sur `manager@xplor.local` (section 8)
+- [x] Verrouillage après 10 échecs sur `manager@xplor.local` (section 8)
 
-Retours du porteur :
+Retours du porteur : validé le 29/09/2026.
