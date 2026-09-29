@@ -140,6 +140,19 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 
 `zod`, `typescript`, `vitest` (D-29) et `@types/node` (D-33) sont redéclarés comme dépendances directes du worker, comme pour l'API.
 
+## D-37 — Argon2id et liste de mots de passe courants (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `PasswordService` hache avec `@node-rs/argon2` 2.2, algorithme Argon2id explicite. Les coûts sont ceux du paquet, déjà alignés sur l'OWASP : mémoire 19 456 Kio, 2 passes, parallélisme 1. La liste embarquée est `apps/api/src/auth/common-passwords.txt`, copie de SecLists `Passwords/Common-Credentials/Pwdb_top-10000.txt` (exactement 10 000 entrées, dont `password1234`). Elle est lue une fois au chargement du module, comparaison insensible à la casse. `10k-most-common.txt` (10 001 lignes) et `xato-net-10-million-passwords-10000.txt` (9 999 mots uniques) ne contiennent pas `password1234` : ils ne peuvent pas servir le critère de F-90. Le verrouillage (10 échecs, 15 min, échéance incluse) est dans `lockout.ts`, sans dépendance. `nest-cli.json` copie le fichier texte vers `dist` pour le démarrage compilé.
+- **Alternatives :** `10k-most-common.txt` ou la tranche xato des 10 000 ; paquet `argon2` (node-gyp) ; coûts laissés implicites.
+- **À valider :** oui
+
+| Paquet ou ressource                         | Raison                                                                                                              | Licence      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------ |
+| @node-rs/argon2                             | Hachage et vérification argon2id, bindings Rust (sans node-gyp).                                                    | MIT          |
+| SecLists `Pwdb_top-10000.txt`               | Liste embarquée des 10 000 mots de passe les plus courants. Le dépôt danielmiessler/SecLists est sous licence MIT. | MIT (dépôt)  |
+| Probable-Wordlists (berzerk0), source amont | Même liste, publiée dans SecLists sous le nom `Pwdb_top-10000.txt`. Attribution conservée ici.                     | CC BY-SA 4.0 |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

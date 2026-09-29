@@ -5,6 +5,8 @@
   "entryFile": "main",
   "language": "ts",
   "compilerOptions": {
-    "tsConfigPath": "tsconfig.build.json"
+    "tsConfigPath": "tsconfig.build.json",
+    "assets": ["auth/common-passwords.txt"],
+    "watchAssets": true
   }
 }
