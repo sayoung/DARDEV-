@@ -1,7 +1,12 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@xplor/shared": ["./packages/shared/src/index.ts"],
+      "@xplor/i18n": ["./packages/i18n/src/index.ts"]
+    }
   },
   "include": ["vitest.workspace.ts", "vitest.config.ts", "playwright.config.ts", "e2e/**/*.ts"]
 }

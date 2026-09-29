@@ -66,6 +66,8 @@ Dans les outils du navigateur, sur l'élément `<html>` :
 
 Le rôle affiché devient **مسؤول**. Le nom **Administrateur** ne change pas : c'est le nom du compte, pas une chaîne traduite. La feuille de style aligne le contenu avec `text-align: start` et les marges logiques (`margin-inline`, `padding-inline`) : en RTL, le bloc part du côté droit.
 
+La preuve RTL versionnée est [`docs/screenshots/login-ar.png`](screenshots/login-ar.png) : capture pleine page du formulaire de connexion ouvert avec `?lang=ar`. Le scénario Playwright `e2e/back-office.spec.ts` vérifie `lang="ar"` et `dir="rtl"` sur `<html>` avant d'enregistrer ce fichier.
+
 Revenir au **Français** pour la suite (les libellés ci-dessous sont en français). Le choix est gardé dans `localStorage` sous la clé `xplor.lang`.
 
 ## 5. Mot de passe oublié
@@ -158,7 +160,7 @@ Attendu : « Compte verrouillé. Réessayez dans 15 minutes. » Le compte reste 
 - [ ] Mailpit http://localhost:8025
 - [ ] `GET /api/v1/openapi.json` répond le document OpenAPI 3.1.0
 - [ ] Connexion `admin@xplor.local` avec `SEED_DEFAULT_PASSWORD`
-- [ ] Arabe : `lang="ar"` et `dir="rtl"`
+- [ ] Arabe : `lang="ar"` et `dir="rtl"` (preuve versionnée : `docs/screenshots/login-ar.png`)
 - [ ] Mot de passe oublié, lien Mailpit, connexion avec le nouveau mot de passe
 - [ ] Invitation 201, lien Mailpit, acceptation, connexion du compte invité
 - [ ] `editor@xplor.local` : `POST /api/v1/admin/users/invitations` répond 403
