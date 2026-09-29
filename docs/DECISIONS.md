@@ -287,6 +287,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** ajouter `api-int` au workspace et l'exclure par un filtre CLI ; créer `xplor_test` avec un client Node plutôt que `psql` ; ne pas charger le `.env` racine dans `globalSetup`.
 - **À valider :** oui (projet Vitest séparé ; chargement du `.env` ; `postgresql-client` en CI ; `|| true` sur `CREATE DATABASE`)
 
+## D-51 — Tests HTTP du flux d'authentification (F-90)
+
+- **Date :** 29/09/2026
+- **Décision :** `apps/api/test/auth.int.test.ts` démarre le vrai `AppModule` sur Fastify (`NestFastifyApplication`), avec le préfixe `/api/v1`, `@fastify/cookie` et `app.inject`. `Test.createTestingModule` puis `overrideProvider(MAILER)` branche `FakeMailer` : `NestFactory.create` ne permet pas ce remplacement. `process.env.DATABASE_URL` est forcé sur `DATABASE_URL_TEST` le temps du fichier, car le schéma Prisma lit `DATABASE_URL`. Redis est le serveur de `REDIS_URL`. Entre les tests : `resetDb()` et suppression des clés `sess:*` ainsi que de l'index `user-sess:*`. `ThrottlerGuard` est remplacé par un guard qui laisse passer, dans ce module de test seulement : le verrouillage enchaîne plus de cinq `POST /auth/login`, et la limite de production reste 5/min (D-40). En CI, `loadEnv` ne reçoit que `DATABASE_URL_TEST`, `REDIS_URL` et `SEED_DEFAULT_PASSWORD` ; les clés S3, SMTP et `SESSION_SECRET` non exercées reprennent le processus ou les valeurs de développement de `.env.example`. `POST /auth/logout` répond **204** (corps vide), comme `password/reset` et `invite/accept`. D-40 indiquait 200. Le client du back-office accepte tout statut 2xx (`response.ok`). Le 10e mot de passe faux reste 401 et pose le verrou ; la tentative suivante est 423 (inchangé, D-40).
+- **Alternatives :** garder le logout en 200 ; relever la limite du throttler au lieu de couper le guard ; envoyer les courriels à Mailpit ; vider toute la base Redis.
+- **À valider :** oui (logout 204 ; throttler coupé seulement dans ce fichier ; `DATABASE_URL` réécrit)
+
+| Paquet          | Raison                                                                                                    | Licence |
+| --------------- | --------------------------------------------------------------------------------------------------------- | ------- |
+| @nestjs/testing | `Test.createTestingModule` et `overrideProvider` pour brancher `FakeMailer` sans SMTP. 11.2.6, NestJS 11. | MIT     |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
