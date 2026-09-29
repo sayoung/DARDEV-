@@ -1,16 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Role as PrismaRole } from '@prisma/client';
-import { Role } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { toSharedRole } from './prisma-role.js';
 import { type SessionUser, type UserLookup } from './user-lookup.js';
-
-const ROLE_BY_PRISMA: Record<PrismaRole, Role> = {
-  [PrismaRole.ADMIN]: Role.ADMIN,
-  [PrismaRole.EDITOR]: Role.EDITOR,
-  [PrismaRole.HOTEL_MANAGER]: Role.HOTEL_MANAGER,
-  [PrismaRole.PARTNER]: Role.PARTNER,
-};
 
 @Injectable()
 export class PrismaUserLookup implements UserLookup {
@@ -26,7 +18,7 @@ export class PrismaUserLookup implements UserLookup {
     }
     return {
       id: user.id,
-      role: ROLE_BY_PRISMA[user.role],
+      role: toSharedRole(user.role),
       active: user.active,
     };
   }

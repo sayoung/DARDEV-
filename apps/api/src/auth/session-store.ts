@@ -29,6 +29,11 @@ export function createSessionId(): string {
   return randomBytes(32).toString('base64url');
 }
 
+/** Jeton CSRF de session, même format que l'identifiant (32 octets). */
+export function createCsrfToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
 export function sessionKey(id: string): string {
   return `sess:${id}`;
 }

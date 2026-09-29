@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { describe, expect, it } from 'vitest';
 
+import { DUMMY_PASSWORD_HASH } from './dummy-password.js';
 import {
   isCommonPassword,
   PasswordService,
@@ -25,6 +26,12 @@ describe('PasswordService', () => {
     const hashed = await service.hash('phrase-secrete-xplor');
 
     expect(await service.verify(hashed, 'autre-phrase-secrete')).toBe(false);
+  });
+
+  it('vérifie le hash factice précalculé pour un email inconnu', async () => {
+    expect(DUMMY_PASSWORD_HASH.startsWith('$argon2id$')).toBe(true);
+    expect(await service.verify(DUMMY_PASSWORD_HASH, 'xplor-dummy-unknown-email')).toBe(true);
+    expect(await service.verify(DUMMY_PASSWORD_HASH, 'autre-phrase-secrete')).toBe(false);
   });
 });
 

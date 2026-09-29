@@ -10,7 +10,7 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 
 import { AppModule } from './app.module.js';
-import { SESSION_COOKIE_NAME } from './auth/session-cookie.js';
+import { SESSION_COOKIE_NAME, sessionCookieOptions } from './auth/session-cookie.js';
 import { loadEnv } from './config/env.js';
 
 function loadLocalEnvFile(): void {
@@ -34,10 +34,7 @@ async function bootstrap(): Promise<void> {
     .getInstance()
     .decorate('sessionCookie', {
       name: SESSION_COOKIE_NAME,
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: env.NODE_ENV === 'production',
-      path: '/',
+      ...sessionCookieOptions(env.NODE_ENV === 'production'),
     });
   app.setGlobalPrefix('api/v1', {
     exclude: [{ path: 'api/health', method: RequestMethod.GET }],

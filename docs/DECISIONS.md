@@ -176,6 +176,17 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 | --------------- | ----------------------------------------------------------------------------------------------- | ------- |
 | @fastify/cookie | Lire et poser le cookie de session `xplor_sid` (httpOnly, SameSite=Lax). 11.1.2, Fastify 5.   | MIT     |
 
+## D-40 — Login, logout, me et limite de débit (F-90, NF-01)
+
+- **Date :** 29/09/2026
+- **Décision :** `POST /api/v1/auth/login`, `POST /auth/logout` et `GET /auth/me` vivent dans `AuthModule`. Les schémas `LoginRequestSchema` et `MeResponseSchema` sont dans `@xplor/shared`. `AuthService` lit et met à jour les comptes via `UserRepository` (wrapper Prisma, remplacé par un faux dans les tests). L'email est comparé sans tenir compte de la casse (`mode: 'insensitive'`), après trim et mise en minuscules. Un email inconnu, un mauvais mot de passe et un compte inactif répondent 401 avec le code `INVALID_CREDENTIALS`. Pour un email inconnu, `PasswordService.verify` est appelé sur un hash argon2id précalculé (mêmes coûts que D-37) afin que le temps de réponse ne révèle pas l'existence du compte. Un compte déjà verrouillé (`isLocked`) répond 423 `ACCOUNT_LOCKED` sans nouvelle vérification du mot de passe. Chaque mot de passe faux appelle `registerFailure` et persiste `failedLoginCount` et `lockedUntil` : le 10e échec pose le verrou et répond encore 401 ; la tentative suivante répond 423, sans rallonger la fenêtre. Un succès remet le compteur à zéro, écrit `lastLoginAt`, détruit toutes les sessions du compte puis en crée une nouvelle (pas de fixation de session), pose le cookie `xplor_sid` et renvoie `MeResponse`. `POST` login et logout répondent 200 : le défaut Nest d'un `POST` est 201. Une langue `uiLang` hors fr/ar/en est lue comme `fr`. `@nestjs/throttler` 6.7.1 limite seulement `POST /auth/login` à 5 requêtes par 60 secondes et par IP (`req.ip`, stockage mémoire du paquet). Le guard n'est pas global, pour laisser `GET /api/health` public. La couverture Vitest mesure tout `apps/api/src/auth` avec un seuil de 70 % ; le seuil 100 % de `access-policy.ts` (D-35) reste un seuil par fichier.
+- **Alternatives :** stockage Redis du compteur de débit ; répondre 423 dès le 10e échec ; guard de débit global avec `@SkipThrottle` sur le reste ; signer le cookie (déjà écarté en D-39).
+- **À valider :** oui (compteur en mémoire ; 401 au 10e échec puis 423 à l'essai suivant ; destruction de toutes les sessions du compte à chaque login ; repli `uiLang` sur `fr`)
+
+| Paquet            | Raison                                                                                          | Licence |
+| ----------------- | ----------------------------------------------------------------------------------------------- | ------- |
+| @nestjs/throttler | Limite `POST /auth/login` à 5 requêtes par minute et par IP (NF-01). 6.7.1, NestJS 11.         | MIT     |
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :
