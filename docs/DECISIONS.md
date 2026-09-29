@@ -75,6 +75,13 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Alternatives :** secret MinIO identique au mot de passe Postgres (refusé par MinIO) ; image `quay.io/minio/minio` ; volume et healthcheck aussi sur `minio-init`.
 - **À valider :** oui
 
+## D-32 — Workflow CI GitHub Actions (NF-08)
+
+- **Date :** 29/09/2026
+- **Décision :** `.github/workflows/ci.yml` utilise `actions/checkout@v4`, `pnpm/action-setup@v4` (pnpm 9.15.9, champ `packageManager`) et `actions/setup-node@v4` (Node 22, `cache: pnpm`). Le dépôt est en pnpm 9 : `pnpm/setup` ne s'applique qu'à pnpm 11 et remplacerait `actions/setup-node`, ce que la consigne n'autorise pas. Les services CI sont `postgres:16` et `redis:7` (tags demandés ; le Compose local reste en variantes `-alpine`). Depuis le runner, les ports publiés sont joints via `localhost`. `DATABASE_URL`, `DATABASE_URL_TEST` et `REDIS_URL` reprennent les identifiants de développement de `.env.example` (D-31), en clair dans le workflow : ce ne sont pas des secrets de production, et le fichier ne référence aucun `secrets.*`. L'image Postgres officielle ne crée que la base `xplor` ; `xplor_test` n'est pas initialisée en CI (le script `docker/postgres/init.sql` ne peut pas être monté : les services démarrent avant `actions/checkout`). Les tests actuels ne s'y connectent pas.
+- **Alternatives :** `pnpm/setup` (pnpm 11+) ; images `-alpine` comme en local ; monter `init.sql` ou créer `xplor_test` par `docker exec` ; passer les URL par secrets GitHub.
+- **À valider :** oui
+
 ## Encore à valider (cahier des charges, section 11.2)
 
 Pas de numéro de décision tant que le porteur n'a pas tranché :

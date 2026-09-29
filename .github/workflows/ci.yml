@@ -1,0 +1,74 @@
+# CI Xplor (NF-08). Déclenchée sur main et develop.
+# Aucun secret : les identifiants Postgres sont ceux du développement local
+# (.env.example, décision D-31), pas des secrets de production.
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: xplor
+          POSTGRES_PASSWORD: xplor
+          POSTGRES_DB: xplor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U xplor -d xplor"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm test
+        env:
+          DATABASE_URL: postgresql://xplor:xplor@localhost:5432/xplor
+          DATABASE_URL_TEST: postgresql://xplor:xplor@localhost:5432/xplor_test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Audit
+        run: pnpm audit --audit-level=high
