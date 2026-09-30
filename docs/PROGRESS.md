@@ -11,16 +11,18 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026
-**Exigence :** M1 F-01 (formulaire de visite) — correction de revue
+**Exigence :** M1 API-22 (écran des scènes) — correction de revue
 
 Plan :
-1. Séparer l'erreur de chargement de la visite et les erreurs d'enregistrement ou de suppression, pour que le formulaire reste monté après un 422 ou un 500.
-2. Remplacer le bouton 404 par un lien `hrefFor('/tours')`.
-3. Afficher un message traduit si `listCities` ou `listCategories` échoue.
-4. Ajouter les règles CSS de `tour-form`, `tour-status`, `form-error` et `form-success`.
-5. Couvrir le 422 (formulaire conservé) par un test Vitest, puis lancer lint, typecheck, test et test:e2e.
+1. Corriger les erreurs lint dans `TourScenesSection.tsx` (types de `title`/`caption`, assertions inutiles) et `TourScenesSection.test.tsx` (`eslint-disable`, assertions non nulles).
+2. Compléter les mocks dans les tests (ajouter `createdAt` dans `mockScenes`, compléter l'asset mock selon `AssetResponseSchema`).
+3. Corriger les clés de traduction (`catalog.actions`, `catalog.edit`, `catalog.cancel`, `common.deleteConfirm`).
+4. Implémenter le rechargement de la visite (`getTour` et `onTourUpdated`) après création ou suppression d'une scène, et ajouter un test validant la mise à jour du badge.
+5. Garder le formulaire monté (supprimer `loading` lors des rechargements) et ajouter `TourScenesSection.css`.
+6. Afficher une erreur locale pour Zod (`catalog.errors.invalidForm`).
+7. Mettre à jour `docs/PROGRESS.md` et s'assurer que `lint`, `typecheck` et `test` passent.
 
-Réalisé (30/09/2026, Node 24.5.0) : correction de revue M1 F-01 (formulaire de visite). `loadError` ne démonte le formulaire qu’après un échec de `getTour` (hors 404). Un 422 sur `updateTour` ou un échec de `deleteTour` enregistre la clé `common.error.generic`, traduite au rendu, et laisse la saisie en place. Le 404 est un lien `hrefFor('/tours')`. L’échec de `listCities` ou `listCategories` affiche `catalog.errors.fetchFailed`. Règles CSS pour `tour-form`, `tour-status`, `form-error` et `form-success`. Tests Vitest ajoutés (422, suppression en échec, références indisponibles). `pnpm lint`, `pnpm typecheck`, `pnpm test` (423 tests) et `pnpm test:e2e` (7) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
+Réalisé (30/09/2026) : correction de revue M1 API-22 (écran des scènes). Les types de state `title` et `caption` utilisent désormais `LocalizedText`. Les assertions non nulles dans les tests ont été remplacées par des vérifications ou des casts sûrs, et les `eslint-disable` supprimés. Les mocks ont été alignés sur les schémas partagés (`createdAt` ajouté, mock asset complet). Les clés i18n introuvables ont été corrigées. Après une création ou suppression de scène, la visite est rechargée via `getTour` puis passée à `onTourUpdated`, ce qui déclenche un rendu pour le badge "Scène de départ", testé avec succès. `loading` est maintenant réservé au chargement initial. CSS logique intégré. L'erreur `ZodError` est traitée localement. `pnpm lint`, `pnpm typecheck` et `pnpm test` passent avec succès. Aucun commit (orchestrateur).
 
 Réalisé (30/09/2026) :
 - `TourForm.test.tsx` corrigé : `HTMLElement` résolu en omettant le champ de garde de `LocalizedTextField`.
@@ -325,7 +327,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écrans admin des scènes et des hotspots, médiathèque et affichage des problèmes de publication (la liste `/tours`, les formulaires `/tours/new` et `/tours/:id`, les villes et les catégories sont en place), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-79) ; la liste des visites signale une traduction manquante. F-01 : le formulaire de visite est en place (D-81) ; liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). La dépublication n’a pas encore d’écran. F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écran admin des hotspots, médiathèque et affichage des problèmes de publication (la liste `/tours`, les formulaires `/tours/new` et `/tours/:id`, les villes et les catégories sont en place), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-79) ; la liste des visites signale une traduction manquante. F-01 : le formulaire de visite est en place (D-81) ; liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; l'écran admin des scènes est en place (API-22) ; CRUD des hotspots en place ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). La dépublication n’a pas encore d’écran. F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 

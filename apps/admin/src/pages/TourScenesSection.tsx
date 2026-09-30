@@ -6,6 +6,8 @@ import {
   AssetKind,
   SceneCreateSchema,
   SceneUpdateSchema,
+  type LocalizedText,
+  z,
 } from '@xplor/shared';
 import {
   listScenes,
@@ -14,11 +16,13 @@ import {
   deleteScene,
   reorderScenes,
   setStartScene,
+  getTour,
 } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
 import { localize } from '@xplor/shared';
 import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { AssetPicker } from '../catalog/AssetPicker.js';
+import './TourScenesSection.css'; // Will create this
 
 interface Props {
   tour: TourResponse;
@@ -34,8 +38,8 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
   // Form state
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [title, setTitle] = useState<{ fr: string; ar?: string; en?: string }>({ fr: '' });
-  const [caption, setCaption] = useState<{ fr: string; ar?: string; en?: string }>({ fr: '' });
+  const [title, setTitle] = useState<LocalizedText>({ fr: '' });
+  const [caption, setCaption] = useState<LocalizedText>({ fr: '' });
   const [panoramaAssetId, setPanoramaAssetId] = useState('');
   const [initialYaw, setInitialYaw] = useState(0);
   const [initialPitch, setInitialPitch] = useState(0);
@@ -44,7 +48,6 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
 
   const reloadScenes = async () => {
     try {
-      setLoading(true);
       const res = await listScenes(tour.id);
       setScenes(res);
       setError(null);
@@ -75,7 +78,7 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
     setIsAdding(false);
     setEditingId(scene.id);
     setTitle(scene.title);
-    setCaption(scene.caption || { fr: '' });
+    setCaption(scene.caption ?? { fr: '' });
     setPanoramaAssetId(scene.panoramaAssetId);
     setInitialYaw(scene.initialYaw);
     setInitialPitch(scene.initialPitch);
@@ -94,20 +97,26 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
     setSubmitting(true);
     setError(null);
 
+    // If caption doesn't have at least 'fr' or any other required field, zod will throw.
+    // Let's pass caption only if it has at least one key with content.
+    const hasCaption = Object.values(caption).some(v => v.trim() !== '');
+
     const payload = {
-      title: title as { fr: string; ar?: string; en?: string },
-      caption: caption.fr ? (caption as { fr: string; ar?: string; en?: string }) : undefined,
+      title,
+      caption: hasCaption ? caption : undefined,
       panoramaAssetId,
       initialYaw,
       initialPitch,
       initialZoom,
-      weight: isAdding ? scenes.length : scenes.find((s) => s.id === editingId)?.weight || 0,
+      weight: isAdding ? scenes.length : (scenes.find((s) => s.id === editingId)?.weight ?? 0),
     };
 
     try {
       if (isAdding) {
         const data = SceneCreateSchema.parse(payload);
         await createScene(tour.id, data);
+        const updatedTour = await getTour(tour.id);
+        onTourUpdated(updatedTour);
       } else if (editingId) {
         const data = SceneUpdateSchema.parse(payload);
         await updateScene(editingId, data);
@@ -116,7 +125,9 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
       setEditingId(null);
       await reloadScenes();
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'PANORAMA_ASSET_NOT_FOUND') {
+      if (err instanceof z.ZodError) {
+        setError('catalog.errors.invalidForm');
+      } else if (err instanceof ApiError && err.code === 'PANORAMA_ASSET_NOT_FOUND') {
         setError('catalog.errors.panoramaAssetNotFound');
       } else {
         setError('common.error.generic');
@@ -127,11 +138,13 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm(t('common.confirmDelete'))) return;
+    if (!window.confirm(t('common.deleteConfirm'))) return;
     try {
       setError(null);
       await deleteScene(id);
       await reloadScenes();
+      const updatedTour = await getTour(tour.id);
+      onTourUpdated(updatedTour);
     } catch {
       setError('common.error.generic');
     }
@@ -171,19 +184,19 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
   const showForm = isAdding || editingId !== null;
 
   return (
-    <section>
+    <section className="tour-scenes-section">
       <h3>{t('catalog.scene.title')}</h3>
       {error && <div className="form-error" role="alert">{t(error)}</div>}
       
       {loading ? (
         <p>{t('common.loading')}</p>
       ) : (
-        <table>
+        <table className="scenes-table">
           <thead>
             <tr>
               <th>{t('catalog.scene.fields.title')}</th>
               <th>{t('catalog.scene.fields.hotspotCount')}</th>
-              <th>{t('common.actions')}</th>
+              <th>{t('catalog.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -196,7 +209,7 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
                   )}
                 </td>
                 <td>{scene.hotspotCount}</td>
-                <td style={{ display: 'flex', gap: '0.5rem' }}>
+                <td className="actions-cell">
                   <button
                     type="button"
                     disabled={index === 0}
@@ -215,7 +228,7 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
                     {t('catalog.scene.actions.setStart')}
                   </button>
                   <button type="button" onClick={() => { handleStartEdit(scene); }}>
-                    {t('common.edit')}
+                    {t('catalog.edit')}
                   </button>
                   <button type="button" onClick={() => { void handleDelete(scene.id); }}>
                     {t('common.delete')}
@@ -227,26 +240,27 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
         </table>
       )}
 
-      {!showForm && (
-        <button type="button" onClick={handleStartAdd} style={{ marginBlockStart: '1rem' }}>
+      {!showForm && !loading && (
+        <button type="button" onClick={handleStartAdd} className="btn-add-scene">
           {t('catalog.scene.actions.add')}
         </button>
       )}
 
       {showForm && (
-        <form onSubmit={(e) => { void handleSubmit(e); }} style={{ marginBlockStart: '1rem', border: '1px solid #ccc', padding: '1rem' }}>
-          <h4>{isAdding ? t('catalog.scene.actions.add') : t('common.edit')}</h4>
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="scene-form">
+          <h4>{isAdding ? t('catalog.scene.actions.add') : t('catalog.edit')}</h4>
           <LocalizedTextField
             label={t('catalog.scene.fields.title')}
             value={title}
-            onChange={(v) => setTitle(v as { fr: string })}
+            onChange={setTitle}
             required
           />
           <LocalizedTextField
             label={t('catalog.scene.fields.caption')}
             value={caption}
-            onChange={(v) => setCaption(v as { fr: string })}
+            onChange={setCaption}
           />
+
           <AssetPicker
             label={t('catalog.scene.fields.panorama')}
             kind={AssetKind.PANORAMA}
@@ -255,7 +269,7 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
             required
           />
           
-          <div style={{ display: 'flex', gap: '1rem', marginBlockEnd: '1rem' }}>
+          <div className="scene-form-row">
             <label>
               {t('catalog.scene.fields.initialYaw')}
               <input type="number" step="0.1" value={initialYaw} onChange={e => { setInitialYaw(Number(e.target.value)); }} required />
@@ -270,12 +284,12 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
             </label>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="scene-form-actions">
             <button type="submit" disabled={submitting}>
               {t('common.save')}
             </button>
             <button type="button" onClick={handleCancelForm} disabled={submitting}>
-              {t('common.cancel')}
+              {t('catalog.cancel')}
             </button>
           </div>
         </form>
