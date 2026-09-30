@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { TourForm } from './TourForm.js';
 import { getTour, updateTour, deleteTour } from '../api/catalog.js';
-import { navigate, useAppLocation } from '../router.js';
+import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Role, type TourResponse, type TourUpdate } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
+
+function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0;
+}
 
 export function TourDetailPage() {
   const { t } = useTranslation();
@@ -17,8 +21,9 @@ export function TourDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [globalError, setGlobalError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [successKey, setSuccessKey] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -36,7 +41,7 @@ export function TourDetailPage() {
             if (err instanceof ApiError && err.code === 'TOUR_NOT_FOUND') {
               setNotFound(true);
             } else {
-              setGlobalError('common.error.generic');
+              setLoadError('common.error.generic');
             }
             setLoading(false);
           }
@@ -55,11 +60,11 @@ export function TourDetailPage() {
     return <p>{t('common.loading')}</p>;
   }
 
-  if (globalError) {
+  if (loadError) {
     return (
       <div>
         <h2>{t('page.tourDetail.title')}</h2>
-        <div className="form-error" role="alert">{t(globalError)}</div>
+        <div className="form-error" role="alert">{t(loadError)}</div>
       </div>
     );
   }
@@ -68,21 +73,32 @@ export function TourDetailPage() {
     return (
       <div>
         <p>{t('tour.notFound')}</p>
-        <button type="button" onClick={() => { navigate('/tours'); }}>{t('tour.backToList')}</button>
+        <a
+          href={hrefFor('/tours')}
+          onClick={(event) => {
+            if (isModifiedClick(event)) {
+              return;
+            }
+            event.preventDefault();
+            navigate('/tours');
+          }}
+        >
+          {t('tour.backToList')}
+        </a>
       </div>
     );
   }
 
   const handleSubmit = async (data: TourUpdate) => {
     setIsSubmitting(true);
-    setGlobalError(null);
-    setSuccessMsg(null);
+    setActionError(null);
+    setSuccessKey(null);
     try {
       const updated = await updateTour(id, data);
       setTour(updated);
-      setSuccessMsg(t('tour.saveSuccess'));
+      setSuccessKey('tour.saveSuccess');
     } catch {
-      setGlobalError(t('common.error.generic'));
+      setActionError('common.error.generic');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,12 +106,13 @@ export function TourDetailPage() {
 
   const handleDelete = async () => {
     setIsSubmitting(true);
-    setGlobalError(null);
+    setActionError(null);
+    setSuccessKey(null);
     try {
       await deleteTour(id);
       navigate('/tours');
     } catch {
-      setGlobalError(t('common.error.generic'));
+      setActionError('common.error.generic');
       setIsSubmitting(false);
     }
   };
@@ -105,8 +122,8 @@ export function TourDetailPage() {
   return (
     <div>
       <h2>{t('page.tourDetail.title')}</h2>
-      {globalError && <div className="form-error" role="alert">{globalError}</div>}
-      {successMsg && <div className="form-success" role="status">{successMsg}</div>}
+      {actionError !== null && <div className="form-error" role="alert">{t(actionError)}</div>}
+      {successKey !== null && <div className="form-success" role="status">{t(successKey)}</div>}
       <TourForm
         initialData={tour}
         onSubmit={handleSubmit}

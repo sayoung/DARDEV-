@@ -90,3 +90,38 @@ h1 {
   align-items: center;
   margin-block-start: 1rem;
 }
+
+.tour-form {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 1rem;
+  margin-block-start: 1rem;
+  max-inline-size: 40rem;
+}
+
+.tour-status {
+  margin-block: 0;
+  margin-inline: 0;
+  font-weight: 700;
+}
+
+.form-error,
+.form-success {
+  margin-block: 0;
+  margin-inline: 0;
+}
+
+.form-error {
+  color: #b00020;
+}
+
+.form-success {
+  color: #0b6b2f;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}

@@ -254,7 +254,97 @@ describe('TourForm Pages', () => {
     render(<App />);
     
     await screen.findByText(resources.fr.tour.notFound);
-    expect(screen.getByRole('button', { name: resources.fr.tour.backToList })).toBeTruthy();
+    const back = screen.getByRole('link', { name: resources.fr.tour.backToList });
+    expect(back.getAttribute('href')).toBe('/tours');
+  });
+
+  it('un 422 à l’enregistrement garde le formulaire et affiche un message générique', async () => {
+    window.history.replaceState(null, '', '/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
+
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
+      if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'GET') {
+        return Promise.resolve(jsonResponse(200, mockTour));
+      }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'PATCH') {
+        return Promise.resolve(jsonResponse(422, { error: { code: 'VALIDATION', message: 'invalid' } }));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+
+    const titleInputs = await screen.findAllByDisplayValue('Tour 1');
+    const titleInput = titleInputs.find((el) => !el.classList.contains('ltf-fr-guard')) as HTMLElement;
+    fireEvent.change(titleInput, { target: { value: 'Titre Modifié' } });
+    fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
+
+    await screen.findByText(resources.fr.common.error.generic);
+    const kept = screen.getAllByDisplayValue('Titre Modifié').find((el) => !el.classList.contains('ltf-fr-guard'));
+    expect(kept).toBeTruthy();
+    expect(screen.getByRole('button', { name: resources.fr.common.save })).toBeTruthy();
+    expect(window.location.pathname).toBe('/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
+  });
+
+  it('un échec de suppression garde le formulaire et affiche un message générique', async () => {
+    window.history.replaceState(null, '', '/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
+      if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'GET') {
+        return Promise.resolve(jsonResponse(200, mockTour));
+      }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'DELETE') {
+        return Promise.resolve(jsonResponse(500, { error: { code: 'INTERNAL', message: 'fail' } }));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    await screen.findAllByDisplayValue('Tour 1');
+    fireEvent.click(screen.getByRole('button', { name: resources.fr.common.delete }));
+
+    await screen.findByText(resources.fr.common.error.generic);
+    expect(screen.getAllByDisplayValue('Tour 1').length).toBeGreaterThan(0);
+    expect(window.location.pathname).toBe('/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
+
+    const deleteCall = recordedCalls().find((c) => c.method === 'DELETE');
+    expect(deleteCall).toBeDefined();
+  });
+
+  it('échec du chargement des villes ou des catégories affiche un message', async () => {
+    window.history.replaceState(null, '', '/tours/new');
+
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/cities') && method === 'GET') {
+        return Promise.resolve(jsonResponse(500, { error: { code: 'INTERNAL', message: 'fail' } }));
+      }
+      if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+
+    await screen.findByText(resources.fr.catalog.errors.fetchFailed);
+    expect(screen.getByRole('button', { name: resources.fr.common.save })).toBeTruthy();
   });
 
   it('accès refusé pour les autres rôles', async () => {

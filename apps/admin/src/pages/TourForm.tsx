@@ -46,18 +46,26 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
   const [cities, setCities] = useState<CityResponse[]>([]);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [referenceError, setReferenceError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.all([listCities(), listCategories()]).then(([citiesRes, categoriesRes]) => {
-      if (active) {
-        setCities(citiesRes);
-        setCategories(categoriesRes);
-      }
-    }).catch(() => {
-        // Handle error silently or log
-    });
-    return () => { active = false; };
+    Promise.all([listCities(), listCategories()])
+      .then(([citiesRes, categoriesRes]) => {
+        if (active) {
+          setCities(citiesRes);
+          setCategories(categoriesRes);
+          setReferenceError(null);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setReferenceError('catalog.errors.fetchFailed');
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleCategoryChange = (id: string, checked: boolean) => {
@@ -116,8 +124,9 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
 
   return (
     <form onSubmit={handleSubmit} className="tour-form">
-      {statusText && <div className="tour-status">{statusText}</div>}
-      {formError && <div className="form-error" role="alert">{formError}</div>}
+      {statusText && <p className="tour-status">{statusText}</p>}
+      {referenceError !== null && <p className="form-error" role="alert">{t(referenceError)}</p>}
+      {formError !== null && <p className="form-error" role="alert">{formError}</p>}
       
       <LocalizedTextField
         label={t('tour.form.title')}

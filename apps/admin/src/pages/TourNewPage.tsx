@@ -23,7 +23,7 @@ export function TourNewPage() {
       const tour = await createTour(data);
       navigate(`/tours/${tour.id}`);
     } catch {
-      setGlobalError(t('common.error.generic'));
+      setGlobalError('common.error.generic');
     } finally {
       setIsSubmitting(false);
     }
@@ -32,7 +32,7 @@ export function TourNewPage() {
   return (
     <div>
       <h2>{t('page.tourNew.title')}</h2>
-      {globalError && <div className="form-error" role="alert">{globalError}</div>}
+      {globalError !== null && <div className="form-error" role="alert">{t(globalError)}</div>}
       <TourForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </div>
   );
