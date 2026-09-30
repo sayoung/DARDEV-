@@ -11,15 +11,112 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026  
-**Exigence :** M1 F-04 — revue du composant LocalizedTextField.
+**Exigence :** M1 API-25 — correction de revue des écrans villes et catégories.
 
 Plan :
 
-1. Remplir les pages `/cities` et `/categories` de `apps/admin`.
-2. Ajouter le tableau, le formulaire `LocalizedTextField`, et les validations Zod.
-3. Intégrer les traductions et l'erreur 409 IN_USE.
-4. Écrire les tests Vitest (jsdom) pour vérifier le rendu et les permissions.
-5. Lancer lint, typecheck, test.
+1. Poids de catégorie : saisie brute (chaîne), `Number()` à l'envoi, refus de `1.5` et `''` par `CategoryCreateSchema`.
+2. Tests de création : POST 201 avec UUID v7, absence du message générique, second GET de liste.
+3. Assertions directes (`toBeDefined`, corps du POST) et `vi.spyOn(window, 'confirm')` restauré dans `afterEach`.
+4. Un test par page : langue `en`, nom sans anglais, repli `fr` et indicateur « Missing translation ».
+5. Remplacer le séparateur ` - ` par un élément avec marge CSS logique.
+6. Relancer `pnpm lint`, `pnpm typecheck` et `pnpm test`, puis coller la sortie ici.
+
+Réalisé (30/09/2026, Node 22.23.3) : correction de revue M1 API-25 (écrans villes et catégories). Le poids d'une catégorie reste une chaîne ; `Number()` n'est appliqué qu'à l'envoi, et une chaîne vide est laissée telle quelle pour que `CategoryCreateSchema` refuse `1.5` et `''` (`catalog.errors.invalidForm`). L'indicateur de traduction manquante est un élément distinct, écarté par `margin-inline-start`. Les tests de création attendent un POST 201 avec un UUID v7, l'absence du message générique et un second GET. `window.confirm` est espionné puis restauré. Un test par page vérifie le repli français et « Missing translation » quand `en` est absent (langue d'interface `en`, clé `xplor.lang`, car le shell réapplique la langue au montage). `pnpm lint`, `pnpm typecheck` et `pnpm test` (402 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
+
+```text
+NODE v22.23.3
+
+> xplor@ lint D:\DARDEV\local\xplor_smit
+> eslint .
+
+
+> xplor@ typecheck D:\DARDEV\local\xplor_smit
+> tsc --noEmit -p tsconfig.json && pnpm -r typecheck
+
+Scope: 7 of 8 workspace projects
+apps/worker typecheck$ tsc --noEmit -p tsconfig.json
+packages/shared typecheck$ tsc --noEmit -p tsconfig.json
+apps/worker typecheck: Done
+packages/shared typecheck: Done
+packages/i18n typecheck$ tsc --noEmit -p tsconfig.json
+packages/i18n typecheck: Done
+apps/kiosk typecheck$ tsc --noEmit -p tsconfig.json
+apps/api typecheck$ tsc --noEmit -p tsconfig.json
+apps/admin typecheck$ tsc --noEmit -p tsconfig.json
+apps/web typecheck$ tsc --noEmit -p tsconfig.json
+apps/kiosk typecheck: Done
+apps/web typecheck: Done
+apps/admin typecheck: Done
+apps/api typecheck: Done
+
+> xplor@ test D:\DARDEV\local\xplor_smit
+> vitest run
+
+ DEPRECATED  The workspace file is deprecated and will be removed in the next major. Please, use the `test.projects` field in D:/DARDEV/local/xplor_smit/vitest.config.ts instead.
+
+ RUN  v3.2.7 D:/DARDEV/local/xplor_smit
+
+ ✓ |@xplor/shared| src/catalog.test.ts (72 tests) 55ms
+ ✓ |@xplor/api| src/openapi/registry.test.ts (4 tests) 210ms
+ ✓ |@xplor/api| src/catalog/hotspots.service.test.ts (17 tests) 36ms
+ ✓ |@xplor/api| src/auth/password.service.test.ts (6 tests) 158ms
+ ✓ |@xplor/api| src/catalog/scenes.service.test.ts (10 tests) 25ms
+ ✓ |@xplor/api| src/catalog/tours.service.test.ts (8 tests) 26ms
+[Nest] 12868  - 30/09/2026 01:26:33    WARN [AuthService] Envoi de réinitialisation interrompu
+ ✓ |@xplor/api| src/auth/auth.service.test.ts (26 tests) 35ms
+ ✓ |@xplor/api| src/catalog/tour-publication.service.test.ts (11 tests) 22ms
+ ✓ |@xplor/api| src/config/env.test.ts (4 tests) 16ms
+ ✓ |@xplor/api| src/auth/auth.controller.test.ts (16 tests) 20ms
+ ✓ |@xplor/api| src/seed/seed-tours.test.ts (2 tests) 18ms
+ ✓ |@xplor/api| src/users/invitation.test.ts (8 tests) 27ms
+ ✓ |@xplor/shared| src/auth.test.ts (14 tests) 14ms
+ ✓ |@xplor/worker| src/env.test.ts (2 tests) 10ms
+ ✓ |@xplor/api| src/auth/session-store.test.ts (6 tests) 11ms
+ ✓ |@xplor/api| src/seed/seed-catalog.test.ts (2 tests) 11ms
+ ✓ |@xplor/shared| src/localized-text.test.ts (6 tests) 13ms
+ ✓ |@xplor/api| src/catalog/cities.service.test.ts (8 tests) 14ms
+ ✓ |@xplor/api| src/app.module.test.ts (1 test) 94ms
+ ✓ |@xplor/api| src/catalog/catalog-http.test.ts (14 tests) 15ms
+ ✓ |@xplor/api| src/catalog/categories.service.test.ts (6 tests) 14ms
+ ✓ |@xplor/api| src/health/health.service.test.ts (3 tests) 7ms
+ ✓ |@xplor/api| src/catalog/publication-rules.test.ts (25 tests) 10ms
+ ✓ |@xplor/api| src/auth/user-token.test.ts (6 tests) 8ms
+ ✓ |@xplor/api| src/catalog/assets.service.test.ts (4 tests) 13ms
+ ✓ |@xplor/api| src/auth/access-policy.test.ts (14 tests) 9ms
+ ✓ |@xplor/i18n| src/keys.test.ts (4 tests) 7ms
+ ✓ |@xplor/admin| src/router.test.ts (4 tests) 6ms
+ ✓ |@xplor/worker| src/main.test.ts (2 tests) 6ms
+ ✓ |@xplor/api| src/auth/lockout.test.ts (4 tests) 5ms
+ ✓ |@xplor/api| src/catalog/tour-duplicate.test.ts (5 tests) 6ms
+ ✓ |@xplor/api| src/mail/render-mail.test.ts (2 tests) 5ms
+ ✓ |@xplor/api| src/auth/prisma-user.repository.test.ts (8 tests) 10ms
+ ✓ |@xplor/admin| src/lang.test.ts (1 test) 5ms
+ ✓ |@xplor/api| src/auth/user-token.repository.test.ts (6 tests) 12ms
+ ✓ |@xplor/api| src/auth/session.guard.test.ts (10 tests) 10ms
+ ✓ |@xplor/admin| src/api/client.test.ts (11 tests) 33ms
+ ✓ |@xplor/api| src/seed/seed-users.test.ts (4 tests) 7ms
+ ✓ |@xplor/api| src/mail/fake-mailer.test.ts (1 test) 4ms
+ ✓ |@xplor/shared| src/password.test.ts (1 test) 4ms
+ ✓ |@xplor/api| src/prisma/role.test.ts (1 test) 4ms
+ ✓ |@xplor/api| src/auth/unit-of-work.test.ts (2 tests) 4ms
+ ✓ |@xplor/api| src/auth/prisma-user.lookup.test.ts (2 tests) 4ms
+ ✓ |@xplor/api| src/mail/smtp-mailer.test.ts (1 test) 3ms
+ ✓ |@xplor/admin| src/catalog/LocalizedTextField.test.tsx (4 tests) 367ms
+ ✓ |@xplor/admin| src/App.test.tsx (3 tests) 374ms
+ ✓ |@xplor/admin| src/auth/account-access.test.tsx (8 tests) 548ms
+   ✓ réinitialisation et invitation > l’envoi de forgot affiche toujours le même message de confirmation  309ms
+ ✓ |@xplor/admin| src/pages/CitiesPage.test.tsx (5 tests) 556ms
+ ✓ |@xplor/admin| src/session.test.tsx (8 tests) 588ms
+ ✓ |@xplor/admin| src/pages/CategoriesPage.test.tsx (6 tests) 632ms
+ ✓ |@xplor/kiosk| src/mount.test.ts (2 tests) 4ms
+ ✓ |@xplor/web| src/mount.test.ts (2 tests) 5ms
+
+ Test Files  52 passed (52)
+      Tests  402 passed (402)
+   Start at  01:26:31
+   Duration  5.80s (transform 3.19s, setup 0ms, collect 36.20s, tests 4.10s, environment 33.82s, prepare 10.80s)
+```
 
 Réalisé (30/09/2026, Node 22) : M1 API-25 (CRUD des villes et des catégories, front). Implémentation des pages back-office `CitiesPage` et `CategoriesPage` (`apps/admin/src/pages`). Affichage des données avec texte de chargement (`common.loading`) et avertissement texte lisible pour les traductions manquantes (`catalog.translation.missing`) en gérant correctement le code langue principal. Formulaires complets basés sur `LocalizedTextField` et validation Zod front-end. Suppression avec confirmation et traduction native de l'erreur 409 IN_USE (`ApiError` gérant `error.code`). Gestion des erreurs via alertes locales aux pages. Accès en écriture (boutons) restreint aux rôles ADMIN et EDITOR via `useAuth()`. Traductions ajoutées dans `@xplor/i18n` (fr, ar, en). Les tests Vitest (`CitiesPage.test.tsx` et `CategoriesPage.test.tsx`) valident le rendu, l'envoi correct des corps HTTP, la traduction du 409 sur la base du format `{ error: { code, message } }` et l'inaccessibilité des boutons pour le rôle PARTNER. `pnpm lint`, `pnpm typecheck` et `pnpm test` (399 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
 
@@ -162,7 +259,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **API-22, partie 1** (CRUD des scènes, D-72) : `GET` / `POST` `/api/v1/admin/tours/:tourId/scenes`, `GET` / `PATCH` / `DELETE` `/api/v1/admin/scenes/:id`. Liste des scènes non supprimées, tri `weight` puis `createdAt`. La première scène devient `startSceneId` ; la suppression de la scène de départ le remet à null, dans la même transaction. `createdById` = session. `contentVersion` de la visite +1. 404 `TOUR_NOT_FOUND` ou `SCENE_NOT_FOUND`, 422 `PANORAMA_ASSET_NOT_FOUND`, format `{ error: { code, message } }`. ADMIN et EDITOR (`canManageContent`). `SceneResponseSchema` dans `@xplor/shared`. OpenAPI à jour. Pas d'écran admin.
 - **API-22, partie 2** (réordonnancement et scène de départ, D-72) : `POST /api/v1/admin/tours/:tourId/scenes/reorder` (`SceneReorderRequestSchema`) et `POST .../scenes/set-start` (`SetStartSceneRequestSchema`). Liste incomplète, doublon ou scène hors de l’ensemble → 422 `SCENE_SET_MISMATCH`, sans écriture. `weight` = index. Scène inconnue, supprimée ou d’une autre visite → 422 `START_SCENE_FOREIGN`. Succès : 200, liste triée ou `TourResponse`. `contentVersion` +1. Même contrôle d’accès. OpenAPI à jour. Pas d'écran admin.
 - **F-03** (règles de publication, D-68, D-74) : `validateTour` dans `apps/api/src/catalog/publication-rules.ts` (25 tests, dont « Visite manuelle »), fonction pure, couverture 100 %. `POST /api/v1/admin/tours/:id/validate` répond 200 `{ issues: ValidationIssue[] }` via `TourPublicationService` : visite, scènes (y compris supprimées) avec `processingStatus` du panorama, hotspots, et `findTargetTour` préchargé. Liste vide si la visite est publiable. Cette route ne publie pas et ne change pas `contentVersion`. `TourValidationResponseSchema` est dans `@xplor/shared`. 404 `TOUR_NOT_FOUND` si la visite est absente ou supprimée. `POST .../publish` : si `issues` n’est pas vide, 422 `{ error: { code: "TOUR_NOT_PUBLISHABLE", message, issues } }` sans écriture ; sinon, dans la même transaction, `status` PUBLISHED, `publishedAt` = maintenant, `contentVersion` +1, puis 200 `TourResponse`. `POST .../unpublish` : `status` DRAFT, `publishedAt` conservé, `contentVersion` +1, 200 `TourResponse`. `status` est déjà sur `TourResponseSchema` (D-71). ADMIN et EDITOR (`canManageContent`). OpenAPI à jour. L’affichage des problèmes dans l’admin reste à faire.
-- **API-25** (CRUD villes et catégories) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Lecture pour toute session ; écriture ADMIN et EDITOR (`canManageCatalog`). 409 `IN_USE` au format du cahier. Seed fr/ar/en. OpenAPI à jour. Pas d'écran admin (D-69).
+- **API-25** (CRUD villes et catégories) : `GET` / `POST` / `PATCH` / `DELETE` sur `/api/v1/admin/cities` et `/api/v1/admin/categories`. Lecture pour toute session ; écriture ADMIN et EDITOR (`canManageCatalog`). 409 `IN_USE` au format du cahier. Seed fr/ar/en. OpenAPI à jour. Écrans `/cities` et `/categories` : liste avec repli `localize`, formulaire `LocalizedTextField`, validation Zod, confirmation de suppression, 409 traduit (D-69).
 - **Schéma 5.6 à 5.8** (D-66, D-70) : `Hotel`, `Selection`, `SelectionItem`, `Kiosk`, `UserHotel`, migration `20260929183235_hotels_kiosks`. Seed : 1 hôtel à Rabat (FIVE, RENTAL, fr/ar/en, sans PIN), sélection vide, kiosque « Hall principal » PENDING, `UserHotel` pour `manager@xplor.local`. CRUD et écrans restent en M5. La session ne charge pas encore `hotelIds`.
 - **API-23, partie 1** (contrats, D-73) : `HotspotUpdateSchema` et `HotspotResponseSchema` dans `@xplor/shared`, types `z.infer` exportés par `index.ts`. Tests : une réponse valide par type, type inconnu refusé, URL non http/https refusée à la mise à jour. Pas de route, pas d’OpenAPI, pas d’écran.
 - **API-23, partie 2** (liste et création, D-73) : `GET` et `POST` `/api/v1/admin/scenes/:sceneId/hotspots`. Liste triée par `createdAt` croissant. Création 201 `HotspotResponseSchema`, `createdById` = session, `contentVersion` de la visite +1. 404 `SCENE_NOT_FOUND` si la scène parente est absente ou supprimée. 422 `{ error: { code, message } }` via `assertTargets` (réutilisable par PATCH) : `SCENE_LINK_TARGET_MISSING`, `SCENE_LINK_SELF`, `SCENE_LINK_FOREIGN`, `TOUR_LINK_TARGET_MISSING`, `TOUR_LINK_SELF`, `TOUR_LINK_SCENE_FOREIGN` (une cible `DRAFT` reste acceptée), `MEDIA_ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour.
@@ -174,7 +271,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écrans admin (y compris villes, catégories, visites, scènes, hotspots, médiathèque et affichage des problèmes de publication), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-78) ; le signalement dans la liste des visites reste à faire. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écrans admin des visites, scènes, hotspots, médiathèque et affichage des problèmes de publication (villes et catégories sont en place), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-78) ; le signalement dans la liste des visites reste à faire. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 

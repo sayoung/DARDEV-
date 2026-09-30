@@ -27,7 +27,7 @@ export function CategoriesPage() {
   const [name, setName] = useState<LocalizedText>({ fr: '' });
   const [icon, setIcon] = useState('');
   const [color, setColor] = useState('#000000');
-  const [weight, setWeight] = useState<number | ''>(0);
+  const [weight, setWeight] = useState('0');
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -52,7 +52,7 @@ export function CategoriesPage() {
     setName({ fr: '' });
     setIcon('');
     setColor('#000000');
-    setWeight(0);
+    setWeight('0');
     setFormError(null);
   }
 
@@ -61,7 +61,7 @@ export function CategoriesPage() {
     setName({ fr: category.name.fr, ar: category.name.ar, en: category.name.en });
     setIcon(category.icon);
     setColor(category.color);
-    setWeight(category.weight);
+    setWeight(String(category.weight));
     setFormError(null);
   }
 
@@ -90,7 +90,7 @@ export function CategoriesPage() {
       name,
       icon,
       color,
-      weight: typeof weight === 'string' ? parseInt(weight, 10) : weight,
+      weight: weight === '' ? weight : Number(weight),
     };
 
     const parsed = CategoryCreateSchema.safeParse(payload);
@@ -141,10 +141,10 @@ export function CategoriesPage() {
               return (
                 <tr key={category.id}>
                   <td>
-                    {localize(category.name, i18n.language)}
-                    {isMissingTranslation && (
-                      <span className="missing-translation"> - {t('catalog.translation.missing')}</span>
-                    )}
+                    <span>{localize(category.name, i18n.language)}</span>
+                    {isMissingTranslation ? (
+                      <span className="missing-translation">{t('catalog.translation.missing')}</span>
+                    ) : null}
                   </td>
                   <td>{category.icon}</td>
                   <td>
@@ -203,11 +203,9 @@ export function CategoriesPage() {
             <label htmlFor="weight">{t('catalog.category.weight')}</label>
             <input
               id="weight"
-              type="number"
-              step="1"
+              inputMode="decimal"
               value={weight}
-              onChange={(e) => { setWeight(e.target.value === '' ? '' : parseInt(e.target.value, 10)); }}
-              required
+              onChange={(e) => { setWeight(e.target.value); }}
             />
           </div>
           

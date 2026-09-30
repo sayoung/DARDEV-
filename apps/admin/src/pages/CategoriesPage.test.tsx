@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { Role, type MeResponse, type CategoryResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearCsrfToken } from '../api/client.js';
 import { App } from '../App.js';
 import { i18n } from '../i18n.js';
+import { LANG_STORAGE_KEY } from '../lang.js';
 
 const profileAdmin: MeResponse = {
   id: 'user-admin',
@@ -26,12 +27,14 @@ const profilePartner: MeResponse = {
 };
 
 const mockCategory: CategoryResponse = {
-  id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f', // Valid UUID v7 format
+  id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f',
   name: { fr: 'Nature', ar: 'طبيعة', en: 'Nature' },
   icon: 'tree',
   color: '#00FF00',
   weight: 10,
 };
+
+const createdCategoryId = '018f6b21-4d39-7a1b-8e45-3f8c5b2a1d10';
 
 const fetchMock = vi.fn<(input: unknown, init?: unknown) => Promise<Response>>();
 
@@ -62,6 +65,7 @@ describe('CategoriesPage', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('affiche la liste des categories', async () => {
@@ -86,39 +90,76 @@ describe('CategoriesPage', () => {
         return Promise.resolve(jsonResponse(200, [mockCategory]));
       }
       if (url.endsWith('/admin/categories') && method === 'POST') {
-        return Promise.resolve(jsonResponse(200, { ...mockCategory, id: 'cat-2' }));
+        return Promise.resolve(jsonResponse(201, { ...mockCategory, id: createdCategoryId }));
       }
       return Promise.resolve(jsonResponse(404, {}));
     });
 
-    const frInput = screen.getAllByRole('textbox').find(el => el.getAttribute('lang') === 'fr');
-    expect(frInput).toBeTruthy();
-    if (frInput) {
-      fireEvent.change(frInput, { target: { value: 'Culture' } });
-    }
-    
+    const frInput = screen.getAllByRole('textbox').find((el) => el.getAttribute('lang') === 'fr');
+    expect(frInput).toBeDefined();
+    fireEvent.change(frInput as HTMLElement, { target: { value: 'Culture' } });
+
     fireEvent.change(screen.getByLabelText(resources.fr.catalog.category.icon), { target: { value: 'museum' } });
     fireEvent.change(screen.getByLabelText(resources.fr.catalog.category.color), { target: { value: '#FF0000' } });
     fireEvent.change(screen.getByLabelText(resources.fr.catalog.category.weight), { target: { value: '5' } });
-    
+
     fireEvent.click(screen.getByRole('button', { name: resources.fr.catalog.save }));
-    
+
     await waitFor(() => {
-      const postCall = recordedCalls().find(c => c.method === 'POST' && c.url.endsWith('/admin/categories'));
-      expect(postCall).toBeTruthy();
-      if (postCall && postCall.init) {
-        expect(JSON.parse(postCall.init.body as string)).toEqual({
-          name: { fr: 'Culture' },
-          icon: 'museum',
-          color: '#ff0000',
-          weight: 5,
-        });
-      }
+      const calls = recordedCalls();
+      const postCall = calls.find((c) => c.method === 'POST' && c.url.endsWith('/admin/categories'));
+      expect(postCall?.init?.body).toBe(JSON.stringify({
+        name: { fr: 'Culture' },
+        icon: 'museum',
+        color: '#ff0000',
+        weight: 5,
+      }));
+      const gets = calls.filter((c) => c.method === 'GET' && c.url.endsWith('/admin/categories'));
+      expect(gets).toHaveLength(2);
     });
+    expect(screen.queryByText(resources.fr.catalog.errors.generic)).toBeNull();
+  });
+
+  it('poids 1.5 : aucun POST et message invalidForm', async () => {
+    render(<App />);
+    await screen.findByText('Nature');
+
+    const frInput = screen.getAllByRole('textbox').find((el) => el.getAttribute('lang') === 'fr');
+    expect(frInput).toBeDefined();
+    fireEvent.change(frInput as HTMLElement, { target: { value: 'Culture' } });
+    fireEvent.change(screen.getByLabelText(resources.fr.catalog.category.icon), { target: { value: 'museum' } });
+    fireEvent.change(screen.getByLabelText(resources.fr.catalog.category.weight), { target: { value: '1.5' } });
+
+    fireEvent.click(screen.getByRole('button', { name: resources.fr.catalog.save }));
+
+    expect(await screen.findByText(resources.fr.catalog.errors.invalidForm)).toBeTruthy();
+    const postCall = recordedCalls().find((c) => c.method === 'POST' && c.url.endsWith('/admin/categories'));
+    expect(postCall).toBeUndefined();
+  });
+
+  it('repli français et indicateur quand la traduction anglaise manque', async () => {
+    localStorage.setItem(LANG_STORAGE_KEY, 'en');
+    await i18n.changeLanguage('en');
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+      if (url.endsWith('/auth/me')) {
+        return Promise.resolve(jsonResponse(200, profileAdmin));
+      }
+      if (url.endsWith('/admin/categories') && method === 'GET') {
+        return Promise.resolve(jsonResponse(200, [{ ...mockCategory, name: { fr: 'Nature', ar: 'طبيعة' } }]));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    const nameCell = await screen.findByRole('cell', { name: /Nature/ });
+    expect(within(nameCell).getByText('Nature')).toBeTruthy();
+    expect(within(nameCell).getByText(resources.en.catalog.translation.missing)).toBeTruthy();
   });
 
   it('409 IN_USE traduit lors de la suppression', async () => {
-    window.confirm = vi.fn(() => true);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
       const url = requestUrl(input);

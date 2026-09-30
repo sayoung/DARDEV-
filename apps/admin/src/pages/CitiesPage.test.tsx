@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { Role, type MeResponse, type CityResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearCsrfToken } from '../api/client.js';
 import { App } from '../App.js';
 import { i18n } from '../i18n.js';
+import { LANG_STORAGE_KEY } from '../lang.js';
 
 const profileAdmin: MeResponse = {
   id: 'user-admin',
@@ -26,12 +27,14 @@ const profilePartner: MeResponse = {
 };
 
 const mockCity: CityResponse = {
-  id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e', // Valid UUID v7 format
+  id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e',
   name: { fr: 'Rabat', ar: 'الرباط', en: 'Rabat' },
   region: 'RSK',
   lat: 34.0,
   lng: -6.8,
 };
+
+const createdCityId = '018f6b21-4d39-7a1b-8e45-3f8c5b2a1d11';
 
 const fetchMock = vi.fn<(input: unknown, init?: unknown) => Promise<Response>>();
 
@@ -62,6 +65,7 @@ describe('CitiesPage', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('affiche la liste des villes', async () => {
@@ -86,39 +90,59 @@ describe('CitiesPage', () => {
         return Promise.resolve(jsonResponse(200, [mockCity]));
       }
       if (url.endsWith('/admin/cities') && method === 'POST') {
-        return Promise.resolve(jsonResponse(200, { ...mockCity, id: 'city-2' }));
+        return Promise.resolve(jsonResponse(201, { ...mockCity, id: createdCityId }));
       }
       return Promise.resolve(jsonResponse(404, {}));
     });
 
-    const frInput = screen.getAllByRole('textbox').find(el => el.getAttribute('lang') === 'fr');
-    expect(frInput).toBeTruthy();
-    if (frInput) {
-      fireEvent.change(frInput, { target: { value: 'Salé' } });
-    }
-    
+    const frInput = screen.getAllByRole('textbox').find((el) => el.getAttribute('lang') === 'fr');
+    expect(frInput).toBeDefined();
+    fireEvent.change(frInput as HTMLElement, { target: { value: 'Salé' } });
+
     fireEvent.change(screen.getByLabelText(resources.fr.catalog.city.region), { target: { value: 'RSK' } });
     fireEvent.change(screen.getByLabelText(resources.fr.catalog.city.lat), { target: { value: '34.1' } });
     fireEvent.change(screen.getByLabelText(resources.fr.catalog.city.lng), { target: { value: '-6.7' } });
-    
+
     fireEvent.click(screen.getByRole('button', { name: resources.fr.catalog.save }));
-    
+
     await waitFor(() => {
-      const postCall = recordedCalls().find(c => c.method === 'POST' && c.url.endsWith('/admin/cities'));
-      expect(postCall).toBeTruthy();
-      if (postCall && postCall.init) {
-        expect(JSON.parse(postCall.init.body as string)).toEqual({
-          name: { fr: 'Salé' },
-          region: 'RSK',
-          lat: 34.1,
-          lng: -6.7,
-        });
-      }
+      const calls = recordedCalls();
+      const postCall = calls.find((c) => c.method === 'POST' && c.url.endsWith('/admin/cities'));
+      expect(postCall?.init?.body).toBe(JSON.stringify({
+        name: { fr: 'Salé' },
+        region: 'RSK',
+        lat: 34.1,
+        lng: -6.7,
+      }));
+      const gets = calls.filter((c) => c.method === 'GET' && c.url.endsWith('/admin/cities'));
+      expect(gets).toHaveLength(2);
     });
+    expect(screen.queryByText(resources.fr.catalog.errors.generic)).toBeNull();
+  });
+
+  it('repli français et indicateur quand la traduction anglaise manque', async () => {
+    localStorage.setItem(LANG_STORAGE_KEY, 'en');
+    await i18n.changeLanguage('en');
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+      if (url.endsWith('/auth/me')) {
+        return Promise.resolve(jsonResponse(200, profileAdmin));
+      }
+      if (url.endsWith('/admin/cities') && method === 'GET') {
+        return Promise.resolve(jsonResponse(200, [{ ...mockCity, name: { fr: 'Rabat', ar: 'الرباط' } }]));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    const nameCell = await screen.findByRole('cell', { name: /Rabat/ });
+    expect(within(nameCell).getByText('Rabat')).toBeTruthy();
+    expect(within(nameCell).getByText(resources.en.catalog.translation.missing)).toBeTruthy();
   });
 
   it('409 IN_USE traduit lors de la suppression', async () => {
-    window.confirm = vi.fn(() => true);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
       const url = requestUrl(input);

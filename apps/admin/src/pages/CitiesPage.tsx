@@ -141,10 +141,10 @@ export function CitiesPage() {
               return (
                 <tr key={city.id}>
                   <td>
-                    {localize(city.name, i18n.language)}
-                    {isMissingTranslation && (
-                      <span className="missing-translation"> - {t('catalog.translation.missing')}</span>
-                    )}
+                    <span>{localize(city.name, i18n.language)}</span>
+                    {isMissingTranslation ? (
+                      <span className="missing-translation">{t('catalog.translation.missing')}</span>
+                    ) : null}
                   </td>
                   <td>{city.region}</td>
                   <td>{city.lat}</td>
