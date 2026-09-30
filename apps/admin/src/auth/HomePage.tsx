@@ -20,6 +20,7 @@ export function HomePage() {
 
   return (
     <section className="home-session">
+      <h2>{t('page.home.title')}</h2>
       <p>{profile.name}</p>
       <p>{t(ROLE_LABEL[profile.role])}</p>
       <button

@@ -60,4 +60,36 @@ describe('langue du back-office', () => {
       await screen.findByRole('heading', { name: resources.en.auth.login.title }),
     ).toBeTruthy();
   });
+
+  it('affiche la navigation avec aria-current sur la route active pour une session authentifiée', async () => {
+    window.history.replaceState(null, '', '/tours');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 'u1',
+              email: 'a@a.com',
+              name: 'Admin',
+              role: 'ADMIN',
+              uiLang: 'fr',
+              csrfToken: 'tok',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        ),
+      ),
+    );
+    render(<App />);
+    const nav = await screen.findByRole('navigation', { name: resources.fr.common.appName });
+    expect(nav).toBeTruthy();
+
+    const linkTours = screen.getByRole('link', { name: 'Visites' });
+    expect(linkTours.getAttribute('aria-current')).toBe('page');
+
+    const linkCities = screen.getByRole('link', { name: 'Villes' });
+    expect(linkCities.getAttribute('aria-current')).toBeNull();
+  });
 });
+

@@ -78,5 +78,30 @@
       "required": "obligatoire",
       "frRequired": "Le français est obligatoire."
     }
+  },
+  "nav": {
+    "tours": "Visites",
+    "cities": "Villes",
+    "categories": "Catégories"
+  },
+  "page": {
+    "home": {
+      "title": "Accueil"
+    },
+    "cities": {
+      "title": "Villes"
+    },
+    "categories": {
+      "title": "Catégories"
+    },
+    "tours": {
+      "title": "Visites"
+    },
+    "tourNew": {
+      "title": "Nouvelle visite"
+    },
+    "tourDetail": {
+      "title": "Détails de la visite"
+    }
   }
 }
