@@ -25,8 +25,8 @@ Réalisé :
 - int tests OK (54 tests passés).
 - migrations appliquées (Already in sync).
 - seed créé (3 visites, 1 hôtel, 1 kiosque, 4 utilisateurs).
-- openapi.json regénéré.
-- PROGRESS.md et DECISIONS.md (D-83, D-82) à jour.
+- openapi.json regénéré (identique, aucun changement).
+- PROGRESS.md et DECISIONS.md à jour (les décisions D-82 et D-83 y existent déjà et sont clarifiées avec date, décision, alternatives et à valider).
 
 ## Definition of Done — M1
 
@@ -36,11 +36,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | 1   | Toutes les exigences du jalon implémentées et leurs CA vérifiés.                                                                                                                                      | Partiel (manque Playwright) |
 | 2   | Tests automatisés ajoutés et verts en CI (Vitest unitaires + intégration API, Playwright pour les parcours principaux).                                                                               | Partiel (447 unitaires, 54 intégration, Playwright à faire) |
-| 3   | pnpm lint, pnpm typecheck sans erreur.                                                                                                                                                            | Fait |
+| 3   | pnpm lint, pnpm typecheck sans erreur.                                                                                                                                                            | Fait (aucune erreur) |
 | 4   | Migrations Prisma créées et appliquées sur une base vierge sans erreur ; seed à jour.                                                                                                                 | Fait (Already in sync) |
 | 5   | Chaînes d'interface dans les 3 langues ; vérification visuelle en arabe (RTL).                                                                                                                        | reporté, D-82 |
-| 6   | docs/PROGRESS.md mis à jour (fait / reste / risques) ; docs/DECISIONS.md complété ; OpenAPI à jour si l'API a changé.                                                                             | Fait |
-| 7   | Données de démonstration : pnpm db:seed crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle.                                                                            | Fait |
+| 6   | docs/PROGRESS.md mis à jour (fait / reste / risques) ; docs/DECISIONS.md complété ; OpenAPI à jour si l'API a changé.                                                                             | Fait (openapi.json inchangé) |
+| 7   | Données de démonstration : pnpm db:seed crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle.                                                                            | Fait (3 visites, 1 hôtel, 1 kiosque, 4 utilisateurs) |
 | 8   | Démo au porteur effectuée et retours consignés.                                                                                                                                                       | à faire |
 
 ## Tableau
@@ -49,7 +49,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-01** : Schémas partagés, modèles. CRUD des visites, duplication, listes, formulaires.
 - **API-21** (partiel) : GET / POST / PATCH / DELETE visites.
 - **API-22** : CRUD scènes, ordonnancement, scène de départ.
-- **F-03** : Règles de publication, TourPublicationPanel, API  alidate/publish/unpublish (D-74).
+- **F-03** : Règles de publication, TourPublicationPanel, API validate/publish/unpublish (D-74).
 - **API-25** : CRUD villes et catégories.
 - **Schémas** : Hotel, Kiosk, Selection, UserHotel.
 - **API-23** : CRUD Hotspots en API + écran admin des hotspots.
@@ -67,6 +67,6 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur injoignable par moments, VirtualMachinePlatform actif mais VirtualizationFirmwareEnabled False).
-- eslint 9 et  itest.workspace.ts dépréciés.
+- eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest 3.2.7, fastify 5.11.3).
 
