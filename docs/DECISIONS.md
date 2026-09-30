@@ -571,3 +571,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 2. Hébergement : VPS au Maroc ou cloud international ; stockage S3 (MinIO auto-hébergé ou service géré). Impact loi 09-08 et coût.
 3. Nombre de visites prévues au lancement et liste des sites de la région Rabat-Salé-Kénitra.
 4. Nom de domaine et charte graphique Xplor.
+
+## D-78 — Client API : requestJson et modules (M1 F-01)
+
+- **Date :** 30/09/2026
+- **Décision :** La fonction `requestJson<T>` (dans `apps/admin/src/api/client.ts`) centralise les appels au back-end : sérialisation JSON automatique via `Content-Type: application/json` pour `init.body`, gestion centralisée des erreurs `ApiError` (incluant `issues` pour les rejets de type 422), décodage 204 (undefined) et validation Zod de la réponse au travers des schémas exportés par `@xplor/shared`. La propagation de `X-CSRF-Token` pour les méthodes avec effet de bord est déléguée à l'existant `apiFetch`. Le fichier `catalog.ts` définit le CRUD de l'API (cities, categories, tours) avec typage strict pour ne jamais redéclarer un type (CityResponseSchema, PaginatedTourResponseSchema). `listCities` et `listCategories` ne sont pas paginées (D-69) contrairement à `listTours`.
+- **Alternatives :** fetch brut à chaque appel (sans parse).
+- **À valider :** non

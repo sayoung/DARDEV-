@@ -10,6 +10,8 @@ import {
   login,
   logout,
   resetPassword,
+  requestJson,
+  ApiError,
 } from './client.js';
 
 const profile = {
@@ -148,3 +150,77 @@ function requestUrl(input: unknown): string {
 function isRequestInit(value: unknown): value is RequestInit {
   return typeof value === 'object' && value !== null;
 }
+
+describe('requestJson', () => {
+  const schema = {
+    parse: (val: unknown) => {
+      if (typeof val === 'object' && val !== null && 'ok' in val) {
+        return val as { ok: boolean };
+      }
+      throw new Error('Invalid schema');
+    },
+  };
+
+  beforeEach(() => {
+    clearCsrfToken();
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('parse une réponse valide', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+    const result = await requestJson('/test', schema);
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('renvoie undefined sur 204', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const result = await requestJson('/test', schema);
+    expect(result).toBeUndefined();
+  });
+
+  it('jette ApiError avec code sur 422', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(422, { error: { code: 'INVALID', message: 'msg' } }));
+    try {
+      await requestJson('/test', schema);
+      expect.fail('Should have thrown');
+    } catch (e) {
+      expect(e).toBeInstanceOf(ApiError);
+      expect((e as ApiError).status).toBe(422);
+      expect((e as ApiError).code).toBe('INVALID');
+    }
+  });
+
+  it('jette une erreur si la réponse ne correspond pas au schéma', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { bad: true }));
+    await expect(requestJson('/test', schema)).rejects.toThrow('Invalid schema');
+  });
+
+  it('envoie Content-Type application/json si body est présent', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await requestJson('/test', schema, { method: 'POST', body: JSON.stringify({ a: 1 }) });
+    const call = lastCall();
+    expect(headerOf(call, 'Content-Type')).toBe('application/json');
+  });
+
+  it('en-tête X-CSRF-Token présent sur POST et absent sur GET', async () => {
+    // Simuler le login pour obtenir le jeton CSRF
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      id: 'user', email: 'u@test.com', name: 'U', role: 'ADMIN', uiLang: 'fr', csrfToken: 'fake-csrf'
+    }));
+    const { fetchCurrentUser } = await import('./client.js');
+    await fetchCurrentUser();
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+    await requestJson('/test', schema, { method: 'GET' });
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBeNull();
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+    await requestJson('/test', schema, { method: 'POST', body: '{}' });
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe('fake-csrf');
+  });
+});
