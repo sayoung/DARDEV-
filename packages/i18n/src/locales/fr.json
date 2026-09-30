@@ -7,6 +7,12 @@
       "fr": "Français",
       "ar": "العربية",
       "en": "English"
+    },
+    "deleteConfirm": "Êtes-vous sûr ?",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "error": {
+      "generic": "Une erreur est survenue."
     }
   },
   "auth": {
@@ -51,7 +57,8 @@
       "HOTEL_MANAGER": "Gestionnaire d'hôtel",
       "PARTNER": "Partenaire"
     },
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "accessDenied": "Accès refusé"
   },
   "health": {
     "ok": "Service disponible"
@@ -177,5 +184,23 @@
     "tourDetail": {
       "title": "Détails de la visite"
     }
+  },
+  "tour": {
+    "form": {
+      "title": "Titre",
+      "summary": "Résumé",
+      "description": "Description",
+      "practicalInfo": "Informations pratiques",
+      "cityId": "Ville",
+      "selectCity": "Sélectionner une ville...",
+      "categoryIds": "Catégories",
+      "coverAssetId": "Vignette",
+      "durationMinutes": "Durée (minutes)",
+      "lat": "Latitude",
+      "lng": "Longitude"
+    },
+    "notFound": "Visite introuvable.",
+    "backToList": "Retour aux visites",
+    "saveSuccess": "Visite enregistrée."
   }
 }

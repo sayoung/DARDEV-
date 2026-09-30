@@ -593,3 +593,12 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** `apps/admin/src/api/catalog.ts` expose `listAssets` et `getAsset`. Le composant `AssetPicker` (React contrôlé, `apps/admin/src/catalog/`) permet de sélectionner un média selon son `AssetKind`. Il affiche une liste déroulante `<select>` liée avec `<label>` via un ID unique. Les options présentent les 8 derniers caractères de l'ID, le type MIME, les dimensions (si connues) et le statut de traitement traduit. Les états (chargement, liste vide, erreur réseau) sont traduits avec les clés `catalog.asset.*`. Si l'appel API échoue, le composant cache le sélecteur et affiche l'erreur. L'upload reste prévu pour M2. Le composant est couvert par Vitest sous jsdom.
 - **Alternatives :** utiliser un paquet comme react-select ; inclure la logique d'upload immédiatement.
 - **À valider :** oui
+
+## D-81 — Formulaires de visite et intégration front (M1 F-01)
+
+- **Date :** 30/09/2026
+- **Décision :** Implémentation du frontend pour la création et modification des visites (M1 F-01). `TourForm.tsx` coordonne la saisie : titre, résumé, description, infos pratiques (via `LocalizedTextField`), ville, catégories, et durée/coordonnées (champs optionnels). L'Asset de couverture utilise `AssetPicker`. L'affichage du formulaire est restreint aux rôles ADMIN et EDITOR via l'objet `Role` partagé. La validation Zod est effectuée côté client avant l'envoi, avec une gestion gracieuse des erreurs. Les IDs des mocks de test utilisent désormais de véritables UUIDs pour passer la validation stricte de Zod sur le schéma `idSchema`.
+- **Complément (30/09/2026) :** une erreur au chargement de la visite (autre qu’un 404) remplace le formulaire. Une erreur d’enregistrement (422 ou autre) ou de suppression enregistre la clé `common.error.generic` et la traduit au rendu, sans démonter le formulaire. L’échec de `listCities` ou `listCategories` affiche `catalog.errors.fetchFailed`. Le 404 propose un lien `hrefFor('/tours')`, pas un bouton.
+- **Alternatives :** Création et modification dans des modals (rejeté pour des URL distinctes `/tours/new` et `/tours/:id`). Un seul état `globalError` pour le chargement et l’action (rejeté : il démontait le formulaire et perdait la saisie).
+- **À valider :** non
+

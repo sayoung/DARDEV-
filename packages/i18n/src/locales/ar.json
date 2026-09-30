@@ -7,6 +7,12 @@
       "fr": "Français",
       "ar": "العربية",
       "en": "English"
+    },
+    "deleteConfirm": "هل أنت متأكد؟",
+    "save": "حفظ",
+    "delete": "حذف",
+    "error": {
+      "generic": "حدث خطأ."
     }
   },
   "auth": {
@@ -51,7 +57,8 @@
       "HOTEL_MANAGER": "مسؤول الفندق",
       "PARTNER": "شريك"
     },
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "accessDenied": "تم الرفض"
   },
   "health": {
     "ok": "الخدمة متاحة"
@@ -177,5 +184,23 @@
     "tourDetail": {
       "title": "تفاصيل الزيارة"
     }
+  },
+  "tour": {
+    "form": {
+      "title": "العنوان",
+      "summary": "الملخص",
+      "description": "الوصف",
+      "practicalInfo": "معلومات عملية",
+      "cityId": "المدينة",
+      "selectCity": "اختر مدينة...",
+      "categoryIds": "الفئات",
+      "coverAssetId": "صورة الغلاف",
+      "durationMinutes": "المدة (دقائق)",
+      "lat": "خط العرض",
+      "lng": "خط الطول"
+    },
+    "notFound": "لم يتم العثور على الجولة.",
+    "backToList": "العودة إلى الجولات",
+    "saveSuccess": "تم حفظ الجولة."
   }
 }
