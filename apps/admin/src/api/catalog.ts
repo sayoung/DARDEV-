@@ -105,3 +105,9 @@ export async function deleteTour(id: string): Promise<void> {
     method: 'DELETE',
   });
 }
+
+export async function duplicateTour(id: string): Promise<TourResponse> {
+  return requestJson(`/api/v1/admin/tours/${id}/duplicate`, TourResponseSchema, {
+    method: 'POST',
+  });
+}

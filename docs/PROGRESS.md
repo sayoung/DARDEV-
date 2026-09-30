@@ -11,17 +11,37 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026  
-**Exigence :** M1 API-25 — correction de revue des écrans villes et catégories.
+**Exigence :** M1 F-01 — écran liste des visites.
 
 Plan :
+1. Ajouter `duplicateTour` dans `apps/admin/src/api/client.ts`.
+2. Compléter les clés i18n pour l'écran des visites (statuts, boutons, filtres, colonnes du tableau).
+3. Créer `apps/admin/src/pages/ToursPage.tsx` avec le tableau paginé, les filtres synchronisés à l'URL et le contrôle d'accès.
+4. Écrire `ToursPage.test.tsx` pour couvrir la navigation, les filtres, la duplication et l'accès PARTNER.
+5. Lancer lint, typecheck, et tests, puis ajouter la sortie ici.
+  
+Réalisé (30/09/2026, Node 22) : M1 F-01 (écran liste des visites). Implémentation de la page `ToursPage` dans `apps/admin/src/pages`. Affichage sous forme d'un tableau paginé. Ajout de `duplicateTour` dans `catalog.ts` et `client.ts`. Ajout des traductions (`fr`, `ar`, `en`) pour les statuts de visites, colonnes, filtres, etc. Filtres synchronisés via des query parameters en appelant le custom router (`navigateWithSearch`). Contrôle d'accès : le bouton Nouvelle visite et les actions d'édition/duplication sont masqués pour le rôle PARTNER. Utilisation de la fonction mock Vitest pour vérifier l'accès avec les profils ADMIN et PARTNER. Correction des schémas d'ID Zod (génération d'UUID v7 mockés valides). `pnpm lint`, `pnpm typecheck` et `pnpm test` (407 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
 
-1. Poids de catégorie : saisie brute (chaîne), `Number()` à l'envoi, refus de `1.5` et `''` par `CategoryCreateSchema`.
-2. Tests de création : POST 201 avec UUID v7, absence du message générique, second GET de liste.
-3. Assertions directes (`toBeDefined`, corps du POST) et `vi.spyOn(window, 'confirm')` restauré dans `afterEach`.
-4. Un test par page : langue `en`, nom sans anglais, repli `fr` et indicateur « Missing translation ».
-5. Remplacer le séparateur ` - ` par un élément avec marge CSS logique.
-6. Relancer `pnpm lint`, `pnpm typecheck` et `pnpm test`, puis coller la sortie ici.
+```text
+NODE v22.23.3
 
+> xplor@ lint D:\DARDEV\local\xplor_smit
+> eslint .
+
+> xplor@ typecheck D:\DARDEV\local\xplor_smit
+> tsc --noEmit -p tsconfig.json && pnpm -r typecheck
+
+Scope: 7 of 8 workspace projects
+apps/kiosk typecheck: Done
+apps/web typecheck: Done
+apps/admin typecheck: Done
+apps/api typecheck: Done
+
+> xplor@ test D:\DARDEV\local\xplor_smit
+> vitest run
+ Test Files  53 passed (53)
+      Tests  407 passed (407)
+```
 Réalisé (30/09/2026, Node 22.23.3) : correction de revue M1 API-25 (écrans villes et catégories). Le poids d'une catégorie reste une chaîne ; `Number()` n'est appliqué qu'à l'envoi, et une chaîne vide est laissée telle quelle pour que `CategoryCreateSchema` refuse `1.5` et `''` (`catalog.errors.invalidForm`). L'indicateur de traduction manquante est un élément distinct, écarté par `margin-inline-start`. Les tests de création attendent un POST 201 avec un UUID v7, l'absence du message générique et un second GET. `window.confirm` est espionné puis restauré. Un test par page vérifie le repli français et « Missing translation » quand `en` est absent (langue d'interface `en`, clé `xplor.lang`, car le shell réapplique la langue au montage). `pnpm lint`, `pnpm typecheck` et `pnpm test` (402 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
 
 ```text

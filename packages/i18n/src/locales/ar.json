@@ -109,6 +109,36 @@
       "color": "اللون",
       "weight": "الوزن",
       "deleteConfirm": "هل أنت متأكد أنك تريد حذف هذه الفئة؟"
+    },
+    "tour": {
+      "status": {
+        "DRAFT": "مسودة",
+        "PUBLISHED": "منشورة"
+      },
+      "columns": {
+        "title": "العنوان",
+        "city": "المدينة",
+        "status": "الحالة",
+        "scenes": "المشاهد"
+      },
+      "filters": {
+        "status": "الحالة",
+        "allStatus": "جميع الحالات",
+        "city": "المدينة",
+        "allCities": "جميع المدن",
+        "category": "الفئة",
+        "allCategories": "جميع الفئات",
+        "search": "بحث..."
+      },
+      "actions": {
+        "new": "زيارة جديدة",
+        "duplicate": "تكرار"
+      },
+      "pagination": {
+        "prev": "السابق",
+        "next": "التالي",
+        "info": "صفحة {{page}} من {{total}}"
+      }
     }
   },
   "nav": {
