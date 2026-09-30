@@ -32,6 +32,7 @@ export {
   HotspotResponseSchema,
   HotspotType,
   HotspotUpdateSchema,
+  idSchema,
   PaginatedAssetResponseSchema,
   PaginatedTourResponseSchema,
   PaginationQuerySchema,
