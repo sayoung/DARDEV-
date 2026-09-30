@@ -1,4 +1,4 @@
-﻿# Décisions — Xplor
+# Décisions — Xplor
 
 Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30 propres à ce dépôt. « À valider : non » signifie que le porteur a déjà tranché, ou que la consigne de lancement du dépôt l'impose.
 
@@ -628,4 +628,3 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | clsx | Utilitaire pour la construction conditionnelle de classes CSS. | MIT |
 | tailwind-merge | Fusion de classes Tailwind pour éviter les conflits (shadcn/ui). | MIT |
 | lucide-react | Icônes SVG pour l'interface utilisateur. | ISC |
-
