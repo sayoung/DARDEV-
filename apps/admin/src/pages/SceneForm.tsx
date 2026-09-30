@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type SceneResponse, type SceneCreate, type SceneUpdate, type LocalizedText, AssetKind } from '@xplor/shared';
+import { type SceneResponse, type SceneCreate, type LocalizedText, AssetKind } from '@xplor/shared';
 import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { AssetPicker } from '../catalog/AssetPicker.js';
 import { Button } from '../components/ui/Button.js';

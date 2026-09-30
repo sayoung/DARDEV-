@@ -1,17 +1,16 @@
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { resources } from '@xplor/i18n';
 import { i18n } from '../i18n.js';
 import { SceneDetailPage } from './SceneDetailPage.js';
-import { AppRoute, navigate, useAppLocation } from '../router.js';
+import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { getScene, createScene, updateScene, listScenes, listAssets } from '../api/catalog.js';
-import { Role } from '@xplor/shared';
+import { getScene, createScene, listScenes } from '../api/catalog.js';
+import { Role, type SceneResponse } from '@xplor/shared';
 
 vi.mock('../router.js', () => ({
   useAppLocation: vi.fn(),
   navigate: vi.fn(),
-  hrefFor: vi.fn((path) => path),
+  hrefFor: vi.fn((path: string) => path),
 }));
 
 vi.mock('../auth/AuthProvider.js', () => ({
@@ -26,12 +25,18 @@ vi.mock('../api/catalog.js', () => ({
   listAssets: vi.fn(() => Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })),
 }));
 
+interface MockAssetPickerProps {
+  kind: string;
+  value: string;
+  onChange: (val: string) => void;
+}
+
 vi.mock('../catalog/AssetPicker.js', () => ({
-  AssetPicker: (props: any) => (
+  AssetPicker: (props: MockAssetPickerProps) => (
     <input 
       data-testid={`mock-asset-picker-${props.kind}`}
       value={props.value || ''} 
-      onChange={(e) => props.onChange(e.target.value)} 
+      onChange={(e) => { props.onChange(e.target.value); }} 
     />
   )
 }));
@@ -67,7 +72,7 @@ describe('SceneDetailPage', () => {
   it('renders loading initially', () => {
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
-      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' } as AppRoute,
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
       notice: null,
       search: '',
     });
@@ -80,7 +85,7 @@ describe('SceneDetailPage', () => {
   it('displays form fields for new scene', async () => {
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
-      route: { name: 'scene-detail', tourId: 't-1', sceneId: 'new' } as AppRoute,
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 'new' },
       notice: null,
       search: '',
     });
@@ -95,12 +100,25 @@ describe('SceneDetailPage', () => {
   it('submits form successfully', async () => {
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
-      route: { name: 'scene-detail', tourId: 't-1', sceneId: 'new' } as AppRoute,
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 'new' },
       notice: null,
       search: '',
     });
     vi.mocked(listScenes).mockResolvedValue([]);
-    vi.mocked(createScene).mockResolvedValue({ id: 's-new', title: { fr: 'Titre' } } as any);
+    const mockSceneResponse: SceneResponse = {
+      id: 's-new',
+      tourId: 't-1',
+      title: { fr: 'Titre' },
+      panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      weight: 0,
+      hotspotCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(createScene).mockResolvedValue(mockSceneResponse);
 
     const { container } = render(<SceneDetailPage />);
     
@@ -114,7 +132,8 @@ describe('SceneDetailPage', () => {
     const panoramaInput = screen.getByTestId('mock-asset-picker-PANORAMA');
     fireEvent.change(panoramaInput, { target: { value: '018b1d62-a5e3-7a91-9e23-2834b6b63300' } });
 
-    fireEvent.submit(container.querySelector('form')!);
+    const form = container.querySelector('form') as HTMLFormElement;
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(createScene).toHaveBeenCalledWith('t-1', expect.objectContaining({
@@ -133,7 +152,7 @@ describe('SceneDetailPage', () => {
   it('displays validation error', async () => {
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
-      route: { name: 'scene-detail', tourId: 't-1', sceneId: 'new' } as AppRoute,
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 'new' },
       notice: null,
       search: '',
     });
@@ -147,7 +166,8 @@ describe('SceneDetailPage', () => {
     const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Nouvelle scène' } });
 
-    fireEvent.submit(container.querySelector('form')!);
+    const form = container.querySelector('form') as HTMLFormElement;
+    fireEvent.submit(form);
 
     expect(await screen.findByText('Veuillez corriger les erreurs dans le formulaire.')).toBeDefined();
   });

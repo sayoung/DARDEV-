@@ -1,13 +1,13 @@
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TourScenesSection } from './TourScenesSection.js';
-import { TourStatus, type TourResponse, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus } from '@xplor/shared';
+import { TourStatus, type TourResponse, type SceneResponse } from '@xplor/shared';
 
 import { navigate } from '../router.js';
 
 vi.mock('../router.js', () => ({
   navigate: vi.fn(),
-  hrefFor: vi.fn((path) => path),
+  hrefFor: vi.fn((path: string) => path),
 }));
 
 // Mock du client HTTP global

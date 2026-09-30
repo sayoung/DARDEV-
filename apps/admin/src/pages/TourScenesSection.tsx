@@ -18,14 +18,14 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { Badge } from '../components/ui/Badge.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
-import { navigate, hrefFor } from '../router.js';
+import { navigate } from '../router.js';
 
 interface Props {
   tour: TourResponse;
   onTourUpdated: (tour: TourResponse) => void;
 }
 
-function isModifiedClick(event: React.MouseEvent<Element>): boolean {
+function isModifiedClick(event: React.MouseEvent): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0;
 }
 

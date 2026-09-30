@@ -31,7 +31,7 @@ export function AssetPicker({ label, kind, value, onChange, required }: AssetPic
       try {
         const res = await listAssets({ kind, pageSize: 100, page: 1 });
         if (mounted) {
-          setAssets(res?.items || []);
+          setAssets(res.items);
           setLoading(false);
         }
       } catch {
@@ -42,7 +42,7 @@ export function AssetPicker({ label, kind, value, onChange, required }: AssetPic
       }
     };
     
-    void fetchAssets();
+    fetchAssets().catch(console.error);
     return () => {
       mounted = false;
     };

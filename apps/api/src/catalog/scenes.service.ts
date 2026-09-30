@@ -301,7 +301,7 @@ function sceneScalars(input: SceneCreate): {
     initialPitch: input.initialPitch,
     initialZoom: input.initialZoom,
     weight: input.weight,
-    narration: input.narration === undefined ? Prisma.DbNull : (input.narration as unknown as Prisma.InputJsonValue),
+    narration: input.narration === undefined ? Prisma.DbNull : input.narration,
     ambientAssetId: input.ambientAssetId,
   };
 }

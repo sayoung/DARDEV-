@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthProvider.js';
 import { SceneForm } from './SceneForm.js';
 import { getScene, updateScene, createScene, deleteScene, listScenes } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
-import { Role, type SceneResponse, type SceneCreate, type SceneUpdate, z } from '@xplor/shared';
+import { Role, type SceneResponse, type SceneCreate, z } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';

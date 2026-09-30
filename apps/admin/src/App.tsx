@@ -144,7 +144,7 @@ function AdminShell() {
 
       {isAuthenticatedRoute && isAnonymous && notice !== null ? (
         <p className="auth-status" role="status">
-          {t(SUCCESS_MESSAGE[notice as Notice])}
+          {t(SUCCESS_MESSAGE[notice])}
         </p>
       ) : null}
 
