@@ -7,6 +7,12 @@
       "fr": "Français",
       "ar": "العربية",
       "en": "English"
+    },
+    "deleteConfirm": "Are you sure?",
+    "save": "Save",
+    "delete": "Delete",
+    "error": {
+      "generic": "An error occurred."
     }
   },
   "auth": {
@@ -51,7 +57,8 @@
       "HOTEL_MANAGER": "Hotel manager",
       "PARTNER": "Partner"
     },
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "accessDenied": "Access denied"
   },
   "health": {
     "ok": "Service available"
@@ -177,5 +184,23 @@
     "tourDetail": {
       "title": "Tour details"
     }
+  },
+  "tour": {
+    "form": {
+      "title": "Title",
+      "summary": "Summary",
+      "description": "Description",
+      "practicalInfo": "Practical info",
+      "cityId": "City",
+      "selectCity": "Select a city...",
+      "categoryIds": "Categories",
+      "coverAssetId": "Cover",
+      "durationMinutes": "Duration (minutes)",
+      "lat": "Latitude",
+      "lng": "Longitude"
+    },
+    "notFound": "Tour not found.",
+    "backToList": "Back to tours",
+    "saveSuccess": "Tour saved."
   }
 }

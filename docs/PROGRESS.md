@@ -14,20 +14,19 @@ Definition of Done du jalon : non remplie.
 **Exigence :** M1 F-05 (client des médias et sélecteur AssetPicker)
 
 Plan :
-1. Déclarer `listAssets` et `getAsset` dans `apps/admin/src/api/catalog.ts`.
-2. Créer le composant `AssetPicker` (React contrôlé).
-3. Ajouter les traductions `catalog.asset.*` en fr, ar, en.
-4. Écrire les tests Vitest (jsdom) avec un fetch simulé vérifiant les paramètres.
-5. S'assurer du respect des règles (CSS logique `marginBlockEnd`, clés i18n).
-6. Mettre à jour `docs/DECISIONS.md` et `docs/PROGRESS.md`.
+1. Déclarer `TourForm`, `TourNewPage` et `TourDetailPage` pour M1 F-01.
+2. Utiliser `LocalizedTextField` et `AssetPicker`.
+3. Gérer les contraintes `ADMIN` et `EDITOR`.
+4. Mettre à jour `docs/DECISIONS.md` et `docs/PROGRESS.md`.
 
 Réalisé (30/09/2026) :
-- Fonctions API ajoutées dans le client `catalog.ts`.
-- `AssetPicker` développé avec gestion des états (chargement, erreur, liste vide) et des traductions avec CSS logique (`marginBlockEnd`, `paddingInlineStart`).
-- Traductions insérées dans `@xplor/i18n` sans erreur de test de complétude.
-- Les tests unitaires `AssetPicker.test.tsx` couvrent les trois états de rendu et les paramètres de requête API.
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` passés avec succès.
-- Fichiers de suivi et `DECISIONS.md` (D-80) mis à jour. Aucun paquet npm ajouté. Aucun commit (orchestrateur).
+- `TourForm.tsx` (avec support multilingue et Zod form validation).
+- Intégration des endpoints `POST /tours` et `PATCH /tours/:id` dans les pages `TourNewPage` et `TourDetailPage`.
+- Validation stricte `ADMIN` et `EDITOR`.
+- Mock des données de test mis à jour avec des vrais UUIDs pour passer la validation Zod stricte.
+- Correction d'un bug dans `LocalizedTextField.tsx` de tests lié à `aria-hidden`.
+- Tous les tests Vitest unitaires et e2e sont de nouveau verts.
+- `pnpm lint` et `pnpm typecheck` validés.
 
 Réalisé (30/09/2026) : 
 - `TourResponseSchema` mis à jour et validé avec ces deux champs.
