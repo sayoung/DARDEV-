@@ -11,7 +11,18 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026  
-**Exigence :** M1 NF-09 — seed des 3 visites liées.
+**Exigence :** M1 F-04 — composant LocalizedTextField (back-office).
+
+Plan :
+1. Ajouter les clés `catalog.translation.missing` et `catalog.translation.tab.*` dans `@xplor/i18n`.
+2. Créer le composant contrôlé `LocalizedTextField` (`apps/admin/src/catalog/`) avec onglets fr/ar/en, support RTL et indicateur de traduction manquante.
+3. Écrire la feuille de style avec des propriétés CSS logiques.
+4. Écrire les tests Vitest (jsdom) pour le composant (changement d'onglet, attributs, saisie, nettoyage sans jest-dom).
+5. Mettre à jour la documentation (D-78, PROGRESS).
+
+Réalisé (30/09/2026) : M1 F-04 (composant LocalizedTextField). Les clés i18n de catalogue ont été ajoutées dans les trois locales, et le test dynamique de clés reste vert. Le composant React contrôlé a été créé dans `apps/admin/src/catalog/LocalizedTextField.tsx`, exposant la valeur typée `LocalizedText`. Les trois onglets sont accessibles au clavier et l'onglet arabe possède `dir="rtl"`. L'indicateur de traduction manquante apparaît de façon appropriée. Les tests Vitest passent avec succès (4 tests de composant, sans dépendance `jest-dom`). Les validations statiques (`lint`, `typecheck`) sont propres. La décision D-78 a été enregistrée. Aucun commit (orchestrateur).
+
+**Exigence précédente :** M1 NF-09 — seed des 3 visites liées.
 
 Plan :
 1. Intégrer `seed-tours.ts` dans `prisma/seed.ts`.

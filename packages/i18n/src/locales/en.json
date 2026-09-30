@@ -59,12 +59,22 @@
     "invite": {
       "subject": "Invitation to join Xplor",
       "text": "You are invited to join Xplor. Set your password by opening this link (valid for 48 hours): {link}",
-      "html": "<p>You are invited to join Xplor.</p><p><a href=\"{link}\">Set your password</a> (link valid for 48 hours).</p>"
+      "html": "\u003cp\u003eYou are invited to join Xplor.\u003c/p\u003e\u003cp\u003e\u003ca href=\"{link}\"\u003eSet your password\u003c/a\u003e (link valid for 48 hours).\u003c/p\u003e"
     },
     "reset": {
       "subject": "Reset your Xplor password",
       "text": "To choose a new password, open this link (valid for 1 hour): {link}",
-      "html": "<p><a href=\"{link}\">Choose a new password</a> (link valid for 1 hour).</p>"
+      "html": "\u003cp\u003e\u003ca href=\"{link}\"\u003eChoose a new password\u003c/a\u003e (link valid for 1 hour).\u003c/p\u003e"
+    }
+  },
+  "catalog": {
+    "translation": {
+      "tab": {
+        "en": "English",
+        "fr": "French",
+        "ar": "Arabic"
+      },
+      "missing": "Missing translation"
     }
   }
 }

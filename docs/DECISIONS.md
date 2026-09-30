@@ -578,3 +578,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** La fonction `requestJson<T>` (dans `apps/admin/src/api/client.ts`) centralise les appels au back-end : sérialisation JSON automatique via `Content-Type: application/json` pour `init.body`, gestion centralisée des erreurs `ApiError` (incluant `issues` pour les rejets de type 422), et validation Zod de la réponse. La fonction utilise des surcharges TypeScript (`schema: ZodType<T>` ou `null`) pour retourner avec précision `Promise<T>` ou `Promise<void>` (en cas de 204), respectant l'import direct des types Zod sans dépendance additionnelle dans le front (`ZodType` et `z` étant exportés par `@xplor/shared`). La propagation de `X-CSRF-Token` pour les méthodes avec effet de bord est déléguée à l'existant `apiFetch`. Le fichier `catalog.ts` définit le CRUD de l'API (cities, categories, tours) avec un typage strict (`CityCreate`, `TourUpdate`, etc.) pour les paramètres d'entrée et de sortie afin d'éviter tout recours à `unknown`. `listCities` et `listCategories` ne sont pas paginées (D-69) et utilisent les schémas listes de `@xplor/shared`.
 - **Alternatives :** fetch brut à chaque appel (sans parse).
 - **À valider :** non
+
+## D-78 — Composant LocalizedTextField (F-04)
+
+- **Date :** 30/09/2026
+- **Décision :** Création du composant contrôlé `LocalizedTextField` dans `apps/admin/src/catalog/`. Il gère un objet `LocalizedText` (fr/ar/en) avec trois onglets et un seul champ de saisie visible. L'onglet 'ar' utilise `dir="rtl"` et `lang="ar"`, les autres `dir="ltr"`. Si un onglet n'a pas de valeur saisie, il affiche l'indicateur « Traduction manquante ». Le composant utilise uniquement des propriétés CSS logiques (`margin-inline-start`, `padding-inline`, `padding-block`, `border-block-end`) dans `style.css`. `onChange` ne met à jour que la langue active. Les tests sont faits avec Vitest et `@testing-library/react` (assertions standard). Nouvelles clés i18n ajoutées dans `packages/i18n` : `catalog.translation.missing` et `catalog.translation.tab.*`.
+- **Alternatives :** Afficher 3 champs de saisie simultanément ; ajouter `@testing-library/jest-dom` pour les matchers.
+- **À valider :** non
+

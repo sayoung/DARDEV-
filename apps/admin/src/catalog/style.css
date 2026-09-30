@@ -1,0 +1,49 @@
+.localized-text-field {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.5rem;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tab-list {
+  display: flex;
+  column-gap: 0.25rem;
+  border-block-end: 1px solid #ccc;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  border-block-end: 2px solid transparent;
+  padding-block: 0.25rem;
+  padding-inline: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  column-gap: 0.25rem;
+}
+
+.tab-button.active {
+  border-block-end-color: #007bff;
+  font-weight: bold;
+}
+
+.missing-indicator {
+  font-size: 0.75em;
+  color: #dc3545;
+  margin-inline-start: 0.25rem;
+}
+
+.text-input {
+  width: 100%;
+  padding-inline: 0.5rem;
+  padding-block: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+}
