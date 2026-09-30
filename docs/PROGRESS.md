@@ -11,14 +11,15 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026  
-**Exigence :** M1 F-05 — liste des médias en lecture seule. Hors de ce lot : upload, suppression, retraitement (API-24, M2) et écran médiathèque.
+**Exigence :** M1 NF-09 — seed des 3 visites liées.
 
 Plan :
+1. Intégrer `seed-tours.ts` dans `prisma/seed.ts`.
+2. Vérifier que la création des lignes Asset est correcte (processingStatus READY, originalKey sous seed/). Consigner D-77 pour les fichiers M2.
+3. Vérifier que `test/seed.int.test.ts` confirme le nombre exact de visites (3), scènes (8), hotspots (11) et assets (11), sans duplication au second seed.
+4. Mettre à jour `docs/PROGRESS.md` (critère 7) et exécuter la validation (`lint`, `typecheck`, `test:int`, `db:seed`).
 
-1. `AssetResponseSchema` dans `@xplor/shared` (`id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`) et `AssetListQuerySchema` (`PaginationQuery`, `kind` facultatif). Tests du schéma.
-2. `GET /api/v1/admin/assets` et `GET /api/v1/admin/assets/:id` : contrôleur fin, `AssetsService`, Prisma. Tri `createdAt` décroissant. Garde `SessionGuard`, `CsrfGuard`, `canManageContent`. 404 `ASSET_NOT_FOUND`.
-3. Test unitaire du service. Intégration : filtre `kind`, 401, 403 pour PARTNER et HOTEL_MANAGER.
-4. Régénérer `docs/openapi.json`. Consigner D-76 (l’upload reste en M2). `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
+Réalisé (30/09/2026, Node 22.23.3) : M1 NF-09 (seed des 3 visites liées). `seed-tours.ts` a été intégré dans `prisma/seed.ts`. Le seed crée 3 visites publiées (Kasbah des Oudayas, Jardin de Salé, Plage de Mehdia) reliées par des SCENE_LINK et TOUR_LINK distincts. La création est idempotente (UUID v7 fixes). La validation des visites est assurée par `validateTour` dans `seed-tours.test.ts`. Les 11 assets générés (3 images, 8 panoramas) ont un `processingStatus` READY, une `originalKey` commençant par `seed/` et un `contentHash` fixe ; les fichiers physiques viendront avec M2 (D-77). `seed.int.test.ts` mis à jour et vert (vérification du `status` PUBLISHED, des 3 `TOUR_LINK` avec `targetTourId` vers une autre visite, et 3 `tourCategory`). `pnpm lint`, `pnpm typecheck` réussis sans erreur. `pnpm test` passe avec 376 tests, `pnpm test:int` avec 54 tests. `pnpm db:seed` a été lancé deux fois avec succès. Aucun commit (orchestrateur).
 
 Réalisé (30/09/2026, Node 22.23.3) : `GET /api/v1/admin/assets` et `GET /api/v1/admin/assets/:id`. `AssetResponseSchema` et `AssetListQuerySchema` dans `@xplor/shared`. Filtre `kind` facultatif, pagination `PaginationQuery`, tri `createdAt` décroissant puis `id` croissant. 404 `ASSET_NOT_FOUND`. Garde `SessionGuard`, `CsrfGuard`, `canManageContent`. Pas d’upload ni de suppression (API-24, M2). D-76. OpenAPI régénéré. `pnpm lint` et `pnpm typecheck` verts. `pnpm test` : 374. `pnpm test:int` : 54, dont 3 dans `assets.int.test.ts`. Couverture de `catalog.ts` : 100 % (93 tests du paquet `@xplor/shared`). Aucun commit (orchestrateur).
 
@@ -42,7 +43,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 | 4   | Migrations Prisma créées et appliquées sur une base vierge sans erreur ; seed à jour.                                                                                                                 | à faire |
 | 5   | Chaînes d'interface dans les 3 langues ; vérification visuelle en arabe (RTL).                                                                                                                        | à faire |
 | 6   | `docs/PROGRESS.md` mis à jour (fait / reste / risques) ; `docs/DECISIONS.md` complété ; OpenAPI à jour si l'API a changé.                                                                             | à faire |
-| 7   | Données de démonstration : `pnpm db:seed` crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle (panoramas d'exemple libres de droits dans `apps/api/prisma/seed-assets/`). | à faire |
+| 7   | Données de démonstration : `pnpm db:seed` crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle (panoramas d'exemple libres de droits dans `apps/api/prisma/seed-assets/`). | Partiel (renvoi à D-77 : les panoramas sont absents du dépôt et aucun fichier n'est déposé) |
 | 8   | Démo au porteur effectuée et retours consignés.                                                                                                                                                       | à faire |
 
 ## Tableau
@@ -61,9 +62,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **API-23, partie 3** (modification et suppression, D-73) : `PATCH` et `DELETE` `/api/v1/admin/hotspots/:id`. Remplacement complet (`HotspotUpdateSchema`) ; si le type change, les champs des autres types passent à `null` ou `[]` dans la même écriture. Suppression physique, 204. 404 `HOTSPOT_NOT_FOUND` si le hotspot est inconnu ou si la scène parente est supprimée. `contentVersion` +1 dans la même transaction. Mêmes 422 via `assertTargets`. ADMIN et EDITOR. OpenAPI à jour. Pas d’écran admin.
 - **F-05** (liste des médias, lecture seule, D-76) : `GET /api/v1/admin/assets` (filtre `kind` facultatif, `PaginationQuery`, tri `createdAt` décroissant puis `id` croissant) et `GET /api/v1/admin/assets/:id`. `AssetResponseSchema` dans `@xplor/shared` (`id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`). 404 `ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour. Pas d’upload, pas de suppression (API-24, M2). Pas d’écran admin.
 
+- **NF-09** (seed des 3 visites liées) : `seed-tours.ts` intégré à `prisma/seed.ts`. 3 visites publiées créées, valides (`validateTour`), idempotence via UUID v7. Couvert par `seed.int.test.ts`.
+
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écrans admin (y compris villes, catégories, visites, scènes, hotspots, médiathèque et affichage des problèmes de publication), F-02 (sans traitement), F-04, et les 3 visites liées du seed. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écrans admin (y compris villes, catégories, visites, scènes, hotspots, médiathèque et affichage des problèmes de publication), F-02 (sans traitement), F-04. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 

@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, TourStatus as PrismaTourStatus, HotspotType as PrismaHotspotType } from '@prisma/client';
 import { LocalizedTextSchema, Role } from '@xplor/shared';
 import { afterAll, expect, it } from 'vitest';
 
@@ -124,6 +124,34 @@ it('deux exécutions du seed laissent quatre utilisateurs actifs, un par rôle',
     hotelId: SEED_HOTEL.id,
     user: { email: SEED_MANAGER_EMAIL, role: Role.HOTEL_MANAGER },
   });
+
+  const tours = await prisma.tour.findMany();
+  const scenes = await prisma.scene.findMany();
+  const hotspots = await prisma.hotspot.findMany();
+  const assets = await prisma.asset.findMany();
+  const tourCategories = await prisma.tourCategory.findMany();
+
+  expect(tours).toHaveLength(3);
+  expect(tours.every((t) => t.status === PrismaTourStatus.PUBLISHED)).toBe(true);
+  expect(scenes).toHaveLength(8);
+  expect(hotspots).toHaveLength(11);
+  expect(assets).toHaveLength(11);
+  expect(tourCategories).toHaveLength(3);
+
+  const tourLinks = hotspots.filter((h) => h.type === PrismaHotspotType.TOUR_LINK);
+  expect(tourLinks).toHaveLength(3);
+  
+  const targetTourIds = new Set(tourLinks.map((h) => h.targetTourId));
+  expect(targetTourIds.size).toBe(3);
+  expect(targetTourIds.has(null)).toBe(false);
+
+  for (const link of tourLinks) {
+    const scene = scenes.find((s) => s.id === link.sceneId);
+    if (!scene) {
+      throw new Error('Scene not found');
+    }
+    expect(link.targetTourId).not.toBe(scene.tourId);
+  }
 });
 
 function readSeedPassword(): string {
