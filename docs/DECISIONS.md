@@ -561,7 +561,7 @@ Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30
 - **Date :** 30/09/2026
 - **Décision :** le seed (NF-09) crée les lignes en base pour les 11 médias (3 vignettes IMAGE, 8 panoramas PANORAMA) associés aux visites de Kasbah des Oudayas, Jardin de Salé et Plage de Mehdia. Ces médias sont créés en `READY` avec un `contentHash` précalculé et une clé `originalKey` préfixée `seed/`. Aucun fichier physique n'est poussé sur MinIO durant M1 : les panoramas libres de droits présents dans `apps/api/prisma/seed-assets/` seront chargés sur MinIO via le pipeline métier de M2 (exigence API-24).
 - **Alternatives :** Uploader directement les fichiers via le script de seed.
-- **À valider :** non (l'objectif de la DoD M1 est de valider le modèle de données, le seed, et l'API, le pipeline MinIO étant prévu pour M2).
+- **À valider :** oui (le report à M2 touche un critère de la DoD de M1 et le porteur doit l'accepter).
 
 ## Encore à valider (cahier des charges, section 11.2)
 
