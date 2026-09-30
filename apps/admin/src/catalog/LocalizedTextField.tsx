@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LANGS, type Lang, type LocalizedText } from '@xplor/shared';
-
-import './style.css';
+import { Badge } from '../components/ui/Badge.js';
+import { Input } from '../components/ui/Input.js';
+import { Textarea } from '../components/ui/Textarea.js';
+import { Label } from '../components/ui/Label.js';
 
 interface LocalizedTextFieldProps {
   label: string;
@@ -10,7 +12,6 @@ interface LocalizedTextFieldProps {
   onChange: (value: LocalizedText) => void;
   maxLength?: number;
   multiline?: boolean;
-  /** Exige une valeur française, quel que soit l’onglet actif. */
   required?: boolean;
 }
 
@@ -105,7 +106,6 @@ export function LocalizedTextField({
 
   const fieldProps = {
     id: fieldId,
-    className: 'ltf-input',
     value: value[activeTab] ?? '',
     onChange: handleChange,
     maxLength,
@@ -116,12 +116,12 @@ export function LocalizedTextField({
   } as const;
 
   return (
-    <div className="ltf" ref={rootRef}>
-      <div className="ltf-label-row">
-        <label id={labelId} className="ltf-label" htmlFor={fieldId}>
+    <div className="space-y-4" ref={rootRef}>
+      <div className="flex flex-col gap-2">
+        <Label id={labelId} htmlFor={fieldId}>
           {label}
-        </label>
-        <div role="tablist" aria-labelledby={labelId} className="ltf-tablist">
+        </Label>
+        <div role="tablist" aria-labelledby={labelId} className="inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 text-gray-500 max-w-fit">
           {LANGS.map((lang) => {
             const empty = isBlank(value[lang]);
             const tabId = `${idPrefix}-tab-${lang}`;
@@ -143,14 +143,17 @@ export function LocalizedTextField({
                   setActiveTab(lang);
                 }}
                 onKeyDown={handleKeyDown}
-                className="ltf-tab"
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === lang ? 'bg-white text-gray-950 shadow-sm' : 'hover:bg-gray-200/50 hover:text-gray-900'}`}
+                dir={lang === 'ar' ? 'rtl' : 'ltr'}
               >
                 {t(`catalog.translation.tab.${lang}`)}
                 {lang === 'fr' && required === true ? (
-                  <span className="ltf-required">{t('catalog.translation.required')}</span>
+                  <span className="ml-1 text-red-500">{t('catalog.translation.required')}</span>
                 ) : null}
                 {empty ? (
-                  <span className="ltf-missing">{t('catalog.translation.missing')}</span>
+                  <Badge variant="secondary" className="ml-2 text-[10px] leading-none px-1 py-0.5 font-normal h-4">
+                    {t('catalog.translation.missing')}
+                  </Badge>
                 ) : null}
               </button>
             );
@@ -159,14 +162,14 @@ export function LocalizedTextField({
       </div>
 
       {showFrError ? (
-        <p id={errorId} className="ltf-fr-error" role="alert">
+        <p id={errorId} className="text-[0.8rem] font-medium text-destructive" role="alert">
           {t('catalog.translation.frRequired')}
         </p>
       ) : null}
 
       {required === true ? (
         <input
-          className="ltf-fr-guard"
+          className="absolute h-0 w-0 p-0 overflow-hidden border-0 bg-transparent text-transparent opacity-0"
           value={value.fr}
           onChange={(event) => {
             updateLang('fr', event.target.value);
@@ -187,18 +190,18 @@ export function LocalizedTextField({
         role="tabpanel"
         id={panelId}
         aria-labelledby={`${idPrefix}-tab-${activeTab}`}
-        className="ltf-panel"
+        className="mt-2 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
       >
         {multiline ? (
-          <textarea
-            ref={(element) => {
+          <Textarea
+            ref={(element: HTMLTextAreaElement) => {
               fieldRef.current = element;
             }}
             {...fieldProps}
           />
         ) : (
-          <input
-            ref={(element) => {
+          <Input
+            ref={(element: HTMLInputElement) => {
               fieldRef.current = element;
             }}
             type="text"

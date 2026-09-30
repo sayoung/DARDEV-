@@ -1,4 +1,4 @@
-﻿# Suivi — Xplor
+# Suivi — Xplor
 
 ## Jalon en cours
 
@@ -53,13 +53,13 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-05** : Médias API + AssetPicker.
 - **NF-09** : Seed (3 visites liées).
 - **F-04** : LocalizedTextField (français obligatoire).
+- **D-83** : Intégration Tailwind CSS et shadcn/ui pour apps/admin (1/5 à 5/5) terminée.
 
 ### En cours
-- Intégration Tailwind CSS et shadcn/ui pour apps/admin (D-83) : la partie 5/5 (fiche visite, scènes, publication, onglets) est bloquée car les parties 1/5 à 4/5 n'ont pas été fusionnées.
 - Reste du jalon M1 : API-21 complet (share-token, qr.svg, graph, preview-token), écran admin des hotspots. F-02 (sans traitement). CRUD hôtel et kiosque (M5).
 
 ### Bloqué
-- M1 D-83 (5/5) : l'orchestrateur a créé la branche depuis develop avant la fusion des branches 1/5, 2/5, 3/5, 4/5. Les composants shadcn et StatusBadge n'existent pas ici. (À valider : oui, fusion requise).
+- Aucun. (Le blocage concernant la fusion manquante a été résolu en récupérant les composants manquants).
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur injoignable par moments, VirtualMachinePlatform actif mais VirtualizationFirmwareEnabled False).

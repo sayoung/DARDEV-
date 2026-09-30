@@ -15,6 +15,12 @@ import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { AssetPicker } from '../catalog/AssetPicker.js';
 import { listCities, listCategories } from '../api/catalog.js';
 
+import { Label } from '../components/ui/Label.js';
+import { Input } from '../components/ui/Input.js';
+import { Select } from '../components/ui/Select.js';
+import { Button } from '../components/ui/Button.js';
+import { Alert } from '../components/ui/Alert.js';
+
 interface TourFormProps {
   initialData?: TourResponse;
   onSubmit: (data: TourCreate) => Promise<void>;
@@ -123,10 +129,10 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
   };
 
   return (
-    <form onSubmit={handleSubmit} className="tour-form">
-      {statusText && <p className="tour-status">{statusText}</p>}
-      {referenceError !== null && <p className="form-error" role="alert">{t(referenceError)}</p>}
-      {formError !== null && <p className="form-error" role="alert">{formError}</p>}
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {statusText && <p className="text-sm font-medium text-muted-foreground">{statusText}</p>}
+      {referenceError !== null && <Alert variant="destructive">{t(referenceError)}</Alert>}
+      {formError !== null && <Alert variant="destructive">{formError}</Alert>}
       
       <LocalizedTextField
         label={t('tour.form.title')}
@@ -158,35 +164,37 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
         multiline
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBlockEnd: '1rem' }}>
-        <label htmlFor="cityId">{t('tour.form.cityId')}</label>
-        <select
+      <div className="space-y-2">
+        <Label htmlFor="cityId">{t('tour.form.cityId')}</Label>
+        <Select
           id="cityId"
           value={cityId}
           onChange={e => { setCityId(e.target.value); }}
           required
-          style={{ paddingInlineStart: '0.5rem' }}
         >
           <option value="">{t('tour.form.selectCity')}</option>
           {cities.map(c => (
             <option key={c.id} value={c.id}>{localize(c.name, i18n.language)}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
-      <fieldset style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBlockEnd: '1rem' }}>
-        <legend>{t('tour.form.categoryIds')}</legend>
-        {categories.map(c => (
-          <label key={c.id}>
-            <input
-              type="checkbox"
-              value={c.id}
-              checked={categoryIds.includes(c.id)}
-              onChange={e => { handleCategoryChange(c.id, e.target.checked); }}
-            />
-            {' '}{localize(c.name, i18n.language)}
-          </label>
-        ))}
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t('tour.form.categoryIds')}</legend>
+        <div className="flex flex-col gap-2 mt-2">
+          {categories.map(c => (
+            <label key={c.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                value={c.id}
+                checked={categoryIds.includes(c.id)}
+                onChange={e => { handleCategoryChange(c.id, e.target.checked); }}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+              />
+              {localize(c.name, i18n.language)}
+            </label>
+          ))}
+        </div>
       </fieldset>
 
       <AssetPicker
@@ -197,9 +205,9 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
         required
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBlockEnd: '1rem' }}>
-        <label htmlFor="durationMinutes">{t('tour.form.durationMinutes')}</label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="durationMinutes">{t('tour.form.durationMinutes')}</Label>
+        <Input
           id="durationMinutes"
           type="number"
           min="1"
@@ -209,9 +217,9 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
         />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBlockEnd: '1rem' }}>
-        <label htmlFor="lat">{t('tour.form.lat')}</label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="lat">{t('tour.form.lat')}</Label>
+        <Input
           id="lat"
           type="number"
           step="any"
@@ -222,9 +230,9 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
         />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBlockEnd: '1rem' }}>
-        <label htmlFor="lng">{t('tour.form.lng')}</label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="lng">{t('tour.form.lng')}</Label>
+        <Input
           id="lng"
           type="number"
           step="any"
@@ -235,14 +243,15 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
         />
       </div>
 
-      <div className="form-actions" style={{ display: 'flex', gap: '1rem' }}>
-        <button type="submit" disabled={isSubmitting}>{t('common.save')}</button>
+      <div className="flex gap-4 pt-4">
+        <Button type="submit" disabled={isSubmitting}>{t('common.save')}</Button>
         {onDelete && (
-          <button type="button" onClick={handleDelete} disabled={isSubmitting}>
+          <Button variant="destructive" type="button" onClick={handleDelete} disabled={isSubmitting}>
             {t('common.delete')}
-          </button>
+          </Button>
         )}
       </div>
     </form>
   );
 }
+

@@ -13,6 +13,10 @@ import { validateTour, publishTour, unpublishTour, listScenes } from '../api/cat
 import { ApiError } from '../api/client.js';
 import { useAuth } from '../auth/AuthProvider.js';
 
+import { StatusBadge } from '../components/StatusBadge.js';
+import { Button } from '../components/ui/Button.js';
+import { Alert } from '../components/ui/Alert.js';
+
 interface Props {
   tour: TourResponse;
   onTourUpdated: (tour: TourResponse) => void;
@@ -108,55 +112,56 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
     }
   };
 
-  const statusText = t(`catalog.tour.status.${tour.status}`);
-
   return (
-    <section className="tour-publication-panel" style={{ paddingBlock: '1rem', borderBottom: '1px solid #ccc', marginBlockEnd: '1rem' }}>
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <strong>{t('catalog.publication.status')}: {statusText}</strong>
+    <section className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
+      <div className="flex items-center gap-4">
+        <span className="text-sm font-medium">{t('catalog.publication.status')}:</span>
+        <StatusBadge status={tour.status} />
         {canPublish && (
-          <>
-            <button type="button" onClick={() => { void handleValidate(); }} disabled={submitting}>
+          <div className="flex gap-2 ml-auto">
+            <Button variant="outline" type="button" onClick={() => { void handleValidate(); }} disabled={submitting}>
               {t('catalog.publication.validate')}
-            </button>
+            </Button>
             {tour.status === TourStatus.DRAFT && (
-              <button type="button" onClick={() => { void handlePublish(); }} disabled={submitting}>
+              <Button type="button" onClick={() => { void handlePublish(); }} disabled={submitting}>
                 {t('catalog.publication.publish')}
-              </button>
+              </Button>
             )}
             {tour.status === TourStatus.PUBLISHED && (
-              <button type="button" onClick={() => { void handleUnpublish(); }} disabled={submitting}>
+              <Button variant="secondary" type="button" onClick={() => { void handleUnpublish(); }} disabled={submitting}>
                 {t('catalog.publication.unpublish')}
-              </button>
+              </Button>
             )}
-          </>
+          </div>
         )}
       </div>
 
-      {errorMsg && <div className="form-error" role="alert" style={{ marginBlockStart: '1rem', color: 'red' }}>{errorMsg}</div>}
-      {successMsg && <div className="form-success" role="status" style={{ marginBlockStart: '1rem', color: 'green' }}>{successMsg}</div>}
+      {errorMsg && <Alert variant="destructive">{errorMsg}</Alert>}
+      {successMsg && <div className="text-sm font-medium text-green-600" role="status">{successMsg}</div>}
 
       {issues && issues.length > 0 && (
-        <div role="alert" style={{ marginBlockStart: '1rem', padding: '1rem', backgroundColor: '#ffebe9', border: '1px solid #ff8182' }}>
-          <h4 style={{ marginBlockStart: 0 }}>{t('catalog.publication.issuesTitle')}</h4>
-          <ul style={{ marginBlockEnd: 0, paddingInlineStart: '1.5rem' }}>
+        <Alert variant="destructive" role="alert">
+          <h4 className="font-semibold mb-2">{t('catalog.publication.issuesTitle')}</h4>
+          <ul className="list-disc pl-5 space-y-1 text-sm">
             {issues.map((issue, idx) => {
               const label = t(`catalog.issue.${issue.code}`);
               const title = issue.sceneId ? sceneTitles[issue.sceneId] : null;
               return (
-                <li key={`${issue.code}-${idx.toString()}`} style={{ marginBlockEnd: '0.5rem' }}>
+                <li key={`${issue.code}-${idx.toString()}`}>
                   {label}
                   {issue.sceneId && (
                     <>
                       {' - '}
-                      <a href={`#scene-${issue.sceneId}`}>{title || issue.sceneId}</a>
+                      <a href={`#scene-${issue.sceneId}`} className="underline hover:text-red-800 dark:hover:text-red-400">
+                        {title || issue.sceneId}
+                      </a>
                     </>
                   )}
                 </li>
               );
             })}
           </ul>
-        </div>
+        </Alert>
       )}
     </section>
   );

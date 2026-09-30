@@ -156,7 +156,8 @@ describe('TourPublicationPanel', () => {
 
     // Wait for display to update: "Publiée" text and "Dépublier" button
     await waitFor(() => {
-      expect(screen.getByText(/Statut: Publiée/)).toBeDefined();
+      expect(screen.getByText(/Statut/)).toBeDefined();
+      expect(screen.getByText(/Publiée/)).toBeDefined();
     });
     
     expect(screen.getByRole('button', { name: 'Dépublier' })).toBeDefined();

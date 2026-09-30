@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next';
 import {
   type TourResponse,
   type SceneResponse,
-  AssetKind,
+  type LocalizedText,
   SceneCreateSchema,
   SceneUpdateSchema,
-  type LocalizedText,
-  z,
+  localize,
+  AssetKind,
+  z
 } from '@xplor/shared';
 import {
   listScenes,
@@ -18,11 +19,16 @@ import {
   setStartScene,
   getTour,
 } from '../api/catalog.js';
-import { ApiError } from '../api/client.js';
-import { localize } from '@xplor/shared';
 import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { AssetPicker } from '../catalog/AssetPicker.js';
-import './TourScenesSection.css'; // Will create this
+import { ApiError } from '../api/client.js';
+
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table.js';
+import { Badge } from '../components/ui/Badge.js';
+import { Button } from '../components/ui/Button.js';
+import { Alert } from '../components/ui/Alert.js';
+import { Input } from '../components/ui/Input.js';
+import { Label } from '../components/ui/Label.js';
 
 interface Props {
   tour: TourResponse;
@@ -35,21 +41,21 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
   const [title, setTitle] = useState<LocalizedText>({ fr: '' });
   const [caption, setCaption] = useState<LocalizedText>({ fr: '' });
-  const [panoramaAssetId, setPanoramaAssetId] = useState('');
+  const [panoramaAssetId, setPanoramaAssetId] = useState<string>('');
   const [initialYaw, setInitialYaw] = useState(0);
   const [initialPitch, setInitialPitch] = useState(0);
   const [initialZoom, setInitialZoom] = useState(50);
-  const [submitting, setSubmitting] = useState(false);
 
   const reloadScenes = async () => {
     try {
-      const res = await listScenes(tour.id);
-      setScenes(res);
+      const data = await listScenes(tour.id);
+      setScenes(data);
       setError(null);
     } catch {
       setError('common.error.generic');
@@ -97,8 +103,6 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
     setSubmitting(true);
     setError(null);
 
-    // If caption doesn't have at least 'fr' or any other required field, zod will throw.
-    // Let's pass caption only if it has at least one key with content.
     const hasCaption = Object.values(caption).some(v => v.trim() !== '');
 
     const payload = {
@@ -184,71 +188,99 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
   const showForm = isAdding || editingId !== null;
 
   return (
-    <section className="tour-scenes-section">
-      <h3>{t('catalog.scene.title')}</h3>
-      {error && <div className="form-error" role="alert">{t(error)}</div>}
+    <section className="space-y-6">
+      <h3 className="text-xl font-semibold">{t('catalog.scene.title')}</h3>
+      {error && <Alert variant="destructive">{t(error)}</Alert>}
       
       {loading ? (
-        <p>{t('common.loading')}</p>
+        <p className="p-4">{t('common.loading')}</p>
       ) : (
-        <table className="scenes-table">
-          <thead>
-            <tr>
-              <th>{t('catalog.scene.fields.title')}</th>
-              <th>{t('catalog.scene.fields.hotspotCount')}</th>
-              <th>{t('catalog.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scenes.map((scene, index) => (
-              <tr key={scene.id} id={`scene-${scene.id}`}>
-                <td>
-                  {localize(scene.title, i18n.language)}
-                  {scene.id === tour.startSceneId && (
-                    <span className="badge">{t('catalog.scene.startBadge')}</span>
-                  )}
-                </td>
-                <td>{scene.hotspotCount}</td>
-                <td className="actions-cell">
-                  <button
-                    type="button"
-                    disabled={index === 0}
-                    onClick={() => { void handleMove(index, -1); }}
-                  >
-                    {t('catalog.scene.actions.moveUp')}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={index === scenes.length - 1}
-                    onClick={() => { void handleMove(index, 1); }}
-                  >
-                    {t('catalog.scene.actions.moveDown')}
-                  </button>
-                  <button type="button" onClick={() => { void handleSetStart(scene.id); }}>
-                    {t('catalog.scene.actions.setStart')}
-                  </button>
-                  <button type="button" onClick={() => { handleStartEdit(scene); }}>
-                    {t('catalog.edit')}
-                  </button>
-                  <button type="button" onClick={() => { void handleDelete(scene.id); }}>
-                    {t('common.delete')}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('catalog.scene.fields.title')}</TableHead>
+                <TableHead>{t('catalog.scene.fields.hotspotCount')}</TableHead>
+                <TableHead className="text-right">{t('catalog.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scenes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center text-gray-500">
+                    {t('common.empty')}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                scenes.map((scene, index) => (
+                  <TableRow key={scene.id} id={`scene-${scene.id}`}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {localize(scene.title, i18n.language)}
+                        {scene.id === tour.startSceneId && (
+                          <Badge variant="secondary">{t('catalog.scene.startBadge')}</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{scene.hotspotCount}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2 flex-wrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={index === 0}
+                          onClick={() => { void handleMove(index, -1); }}
+                        >
+                          {t('catalog.scene.actions.moveUp')}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={index === scenes.length - 1}
+                          onClick={() => { void handleMove(index, 1); }}
+                        >
+                          {t('catalog.scene.actions.moveDown')}
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { void handleSetStart(scene.id); }}
+                        >
+                          {t('catalog.scene.actions.setStart')}
+                        </Button>
+                        <Button 
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => { handleStartEdit(scene); }}
+                        >
+                          {t('catalog.edit')}
+                        </Button>
+                        <Button 
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => { void handleDelete(scene.id); }}
+                        >
+                          {t('common.delete')}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {!showForm && !loading && (
-        <button type="button" onClick={handleStartAdd} className="btn-add-scene">
+        <Button onClick={handleStartAdd} className="mt-4">
           {t('catalog.scene.actions.add')}
-        </button>
+        </Button>
       )}
 
       {showForm && (
-        <form onSubmit={(e) => { void handleSubmit(e); }} className="scene-form">
-          <h4>{isAdding ? t('catalog.scene.actions.add') : t('catalog.edit')}</h4>
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-6 mt-8 p-6 border rounded-lg bg-gray-50 dark:bg-gray-900">
+          <h4 className="text-lg font-semibold">{isAdding ? t('catalog.scene.actions.add') : t('catalog.edit')}</h4>
           <LocalizedTextField
             label={t('catalog.scene.fields.title')}
             value={title}
@@ -269,28 +301,28 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
             required
           />
           
-          <div className="scene-form-row">
-            <label>
-              {t('catalog.scene.fields.initialYaw')}
-              <input type="number" step="0.1" value={initialYaw} onChange={e => { setInitialYaw(Number(e.target.value)); }} required />
-            </label>
-            <label>
-              {t('catalog.scene.fields.initialPitch')}
-              <input type="number" step="0.1" value={initialPitch} onChange={e => { setInitialPitch(Number(e.target.value)); }} required />
-            </label>
-            <label>
-              {t('catalog.scene.fields.initialZoom')}
-              <input type="number" min="0" max="100" value={initialZoom} onChange={e => { setInitialZoom(Number(e.target.value)); }} required />
-            </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>{t('catalog.scene.fields.initialYaw')}</Label>
+              <Input type="number" step="0.1" value={initialYaw} onChange={e => { setInitialYaw(Number(e.target.value)); }} required />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('catalog.scene.fields.initialPitch')}</Label>
+              <Input type="number" step="0.1" value={initialPitch} onChange={e => { setInitialPitch(Number(e.target.value)); }} required />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('catalog.scene.fields.initialZoom')}</Label>
+              <Input type="number" min="0" max="100" value={initialZoom} onChange={e => { setInitialZoom(Number(e.target.value)); }} required />
+            </div>
           </div>
 
-          <div className="scene-form-actions">
-            <button type="submit" disabled={submitting}>
+          <div className="flex gap-4 pt-4">
+            <Button type="submit" disabled={submitting}>
               {t('common.save')}
-            </button>
-            <button type="button" onClick={handleCancelForm} disabled={submitting}>
+            </Button>
+            <Button variant="outline" type="button" onClick={handleCancelForm} disabled={submitting}>
               {t('catalog.cancel')}
-            </button>
+            </Button>
           </div>
         </form>
       )}

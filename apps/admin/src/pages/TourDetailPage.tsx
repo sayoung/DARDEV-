@@ -8,6 +8,8 @@ import { getTour, updateTour, deleteTour } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Role, type TourResponse, type TourUpdate } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
+import { PageHeader } from '../components/PageHeader.js';
+import { Card, CardContent } from '../components/ui/Card.js';
 
 function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0;
@@ -55,28 +57,29 @@ export function TourDetailPage() {
   }, [id, auth.state]);
 
   if (auth.state.status !== 'authenticated' || (auth.state.profile.role !== Role.ADMIN && auth.state.profile.role !== Role.EDITOR)) {
-    return <p>{t('auth.accessDenied')}</p>;
+    return <p className="p-4">{t('auth.accessDenied')}</p>;
   }
 
   if (loading) {
-    return <p>{t('common.loading')}</p>;
+    return <p className="p-4">{t('common.loading')}</p>;
   }
 
   if (loadError) {
     return (
-      <div>
-        <h2>{t('page.tourDetail.title')}</h2>
-        <div className="form-error" role="alert">{t(loadError)}</div>
+      <div className="space-y-6">
+        <PageHeader title={t('page.tourDetail.title')} />
+        <div className="text-sm font-medium text-destructive" role="alert">{t(loadError)}</div>
       </div>
     );
   }
 
   if (notFound || !tour) {
     return (
-      <div>
+      <div className="space-y-6">
         <p>{t('tour.notFound')}</p>
         <a
           href={hrefFor('/tours')}
+          className="text-primary hover:underline"
           onClick={(event) => {
             if (isModifiedClick(event)) {
               return;
@@ -122,19 +125,30 @@ export function TourDetailPage() {
   const statusText = t(`catalog.tour.status.${tour.status}`);
 
   return (
-    <div>
-      <h2>{t('page.tourDetail.title')}</h2>
-      <TourPublicationPanel tour={tour} onTourUpdated={setTour} />
-      {actionError !== null && <div className="form-error" role="alert">{t(actionError)}</div>}
-      {successKey !== null && <div className="form-success" role="status">{t(successKey)}</div>}
-      <TourForm
-        initialData={tour}
-        onSubmit={handleSubmit}
-        onDelete={handleDelete}
-        isSubmitting={isSubmitting}
-        statusText={statusText}
+    <div className="space-y-6 pb-8">
+      <PageHeader 
+        title={t('page.tourDetail.title')} 
       />
-      <TourScenesSection tour={tour} onTourUpdated={setTour} />
+      <TourPublicationPanel tour={tour} onTourUpdated={setTour} />
+      {actionError !== null && <div className="text-sm font-medium text-destructive" role="alert">{t(actionError)}</div>}
+      {successKey !== null && <div className="text-sm font-medium text-green-600" role="status">{t(successKey)}</div>}
+      <Card>
+        <CardContent className="pt-6">
+          <TourForm
+            initialData={tour}
+            onSubmit={handleSubmit}
+            onDelete={handleDelete}
+            isSubmitting={isSubmitting}
+            statusText={statusText}
+          />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <TourScenesSection tour={tour} onTourUpdated={setTour} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
