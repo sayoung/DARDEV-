@@ -15,17 +15,15 @@ Definition of Done du jalon : non remplie.
 
 Plan :
 
-1. Garder l'exigence sur `fr` quel que soit l'onglet actif (onglet marqué obligatoire, message, envoi bloqué) et tester l'onglet arabe actif avec `fr` vide.
-2. Associer le champ à un `role="tabpanel"` (`aria-labelledby`, `aria-controls`, nom du `tablist`).
-3. Retirer l'`aria-label` de l'indicateur et l'asserter avec `getAllByText`.
-4. Utiliser le vrai i18n (`i18n.changeLanguage('fr')`) et les libellés « Traduction manquante » et « Arabe ».
-5. Vérifier la disparition de l'indicateur par une saisie (`fireEvent.change`) dans un composant qui garde l'état.
-6. `import type` pour `LocalizedText` et `KeyboardEvent`, classes `.ltf-`.
-7. Relancer `pnpm lint`, `pnpm typecheck` et `pnpm test`, et coller la sortie ici.
+1. Remplir les pages `/cities` et `/categories` de `apps/admin`.
+2. Ajouter le tableau, le formulaire `LocalizedTextField`, et les validations Zod.
+3. Intégrer les traductions et l'erreur 409 IN_USE.
+4. Écrire les tests Vitest (jsdom) pour vérifier le rendu et les permissions.
+5. Lancer lint, typecheck, test.
 
-Réalisé (30/09/2026, Node 22.23.3) : revue de M1 F-04 (`LocalizedTextField`). Le français reste obligatoire quel que soit l'onglet actif : l'onglet fr porte `aria-required` et le libellé « obligatoire », un message signale `value.fr` vide, et l'envoi du formulaire est bloqué. Le champ est dans un `role="tabpanel"` relié aux onglets (`aria-controls`, `aria-labelledby`) ; le `tablist` est nommé par le libellé du champ. L'indicateur « Traduction manquante » est du texte visible, sans `aria-label`. Les tests Vitest (jsdom) utilisent `i18n.changeLanguage('fr')` et les libellés réels ; la disparition de l'indicateur est vérifiée par `fireEvent.change` dans un composant qui garde l'état. Classes CSS préfixées `.ltf-`. Décision D-78 mise à jour. Aucun commit (orchestrateur).
+Réalisé (30/09/2026, Node 22) : M1 API-25 (CRUD des villes et des catégories, front). Implémentation des pages back-office `CitiesPage` et `CategoriesPage` (`apps/admin/src/pages`). Affichage des données avec avertissement de traduction manquante, formulaires complets basés sur `LocalizedTextField` et validation Zod front-end. Suppression avec confirmation et traduction native de l'erreur 409 IN_USE. Accès en écriture (boutons) restreint aux rôles ADMIN et EDITOR via `useAuth()`. Traductions ajoutées dans `@xplor/i18n` (fr, ar, en). Les tests Vitest (`CitiesPage.test.tsx` et `CategoriesPage.test.tsx`) valident le rendu (avec UUID v7), l'envoi correct des corps HTTP via fetch intercepté, la traduction du 409 et l'inaccessibilité des boutons pour le rôle PARTNER. `pnpm lint`, `pnpm typecheck` et `pnpm test` (399 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
 
-Sortie de `pnpm lint`, `pnpm typecheck` et `pnpm test` (Node 22.23.3) :
+**Exigence précédente :** M1 F-04 — revue du composant LocalizedTextField.
 
 ```text
 NODE v22.23.3

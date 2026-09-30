@@ -77,6 +77,37 @@
       "missing": "Missing translation",
       "required": "required",
       "frRequired": "French is required."
+    },
+    "errors": {
+      "generic": "An error occurred.",
+      "fetchFailed": "Failed to load data.",
+      "deleteFailed": "Failed to delete this item.",
+      "invalidForm": "Please correct the errors in the form.",
+      "inUse": "This item is in use and cannot be deleted."
+    },
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "city": {
+      "createTitle": "Add a city",
+      "editTitle": "Edit city",
+      "name": "Name",
+      "region": "Region",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "deleteConfirm": "Are you sure you want to delete this city?"
+    },
+    "category": {
+      "createTitle": "Add a category",
+      "editTitle": "Edit category",
+      "name": "Name",
+      "icon": "Icon",
+      "color": "Color",
+      "weight": "Weight",
+      "deleteConfirm": "Are you sure you want to delete this category?"
     }
   },
   "nav": {

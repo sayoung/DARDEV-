@@ -77,6 +77,37 @@
       "missing": "Traduction manquante",
       "required": "obligatoire",
       "frRequired": "Le français est obligatoire."
+    },
+    "errors": {
+      "generic": "Une erreur est survenue.",
+      "fetchFailed": "Impossible de charger les données.",
+      "deleteFailed": "Impossible de supprimer cet élément.",
+      "invalidForm": "Veuillez corriger les erreurs dans le formulaire.",
+      "inUse": "Cet élément est utilisé et ne peut pas être supprimé."
+    },
+    "actions": "Actions",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "cancel": "Annuler",
+    "city": {
+      "createTitle": "Ajouter une ville",
+      "editTitle": "Modifier la ville",
+      "name": "Nom",
+      "region": "Région",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette ville ?"
+    },
+    "category": {
+      "createTitle": "Ajouter une catégorie",
+      "editTitle": "Modifier la catégorie",
+      "name": "Nom",
+      "icon": "Icône",
+      "color": "Couleur",
+      "weight": "Poids",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette catégorie ?"
     }
   },
   "nav": {
