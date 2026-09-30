@@ -19,12 +19,14 @@ Plan :
 3. Intégrer les méthodes de fetch API (CRUD hotspots) dans `api/catalog.ts`.
 4. Mettre à jour `locales/fr.json` pour D-82.
 5. Ajouter les tests unitaires correspondants (Vitest) pour vérifier les composants.
+6. Résoudre les retours de revue du code (TS linter et tests).
 
 Réalisé :
 - Composants de formulaire et de vue liste créés.
 - Les endpoints du catalogue sont fonctionnels.
 - Les tests ont été ajoutés (`HotspotsPage.test.tsx` et `HotspotDetailPage.test.tsx`).
-- Typecheck et lint OK. Tests OK.
+- Corrections apportées (suppression des non-null assertions `!`, des types `any`, des cast d'enums forcés `as`).
+- lint, typecheck, test OK.
 
 ## Definition of Done — M1
 

@@ -37,8 +37,7 @@ import {
   type HotspotResponse,
   type HotspotCreate,
   type HotspotUpdate,
-  HotspotType,
-  HotspotIcon, z
+  z
 } from '@xplor/shared';
 import { requestJson } from './client.js';
 

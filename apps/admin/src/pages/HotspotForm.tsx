@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   HotspotType, HotspotIcon, type HotspotCreate, type HotspotResponse, 
-  type LocalizedText, AssetKind, type SceneResponse, type TourResponse 
+  type LocalizedText, AssetKind, type SceneResponse, type TourResponse, z 
 } from '@xplor/shared';
 import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { MultiAssetPicker } from '../catalog/MultiAssetPicker.js';
@@ -94,7 +94,10 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
             id="type"
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
             value={type} 
-            onChange={(e) => { setType(e.target.value as string as HotspotType); }}
+            onChange={(e) => { 
+              const val = z.enum(HotspotType).safeParse(e.target.value);
+              if (val.success) setType(val.data);
+            }}
           >
             {Object.values(HotspotType).map((tVal) => (
               <option key={tVal} value={tVal}>{t(`catalog.hotspots.type.${tVal}`)}</option>
@@ -107,7 +110,10 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
             id="icon"
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
             value={icon} 
-            onChange={(e) => { setIcon(e.target.value as string as HotspotIcon); }}
+            onChange={(e) => { 
+              const val = z.enum(HotspotIcon).safeParse(e.target.value);
+              if (val.success) setIcon(val.data);
+            }}
           >
             {Object.values(HotspotIcon).map((iVal) => (
               <option key={iVal} value={iVal}>{t(`catalog.hotspots.icon.${iVal}`)}</option>

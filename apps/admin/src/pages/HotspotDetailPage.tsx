@@ -28,15 +28,11 @@ export function HotspotDetailPage() {
   useEffect(() => {
     let active = true;
     if (auth.state.status === 'authenticated' && (auth.state.profile.role === Role.ADMIN || auth.state.profile.role === Role.EDITOR) && tourId && sceneId) {
-      const p: Array<Promise<any>> = [
+      Promise.all([
         getScene(sceneId),
-        listScenes(tourId)
-      ];
-      if (hotspotId) {
-        p.push(getHotspot(hotspotId));
-      }
-
-      Promise.all(p)
+        listScenes(tourId),
+        hotspotId ? getHotspot(hotspotId) : Promise.resolve(null)
+      ])
         .then(([resScene, resScenes, resHotspot]) => {
           if (active) {
             setScene(resScene);
@@ -45,7 +41,7 @@ export function HotspotDetailPage() {
             setLoading(false);
           }
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           if (active) {
             if (err instanceof ApiError && err.status === 404) {
               setLoadError('catalog.errors.notFound');

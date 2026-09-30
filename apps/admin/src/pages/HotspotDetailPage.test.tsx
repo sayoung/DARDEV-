@@ -4,8 +4,8 @@ import { i18n } from '../i18n.js';
 import { HotspotDetailPage } from './HotspotDetailPage.js';
 import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { getScene, getHotspot, createHotspot, listScenes, listTours } from '../api/catalog.js';
-import { Role, HotspotType, HotspotIcon, type HotspotResponse, type SceneResponse } from '@xplor/shared';
+import { getScene, createHotspot, listScenes } from '../api/catalog.js';
+import { Role, HotspotType, type SceneResponse } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 
 vi.mock('../router.js', () => ({
@@ -30,10 +30,10 @@ vi.mock('../api/catalog.js', () => ({
 
 // Mock minimal des Pickers car ils peuvent avoir des requêtes
 vi.mock('../catalog/AssetPicker.js', () => ({
-  AssetPicker: ({ label, 'data-testid': testId }: any) => <div data-testid={testId || 'asset-picker'}>{label}</div>
+  AssetPicker: ({ label, 'data-testid': testId }: { label: string; 'data-testid'?: string }) => <div data-testid={testId || 'asset-picker'}>{label}</div>
 }));
 vi.mock('../catalog/MultiAssetPicker.js', () => ({
-  MultiAssetPicker: ({ label }: any) => <div>{label}</div>
+  MultiAssetPicker: ({ label }: { label: string }) => <div>{label}</div>
 }));
 
 const mockAuth = {
@@ -75,14 +75,14 @@ describe('HotspotDetailPage', () => {
     const typeSelect = screen.getByLabelText('Type');
     fireEvent.change(typeSelect, { target: { value: HotspotType.URL } });
 
-    const labelInput = document.querySelector('input[lang="fr"]')! as HTMLInputElement;
-    fireEvent.change(labelInput, { target: { value: 'Google' } });
+    const labelInput = document.querySelector<HTMLInputElement>('input[lang="fr"]');
+    if (labelInput) fireEvent.change(labelInput, { target: { value: 'Google' } });
 
     const urlInput = screen.getByLabelText('URL externe');
     fireEvent.change(urlInput, { target: { value: 'https://google.com' } });
 
-    const form = document.querySelector('form')! as HTMLFormElement;
-    fireEvent.submit(form);
+    const form = document.querySelector<HTMLFormElement>('form');
+    if (form) fireEvent.submit(form);
 
     await waitFor(() => {
       expect(createHotspot).toHaveBeenCalledWith('s1', expect.objectContaining({
@@ -113,14 +113,14 @@ describe('HotspotDetailPage', () => {
     const typeSelect = screen.getByLabelText('Type');
     fireEvent.change(typeSelect, { target: { value: HotspotType.URL } });
 
-    const labelInput = document.querySelector('input[lang="fr"]')! as HTMLInputElement;
-    fireEvent.change(labelInput, { target: { value: 'Google' } });
+    const labelInput = document.querySelector<HTMLInputElement>('input[lang="fr"]');
+    if (labelInput) fireEvent.change(labelInput, { target: { value: 'Google' } });
 
     const urlInput = screen.getByLabelText('URL externe');
     fireEvent.change(urlInput, { target: { value: 'https://google.com' } });
 
-    const form = document.querySelector('form')! as HTMLFormElement;
-    fireEvent.submit(form);
+    const form = document.querySelector<HTMLFormElement>('form');
+    if (form) fireEvent.submit(form);
 
     await waitFor(() => {
       expect(screen.getByText('Veuillez corriger les erreurs dans le formulaire.')).toBeDefined();

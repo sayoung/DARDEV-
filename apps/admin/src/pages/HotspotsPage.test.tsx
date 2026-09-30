@@ -73,12 +73,12 @@ describe('HotspotsPage', () => {
     });
 
     const editBtns = screen.getAllByRole('button', { name: 'Modifier' });
-    fireEvent.click(editBtns[0]!);
+    if (editBtns[0]) fireEvent.click(editBtns[0]);
     expect(navigate).toHaveBeenCalledWith('/tours/t1/scenes/s1/hotspots/h1');
   });
 
   it('supprime un hotspot', async () => {
-    window.confirm = vi.fn().mockReturnValue(true);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.mocked(deleteHotspot).mockResolvedValue(undefined);
 
     render(<HotspotsPage />);
@@ -87,9 +87,9 @@ describe('HotspotsPage', () => {
     });
 
     const deleteBtns = screen.getAllByRole('button', { name: 'Supprimer' });
-    fireEvent.click(deleteBtns[0]!);
+    if (deleteBtns[0]) fireEvent.click(deleteBtns[0]);
 
-    expect(window.confirm).toHaveBeenCalled();
+    expect(confirmSpy).toHaveBeenCalled();
     expect(deleteHotspot).toHaveBeenCalledWith('h1');
 
     await waitFor(() => {
