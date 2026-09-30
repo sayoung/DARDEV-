@@ -1,4 +1,4 @@
-# Suivi — Xplor
+﻿# Suivi — Xplor
 
 ## Jalon en cours
 
@@ -11,20 +11,17 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026
-**Exigence :** M1 F-03 (publication dans le back-office)
+**Exigence :** Intégration Tailwind CSS et shadcn/ui pour apps/admin (D-83)
 
 Plan :
-1. Ajouter validateTour, publishTour et unpublishTour dans `api/catalog.ts`.
-2. Créer `TourPublicationPanel` et l'intégrer en haut de `TourDetailPage`.
-3. Gérer le retour 422 TOUR_NOT_PUBLISHABLE, parser les issues et afficher les libellés traduits avec liens vers les scènes.
-4. Mettre à jour `docs/PROGRESS.md` et `docs/DECISIONS.md`.
-5. Valider avec `pnpm lint`, `pnpm typecheck` et `pnpm test`.
+1. Installer Tailwind CSS et shadcn/ui. Inscrire les dépendances dans docs/DECISIONS.md.
+2. Créer une mise en page commune (barre latérale, en-tête avec utilsateur/langue/déconnexion, zone contenu) RTL ready.
+3. Appliquer composants (tables, formulaires, boutons, badges, onglets, alertes) aux écrans existants.
+4. Accueil : tableau de bord (nombre de visites, scènes, brouillons/publiées, raccourcis).
+5. Corriger le doublon « Administrateur ».
+6. Valider avec lint, typecheck, test (sans casser les tests existants).
 
-Réalisé (30/09/2026) : 
-- `validateTour`, `publishTour`, `unpublishTour` ajoutés à `api/catalog.ts`.
-- `TourPublicationPanel` implémenté, gérant le statut, la vérification, la publication et la dépublication. Les boutons d'action sont restreints aux rôles ADMIN et EDITOR.
-- Affichage des erreurs via des alertes traduits et liens `#scene-<id>`.
-- Tests corrigés : `fetch` global simulé avec données compatibles UUIDv7 et Schémas, vérification de l'UI sur validation (422) et publication (200).
+Réalisé (30/09/2026) :
 - lint, typecheck, test OK. Aucun commit (orchestrateur).
 
 ## Definition of Done — M1
@@ -57,11 +54,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-04** (onglets de traduction) : Composant `LocalizedTextField` fonctionnel, français obligatoire.
 
 ### En cours
-- Intégration Tailwind CSS et shadcn/ui pour apps/admin (D-83) :
-  - Installer Tailwind et shadcn/ui.
-  - Créer une mise en page commune (barre latérale, en-tête, sélecteur de langue, déconnexion) compatible RTL (CSS logique).
-  - Appliquer les composants aux écrans existants : accueil, visites, fiche visite, scènes, hotspots, villes, catégories, connexion, etc.
-  - Corriger le doublon « Administrateur ».
+- Intégration Tailwind CSS et shadcn/ui pour apps/admin (D-83) : installation, layout RTL, composants.
 - Reste du jalon M1 : API-21 complet (share-token, qr.svg, graph, preview-token), écran admin des hotspots. F-02 (sans traitement). CRUD hôtel et kiosque (M5).
 
 ### Bloqué
