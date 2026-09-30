@@ -37,10 +37,11 @@ export function CitiesPage() {
 
   async function fetchCities() {
     try {
+      setFetchError(null);
       const data = await listCities();
       setCities(data);
     } catch {
-      setFetchError(t('catalog.errors.generic'));
+      setFetchError(t('catalog.errors.fetchFailed'));
     } finally {
       setLoading(false);
     }
@@ -68,14 +69,15 @@ export function CitiesPage() {
     if (!window.confirm(t('catalog.city.deleteConfirm'))) {
       return;
     }
+    setFetchError(null);
     try {
       await deleteCity(city.id);
       await fetchCities();
     } catch (e) {
-      if (e instanceof ApiError && e.status === 409) {
-        alert(t('catalog.errors.inUse'));
+      if (e instanceof ApiError && e.code === 'IN_USE') {
+        setFetchError(t('catalog.errors.inUse'));
       } else {
-        alert(t('catalog.errors.generic'));
+        setFetchError(t('catalog.errors.deleteFailed'));
       }
     }
   }
@@ -120,7 +122,7 @@ export function CitiesPage() {
       {fetchError && <p className="error" role="alert">{fetchError}</p>}
       
       {loading ? (
-        <p>Loading...</p>
+        <p>{t('common.loading')}</p>
       ) : (
         <table>
           <thead>
@@ -133,25 +135,29 @@ export function CitiesPage() {
             </tr>
           </thead>
           <tbody>
-            {cities.map((city) => (
-              <tr key={city.id}>
-                <td>
-                  {localize(city.name, i18n.language)}
-                  {!city.name[i18n.language as keyof typeof city.name] && i18n.language !== 'fr' && (
-                    <span className="missing-translation" title={t('catalog.translation.missing')}> ⚠️</span>
-                  )}
-                </td>
-                <td>{city.region}</td>
-                <td>{city.lat}</td>
-                <td>{city.lng}</td>
-                {canWrite && (
+            {cities.map((city) => {
+              const baseLang = i18n.language.split('-')[0];
+              const isMissingTranslation = !city.name[baseLang as keyof typeof city.name] && baseLang !== 'fr';
+              return (
+                <tr key={city.id}>
                   <td>
-                    <button type="button" onClick={() => { handleEdit(city); }}>{t('catalog.edit')}</button>
-                    <button type="button" onClick={() => { void handleDelete(city); }}>{t('catalog.delete')}</button>
+                    {localize(city.name, i18n.language)}
+                    {isMissingTranslation && (
+                      <span className="missing-translation"> - {t('catalog.translation.missing')}</span>
+                    )}
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td>{city.region}</td>
+                  <td>{city.lat}</td>
+                  <td>{city.lng}</td>
+                  {canWrite && (
+                    <td>
+                      <button type="button" onClick={() => { handleEdit(city); }}>{t('catalog.edit')}</button>
+                      <button type="button" onClick={() => { void handleDelete(city); }}>{t('catalog.delete')}</button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

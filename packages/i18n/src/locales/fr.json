@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Xplor",
+    "loading": "Chargement...",
     "language": {
       "label": "Langue",
       "fr": "Français",

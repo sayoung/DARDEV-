@@ -37,10 +37,11 @@ export function CategoriesPage() {
 
   async function fetchCategories() {
     try {
+      setFetchError(null);
       const data = await listCategories();
       setCategories(data);
     } catch {
-      setFetchError(t('catalog.errors.generic'));
+      setFetchError(t('catalog.errors.fetchFailed'));
     } finally {
       setLoading(false);
     }
@@ -68,14 +69,15 @@ export function CategoriesPage() {
     if (!window.confirm(t('catalog.category.deleteConfirm'))) {
       return;
     }
+    setFetchError(null);
     try {
       await deleteCategory(category.id);
       await fetchCategories();
     } catch (e) {
-      if (e instanceof ApiError && e.status === 409) {
-        alert(t('catalog.errors.inUse'));
+      if (e instanceof ApiError && e.code === 'IN_USE') {
+        setFetchError(t('catalog.errors.inUse'));
       } else {
-        alert(t('catalog.errors.generic'));
+        setFetchError(t('catalog.errors.deleteFailed'));
       }
     }
   }
@@ -120,7 +122,7 @@ export function CategoriesPage() {
       {fetchError && <p className="error" role="alert">{fetchError}</p>}
       
       {loading ? (
-        <p>Loading...</p>
+        <p>{t('common.loading')}</p>
       ) : (
         <table>
           <thead>
@@ -133,28 +135,32 @@ export function CategoriesPage() {
             </tr>
           </thead>
           <tbody>
-            {categories.map((category) => (
-              <tr key={category.id}>
-                <td>
-                  {localize(category.name, i18n.language)}
-                  {!category.name[i18n.language as keyof typeof category.name] && i18n.language !== 'fr' && (
-                    <span className="missing-translation" title={t('catalog.translation.missing')}> ⚠️</span>
-                  )}
-                </td>
-                <td>{category.icon}</td>
-                <td>
-                  <div style={{ width: '20px', height: '20px', backgroundColor: category.color }} />
-                  {category.color}
-                </td>
-                <td>{category.weight}</td>
-                {canWrite && (
+            {categories.map((category) => {
+              const baseLang = i18n.language.split('-')[0];
+              const isMissingTranslation = !category.name[baseLang as keyof typeof category.name] && baseLang !== 'fr';
+              return (
+                <tr key={category.id}>
                   <td>
-                    <button type="button" onClick={() => { handleEdit(category); }}>{t('catalog.edit')}</button>
-                    <button type="button" onClick={() => { void handleDelete(category); }}>{t('catalog.delete')}</button>
+                    {localize(category.name, i18n.language)}
+                    {isMissingTranslation && (
+                      <span className="missing-translation"> - {t('catalog.translation.missing')}</span>
+                    )}
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td>{category.icon}</td>
+                  <td>
+                    <div style={{ width: '20px', height: '20px', backgroundColor: category.color }} />
+                    {category.color}
+                  </td>
+                  <td>{category.weight}</td>
+                  {canWrite && (
+                    <td>
+                      <button type="button" onClick={() => { handleEdit(category); }}>{t('catalog.edit')}</button>
+                      <button type="button" onClick={() => { void handleDelete(category); }}>{t('catalog.delete')}</button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}

@@ -119,8 +119,6 @@ describe('CitiesPage', () => {
 
   it('409 IN_USE traduit lors de la suppression', async () => {
     window.confirm = vi.fn(() => true);
-    const alertMock = vi.fn();
-    window.alert = alertMock;
     
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
       const url = requestUrl(input);
@@ -140,7 +138,7 @@ describe('CitiesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: resources.fr.catalog.delete }));
     
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith(resources.fr.catalog.errors.inUse);
+      expect(screen.getByText(resources.fr.catalog.errors.inUse)).toBeTruthy();
     });
   });
 
@@ -189,7 +187,7 @@ function jsonResponse(status: number, body: unknown): Response {
 }
 
 function errorResponse(status: number, code: string): Response {
-  return jsonResponse(status, { statusCode: status, code, message: code });
+  return jsonResponse(status, { error: { code, message: code } });
 }
 
 type RecordedCall = {

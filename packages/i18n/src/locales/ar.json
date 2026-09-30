@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Xplor",
+    "loading": "جاري التحميل...",
     "language": {
       "label": "اللغة",
       "fr": "Français",

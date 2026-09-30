@@ -21,9 +21,7 @@ Plan :
 4. Écrire les tests Vitest (jsdom) pour vérifier le rendu et les permissions.
 5. Lancer lint, typecheck, test.
 
-Réalisé (30/09/2026, Node 22) : M1 API-25 (CRUD des villes et des catégories, front). Implémentation des pages back-office `CitiesPage` et `CategoriesPage` (`apps/admin/src/pages`). Affichage des données avec avertissement de traduction manquante, formulaires complets basés sur `LocalizedTextField` et validation Zod front-end. Suppression avec confirmation et traduction native de l'erreur 409 IN_USE. Accès en écriture (boutons) restreint aux rôles ADMIN et EDITOR via `useAuth()`. Traductions ajoutées dans `@xplor/i18n` (fr, ar, en). Les tests Vitest (`CitiesPage.test.tsx` et `CategoriesPage.test.tsx`) valident le rendu (avec UUID v7), l'envoi correct des corps HTTP via fetch intercepté, la traduction du 409 et l'inaccessibilité des boutons pour le rôle PARTNER. `pnpm lint`, `pnpm typecheck` et `pnpm test` (399 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
-
-**Exigence précédente :** M1 F-04 — revue du composant LocalizedTextField.
+Réalisé (30/09/2026, Node 22) : M1 API-25 (CRUD des villes et des catégories, front). Implémentation des pages back-office `CitiesPage` et `CategoriesPage` (`apps/admin/src/pages`). Affichage des données avec texte de chargement (`common.loading`) et avertissement texte lisible pour les traductions manquantes (`catalog.translation.missing`) en gérant correctement le code langue principal. Formulaires complets basés sur `LocalizedTextField` et validation Zod front-end. Suppression avec confirmation et traduction native de l'erreur 409 IN_USE (`ApiError` gérant `error.code`). Gestion des erreurs via alertes locales aux pages. Accès en écriture (boutons) restreint aux rôles ADMIN et EDITOR via `useAuth()`. Traductions ajoutées dans `@xplor/i18n` (fr, ar, en). Les tests Vitest (`CitiesPage.test.tsx` et `CategoriesPage.test.tsx`) valident le rendu, l'envoi correct des corps HTTP, la traduction du 409 sur la base du format `{ error: { code, message } }` et l'inaccessibilité des boutons pour le rôle PARTNER. `pnpm lint`, `pnpm typecheck` et `pnpm test` (399 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
 
 ```text
 NODE v22.23.3
@@ -57,61 +55,63 @@ apps/api typecheck: Done
 
  RUN  v3.2.7 D:/DARDEV/local/xplor_smit
 
- ✓ |@xplor/api| src/config/env.test.ts (4 tests) 12ms
- ✓ |@xplor/shared| src/catalog.test.ts (72 tests) 55ms
- ✓ |@xplor/api| src/seed/seed-tours.test.ts (2 tests) 19ms
- ✓ |@xplor/api| src/openapi/registry.test.ts (4 tests) 221ms
- ✓ |@xplor/api| src/catalog/tours.service.test.ts (8 tests) 29ms
- ✓ |@xplor/api| src/catalog/hotspots.service.test.ts (17 tests) 37ms
- ✓ |@xplor/api| src/auth/password.service.test.ts (6 tests) 156ms
- ✓ |@xplor/api| src/catalog/tour-publication.service.test.ts (11 tests) 20ms
- ✓ |@xplor/api| src/catalog/scenes.service.test.ts (10 tests) 26ms
-[Nest] 28356  - 30/09/2026 00:48:51    WARN [AuthService] Envoi de réinitialisation interrompu
- ✓ |@xplor/api| src/auth/auth.service.test.ts (26 tests) 38ms
- ✓ |@xplor/api| src/catalog/catalog-http.test.ts (14 tests) 15ms
- ✓ |@xplor/api| src/catalog/cities.service.test.ts (8 tests) 15ms
- ✓ |@xplor/api| src/catalog/categories.service.test.ts (6 tests) 14ms
- ✓ |@xplor/shared| src/auth.test.ts (14 tests) 15ms
- ✓ |@xplor/api| src/seed/seed-catalog.test.ts (2 tests) 12ms
- ✓ |@xplor/api| src/users/invitation.test.ts (8 tests) 30ms
- ✓ |@xplor/api| src/auth/auth.controller.test.ts (16 tests) 22ms
- ✓ |@xplor/api| src/catalog/publication-rules.test.ts (25 tests) 11ms
- ✓ |@xplor/api| src/auth/session-store.test.ts (6 tests) 10ms
- ✓ |@xplor/shared| src/localized-text.test.ts (6 tests) 11ms
- ✓ |@xplor/api| src/auth/user-token.test.ts (6 tests) 9ms
- ✓ |@xplor/worker| src/env.test.ts (2 tests) 9ms
- ✓ |@xplor/api| src/catalog/assets.service.test.ts (4 tests) 12ms
- ✓ |@xplor/worker| src/main.test.ts (2 tests) 7ms
- ✓ |@xplor/api| src/catalog/tour-duplicate.test.ts (5 tests) 6ms
- ✓ |@xplor/api| src/auth/access-policy.test.ts (14 tests) 7ms
- ✓ |@xplor/api| src/seed/seed-users.test.ts (4 tests) 9ms
- ✓ |@xplor/api| src/auth/prisma-user.repository.test.ts (8 tests) 10ms
- ✓ |@xplor/i18n| src/keys.test.ts (4 tests) 8ms
- ✓ |@xplor/api| src/auth/lockout.test.ts (4 tests) 5ms
- ✓ |@xplor/api| src/auth/session.guard.test.ts (10 tests) 10ms
- ✓ |@xplor/api| src/app.module.test.ts (1 test) 83ms
- ✓ |@xplor/api| src/health/health.service.test.ts (3 tests) 8ms
- ✓ |@xplor/api| src/mail/render-mail.test.ts (2 tests) 4ms
- ✓ |@xplor/api| src/auth/user-token.repository.test.ts (6 tests) 9ms
- ✓ |@xplor/admin| src/lang.test.ts (1 test) 5ms
- ✓ |@xplor/api| src/mail/fake-mailer.test.ts (1 test) 5ms
- ✓ |@xplor/admin| src/api/client.test.ts (11 tests) 36ms
- ✓ |@xplor/api| src/prisma/role.test.ts (1 test) 3ms
- ✓ |@xplor/shared| src/password.test.ts (1 test) 4ms
- ✓ |@xplor/api| src/auth/unit-of-work.test.ts (2 tests) 3ms
- ✓ |@xplor/api| src/auth/prisma-user.lookup.test.ts (2 tests) 3ms
- ✓ |@xplor/api| src/mail/smtp-mailer.test.ts (1 test) 2ms
- ✓ |@xplor/admin| src/App.test.tsx (2 tests) 276ms
- ✓ |@xplor/admin| src/catalog/LocalizedTextField.test.tsx (4 tests) 330ms
- ✓ |@xplor/admin| src/auth/account-access.test.tsx (8 tests) 505ms
- ✓ |@xplor/admin| src/session.test.tsx (8 tests) 537ms
- ✓ |@xplor/web| src/mount.test.ts (2 tests) 4ms
- ✓ |@xplor/kiosk| src/mount.test.ts (2 tests) 4ms
+ ✓  @xplor/shared  src/catalog.test.ts (72 tests) 89ms
+ ✓  @xplor/api  src/catalog/scenes.service.test.ts (10 tests) 40ms
+ ✓  @xplor/api  src/catalog/tours.service.test.ts (8 tests) 163ms
+ ✓  @xplor/api  src/catalog/tour-publication.service.test.ts (11 tests) 21ms
+ ✓  @xplor/api  src/auth/password.service.test.ts (6 tests) 325ms
+ ✓  @xplor/api  src/catalog/hotspots.service.test.ts (17 tests) 35ms
+ ✓  @xplor/api  src/openapi/registry.test.ts (4 tests) 545ms
+ ✓  @xplor/api  src/seed/seed-tours.test.ts (2 tests) 20ms
+[Nest] 20348  - 30/09/2026 01:16:41    WARN [AuthService] Envoi de réinitialisation interrompu
+ ✓  @xplor/api  src/auth/auth.service.test.ts (26 tests) 40ms
+ ✓  @xplor/api  src/config/env.test.ts (4 tests) 11ms
+ ✓  @xplor/shared  src/auth.test.ts (14 tests) 14ms
+ ✓  @xplor/api  src/users/invitation.test.ts (8 tests) 48ms
+ ✓  @xplor/api  src/catalog/catalog-http.test.ts (14 tests) 16ms
+ ✓  @xplor/api  src/auth/session-store.test.ts (6 tests) 12ms
+ ✓  @xplor/api  src/catalog/cities.service.test.ts (8 tests) 16ms
+ ✓  @xplor/api  src/auth/auth.controller.test.ts (16 tests) 36ms
+ ✓  @xplor/api  src/catalog/assets.service.test.ts (4 tests) 12ms
+ ✓  @xplor/api  src/catalog/categories.service.test.ts (6 tests) 13ms
+ ✓  @xplor/shared  src/localized-text.test.ts (6 tests) 10ms
+ ✓  @xplor/admin  src/router.test.ts (4 tests) 6ms
+ ✓  @xplor/admin  src/lang.test.ts (1 test) 4ms
+ ✓  @xplor/admin  src/api/client.test.ts (11 tests) 63ms
+ ✓  @xplor/api  src/seed/seed-catalog.test.ts (2 tests) 11ms
+ ✓  @xplor/api  src/app.module.test.ts (1 test) 378ms
+ ✓  @xplor/api  src/catalog/publication-rules.test.ts (25 tests) 10ms
+ ✓  @xplor/admin  src/App.test.tsx (3 tests) 528ms
+ ✓  @xplor/admin  src/pages/CitiesPage.test.tsx (4 tests) 771ms
+ ✓  @xplor/api  src/auth/user-token.test.ts (6 tests) 9ms
+ ✓  @xplor/admin  src/pages/CategoriesPage.test.tsx (4 tests) 800ms
+ ✓  @xplor/api  src/auth/session.guard.test.ts (10 tests) 12ms
+ ✓  @xplor/admin  src/auth/account-access.test.tsx (8 tests) 862ms
+ ✓  @xplor/admin  src/catalog/LocalizedTextField.test.tsx (4 tests) 585ms
+ ✓  @xplor/admin  src/session.test.tsx (8 tests) 908ms
+ ✓  @xplor/api  src/auth/access-policy.test.ts (14 tests) 8ms
+ ✓  @xplor/api  src/auth/user-token.repository.test.ts (6 tests) 12ms
+ ✓  @xplor/api  src/auth/prisma-user.repository.test.ts (8 tests) 10ms
+ ✓  @xplor/api  src/health/health.service.test.ts (3 tests) 8ms
+ ✓  @xplor/api  src/seed/seed-users.test.ts (4 tests) 8ms
+ ✓  @xplor/worker  src/env.test.ts (2 tests) 7ms
+ ✓  @xplor/api  src/auth/lockout.test.ts (4 tests) 6ms
+ ✓  @xplor/worker  src/main.test.ts (2 tests) 6ms
+ ✓  @xplor/api  src/catalog/tour-duplicate.test.ts (5 tests) 6ms
+ ✓  @xplor/api  src/mail/render-mail.test.ts (2 tests) 4ms
+ ✓  @xplor/api  src/mail/fake-mailer.test.ts (1 test) 4ms
+ ✓  @xplor/i18n  src/keys.test.ts (4 tests) 7ms
+ ✓  @xplor/shared  src/password.test.ts (1 test) 6ms
+ ✓  @xplor/api  src/prisma/role.test.ts (1 test) 4ms
+ ✓  @xplor/api  src/auth/unit-of-work.test.ts (2 tests) 3ms
+ ✓  @xplor/api  src/mail/smtp-mailer.test.ts (1 test) 2ms
+ ✓  @xplor/api  src/auth/prisma-user.lookup.test.ts (2 tests) 3ms
+ ✓  @xplor/web  src/mount.test.ts (2 tests) 4ms
+ ✓  @xplor/kiosk  src/mount.test.ts (2 tests) 4ms
 
- Test Files  49 passed (49)
-      Tests  386 passed (386)
-   Start at  00:48:49
-   Duration  5.18s (transform 3.39s, setup 0ms, collect 36.98s, tests 2.68s, environment 20.48s, prepare 10.64s)
+ Test Files  52 passed (52)
+      Tests  399 passed (399)
+   Duration  11.00s
 ```
 
 **Exigence précédente :** M1 NF-09 — seed des 3 visites liées.
