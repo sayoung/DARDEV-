@@ -74,7 +74,9 @@
         "fr": "Français",
         "ar": "Arabe"
       },
-      "missing": "Traduction manquante"
+      "missing": "Traduction manquante",
+      "required": "obligatoire",
+      "frRequired": "Le français est obligatoire."
     }
   }
 }

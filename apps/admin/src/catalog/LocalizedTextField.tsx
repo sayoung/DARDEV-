@@ -1,6 +1,7 @@
-import React, { useState, KeyboardEvent, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LocalizedText } from '@xplor/shared';
+import { LANGS, type Lang, type LocalizedText } from '@xplor/shared';
+
 import './style.css';
 
 interface LocalizedTextFieldProps {
@@ -9,10 +10,13 @@ interface LocalizedTextFieldProps {
   onChange: (value: LocalizedText) => void;
   maxLength?: number;
   multiline?: boolean;
+  /** Exige une valeur française, quel que soit l’onglet actif. */
   required?: boolean;
 }
 
-type LangTab = 'fr' | 'ar' | 'en';
+function isBlank(text: string | undefined): boolean {
+  return text === undefined || text.trim() === '';
+}
 
 export function LocalizedTextField({
   label,
@@ -23,102 +27,182 @@ export function LocalizedTextField({
   required,
 }: LocalizedTextFieldProps) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<LangTab>('fr');
+  const [activeTab, setActiveTab] = useState<Lang>('fr');
+  const rootRef = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const valueRef = useRef(value);
   const idPrefix = useId();
-  const tabRefs = useRef<Record<LangTab, HTMLButtonElement | null>>({ fr: null, ar: null, en: null });
+  const tabRefs = useRef<Record<Lang, HTMLButtonElement | null>>({
+    fr: null,
+    ar: null,
+    en: null,
+  });
 
-  const tabs: LangTab[] = ['fr', 'ar', 'en'];
+  valueRef.current = value;
+  const frBlank = isBlank(value.fr);
+  const showFrError = required === true && frBlank;
+  const errorId = `${idPrefix}-fr-error`;
+  const panelId = `${idPrefix}-panel`;
+  const labelId = `${idPrefix}-label`;
+  const fieldId = `${idPrefix}-field`;
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const currentIndex = tabs.indexOf(activeTab);
+  useEffect(() => {
+    if (required !== true) {
+      return undefined;
+    }
+    const form = rootRef.current?.closest('form') ?? null;
+    if (form === null) {
+      return undefined;
+    }
+    const blockSubmit = (event: Event): void => {
+      if (!isBlank(valueRef.current.fr)) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      setActiveTab('fr');
+      fieldRef.current?.focus();
+    };
+    form.addEventListener('submit', blockSubmit, true);
+    return () => {
+      form.removeEventListener('submit', blockSubmit, true);
+    };
+  }, [required]);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
+    const currentIndex = LANGS.indexOf(activeTab);
     let nextIndex = currentIndex;
 
-    if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      nextIndex = (currentIndex + 1) % tabs.length;
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nextIndex = (currentIndex + 1) % LANGS.length;
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      nextIndex = (currentIndex - 1 + LANGS.length) % LANGS.length;
     }
 
-    if (nextIndex !== currentIndex) {
-      const nextTab = tabs[nextIndex];
-      if (nextTab) {
-        setActiveTab(nextTab);
-        tabRefs.current[nextTab]?.focus();
-      }
+    if (nextIndex === currentIndex) {
+      return;
     }
+    const nextTab = LANGS[nextIndex];
+    if (nextTab === undefined) {
+      return;
+    }
+    setActiveTab(nextTab);
+    tabRefs.current[nextTab]?.focus();
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const updateLang = (lang: Lang, next: string): void => {
     onChange({
       ...value,
-      [activeTab]: e.target.value,
+      [lang]: next,
     });
   };
 
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
+    updateLang(activeTab, event.target.value);
+  };
+
+  const fieldProps = {
+    id: fieldId,
+    className: 'ltf-input',
+    value: value[activeTab] ?? '',
+    onChange: handleChange,
+    maxLength,
+    lang: activeTab,
+    dir: activeTab === 'ar' ? 'rtl' : 'ltr',
+    'aria-describedby': showFrError ? errorId : undefined,
+    'aria-invalid': showFrError && activeTab === 'fr' ? true : undefined,
+  } as const;
+
   return (
-    <div className="localized-text-field">
-      <div className="label-row">
-        <label htmlFor={`${idPrefix}-field-${activeTab}`}>
+    <div className="ltf" ref={rootRef}>
+      <div className="ltf-label-row">
+        <label id={labelId} className="ltf-label" htmlFor={fieldId}>
           {label}
         </label>
-        <div role="tablist" className="tab-list">
-          {tabs.map((lang) => {
-            const isEmpty = !value[lang];
+        <div role="tablist" aria-labelledby={labelId} className="ltf-tablist">
+          {LANGS.map((lang) => {
+            const empty = isBlank(value[lang]);
+            const tabId = `${idPrefix}-tab-${lang}`;
             return (
               <button
                 key={lang}
-                id={`${idPrefix}-tab-${lang}`}
-                ref={(el) => {
-                  tabRefs.current[lang] = el;
+                id={tabId}
+                ref={(element) => {
+                  tabRefs.current[lang] = element;
                 }}
                 type="button"
                 role="tab"
                 aria-selected={activeTab === lang}
+                aria-controls={panelId}
+                aria-required={lang === 'fr' && required === true ? true : undefined}
+                aria-invalid={lang === 'fr' && showFrError ? true : undefined}
                 tabIndex={activeTab === lang ? 0 : -1}
-                onClick={() => { setActiveTab(lang); }}
+                onClick={() => {
+                  setActiveTab(lang);
+                }}
                 onKeyDown={handleKeyDown}
-                className={`tab-button ${activeTab === lang ? 'active' : ''}`}
+                className="ltf-tab"
               >
                 {t(`catalog.translation.tab.${lang}`)}
-                {isEmpty && (
-                  <span
-                    className="missing-indicator"
-                    aria-label={t('catalog.translation.missing')}
-                  >
-                    {t('catalog.translation.missing')}
-                  </span>
-                )}
+                {lang === 'fr' && required === true ? (
+                  <span className="ltf-required">{t('catalog.translation.required')}</span>
+                ) : null}
+                {empty ? (
+                  <span className="ltf-missing">{t('catalog.translation.missing')}</span>
+                ) : null}
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="input-container">
+      {showFrError ? (
+        <p id={errorId} className="ltf-fr-error" role="alert">
+          {t('catalog.translation.frRequired')}
+        </p>
+      ) : null}
+
+      {required === true ? (
+        <input
+          className="ltf-fr-guard"
+          value={value.fr}
+          onChange={(event) => {
+            updateLang('fr', event.target.value);
+          }}
+          onInvalid={(event) => {
+            event.preventDefault();
+            setActiveTab('fr');
+            fieldRef.current?.focus();
+          }}
+          required
+          tabIndex={-1}
+          aria-hidden="true"
+          autoComplete="off"
+        />
+      ) : null}
+
+      <div
+        role="tabpanel"
+        id={panelId}
+        aria-labelledby={`${idPrefix}-tab-${activeTab}`}
+        className="ltf-panel"
+      >
         {multiline ? (
           <textarea
-            id={`${idPrefix}-field-${activeTab}`}
-            className="text-input"
-            value={value[activeTab] || ''}
-            onChange={handleChange}
-            maxLength={maxLength}
-            lang={activeTab}
-            dir={activeTab === 'ar' ? 'rtl' : 'ltr'}
-            required={required && activeTab === 'fr'}
+            ref={(element) => {
+              fieldRef.current = element;
+            }}
+            {...fieldProps}
           />
         ) : (
           <input
-            id={`${idPrefix}-field-${activeTab}`}
+            ref={(element) => {
+              fieldRef.current = element;
+            }}
             type="text"
-            className="text-input"
-            value={value[activeTab] || ''}
-            onChange={handleChange}
-            maxLength={maxLength}
-            lang={activeTab}
-            dir={activeTab === 'ar' ? 'rtl' : 'ltr'}
-            required={required && activeTab === 'fr'}
+            {...fieldProps}
           />
         )}
       </div>

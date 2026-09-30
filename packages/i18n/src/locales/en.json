@@ -74,7 +74,9 @@
         "fr": "French",
         "ar": "Arabic"
       },
-      "missing": "Missing translation"
+      "missing": "Missing translation",
+      "required": "required",
+      "frRequired": "French is required."
     }
   }
 }
