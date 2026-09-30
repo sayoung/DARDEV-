@@ -17,7 +17,12 @@ import {
   type CategoryUpdate,
   type CategoryListResponse,
   type TourCreate,
-  type TourUpdate
+  type TourUpdate,
+  type AssetListQuery,
+  type AssetResponse,
+  type PaginatedAssetResponse,
+  AssetResponseSchema,
+  PaginatedAssetResponseSchema
 } from '@xplor/shared';
 import { requestJson } from './client.js';
 
@@ -110,4 +115,18 @@ export async function duplicateTour(id: string): Promise<TourResponse> {
   return requestJson(`/api/v1/admin/tours/${id}/duplicate`, TourResponseSchema, {
     method: 'POST',
   });
+}
+
+export async function listAssets(query?: AssetListQuery): Promise<PaginatedAssetResponse> {
+  const url = new URL('/api/v1/admin/assets', 'http://localhost'); // base url doesn't matter for path + search
+  if (query) {
+    if (query.page) url.searchParams.set('page', query.page.toString());
+    if (query.pageSize) url.searchParams.set('pageSize', query.pageSize.toString());
+    if (query.kind) url.searchParams.set('kind', query.kind);
+  }
+  return requestJson(`${url.pathname}${url.search}`, PaginatedAssetResponseSchema);
+}
+
+export async function getAsset(id: string): Promise<AssetResponse> {
+  return requestJson(`/api/v1/admin/assets/${id}`, AssetResponseSchema);
 }

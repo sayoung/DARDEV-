@@ -69,6 +69,17 @@
     }
   },
   "catalog": {
+    "asset": {
+      "empty": "Aucun média trouvé.",
+      "error": "Impossible de charger les médias.",
+      "emptyOption": "Sélectionner un média...",
+      "status": {
+        "PENDING": "En attente",
+        "PROCESSING": "En cours",
+        "READY": "Prêt",
+        "ERROR": "Erreur"
+      }
+    },
     "translation": {
       "tab": {
         "en": "Anglais",
