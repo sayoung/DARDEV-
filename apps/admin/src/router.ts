@@ -10,12 +10,18 @@ export type AppRoute =
   | { name: 'tour-new' }
   | { name: 'tour-detail'; id: string }
   | { name: 'scene-detail'; tourId: string; sceneId: string }
+  | { name: 'hotspots'; tourId: string; sceneId: string }
+  | { name: 'hotspot-new'; tourId: string; sceneId: string }
+  | { name: 'hotspot-detail'; tourId: string; sceneId: string; id: string }
   | { name: 'forgot' }
   | { name: 'reset'; token: string }
   | { name: 'invite'; token: string };
 
 const RESET_PATH = /^\/reset\/([^/]+)$/;
 const INVITE_PATH = /^\/invite\/([^/]+)$/;
+const HOTSPOT_NEW_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)\/hotspots\/new$/;
+const HOTSPOT_DETAIL_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)\/hotspots\/([^/]+)$/;
+const HOTSPOTS_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)\/hotspots$/;
 const SCENE_DETAIL_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)$/;
 const TOUR_DETAIL_PATH = /^\/tours\/([^/]+)$/;
 
@@ -34,6 +40,18 @@ export function parsePathname(pathname: string): AppRoute {
   const inviteToken = INVITE_PATH.exec(pathname)?.[1];
   if (inviteToken !== undefined) {
     return { name: 'invite', token: decodeSegment(inviteToken) };
+  }
+  const hotspotNewMatch = HOTSPOT_NEW_PATH.exec(pathname);
+  if (hotspotNewMatch !== null && hotspotNewMatch[1] !== undefined && hotspotNewMatch[2] !== undefined) {
+    return { name: 'hotspot-new', tourId: decodeSegment(hotspotNewMatch[1]), sceneId: decodeSegment(hotspotNewMatch[2]) };
+  }
+  const hotspotDetailMatch = HOTSPOT_DETAIL_PATH.exec(pathname);
+  if (hotspotDetailMatch !== null && hotspotDetailMatch[1] !== undefined && hotspotDetailMatch[2] !== undefined && hotspotDetailMatch[3] !== undefined) {
+    return { name: 'hotspot-detail', tourId: decodeSegment(hotspotDetailMatch[1]), sceneId: decodeSegment(hotspotDetailMatch[2]), id: decodeSegment(hotspotDetailMatch[3]) };
+  }
+  const hotspotsMatch = HOTSPOTS_PATH.exec(pathname);
+  if (hotspotsMatch !== null && hotspotsMatch[1] !== undefined && hotspotsMatch[2] !== undefined) {
+    return { name: 'hotspots', tourId: decodeSegment(hotspotsMatch[1]), sceneId: decodeSegment(hotspotsMatch[2]) };
   }
   const sceneMatch = SCENE_DETAIL_PATH.exec(pathname);
   if (sceneMatch !== null && sceneMatch[1] !== undefined && sceneMatch[2] !== undefined) {

@@ -183,6 +183,50 @@
         "setStart": "Définir comme départ"
       }
     },
+    "hotspots": {
+      "title": "Hotspots",
+      "list": "Hotspots de la scène",
+      "backToList": "Retour à la liste",
+      "backToScene": "Retour à la scène",
+      "add": "Ajouter un hotspot",
+      "edit": "Modifier le hotspot",
+      "empty": "Aucun hotspot pour cette scène.",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce hotspot ?",
+      "columns": {
+        "type": "Type",
+        "label": "Libellé",
+        "target": "Cible",
+        "icon": "Icône"
+      },
+      "type": {
+        "SCENE_LINK": "Lien vers une scène",
+        "TOUR_LINK": "Lien vers une visite",
+        "INFO": "Information",
+        "MEDIA": "Média",
+        "URL": "Lien externe"
+      },
+      "icon": {
+        "ARROW": "Flèche",
+        "INFO": "Info",
+        "PHOTO": "Photo",
+        "PLAY": "Lecture",
+        "PORTAL": "Portail"
+      },
+      "fields": {
+        "type": "Type",
+        "icon": "Icône",
+        "label": "Libellé",
+        "yaw": "Lacet (yaw)",
+        "pitch": "Tangage (pitch)",
+        "arrivalYaw": "Lacet d'arrivée",
+        "targetSceneId": "Scène cible",
+        "targetTourId": "Visite cible",
+        "targetTourSceneId": "Scène de départ (optionnelle)",
+        "body": "Texte",
+        "mediaAssetIds": "Médias",
+        "url": "URL externe"
+      }
+    },
     "publication": {
       "status": "Statut",
       "validate": "Vérifier",

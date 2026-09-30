@@ -1,4 +1,4 @@
-﻿# Suivi — Xplor
+# Suivi — Xplor
 
 ## Jalon en cours
 
@@ -11,18 +11,22 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026
-**Exigence :** M1 F-02 (gestion des scènes, version manuelle sans upload) - Correction ESLint
+**Exigence :** M1 API-23 (écran admin des hotspots)
 
 Plan :
-1. Analyser les erreurs `pnpm lint` et `pnpm typecheck` remontées par le relecteur.
-2. Corriger les types `any` et les importations inutilisées dans `SceneDetailPage.tsx`, `SceneForm.tsx` et leurs tests.
-3. Corriger les assertions inutiles et les promesses non gérées (`AssetPicker.tsx`).
-4. S'assurer que `pnpm lint`, `pnpm typecheck`, et `pnpm test` passent à 100%.
+1. Créer `HotspotsPage`, `HotspotDetailPage`, et `HotspotForm` avec shadcn/ui.
+2. Ajouter le router pour ces pages.
+3. Intégrer les méthodes de fetch API (CRUD hotspots) dans `api/catalog.ts`.
+4. Mettre à jour `locales/fr.json` pour D-82.
+5. Ajouter les tests unitaires correspondants (Vitest) pour vérifier les composants.
+6. Résoudre les retours de revue du code (TS linter et tests).
 
 Réalisé :
-- Suppression des `any` explicites et des imports non utilisés.
-- Correction des assertions non nécessaires et de la gestion des promesses.
-- Les commandes `lint`, `typecheck` et `test` retournent toutes le code 0. Aucun test cassé.
+- Composants de formulaire et de vue liste créés.
+- Les endpoints du catalogue sont fonctionnels.
+- Les tests ont été ajoutés (`HotspotsPage.test.tsx` et `HotspotDetailPage.test.tsx`).
+- Corrections apportées (suppression des non-null assertions `!`, des types `any`, des cast d'enums forcés `as`).
+- lint, typecheck, test OK.
 
 ## Definition of Done — M1
 
@@ -48,14 +52,13 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-03** : Règles de publication, TourPublicationPanel, API alidate/publish/unpublish (D-74).
 - **API-25** : CRUD villes et catégories.
 - **Schémas** : Hotel, Kiosk, Selection, UserHotel.
-- **API-23** : CRUD Hotspots en API.
+- **API-23** : CRUD Hotspots en API + écran admin des hotspots.
 - **F-05** : Médias API + AssetPicker.
 - **NF-09** : Seed (3 visites liées).
 - **F-04** : LocalizedTextField (français obligatoire).
 - **D-83** : Intégration Tailwind CSS et shadcn/ui pour apps/admin (1/5 à 5/5) terminée.
 
 ### En cours
-- écran admin des hotspots
 - parcours Playwright du livrable M1
 - contrôle de la DoD
 
