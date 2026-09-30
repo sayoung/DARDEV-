@@ -215,11 +215,28 @@ const tourResponse = {
   sceneCount: 0,
   createdById: id.user,
   contentVersion: 1,
+  startSceneId: null,
+  publishedAt: null,
 };
 
 describe('TourResponseSchema', () => {
   it('renvoie la visite, son statut et le nombre de scènes', () => {
     expect(TourResponseSchema.parse(tourResponse)).toEqual(tourResponse);
+  });
+
+  it('accepte startSceneId et publishedAt renseignés', () => {
+    const filled = {
+      ...tourResponse,
+      startSceneId: id.scene,
+      publishedAt: '2026-09-30T08:00:00.000Z',
+    };
+    expect(TourResponseSchema.parse(filled)).toEqual(filled);
+  });
+
+  it('refuse un startSceneId qui n’est pas un UUID v7', () => {
+    expect(TourResponseSchema.safeParse({ ...tourResponse, startSceneId: 'abc' }).success).toBe(
+      false,
+    );
   });
 
   it('refuse un jeton de partage qui n’a pas 22 caractères', () => {

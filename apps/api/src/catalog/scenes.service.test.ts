@@ -265,6 +265,8 @@ function harness(): {
         sceneCount,
         createdById: USER_ID,
         contentVersion: tour.contentVersion,
+        startSceneId: tour.startSceneId ?? null,
+        publishedAt: null,
       });
     },
   };

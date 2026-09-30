@@ -124,7 +124,6 @@ export type TourUpdate = z.infer<typeof TourUpdateSchema>;
 
 /**
  * Visite renvoyée par l'API admin (API-21).
- * `publishedAt` et `startSceneId` restent hors de ce schéma.
  * La scène de départ se lit en base ; la réponse scène ne la répète pas.
  */
 export const TourResponseSchema = z.object({
@@ -138,6 +137,8 @@ export const TourResponseSchema = z.object({
   sceneCount: z.number().int().min(0),
   createdById: idSchema,
   contentVersion: z.number().int().min(1),
+  startSceneId: idSchema.nullable(),
+  publishedAt: z.iso.datetime().nullable(),
 });
 export type TourResponse = z.infer<typeof TourResponseSchema>;
 

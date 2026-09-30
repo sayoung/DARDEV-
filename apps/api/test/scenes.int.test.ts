@@ -349,6 +349,7 @@ describe('scènes HTTP', () => {
     const tour = TourResponseSchema.parse(parseJson(updated.body));
     expect(tour.id).toBe(ready.tour.id);
     expect(tour.contentVersion).toBe(4);
+    expect(tour.startSceneId).toBe(second.id);
     const row = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
     expect(row.startSceneId).toBe(second.id);
     expect(row.contentVersion).toBe(4);

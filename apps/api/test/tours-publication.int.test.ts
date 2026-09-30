@@ -268,6 +268,7 @@ describe('publication et dépublication', () => {
     const published = TourResponseSchema.parse(parseJson(publishedResponse.body));
     expect(published.status).toBe(TourStatus.PUBLISHED);
     expect(published.contentVersion).toBe(readyToPublish.contentVersion + 1);
+    expect(published.publishedAt).not.toBeNull();
     const stored = await prisma.tour.findUniqueOrThrow({ where: { id: ready.tour.id } });
     expect(stored.status).toBe(TourStatus.PUBLISHED);
     expect(stored.publishedAt).toBeInstanceOf(Date);

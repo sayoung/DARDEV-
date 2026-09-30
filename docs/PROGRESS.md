@@ -10,44 +10,25 @@ Definition of Done du jalon : non remplie.
 
 ## Session en cours
 
-**Date :** 30/09/2026  
-**Exigence :** M1 F-01 — correction de revue de l'écran liste des visites.
+**Date :** 30/09/2026
+**Exigence :** M1 API-21 (contrat de la fiche visite)
 
 Plan :
-1. Valider `page` (entier ≥ 1), `status` (`z.enum(TourStatus)`), `cityId` et `categoryId` (`idSchema`) et ignorer les valeurs invalides, sans assertion de type.
-2. Laisser `listCities` et `listCategories` dans un effet distinct de `listTours`.
-3. Désactiver « Dupliquer » pendant le POST (`duplicateTour` dans `apps/admin/src/api/catalog.ts`, pas dans `client.ts`).
-4. Libellés accessibles `catalog.tour.filters.*` et marges logiques (`margin-block-*`).
-5. Tests : `cityId`, `categoryId` et `q` dans l'URL fetch et dans `window.location.search` ; Précédent depuis `?page=2` ; `?status=FOO&page=abc` ; combobox par nom ; 403 NestJS de `GET /admin/tours` pour PARTNER.
-6. Coller ici la sortie réelle de `pnpm lint`, `pnpm typecheck` et `pnpm test`.
+1. Mettre à jour `TourResponseSchema` dans `@xplor/shared/src/catalog.ts` pour inclure `startSceneId` et `publishedAt`.
+2. Mettre à jour la logique de mapping côté API (`toTour` dans `tours.service.ts`) pour peupler ces champs de la base.
+3. Vérifier les types des mock et adapter la base de test `ToursPage.test.tsx` et `scenes.service.test.ts`.
+4. Assurer que ces champs fonctionnent à la création, la mise à jour (via duplications), la modification du start-scene et la publication, via les tests d'intégration.
+5. Mettre à jour `docs/openapi.json`.
+6. Corriger les renvois vers la décision D-78 qui devient D-79 (LocalizedTextField).
 
-Réalisé (30/09/2026, Node 22.23.3) : correction de revue M1 F-01 (écran liste des visites). `page`, `status` (`z.enum(TourStatus)`), `cityId` et `categoryId` (`idSchema`) sont validés ; une valeur invalide (`?status=FOO`, `?page=abc`) est ignorée, sans assertion de type. `listCities` et `listCategories` restent dans un effet séparé de `listTours`. `duplicateTour` est dans `apps/admin/src/api/catalog.ts` (il n'est pas dans `client.ts`, qui ne fournit que `requestJson`) : le bouton Dupliquer est désactivé pendant le POST et un second clic ne relance pas la requête. Libellés `<label>` `catalog.tour.filters.status/city/category/search`, marges `margin-block-start` et `margin-block-end`. Le mock PARTNER reprend le corps NestJS d'un `ForbiddenException` (`statusCode` 403, `message` et `error` « Forbidden ») sur `GET /admin/tours`. `pnpm lint`, `pnpm typecheck` et `pnpm test` (408 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
-
-```text
-NODE v22.23.3
-
-> xplor@ lint D:\DARDEV\local\xplor_smit
-> eslint .
-
-
-> xplor@ typecheck D:\DARDEV\local\xplor_smit
-> tsc --noEmit -p tsconfig.json && pnpm -r typecheck
-
-Scope: 7 of 8 workspace projects
-apps/worker typecheck$ tsc --noEmit -p tsconfig.json
-packages/shared typecheck$ tsc --noEmit -p tsconfig.json
-apps/worker typecheck: Done
-packages/shared typecheck: Done
-packages/i18n typecheck$ tsc --noEmit -p tsconfig.json
-packages/i18n typecheck: Done
-apps/admin typecheck$ tsc --noEmit -p tsconfig.json
-apps/api typecheck$ tsc --noEmit -p tsconfig.json
-apps/kiosk typecheck$ tsc --noEmit -p tsconfig.json
-apps/web typecheck$ tsc --noEmit -p tsconfig.json
-apps/kiosk typecheck: Done
-apps/web typecheck: Done
-apps/admin typecheck: Done
-apps/api typecheck: Done
+Réalisé (30/09/2026) : 
+- `TourResponseSchema` mis à jour et validé avec ces deux champs.
+- Le helper `toTour` de l'API remplit automatiquement ces champs pour tous les endpoints retournant une `TourResponse`.
+- Les mocks admin et api (`ToursPage.test.tsx` et `scenes.service.test.ts`) ont été adaptés.
+- Les tests d'intégration (`tours.int.test.ts`, `scenes.int.test.ts`, `tours-publication.int.test.ts`) s'assurent désormais que la création donne des nulls, la publication pose `publishedAt`, et le set-start pose `startSceneId`.
+- OpenAPI regénéré. 
+- Décisions et `PROGRESS.md` corrigés (D-78 -> D-79).
+- Succès de `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
 
 > xplor@ test D:\DARDEV\local\xplor_smit
 > vitest run
@@ -366,11 +347,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-05** (liste des médias, lecture seule, D-76) : `GET /api/v1/admin/assets` (filtre `kind` facultatif, `PaginationQuery`, tri `createdAt` décroissant puis `id` croissant) et `GET /api/v1/admin/assets/:id`. `AssetResponseSchema` dans `@xplor/shared` (`id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`). 404 `ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour. Pas d’upload, pas de suppression (API-24, M2). Pas d’écran admin.
 
 - **NF-09** (seed des 3 visites liées) : `seed-tours.ts` intégré à `prisma/seed.ts`. 3 visites publiées créées, valides (`validateTour`), idempotence via UUID v7. Couvert par `seed.int.test.ts`.
-- **F-04** (onglets de traduction, D-78) : composant contrôlé `LocalizedTextField` (`apps/admin/src/catalog/`). Un champ visible, onglets fr/ar/en, `dir="rtl"` sur l'arabe, indicateur « Traduction manquante », français obligatoire quel que soit l'onglet actif. La liste des visites signale une traduction manquante (`catalog.translation.missing`) quand la langue active, autre que le français, est absente du titre.
+- **F-04** (onglets de traduction, D-79) : composant contrôlé `LocalizedTextField` (`apps/admin/src/catalog/`). Un champ visible, onglets fr/ar/en, `dir="rtl"` sur l'arabe, indicateur « Traduction manquante », français obligatoire quel que soit l'onglet actif. La liste des visites signale une traduction manquante (`catalog.translation.missing`) quand la langue active, autre que le français, est absente du titre.
 
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), formulaires admin des visites (`/tours/new`, `/tours/:id`), scènes, hotspots, médiathèque et affichage des problèmes de publication (la liste `/tours`, les villes et les catégories sont en place), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-78) ; la liste des visites signale une traduction manquante. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), formulaires admin des visites (`/tours/new`, `/tours/:id`), scènes, hotspots, médiathèque et affichage des problèmes de publication (la liste `/tours`, les villes et les catégories sont en place), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-79) ; la liste des visites signale une traduction manquante. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 

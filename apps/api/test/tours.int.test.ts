@@ -190,6 +190,8 @@ describe('visites HTTP', () => {
     expect(created.createdById).toBe(editor.userId);
     expect(created.sceneCount).toBe(0);
     expect(created.categoryIds).toEqual([refs.category.id]);
+    expect(created.startSceneId).toBeNull();
+    expect(created.publishedAt).toBeNull();
 
     const row = await prisma.tour.findUniqueOrThrow({ where: { id: created.id } });
     expect(row.status).toBe('DRAFT');
