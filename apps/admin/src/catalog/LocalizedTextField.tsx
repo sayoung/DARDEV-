@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState, KeyboardEvent, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LocalizedText } from '@xplor/shared';
 import './style.css';
@@ -24,6 +24,8 @@ export function LocalizedTextField({
 }: LocalizedTextFieldProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<LangTab>('fr');
+  const idPrefix = useId();
+  const tabRefs = useRef<Record<LangTab, HTMLButtonElement | null>>({ fr: null, ar: null, en: null });
 
   const tabs: LangTab[] = ['fr', 'ar', 'en'];
 
@@ -43,7 +45,7 @@ export function LocalizedTextField({
       const nextTab = tabs[nextIndex];
       if (nextTab) {
         setActiveTab(nextTab);
-        document.getElementById(`tab-${nextTab}`)?.focus();
+        tabRefs.current[nextTab]?.focus();
       }
     }
   };
@@ -58,7 +60,7 @@ export function LocalizedTextField({
   return (
     <div className="localized-text-field">
       <div className="label-row">
-        <label htmlFor={`field-${activeTab}`}>
+        <label htmlFor={`${idPrefix}-field-${activeTab}`}>
           {label}
         </label>
         <div role="tablist" className="tab-list">
@@ -67,7 +69,10 @@ export function LocalizedTextField({
             return (
               <button
                 key={lang}
-                id={`tab-${lang}`}
+                id={`${idPrefix}-tab-${lang}`}
+                ref={(el) => {
+                  tabRefs.current[lang] = el;
+                }}
                 type="button"
                 role="tab"
                 aria-selected={activeTab === lang}
@@ -94,7 +99,7 @@ export function LocalizedTextField({
       <div className="input-container">
         {multiline ? (
           <textarea
-            id={`field-${activeTab}`}
+            id={`${idPrefix}-field-${activeTab}`}
             className="text-input"
             value={value[activeTab] || ''}
             onChange={handleChange}
@@ -105,7 +110,7 @@ export function LocalizedTextField({
           />
         ) : (
           <input
-            id={`field-${activeTab}`}
+            id={`${idPrefix}-field-${activeTab}`}
             type="text"
             className="text-input"
             value={value[activeTab] || ''}

@@ -23,7 +23,7 @@
       "title": "Mot de passe oublié",
       "email": "Adresse e-mail",
       "submit": "Envoyer le lien",
-      "sent": "Si un compte correspond à cette adresse, un courriel vient d\u0027être envoyé.",
+      "sent": "Si un compte correspond à cette adresse, un courriel vient d'être envoyé.",
       "invalidEmail": "Indiquez une adresse e-mail valide.",
       "back": "Retour à la connexion"
     },
@@ -39,7 +39,7 @@
       "successInvite": "Votre mot de passe est défini. Vous pouvez vous connecter."
     },
     "errors": {
-      "TOKEN_INVALID": "Ce lien n\u0027est plus valable.",
+      "TOKEN_INVALID": "Ce lien n'est plus valable.",
       "PASSWORD_TOO_COMMON": "Ce mot de passe est trop courant.",
       "PASSWORD_INVALID": "Le mot de passe doit contenir au moins 12 caractères.",
       "request": "La demande a échoué. Réessayez."
@@ -47,7 +47,7 @@
     "role": {
       "ADMIN": "Administrateur",
       "EDITOR": "Éditeur",
-      "HOTEL_MANAGER": "Gestionnaire d\u0027hôtel",
+      "HOTEL_MANAGER": "Gestionnaire d'hôtel",
       "PARTNER": "Partenaire"
     },
     "logout": "Se déconnecter"
@@ -59,12 +59,12 @@
     "invite": {
       "subject": "Invitation à rejoindre Xplor",
       "text": "Vous êtes invité à rejoindre Xplor. Définissez votre mot de passe en ouvrant ce lien (valable 48 heures) : {link}",
-      "html": "\u003cp\u003eVous êtes invité à rejoindre Xplor.\u003c/p\u003e\u003cp\u003e\u003ca href=\"{link}\"\u003eDéfinir votre mot de passe\u003c/a\u003e (lien valable 48 heures).\u003c/p\u003e"
+      "html": "<p>Vous êtes invité à rejoindre Xplor.</p><p><a href=\"{link}\">Définir votre mot de passe</a> (lien valable 48 heures).</p>"
     },
     "reset": {
       "subject": "Réinitialisation de votre mot de passe Xplor",
       "text": "Pour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) : {link}",
-      "html": "\u003cp\u003e\u003ca href=\"{link}\"\u003eChoisir un nouveau mot de passe\u003c/a\u003e (lien valable 1 heure).\u003c/p\u003e"
+      "html": "<p><a href=\"{link}\">Choisir un nouveau mot de passe</a> (lien valable 1 heure).</p>"
     }
   },
   "catalog": {
