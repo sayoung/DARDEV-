@@ -102,7 +102,9 @@
       "fetchFailed": "Impossible de charger les données.",
       "deleteFailed": "Impossible de supprimer cet élément.",
       "invalidForm": "Veuillez corriger les erreurs dans le formulaire.",
-      "inUse": "Cet élément est utilisé et ne peut pas être supprimé."
+      "inUse": "Cet élément est utilisé et ne peut pas être supprimé.",
+      "panoramaAssetNotFound": "Le panorama sélectionné est introuvable.",
+      "sceneSetMismatch": "La liste des scènes est invalide ou incomplète."
     },
     "actions": "Actions",
     "edit": "Modifier",
@@ -156,6 +158,25 @@
         "prev": "Précédent",
         "next": "Suivant",
         "info": "Page {{page}} sur {{total}}"
+      }
+    },
+    "scene": {
+      "title": "Scènes",
+      "startBadge": "Scène de départ",
+      "fields": {
+        "title": "Titre",
+        "caption": "Légende",
+        "panorama": "Panorama",
+        "initialYaw": "Lacet initial",
+        "initialPitch": "Tangage initial",
+        "initialZoom": "Zoom initial",
+        "hotspotCount": "Hotspots"
+      },
+      "actions": {
+        "add": "Ajouter une scène",
+        "moveUp": "Monter",
+        "moveDown": "Descendre",
+        "setStart": "Définir comme départ"
       }
     }
   },

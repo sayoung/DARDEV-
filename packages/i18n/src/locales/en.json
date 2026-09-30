@@ -102,7 +102,9 @@
       "fetchFailed": "Failed to load data.",
       "deleteFailed": "Failed to delete this item.",
       "invalidForm": "Please correct the errors in the form.",
-      "inUse": "This item is in use and cannot be deleted."
+      "inUse": "This item is in use and cannot be deleted.",
+      "panoramaAssetNotFound": "The selected panorama could not be found.",
+      "sceneSetMismatch": "The list of scenes is invalid or incomplete."
     },
     "actions": "Actions",
     "edit": "Edit",
@@ -156,6 +158,25 @@
         "prev": "Previous",
         "next": "Next",
         "info": "Page {{page}} of {{total}}"
+      }
+    },
+    "scene": {
+      "title": "Scenes",
+      "startBadge": "Start scene",
+      "fields": {
+        "title": "Title",
+        "caption": "Caption",
+        "panorama": "Panorama",
+        "initialYaw": "Initial yaw",
+        "initialPitch": "Initial pitch",
+        "initialZoom": "Initial zoom",
+        "hotspotCount": "Hotspots"
+      },
+      "actions": {
+        "add": "Add a scene",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "setStart": "Set as start"
       }
     }
   },
