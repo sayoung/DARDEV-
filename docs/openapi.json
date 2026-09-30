@@ -6487,6 +6487,23 @@
                       "updatedAt": {
                         "type": "string",
                         "format": "date-time"
+                      },
+                      "narration": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "additionalProperties": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "ambientAssetId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
                       }
                     },
                     "required": [
@@ -6719,6 +6736,20 @@
                   },
                   "weight": {
                     "type": "integer"
+                  },
+                  "narration": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "ambientAssetId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
                   }
                 },
                 "required": [
@@ -6815,6 +6846,23 @@
                     "updatedAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "narration": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "ambientAssetId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
                     }
                   },
                   "required": [
@@ -7123,6 +7171,23 @@
                       "updatedAt": {
                         "type": "string",
                         "format": "date-time"
+                      },
+                      "narration": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "additionalProperties": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "ambientAssetId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "uuid"
                       }
                     },
                     "required": [
@@ -7783,6 +7848,23 @@
                     "updatedAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "narration": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "ambientAssetId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
                     }
                   },
                   "required": [
@@ -8014,6 +8096,20 @@
                   },
                   "weight": {
                     "type": "integer"
+                  },
+                  "narration": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "ambientAssetId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
                   }
                 },
                 "required": [
@@ -8110,6 +8206,23 @@
                     "updatedAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "narration": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "ambientAssetId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
                     }
                   },
                   "required": [

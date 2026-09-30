@@ -27,20 +27,22 @@ export function AssetPicker({ label, kind, value, onChange, required }: AssetPic
     setLoading(true);
     setError(false);
     
-    listAssets({ kind, pageSize: 100, page: 1 })
-      .then((res) => {
+    const fetchAssets = async () => {
+      try {
+        const res = await listAssets({ kind, pageSize: 100, page: 1 });
         if (mounted) {
-          setAssets(res.items);
+          setAssets(res?.items || []);
           setLoading(false);
         }
-      })
-      .catch(() => {
+      } catch {
         if (mounted) {
           setError(true);
           setLoading(false);
         }
-      });
-      
+      }
+    };
+    
+    void fetchAssets();
     return () => {
       mounted = false;
     };

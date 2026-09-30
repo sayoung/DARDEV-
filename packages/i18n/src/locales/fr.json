@@ -104,7 +104,8 @@
       "invalidForm": "Veuillez corriger les erreurs dans le formulaire.",
       "inUse": "Cet élément est utilisé et ne peut pas être supprimé.",
       "panoramaAssetNotFound": "Le panorama sélectionné est introuvable.",
-      "sceneSetMismatch": "La liste des scènes est invalide ou incomplète."
+      "sceneSetMismatch": "La liste des scènes est invalide ou incomplète.",
+      "sceneNotFound": "La scène demandée est introuvable."
     },
     "actions": "Actions",
     "edit": "Modifier",
@@ -170,8 +171,11 @@
         "initialYaw": "Lacet initial",
         "initialPitch": "Tangage initial",
         "initialZoom": "Zoom initial",
-        "hotspotCount": "Hotspots"
+        "hotspotCount": "Hotspots",
+        "narration": "Narration audio",
+        "ambient": "Son d'ambiance"
       },
+      "saveSuccess": "Scène enregistrée avec succès",
       "actions": {
         "add": "Ajouter une scène",
         "moveUp": "Monter",

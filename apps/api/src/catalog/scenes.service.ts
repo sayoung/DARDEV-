@@ -290,6 +290,8 @@ function sceneScalars(input: SceneCreate): {
   initialPitch: number;
   initialZoom: number;
   weight: number;
+  narration?: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue;
+  ambientAssetId?: string | null;
 } {
   return {
     title: localizedToJson(input.title),
@@ -299,6 +301,8 @@ function sceneScalars(input: SceneCreate): {
     initialPitch: input.initialPitch,
     initialZoom: input.initialZoom,
     weight: input.weight,
+    narration: input.narration === undefined ? Prisma.DbNull : (input.narration as unknown as Prisma.InputJsonValue),
+    ambientAssetId: input.ambientAssetId,
   };
 }
 
@@ -321,6 +325,7 @@ function exactSceneIds(activeIds: readonly string[], requested: readonly string[
 
 function toScene(row: SceneRow): SceneResponse {
   const caption = row.caption === null ? undefined : row.caption;
+  const narration = row.narration === null ? undefined : row.narration;
   return SceneResponseSchema.parse({
     id: row.id,
     tourId: row.tourId,
@@ -334,6 +339,8 @@ function toScene(row: SceneRow): SceneResponse {
     hotspotCount: row._count.hotspots,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    ...(narration === undefined ? {} : { narration }),
+    ambientAssetId: row.ambientAssetId,
   });
 }
 

@@ -9,12 +9,14 @@ export type AppRoute =
   | { name: 'tours' }
   | { name: 'tour-new' }
   | { name: 'tour-detail'; id: string }
+  | { name: 'scene-detail'; tourId: string; sceneId: string }
   | { name: 'forgot' }
   | { name: 'reset'; token: string }
   | { name: 'invite'; token: string };
 
 const RESET_PATH = /^\/reset\/([^/]+)$/;
 const INVITE_PATH = /^\/invite\/([^/]+)$/;
+const SCENE_DETAIL_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)$/;
 const TOUR_DETAIL_PATH = /^\/tours\/([^/]+)$/;
 
 export function parsePathname(pathname: string): AppRoute {
@@ -32,6 +34,10 @@ export function parsePathname(pathname: string): AppRoute {
   const inviteToken = INVITE_PATH.exec(pathname)?.[1];
   if (inviteToken !== undefined) {
     return { name: 'invite', token: decodeSegment(inviteToken) };
+  }
+  const sceneMatch = SCENE_DETAIL_PATH.exec(pathname);
+  if (sceneMatch !== null && sceneMatch[1] !== undefined && sceneMatch[2] !== undefined) {
+    return { name: 'scene-detail', tourId: decodeSegment(sceneMatch[1]), sceneId: decodeSegment(sceneMatch[2]) };
   }
   const tourId = TOUR_DETAIL_PATH.exec(pathname)?.[1];
   if (tourId !== undefined && tourId !== '') {

@@ -150,6 +150,8 @@ const sceneShape = {
   initialPitch: pitchSchema.default(0),
   initialZoom: z.number().int().min(0).max(100).default(50),
   weight: z.number().int(),
+  narration: z.record(z.string(), idSchema).optional(),
+  ambientAssetId: idSchema.optional().nullable(),
 };
 
 /** Corps de création d'une scène (API-22). */
@@ -179,6 +181,8 @@ export const SceneResponseSchema = z.object({
   hotspotCount: z.number().int().min(0),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
+  narration: z.record(z.string(), idSchema).optional().nullable(),
+  ambientAssetId: idSchema.optional().nullable(),
 });
 export type SceneResponse = z.infer<typeof SceneResponseSchema>;
 

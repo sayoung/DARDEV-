@@ -3,6 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TourScenesSection } from './TourScenesSection.js';
 import { TourStatus, type TourResponse, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus } from '@xplor/shared';
 
+import { navigate } from '../router.js';
+
+vi.mock('../router.js', () => ({
+  navigate: vi.fn(),
+  hrefFor: vi.fn((path) => path),
+}));
+
 // Mock du client HTTP global
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -87,7 +94,7 @@ describe('TourScenesSection', () => {
     expect(screen.getByText('catalog.scene.startBadge')).toBeDefined();
   });
 
-  it('la création envoie le bon corps et met à jour le badge', async () => {
+  it('le bouton ajouter redirige vers le formulaire de création', async () => {
     mockFetch.mockReset();
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -100,95 +107,9 @@ describe('TourScenesSection', () => {
       expect(screen.getByText('catalog.scene.actions.add')).toBeDefined();
     });
     
-    const mockAsset: AssetResponse = {
-      id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d99',
-      kind: AssetKind.PANORAMA,
-      mimeType: 'image/jpeg',
-      sizeBytes: 1234,
-      width: 2000,
-      height: 1000,
-      processingStatus: ProcessingStatus.READY,
-      createdAt: '2026-09-29T18:00:00.000Z',
-      copyright: null
-    };
-
-    // Remplir Assets
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        items: [mockAsset],
-        total: 1,
-        page: 1,
-        pageSize: 100
-      })
-    });
-    
-    fireEvent.click(screen.getByText('catalog.scene.actions.add'));
-    
-    const titleInputs = screen.getAllByRole('textbox');
-    const titleInput = titleInputs[0];
-    if (!titleInput) throw new Error('title input not found');
-    fireEvent.change(titleInput, { target: { value: 'Nouvelle Scène' } });
-    
-    // Attendre que l'AssetPicker charge
-    await waitFor(() => {
-      const s = document.querySelector('select');
-      expect(s).not.toBeNull();
-      expect(s?.options.length).toBeGreaterThan(0);
-    });
-    const select = document.querySelector('select');
-    if (!select) throw new Error('select not found');
-    fireEvent.change(select, { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d99' } });
-
-    const baseScene = mockScenes[0];
-    if (!baseScene) throw new Error('base scene not found');
-
-    const newScene: SceneResponse = {
-      ...baseScene,
-      id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d00',
-      title: { fr: 'Nouvelle Scène' }
-    };
-
-    // Mocker la réponse POST createScene
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 201,
-      json: () => Promise.resolve(newScene)
-    });
-    // Mocker getTour (startSceneId a été mis à jour par l'API)
-    const updatedTour: TourResponse = {
-      ...mockTour,
-      sceneCount: 1,
-      startSceneId: newScene.id
-    };
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(updatedTour)
-    });
-    // Mocker le rechargement de la liste
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve([newScene])
-    });
-
-    fireEvent.click(screen.getByText('common.save'));
-    
-    await waitFor(() => {
-      const call = mockFetch.mock.calls.find(c => c[0] === `/api/v1/admin/tours/${mockTour.id}/scenes` && (c[1] as RequestInit | undefined)?.method === 'POST');
-      expect(call).toBeDefined();
-      if (!call) throw new Error('POST call not found');
-      const body = JSON.parse((call[1] as RequestInit).body as string) as { title: { fr: string }, panoramaAssetId: string, weight: number };
-      expect(body.title.fr).toBe('Nouvelle Scène');
-      expect(body.panoramaAssetId).toBe('018f6b21-4d39-7a1b-9e45-3f8c5b2a1d99');
-      // Pour une première scène le weight est 0
-      expect(body.weight).toBe(0);
-      
-      expect(onTourUpdated).toHaveBeenCalledWith(updatedTour);
-    });
-    
-    // Le composant parent mettrait à jour 'tour', on simule ce rerender
-    // Wait for the table to be updated and show the badge
-    // We didn't change props.tour here directly, but verify that it was called.
+    const addBtn = screen.getByText('catalog.scene.actions.add');
+    fireEvent.click(addBtn);
+    expect(navigate).toHaveBeenCalledWith(`/tours/${mockTour.id}/scenes/new`);
   });
 
   it('Descendre envoie l\'ordre attendu', async () => {
