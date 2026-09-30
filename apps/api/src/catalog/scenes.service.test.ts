@@ -41,6 +41,7 @@ interface StoredTour {
   startSceneId: string | null;
   contentVersion: number;
   deletedAt: Date | null;
+  publishedAt: Date | null;
 }
 
 interface StoredScene {
@@ -79,8 +80,8 @@ function harness(): {
   setCreatedAt: (id: string, at: Date) => void;
 } {
   const tours = new Map<string, StoredTour>([
-    [TOUR_ID, { id: TOUR_ID, startSceneId: null, contentVersion: 1, deletedAt: null }],
-    [OTHER_TOUR_ID, { id: OTHER_TOUR_ID, startSceneId: null, contentVersion: 1, deletedAt: null }],
+    [TOUR_ID, { id: TOUR_ID, startSceneId: null, contentVersion: 1, deletedAt: null, publishedAt: null }],
+    [OTHER_TOUR_ID, { id: OTHER_TOUR_ID, startSceneId: null, contentVersion: 1, deletedAt: null, publishedAt: null }],
   ]);
   const scenes = new Map<string, StoredScene>();
   const assets = new Set<string>([PANORAMA_ID, PANORAMA_B]);
@@ -266,7 +267,7 @@ function harness(): {
         createdById: USER_ID,
         contentVersion: tour.contentVersion,
         startSceneId: tour.startSceneId ?? null,
-        publishedAt: null,
+        publishedAt: tour.publishedAt?.toISOString() ?? null,
       });
     },
   };
@@ -671,6 +672,7 @@ describe('ScenesService', () => {
     expect(tour.id).toBe(TOUR_ID);
     expect(tour.sceneCount).toBe(2);
     expect(tour.contentVersion).toBe(4);
+    expect(tour.startSceneId).toBe(second.id);
     expect(tours.get(TOUR_ID)?.startSceneId).toBe(second.id);
 
     const foreign = await service.create(OTHER_TOUR_ID, porte, USER_ID);

@@ -63,6 +63,8 @@ interface StoredTour {
   shareToken: string;
   contentVersion: number;
   deletedAt: Date | null;
+  startSceneId: string | null;
+  publishedAt: Date | null;
   createdById: string;
   createdAt: Date;
   links: Link[];
@@ -243,6 +245,8 @@ function harness(): {
           shareToken: readString(data.shareToken),
           contentVersion: 1,
           deletedAt: null,
+          startSceneId: null,
+          publishedAt: null,
           createdById: readString(data.createdById),
           createdAt: new Date(Date.UTC(2026, 8, 29, 0, 0, seq)),
           links: [],
@@ -421,10 +425,25 @@ describe('ToursService', () => {
     expect(created.createdById).toBe(USER_ID);
     expect(created.contentVersion).toBe(1);
     expect(created.sceneCount).toBe(0);
+    expect(created.startSceneId).toBeNull();
+    expect(created.publishedAt).toBeNull();
     expect(created.categoryIds).toEqual([CATEGORY_ID]);
     expect(created.description).toEqual({ fr: 'Texte long' });
     expect(created.durationMinutes).toBe(25);
     expect(await service.get(created.id)).toEqual(created);
+  });
+
+  it('formate publishedAt en chaîne ISO', async () => {
+    const { service, tours } = harness();
+    const created = await service.create(kasbah, USER_ID);
+    const date = new Date('2026-09-30T10:00:00Z');
+    
+    const tour = tours.get(created.id);
+    if (!tour) throw new Error('Tour introuvable');
+    tour.publishedAt = date;
+
+    const response = await service.get(created.id);
+    expect(response.publishedAt).toBe('2026-09-30T10:00:00.000Z');
   });
 
   it('ignore un categoryId répété', async () => {

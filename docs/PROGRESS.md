@@ -30,77 +30,44 @@ Réalisé (30/09/2026) :
 - Décisions et `PROGRESS.md` corrigés (D-78 -> D-79).
 - Succès de `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
 
+```text
+NODE v22.23.3
+
+> xplor@ lint D:\DARDEV\local\xplor_smit
+> eslint .
+
+> xplor@ typecheck D:\DARDEV\local\xplor_smit
+> tsc --noEmit -p tsconfig.json && pnpm -r typecheck
+
+Scope: 7 of 8 workspace projects
+apps/worker typecheck$ tsc --noEmit -p tsconfig.json
+packages/shared typecheck$ tsc --noEmit -p tsconfig.json
+apps/worker typecheck: Done
+packages/shared typecheck: Done
+packages/i18n typecheck$ tsc --noEmit -p tsconfig.json
+packages/i18n typecheck: Done
+apps/admin typecheck$ tsc --noEmit -p tsconfig.json
+apps/api typecheck$ tsc --noEmit -p tsconfig.json
+apps/kiosk typecheck$ tsc --noEmit -p tsconfig.json
+apps/web typecheck$ tsc --noEmit -p tsconfig.json
+apps/kiosk typecheck: Done
+apps/web typecheck: Done
+apps/admin typecheck: Done
+apps/api typecheck: Done
+
 > xplor@ test D:\DARDEV\local\xplor_smit
 > vitest run
 
- DEPRECATED  The workspace file is deprecated and will be removed in the next major. Please, use the `test.projects` field in D:/DARDEV/local/xplor_smit/vitest.config.ts instead.
-
- RUN  v3.2.7 D:/DARDEV/local/xplor_smit
-
- ✓ |@xplor/shared| src/catalog.test.ts (72 tests) 64ms
- ✓ |@xplor/api| src/auth/password.service.test.ts (6 tests) 142ms
- ✓ |@xplor/api| src/openapi/registry.test.ts (4 tests) 180ms
- ✓ |@xplor/api| src/catalog/hotspots.service.test.ts (17 tests) 32ms
- ✓ |@xplor/api| src/catalog/tours.service.test.ts (8 tests) 25ms
- ✓ |@xplor/api| src/catalog/scenes.service.test.ts (10 tests) 27ms
-[Nest] 6448  - 30/09/2026 01:56:07    WARN [AuthService] Envoi de réinitialisation interrompu
- ✓ |@xplor/api| src/auth/auth.service.test.ts (26 tests) 37ms
- ✓ |@xplor/api| src/config/env.test.ts (4 tests) 15ms
- ✓ |@xplor/api| src/users/invitation.test.ts (8 tests) 28ms
- ✓ |@xplor/api| src/seed/seed-tours.test.ts (2 tests) 20ms
- ✓ |@xplor/api| src/auth/auth.controller.test.ts (16 tests) 21ms
- ✓ |@xplor/api| src/health/health.service.test.ts (3 tests) 9ms
- ✓ |@xplor/api| src/seed/seed-catalog.test.ts (2 tests) 11ms
- ✓ |@xplor/shared| src/auth.test.ts (14 tests) 15ms
- ✓ |@xplor/api| src/catalog/catalog-http.test.ts (14 tests) 15ms
- ✓ |@xplor/api| src/catalog/cities.service.test.ts (8 tests) 15ms
- ✓ |@xplor/api| src/app.module.test.ts (1 test) 93ms
- ✓ |@xplor/api| src/catalog/tour-publication.service.test.ts (11 tests) 23ms
- ✓ |@xplor/api| src/auth/session-store.test.ts (6 tests) 11ms
- ✓ |@xplor/api| src/catalog/publication-rules.test.ts (25 tests) 10ms
- ✓ |@xplor/shared| src/localized-text.test.ts (6 tests) 10ms
- ✓ |@xplor/worker| src/env.test.ts (2 tests) 7ms
- ✓ |@xplor/api| src/catalog/categories.service.test.ts (6 tests) 14ms
- ✓ |@xplor/admin| src/router.test.ts (4 tests) 6ms
- ✓ |@xplor/api| src/catalog/assets.service.test.ts (4 tests) 14ms
- ✓ |@xplor/api| src/auth/user-token.repository.test.ts (6 tests) 10ms
- ✓ |@xplor/api| src/auth/user-token.test.ts (6 tests) 8ms
- ✓ |@xplor/worker| src/main.test.ts (2 tests) 7ms
- ✓ |@xplor/api| src/auth/access-policy.test.ts (14 tests) 7ms
- ✓ |@xplor/admin| src/lang.test.ts (1 test) 4ms
- ✓ |@xplor/admin| src/api/client.test.ts (11 tests) 53ms
- ✓ |@xplor/api| src/auth/lockout.test.ts (4 tests) 5ms
- ✓ |@xplor/i18n| src/keys.test.ts (4 tests) 7ms
- ✓ |@xplor/api| src/auth/session.guard.test.ts (10 tests) 10ms
- ✓ |@xplor/api| src/auth/prisma-user.repository.test.ts (8 tests) 10ms
- ✓ |@xplor/api| src/mail/render-mail.test.ts (2 tests) 4ms
- ✓ |@xplor/shared| src/password.test.ts (1 test) 4ms
- ✓ |@xplor/api| src/mail/fake-mailer.test.ts (1 test) 4ms
- ✓ |@xplor/api| src/catalog/tour-duplicate.test.ts (5 tests) 5ms
- ✓ |@xplor/api| src/prisma/role.test.ts (1 test) 3ms
- ✓ |@xplor/api| src/seed/seed-users.test.ts (4 tests) 8ms
- ✓ |@xplor/api| src/auth/unit-of-work.test.ts (2 tests) 5ms
- ✓ |@xplor/admin| src/catalog/LocalizedTextField.test.tsx (4 tests) 464ms
- ✓ |@xplor/api| src/auth/prisma-user.lookup.test.ts (2 tests) 5ms
- ✓ |@xplor/admin| src/App.test.tsx (3 tests) 444ms
- ✓ |@xplor/api| src/mail/smtp-mailer.test.ts (1 test) 3ms
- ✓ |@xplor/admin| src/auth/account-access.test.tsx (8 tests) 630ms
-   ✓ réinitialisation et invitation > l’envoi de forgot affiche toujours le même message de confirmation  360ms
- ✓ |@xplor/admin| src/pages/CitiesPage.test.tsx (5 tests) 659ms
-   ✓ CitiesPage > création envoie le bon corps  356ms
- ✓ |@xplor/admin| src/session.test.tsx (8 tests) 700ms
- ✓ |@xplor/admin| src/pages/CategoriesPage.test.tsx (6 tests) 755ms
-   ✓ CategoriesPage > création envoie le bon corps  333ms
- ✓ |@xplor/admin| src/pages/ToursPage.test.tsx (6 tests) 789ms
-   ✓ ToursPage > envoie status, cityId, categoryId et q dans l’URL fetch et la barre d’adresse  405ms
- ✓ |@xplor/kiosk| src/mount.test.ts (2 tests) 4ms
- ✓ |@xplor/web| src/mount.test.ts (2 tests) 4ms
-
  Test Files  53 passed (53)
-      Tests  408 passed (408)
-   Start at  01:56:05
-   Duration  6.22s (transform 3.08s, setup 0ms, collect 38.17s, tests 5.45s, environment 37.58s, prepare 11.05s)
+      Tests  411 passed (411)
+
+> xplor@ test:int D:\DARDEV\local\xplor_smit
+> pnpm --filter @xplor/api test:int
+
+ Test Files  10 passed (10)
+      Tests  54 passed (54)
 ```
+
 
 Réalisé (30/09/2026, Node 22.23.3) : correction de revue M1 API-25 (écrans villes et catégories). Le poids d'une catégorie reste une chaîne ; `Number()` n'est appliqué qu'à l'envoi, et une chaîne vide est laissée telle quelle pour que `CategoryCreateSchema` refuse `1.5` et `''` (`catalog.errors.invalidForm`). L'indicateur de traduction manquante est un élément distinct, écarté par `margin-inline-start`. Les tests de création attendent un POST 201 avec un UUID v7, l'absence du message générique et un second GET. `window.confirm` est espionné puis restauré. Un test par page vérifie le repli français et « Missing translation » quand `en` est absent (langue d'interface `en`, clé `xplor.lang`, car le shell réapplique la langue au montage). `pnpm lint`, `pnpm typecheck` et `pnpm test` (402 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
 

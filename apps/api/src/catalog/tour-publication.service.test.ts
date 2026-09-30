@@ -335,6 +335,8 @@ function tourResponse(tour: StoredTour): TourResponse {
     sceneCount: 3,
     createdById: AUTHOR,
     contentVersion: tour.contentVersion,
+    startSceneId: tour.startSceneId,
+    publishedAt: tour.publishedAt?.toISOString() ?? null,
   });
 }
 
@@ -575,6 +577,7 @@ describe('TourPublicationService', () => {
     expect(reads).toEqual([VISITE]);
     expect(published.status).toBe(TourStatus.PUBLISHED);
     expect(published.contentVersion).toBe(2);
+    expect(published.publishedAt).not.toBeNull();
   });
 
   it('répond 404 à la publication si la visite est absente ou supprimée', async () => {
@@ -610,6 +613,7 @@ describe('TourPublicationService', () => {
     expect(draft.status).toBe(TourStatus.DRAFT);
     expect(draft.contentVersion).toBe(5);
     expect(tourAt(VISITE).publishedAt).toEqual(publishedAt);
+    expect(draft.publishedAt).toBe(publishedAt.toISOString());
   });
 
   it('répond 404 à la dépublication si la visite est absente ou supprimée', async () => {
