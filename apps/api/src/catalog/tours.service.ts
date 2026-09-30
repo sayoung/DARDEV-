@@ -473,5 +473,7 @@ function toTour(row: TourRow): TourResponse {
     sceneCount: row._count.scenes,
     createdById: row.createdById,
     contentVersion: row.contentVersion,
+    startSceneId: row.startSceneId,
+    publishedAt: row.publishedAt?.toISOString() ?? null,
   });
 }

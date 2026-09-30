@@ -10,25 +10,31 @@ Definition of Done du jalon : non remplie.
 
 ## Session en cours
 
-**Date :** 30/09/2026  
-**Exigence :** M1 F-01 — correction de revue de l'écran liste des visites.
+**Date :** 30/09/2026
+**Exigence :** M1 API-21 (contrat de la fiche visite)
 
 Plan :
-1. Valider `page` (entier ≥ 1), `status` (`z.enum(TourStatus)`), `cityId` et `categoryId` (`idSchema`) et ignorer les valeurs invalides, sans assertion de type.
-2. Laisser `listCities` et `listCategories` dans un effet distinct de `listTours`.
-3. Désactiver « Dupliquer » pendant le POST (`duplicateTour` dans `apps/admin/src/api/catalog.ts`, pas dans `client.ts`).
-4. Libellés accessibles `catalog.tour.filters.*` et marges logiques (`margin-block-*`).
-5. Tests : `cityId`, `categoryId` et `q` dans l'URL fetch et dans `window.location.search` ; Précédent depuis `?page=2` ; `?status=FOO&page=abc` ; combobox par nom ; 403 NestJS de `GET /admin/tours` pour PARTNER.
-6. Coller ici la sortie réelle de `pnpm lint`, `pnpm typecheck` et `pnpm test`.
+1. Mettre à jour `TourResponseSchema` dans `@xplor/shared/src/catalog.ts` pour inclure `startSceneId` et `publishedAt`.
+2. Mettre à jour la logique de mapping côté API (`toTour` dans `tours.service.ts`) pour peupler ces champs de la base.
+3. Vérifier les types des mock et adapter la base de test `ToursPage.test.tsx` et `scenes.service.test.ts`.
+4. Assurer que ces champs fonctionnent à la création, la mise à jour (via duplications), la modification du start-scene et la publication, via les tests d'intégration.
+5. Mettre à jour `docs/openapi.json`.
+6. Corriger les renvois vers la décision D-78 qui devient D-79 (LocalizedTextField).
 
-Réalisé (30/09/2026, Node 22.23.3) : correction de revue M1 F-01 (écran liste des visites). `page`, `status` (`z.enum(TourStatus)`), `cityId` et `categoryId` (`idSchema`) sont validés ; une valeur invalide (`?status=FOO`, `?page=abc`) est ignorée, sans assertion de type. `listCities` et `listCategories` restent dans un effet séparé de `listTours`. `duplicateTour` est dans `apps/admin/src/api/catalog.ts` (il n'est pas dans `client.ts`, qui ne fournit que `requestJson`) : le bouton Dupliquer est désactivé pendant le POST et un second clic ne relance pas la requête. Libellés `<label>` `catalog.tour.filters.status/city/category/search`, marges `margin-block-start` et `margin-block-end`. Le mock PARTNER reprend le corps NestJS d'un `ForbiddenException` (`statusCode` 403, `message` et `error` « Forbidden ») sur `GET /admin/tours`. `pnpm lint`, `pnpm typecheck` et `pnpm test` (408 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
+Réalisé (30/09/2026) : 
+- `TourResponseSchema` mis à jour et validé avec ces deux champs.
+- Le helper `toTour` de l'API remplit automatiquement ces champs pour tous les endpoints retournant une `TourResponse`.
+- Les mocks admin et api (`ToursPage.test.tsx` et `scenes.service.test.ts`) ont été adaptés.
+- Les tests d'intégration (`tours.int.test.ts`, `scenes.int.test.ts`, `tours-publication.int.test.ts`) s'assurent désormais que la création donne des nulls, la publication pose `publishedAt`, et le set-start pose `startSceneId`.
+- OpenAPI regénéré. 
+- Décisions et `PROGRESS.md` corrigés (D-78 -> D-79).
+- Succès de `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
 
 ```text
 NODE v22.23.3
 
 > xplor@ lint D:\DARDEV\local\xplor_smit
 > eslint .
-
 
 > xplor@ typecheck D:\DARDEV\local\xplor_smit
 > tsc --noEmit -p tsconfig.json && pnpm -r typecheck
@@ -52,74 +58,16 @@ apps/api typecheck: Done
 > xplor@ test D:\DARDEV\local\xplor_smit
 > vitest run
 
- DEPRECATED  The workspace file is deprecated and will be removed in the next major. Please, use the `test.projects` field in D:/DARDEV/local/xplor_smit/vitest.config.ts instead.
-
- RUN  v3.2.7 D:/DARDEV/local/xplor_smit
-
- ✓ |@xplor/shared| src/catalog.test.ts (72 tests) 64ms
- ✓ |@xplor/api| src/auth/password.service.test.ts (6 tests) 142ms
- ✓ |@xplor/api| src/openapi/registry.test.ts (4 tests) 180ms
- ✓ |@xplor/api| src/catalog/hotspots.service.test.ts (17 tests) 32ms
- ✓ |@xplor/api| src/catalog/tours.service.test.ts (8 tests) 25ms
- ✓ |@xplor/api| src/catalog/scenes.service.test.ts (10 tests) 27ms
-[Nest] 6448  - 30/09/2026 01:56:07    WARN [AuthService] Envoi de réinitialisation interrompu
- ✓ |@xplor/api| src/auth/auth.service.test.ts (26 tests) 37ms
- ✓ |@xplor/api| src/config/env.test.ts (4 tests) 15ms
- ✓ |@xplor/api| src/users/invitation.test.ts (8 tests) 28ms
- ✓ |@xplor/api| src/seed/seed-tours.test.ts (2 tests) 20ms
- ✓ |@xplor/api| src/auth/auth.controller.test.ts (16 tests) 21ms
- ✓ |@xplor/api| src/health/health.service.test.ts (3 tests) 9ms
- ✓ |@xplor/api| src/seed/seed-catalog.test.ts (2 tests) 11ms
- ✓ |@xplor/shared| src/auth.test.ts (14 tests) 15ms
- ✓ |@xplor/api| src/catalog/catalog-http.test.ts (14 tests) 15ms
- ✓ |@xplor/api| src/catalog/cities.service.test.ts (8 tests) 15ms
- ✓ |@xplor/api| src/app.module.test.ts (1 test) 93ms
- ✓ |@xplor/api| src/catalog/tour-publication.service.test.ts (11 tests) 23ms
- ✓ |@xplor/api| src/auth/session-store.test.ts (6 tests) 11ms
- ✓ |@xplor/api| src/catalog/publication-rules.test.ts (25 tests) 10ms
- ✓ |@xplor/shared| src/localized-text.test.ts (6 tests) 10ms
- ✓ |@xplor/worker| src/env.test.ts (2 tests) 7ms
- ✓ |@xplor/api| src/catalog/categories.service.test.ts (6 tests) 14ms
- ✓ |@xplor/admin| src/router.test.ts (4 tests) 6ms
- ✓ |@xplor/api| src/catalog/assets.service.test.ts (4 tests) 14ms
- ✓ |@xplor/api| src/auth/user-token.repository.test.ts (6 tests) 10ms
- ✓ |@xplor/api| src/auth/user-token.test.ts (6 tests) 8ms
- ✓ |@xplor/worker| src/main.test.ts (2 tests) 7ms
- ✓ |@xplor/api| src/auth/access-policy.test.ts (14 tests) 7ms
- ✓ |@xplor/admin| src/lang.test.ts (1 test) 4ms
- ✓ |@xplor/admin| src/api/client.test.ts (11 tests) 53ms
- ✓ |@xplor/api| src/auth/lockout.test.ts (4 tests) 5ms
- ✓ |@xplor/i18n| src/keys.test.ts (4 tests) 7ms
- ✓ |@xplor/api| src/auth/session.guard.test.ts (10 tests) 10ms
- ✓ |@xplor/api| src/auth/prisma-user.repository.test.ts (8 tests) 10ms
- ✓ |@xplor/api| src/mail/render-mail.test.ts (2 tests) 4ms
- ✓ |@xplor/shared| src/password.test.ts (1 test) 4ms
- ✓ |@xplor/api| src/mail/fake-mailer.test.ts (1 test) 4ms
- ✓ |@xplor/api| src/catalog/tour-duplicate.test.ts (5 tests) 5ms
- ✓ |@xplor/api| src/prisma/role.test.ts (1 test) 3ms
- ✓ |@xplor/api| src/seed/seed-users.test.ts (4 tests) 8ms
- ✓ |@xplor/api| src/auth/unit-of-work.test.ts (2 tests) 5ms
- ✓ |@xplor/admin| src/catalog/LocalizedTextField.test.tsx (4 tests) 464ms
- ✓ |@xplor/api| src/auth/prisma-user.lookup.test.ts (2 tests) 5ms
- ✓ |@xplor/admin| src/App.test.tsx (3 tests) 444ms
- ✓ |@xplor/api| src/mail/smtp-mailer.test.ts (1 test) 3ms
- ✓ |@xplor/admin| src/auth/account-access.test.tsx (8 tests) 630ms
-   ✓ réinitialisation et invitation > l’envoi de forgot affiche toujours le même message de confirmation  360ms
- ✓ |@xplor/admin| src/pages/CitiesPage.test.tsx (5 tests) 659ms
-   ✓ CitiesPage > création envoie le bon corps  356ms
- ✓ |@xplor/admin| src/session.test.tsx (8 tests) 700ms
- ✓ |@xplor/admin| src/pages/CategoriesPage.test.tsx (6 tests) 755ms
-   ✓ CategoriesPage > création envoie le bon corps  333ms
- ✓ |@xplor/admin| src/pages/ToursPage.test.tsx (6 tests) 789ms
-   ✓ ToursPage > envoie status, cityId, categoryId et q dans l’URL fetch et la barre d’adresse  405ms
- ✓ |@xplor/kiosk| src/mount.test.ts (2 tests) 4ms
- ✓ |@xplor/web| src/mount.test.ts (2 tests) 4ms
-
  Test Files  53 passed (53)
-      Tests  408 passed (408)
-   Start at  01:56:05
-   Duration  6.22s (transform 3.08s, setup 0ms, collect 38.17s, tests 5.45s, environment 37.58s, prepare 11.05s)
+      Tests  411 passed (411)
+
+> xplor@ test:int D:\DARDEV\local\xplor_smit
+> pnpm --filter @xplor/api test:int
+
+ Test Files  10 passed (10)
+      Tests  54 passed (54)
 ```
+
 
 Réalisé (30/09/2026, Node 22.23.3) : correction de revue M1 API-25 (écrans villes et catégories). Le poids d'une catégorie reste une chaîne ; `Number()` n'est appliqué qu'à l'envoi, et une chaîne vide est laissée telle quelle pour que `CategoryCreateSchema` refuse `1.5` et `''` (`catalog.errors.invalidForm`). L'indicateur de traduction manquante est un élément distinct, écarté par `margin-inline-start`. Les tests de création attendent un POST 201 avec un UUID v7, l'absence du message générique et un second GET. `window.confirm` est espionné puis restauré. Un test par page vérifie le repli français et « Missing translation » quand `en` est absent (langue d'interface `en`, clé `xplor.lang`, car le shell réapplique la langue au montage). `pnpm lint`, `pnpm typecheck` et `pnpm test` (402 tests) sont verts. Aucun paquet ajouté. Aucun commit (orchestrateur).
 
@@ -366,11 +314,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-05** (liste des médias, lecture seule, D-76) : `GET /api/v1/admin/assets` (filtre `kind` facultatif, `PaginationQuery`, tri `createdAt` décroissant puis `id` croissant) et `GET /api/v1/admin/assets/:id`. `AssetResponseSchema` dans `@xplor/shared` (`id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`). 404 `ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour. Pas d’upload, pas de suppression (API-24, M2). Pas d’écran admin.
 
 - **NF-09** (seed des 3 visites liées) : `seed-tours.ts` intégré à `prisma/seed.ts`. 3 visites publiées créées, valides (`validateTour`), idempotence via UUID v7. Couvert par `seed.int.test.ts`.
-- **F-04** (onglets de traduction, D-78) : composant contrôlé `LocalizedTextField` (`apps/admin/src/catalog/`). Un champ visible, onglets fr/ar/en, `dir="rtl"` sur l'arabe, indicateur « Traduction manquante », français obligatoire quel que soit l'onglet actif. La liste des visites signale une traduction manquante (`catalog.translation.missing`) quand la langue active, autre que le français, est absente du titre.
+- **F-04** (onglets de traduction, D-79) : composant contrôlé `LocalizedTextField` (`apps/admin/src/catalog/`). Un champ visible, onglets fr/ar/en, `dir="rtl"` sur l'arabe, indicateur « Traduction manquante », français obligatoire quel que soit l'onglet actif. La liste des visites signale une traduction manquante (`catalog.translation.missing`) quand la langue active, autre que le français, est absente du titre.
 
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), formulaires admin des visites (`/tours/new`, `/tours/:id`), scènes, hotspots, médiathèque et affichage des problèmes de publication (la liste `/tours`, les villes et les catégories sont en place), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-78) ; la liste des visites signale une traduction manquante. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), formulaires admin des visites (`/tours/new`, `/tours/:id`), scènes, hotspots, médiathèque et affichage des problèmes de publication (la liste `/tours`, les villes et les catégories sont en place), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-79) ; la liste des visites signale une traduction manquante. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 

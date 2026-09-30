@@ -54,6 +54,8 @@ const mockTour: TourResponse = {
   shareToken: '1234567890123456789012',
   createdById: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d90',
   contentVersion: 1,
+  startSceneId: null,
+  publishedAt: null,
 };
 
 const mockDuplicateTour: TourResponse = {

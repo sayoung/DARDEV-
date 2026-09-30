@@ -3605,6 +3605,20 @@
                           "contentVersion": {
                             "type": "integer",
                             "minimum": 1
+                          },
+                          "startSceneId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uuid"
+                          },
+                          "publishedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
                           }
                         },
                         "required": [
@@ -3619,7 +3633,9 @@
                           "shareToken",
                           "sceneCount",
                           "createdById",
-                          "contentVersion"
+                          "contentVersion",
+                          "startSceneId",
+                          "publishedAt"
                         ]
                       }
                     },
@@ -4013,6 +4029,20 @@
                     "contentVersion": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "startSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "publishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -4027,7 +4057,9 @@
                     "shareToken",
                     "sceneCount",
                     "createdById",
-                    "contentVersion"
+                    "contentVersion",
+                    "startSceneId",
+                    "publishedAt"
                   ]
                 }
               }
@@ -4322,6 +4354,20 @@
                     "contentVersion": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "startSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "publishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -4336,7 +4382,9 @@
                     "shareToken",
                     "sceneCount",
                     "createdById",
-                    "contentVersion"
+                    "contentVersion",
+                    "startSceneId",
+                    "publishedAt"
                   ]
                 }
               }
@@ -4748,6 +4796,20 @@
                     "contentVersion": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "startSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "publishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -4762,7 +4824,9 @@
                     "shareToken",
                     "sceneCount",
                     "createdById",
-                    "contentVersion"
+                    "contentVersion",
+                    "startSceneId",
+                    "publishedAt"
                   ]
                 }
               }
@@ -5433,6 +5497,20 @@
                     "contentVersion": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "startSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "publishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -5447,7 +5525,9 @@
                     "shareToken",
                     "sceneCount",
                     "createdById",
-                    "contentVersion"
+                    "contentVersion",
+                    "startSceneId",
+                    "publishedAt"
                   ]
                 }
               }
@@ -5815,6 +5895,20 @@
                     "contentVersion": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "startSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "publishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -5829,7 +5923,9 @@
                     "shareToken",
                     "sceneCount",
                     "createdById",
-                    "contentVersion"
+                    "contentVersion",
+                    "startSceneId",
+                    "publishedAt"
                   ]
                 }
               }
@@ -6123,6 +6219,20 @@
                     "contentVersion": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "startSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "publishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -6137,7 +6247,9 @@
                     "shareToken",
                     "sceneCount",
                     "createdById",
-                    "contentVersion"
+                    "contentVersion",
+                    "startSceneId",
+                    "publishedAt"
                   ]
                 }
               }
@@ -7372,6 +7484,20 @@
                     "contentVersion": {
                       "type": "integer",
                       "minimum": 1
+                    },
+                    "startSceneId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    },
+                    "publishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
                     }
                   },
                   "required": [
@@ -7386,7 +7512,9 @@
                     "shareToken",
                     "sceneCount",
                     "createdById",
-                    "contentVersion"
+                    "contentVersion",
+                    "startSceneId",
+                    "publishedAt"
                   ]
                 }
               }
