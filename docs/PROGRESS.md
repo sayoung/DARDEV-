@@ -22,9 +22,9 @@ Plan :
 
 Réalisé (30/09/2026) : 
 - `validateTour`, `publishTour`, `unpublishTour` ajoutés à `api/catalog.ts`.
-- `TourPublicationPanel` implémenté, gérant le statut, la vérification, la publication et la dépublication avec les règles de traduction fr, ar, en (les clés ont été ajoutées dans `locales/fr.json`, avec tolérance pour ar/en dans les tests).
-- Affichage des erreurs via des alertes traduites et liens `#scene-<id>`.
-- `TourPublicationPanel.test.tsx` vérifie le comportement des 422 `SCENE_UNREACHABLE`, 200 publish, etc.
+- `TourPublicationPanel` implémenté, gérant le statut, la vérification, la publication et la dépublication. Les boutons d'action sont restreints aux rôles ADMIN et EDITOR.
+- Affichage des erreurs via des alertes traduits et liens `#scene-<id>`.
+- Tests corrigés : `fetch` global simulé avec données compatibles UUIDv7 et Schémas, vérification de l'UI sur validation (422) et publication (200).
 - lint, typecheck, test OK. Aucun commit (orchestrateur).
 
 ## Definition of Done — M1

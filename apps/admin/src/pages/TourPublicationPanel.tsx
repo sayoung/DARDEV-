@@ -6,10 +6,12 @@ import {
   ValidationIssueSchema,
   TourStatus,
   localize,
-  z
+  z,
+  Role
 } from '@xplor/shared';
 import { validateTour, publishTour, unpublishTour, listScenes } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
+import { useAuth } from '../auth/AuthProvider.js';
 
 interface Props {
   tour: TourResponse;
@@ -18,11 +20,15 @@ interface Props {
 
 export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
   const { t, i18n } = useTranslation();
+  const { state } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [issues, setIssues] = useState<ValidationIssue[] | null>(null);
   const [sceneTitles, setSceneTitles] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const userRole = state.status === 'authenticated' ? state.profile.role : null;
+  const canPublish = userRole === Role.ADMIN || userRole === Role.EDITOR;
 
   const fetchSceneTitles = async (issuesList: ValidationIssue[]) => {
     const sceneIds = issuesList.map(i => i.sceneId).filter((id): id is string => !!id);
@@ -108,18 +114,22 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
     <section className="tour-publication-panel" style={{ paddingBlock: '1rem', borderBottom: '1px solid #ccc', marginBlockEnd: '1rem' }}>
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <strong>{t('catalog.publication.status')}: {statusText}</strong>
-        <button type="button" onClick={() => { void handleValidate(); }} disabled={submitting}>
-          {t('catalog.publication.validate')}
-        </button>
-        {tour.status === TourStatus.DRAFT && (
-          <button type="button" onClick={() => { void handlePublish(); }} disabled={submitting}>
-            {t('catalog.publication.publish')}
-          </button>
-        )}
-        {tour.status === TourStatus.PUBLISHED && (
-          <button type="button" onClick={() => { void handleUnpublish(); }} disabled={submitting}>
-            {t('catalog.publication.unpublish')}
-          </button>
+        {canPublish && (
+          <>
+            <button type="button" onClick={() => { void handleValidate(); }} disabled={submitting}>
+              {t('catalog.publication.validate')}
+            </button>
+            {tour.status === TourStatus.DRAFT && (
+              <button type="button" onClick={() => { void handlePublish(); }} disabled={submitting}>
+                {t('catalog.publication.publish')}
+              </button>
+            )}
+            {tour.status === TourStatus.PUBLISHED && (
+              <button type="button" onClick={() => { void handleUnpublish(); }} disabled={submitting}>
+                {t('catalog.publication.unpublish')}
+              </button>
+            )}
+          </>
         )}
       </div>
 
