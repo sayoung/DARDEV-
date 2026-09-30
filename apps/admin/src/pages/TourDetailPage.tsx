@@ -5,6 +5,7 @@ import { TourForm } from './TourForm.js';
 import { getTour, updateTour, deleteTour } from '../api/catalog.js';
 import { navigate, useAppLocation } from '../router.js';
 import { Role, type TourResponse, type TourUpdate } from '@xplor/shared';
+import { ApiError } from '../api/client.js';
 
 export function TourDetailPage() {
   const { t } = useTranslation();
@@ -32,15 +33,10 @@ export function TourDetailPage() {
         })
         .catch((err: unknown) => {
           if (active) {
-            if (err && typeof err === 'object' && ('code' in err || 'status' in err || 'message' in err)) {
-              const e = err as { code?: string, status?: number, message?: string };
-              if (e.code === 'TOUR_NOT_FOUND' || e.status === 404 || e.message?.includes('404')) {
-                setNotFound(true);
-              } else {
-                setGlobalError(t('common.error.generic'));
-              }
+            if (err instanceof ApiError && err.code === 'TOUR_NOT_FOUND') {
+              setNotFound(true);
             } else {
-              setGlobalError(t('common.error.generic'));
+              setGlobalError('common.error.generic');
             }
             setLoading(false);
           }
@@ -49,7 +45,7 @@ export function TourDetailPage() {
       setLoading(false);
     }
     return () => { active = false; };
-  }, [id, auth.state, t]);
+  }, [id, auth.state]);
 
   if (auth.state.status !== 'authenticated' || (auth.state.profile.role !== Role.ADMIN && auth.state.profile.role !== Role.EDITOR)) {
     return <p>{t('auth.accessDenied')}</p>;
@@ -57,6 +53,15 @@ export function TourDetailPage() {
 
   if (loading) {
     return <p>{t('common.loading')}</p>;
+  }
+
+  if (globalError) {
+    return (
+      <div>
+        <h2>{t('page.tourDetail.title')}</h2>
+        <div className="form-error" role="alert">{t(globalError)}</div>
+      </div>
+    );
   }
 
   if (notFound || !tour) {

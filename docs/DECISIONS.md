@@ -597,7 +597,7 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 ## D-81 — Formulaires de visite et intégration front (M1 F-01)
 
 - **Date :** 30/09/2026
-- **Décision :** Implémentation du frontend pour la création et modification des visites (M1 F-01). TourForm.tsx coordonne la saisie : titre, résumé, description, infos pratiques (via \LocalizedTextField\), ville, catégories, et durée/coordonnées (champs optionnels). L'Asset de couverture utilise \AssetPicker\. L'affichage du formulaire est restreint aux rôles ADMIN et EDITOR via l'objet \Role\ partagé. La validation Zod est effectuée via les routes d'API, avec une gestion gracieuse des erreurs. Les IDs des mocks de test utilisent désormais de véritables UUIDs pour passer la validation très stricte de Zod sur le schéma \idSchema\.
-- **Alternatives :** Création et modification dans des modals (rejeté pour des URL distinctes \/tours/new\ et \/tours/:id\).
+- **Décision :** Implémentation du frontend pour la création et modification des visites (M1 F-01). `TourForm.tsx` coordonne la saisie : titre, résumé, description, infos pratiques (via `LocalizedTextField`), ville, catégories, et durée/coordonnées (champs optionnels). L'Asset de couverture utilise `AssetPicker`. L'affichage du formulaire est restreint aux rôles ADMIN et EDITOR via l'objet `Role` partagé. La validation Zod est effectuée côté client avant l'envoi, avec une gestion gracieuse des erreurs. Les IDs des mocks de test utilisent désormais de véritables UUIDs pour passer la validation stricte de Zod sur le schéma `idSchema`.
+- **Alternatives :** Création et modification dans des modals (rejeté pour des URL distinctes `/tours/new` et `/tours/:id`).
 - **À valider :** non
 

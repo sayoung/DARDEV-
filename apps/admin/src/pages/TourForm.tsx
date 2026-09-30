@@ -8,6 +8,8 @@ import {
   TourUpdateSchema,
   localize,
   AssetKind,
+  type CityResponse,
+  type CategoryResponse,
 } from '@xplor/shared';
 import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { AssetPicker } from '../catalog/AssetPicker.js';
@@ -41,8 +43,8 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
   const [lat, setLat] = useState<string>(initialData?.lat?.toString() ?? '');
   const [lng, setLng] = useState<string>(initialData?.lng?.toString() ?? '');
   
-  const [cities, setCities] = useState<{ id: string; name: LocalizedText }[]>([]);
-  const [categories, setCategories] = useState<{ id: string; name: LocalizedText }[]>([]);
+  const [cities, setCities] = useState<CityResponse[]>([]);
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {

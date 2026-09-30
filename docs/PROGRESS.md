@@ -11,22 +11,19 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026
-**Exigence :** M1 F-05 (client des médias et sélecteur AssetPicker)
+**Exigence :** M1 F-01 (formulaire de visite)
 
 Plan :
-1. Déclarer `TourForm`, `TourNewPage` et `TourDetailPage` pour M1 F-01.
-2. Utiliser `LocalizedTextField` et `AssetPicker`.
-3. Gérer les contraintes `ADMIN` et `EDITOR`.
-4. Mettre à jour `docs/DECISIONS.md` et `docs/PROGRESS.md`.
+1. Corriger l'erreur typecheck dans TourForm.test.tsx.
+2. Corriger l'affichage des erreurs de l'API dans TourDetailPage.tsx.
+3. Corriger les types redéclarés dans TourForm.tsx.
+4. Mettre à jour docs/DECISIONS.md et docs/PROGRESS.md.
 
 Réalisé (30/09/2026) :
-- `TourForm.tsx` (avec support multilingue et Zod form validation).
-- Intégration des endpoints `POST /tours` et `PATCH /tours/:id` dans les pages `TourNewPage` et `TourDetailPage`.
-- Validation stricte `ADMIN` et `EDITOR`.
-- Mock des données de test mis à jour avec des vrais UUIDs pour passer la validation Zod stricte.
-- Correction d'un bug dans `LocalizedTextField.tsx` de tests lié à `aria-hidden`.
-- Tous les tests Vitest unitaires et e2e sont de nouveau verts.
-- `pnpm lint` et `pnpm typecheck` validés.
+- `TourForm.test.tsx` corrigé : `HTMLElement` résolu en omettant le champ de garde de `LocalizedTextField`.
+- `TourDetailPage.tsx` affiche désormais les erreurs réseau autres que 404 via `globalError` et utilise `ApiError`. La dépendance `t` est retirée de l'effet.
+- Types de l'API importés dans `TourForm.tsx` (`CityResponse`, `CategoryResponse`).
+- Validation des tests e2e, typecheck et lint. Tous validés avec succès.
 
 Réalisé (30/09/2026) : 
 - `TourResponseSchema` mis à jour et validé avec ces deux champs.

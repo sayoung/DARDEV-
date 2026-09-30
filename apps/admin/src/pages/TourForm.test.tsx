@@ -185,7 +185,7 @@ describe('TourForm Pages', () => {
     render(<App />);
     
     const titleInputs = await screen.findAllByDisplayValue('Tour 1');
-    const titleInput = titleInputs[0];
+    const titleInput = titleInputs.find((el) => !el.classList.contains('ltf-fr-guard')) as HTMLElement;
     expect(titleInput).toBeTruthy();
     expect(screen.getAllByDisplayValue('60')[0]).toBeTruthy(); 
     expect(screen.getAllByDisplayValue('34')[0]).toBeTruthy(); 
