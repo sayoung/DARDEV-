@@ -124,6 +124,16 @@ it('deux exécutions du seed laissent quatre utilisateurs actifs, un par rôle',
     hotelId: SEED_HOTEL.id,
     user: { email: SEED_MANAGER_EMAIL, role: Role.HOTEL_MANAGER },
   });
+
+  const tours = await prisma.tour.findMany();
+  const scenes = await prisma.scene.findMany();
+  const hotspots = await prisma.hotspot.findMany();
+  const assets = await prisma.asset.findMany();
+
+  expect(tours).toHaveLength(3);
+  expect(scenes).toHaveLength(8);
+  expect(hotspots).toHaveLength(11);
+  expect(assets).toHaveLength(11);
 });
 
 function readSeedPassword(): string {

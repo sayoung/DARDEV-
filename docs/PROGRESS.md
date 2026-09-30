@@ -11,14 +11,13 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026  
-**Exigence :** M1 F-05 — liste des médias en lecture seule. Hors de ce lot : upload, suppression, retraitement (API-24, M2) et écran médiathèque.
+**Exigence :** M1 NF-09 — seed des 3 visites liées.
 
 Plan :
-
-1. `AssetResponseSchema` dans `@xplor/shared` (`id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`) et `AssetListQuerySchema` (`PaginationQuery`, `kind` facultatif). Tests du schéma.
-2. `GET /api/v1/admin/assets` et `GET /api/v1/admin/assets/:id` : contrôleur fin, `AssetsService`, Prisma. Tri `createdAt` décroissant. Garde `SessionGuard`, `CsrfGuard`, `canManageContent`. 404 `ASSET_NOT_FOUND`.
-3. Test unitaire du service. Intégration : filtre `kind`, 401, 403 pour PARTNER et HOTEL_MANAGER.
-4. Régénérer `docs/openapi.json`. Consigner D-76 (l’upload reste en M2). `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`. Aucun commit (orchestrateur).
+1. Intégrer `seed-tours.ts` (déjà codé) dans `prisma/seed.ts`.
+2. Vérifier que la création des lignes Asset est correcte (processingStatus READY, originalKey sous seed/). Consigner D-77 pour les fichiers M2.
+3. Vérifier que `test/seed.int.test.ts` confirme le nombre exact de visites (3), scènes (8), hotspots (11) et assets (11), sans duplication au second seed.
+4. Mettre à jour `docs/PROGRESS.md` (critère 7) et exécuter la validation (`lint`, `typecheck`, `test:int`, `db:seed`).
 
 Réalisé (30/09/2026, Node 22.23.3) : `GET /api/v1/admin/assets` et `GET /api/v1/admin/assets/:id`. `AssetResponseSchema` et `AssetListQuerySchema` dans `@xplor/shared`. Filtre `kind` facultatif, pagination `PaginationQuery`, tri `createdAt` décroissant puis `id` croissant. 404 `ASSET_NOT_FOUND`. Garde `SessionGuard`, `CsrfGuard`, `canManageContent`. Pas d’upload ni de suppression (API-24, M2). D-76. OpenAPI régénéré. `pnpm lint` et `pnpm typecheck` verts. `pnpm test` : 374. `pnpm test:int` : 54, dont 3 dans `assets.int.test.ts`. Couverture de `catalog.ts` : 100 % (93 tests du paquet `@xplor/shared`). Aucun commit (orchestrateur).
 
@@ -42,7 +41,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 | 4   | Migrations Prisma créées et appliquées sur une base vierge sans erreur ; seed à jour.                                                                                                                 | à faire |
 | 5   | Chaînes d'interface dans les 3 langues ; vérification visuelle en arabe (RTL).                                                                                                                        | à faire |
 | 6   | `docs/PROGRESS.md` mis à jour (fait / reste / risques) ; `docs/DECISIONS.md` complété ; OpenAPI à jour si l'API a changé.                                                                             | à faire |
-| 7   | Données de démonstration : `pnpm db:seed` crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle (panoramas d'exemple libres de droits dans `apps/api/prisma/seed-assets/`). | à faire |
+| 7   | Données de démonstration : `pnpm db:seed` crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle (panoramas d'exemple libres de droits dans `apps/api/prisma/seed-assets/`). | Fait    |
 | 8   | Démo au porteur effectuée et retours consignés.                                                                                                                                                       | à faire |
 
 ## Tableau
