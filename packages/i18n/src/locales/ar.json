@@ -69,6 +69,17 @@
     }
   },
   "catalog": {
+    "asset": {
+      "empty": "لم يتم العثور على وسائط.",
+      "error": "تعذر تحميل الوسائط.",
+      "emptyOption": "اختر وسيط...",
+      "status": {
+        "PENDING": "قيد الانتظار",
+        "PROCESSING": "قيد المعالجة",
+        "READY": "جاهز",
+        "ERROR": "خطأ"
+      }
+    },
     "translation": {
       "tab": {
         "en": "الإنجليزية",

@@ -11,15 +11,23 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026
-**Exigence :** M1 API-21 (contrat de la fiche visite)
+**Exigence :** M1 F-05 (client des médias et sélecteur AssetPicker)
 
 Plan :
-1. Mettre à jour `TourResponseSchema` dans `@xplor/shared/src/catalog.ts` pour inclure `startSceneId` et `publishedAt`.
-2. Mettre à jour la logique de mapping côté API (`toTour` dans `tours.service.ts`) pour peupler ces champs de la base.
-3. Vérifier les types des mock et adapter la base de test `ToursPage.test.tsx` et `scenes.service.test.ts`.
-4. Assurer que ces champs fonctionnent à la création, la mise à jour (via duplications), la modification du start-scene et la publication, via les tests d'intégration.
-5. Mettre à jour `docs/openapi.json`.
-6. Corriger les renvois vers la décision D-78 qui devient D-79 (LocalizedTextField).
+1. Déclarer `listAssets` et `getAsset` dans `apps/admin/src/api/catalog.ts`.
+2. Créer le composant `AssetPicker` (React contrôlé).
+3. Ajouter les traductions `catalog.asset.*` en fr, ar, en.
+4. Écrire les tests Vitest (jsdom) avec un fetch simulé vérifiant les paramètres.
+5. S'assurer du respect des règles (CSS logique `marginBlockEnd`, clés i18n).
+6. Mettre à jour `docs/DECISIONS.md` et `docs/PROGRESS.md`.
+
+Réalisé (30/09/2026) :
+- Fonctions API ajoutées dans le client `catalog.ts`.
+- `AssetPicker` développé avec gestion des états (chargement, erreur, liste vide) et des traductions avec CSS logique (`marginBlockEnd`, `paddingInlineStart`).
+- Traductions insérées dans `@xplor/i18n` sans erreur de test de complétude.
+- Les tests unitaires `AssetPicker.test.tsx` couvrent les trois états de rendu et les paramètres de requête API.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` passés avec succès.
+- Fichiers de suivi et `DECISIONS.md` (D-80) mis à jour. Aucun paquet npm ajouté. Aucun commit (orchestrateur).
 
 Réalisé (30/09/2026) : 
 - `TourResponseSchema` mis à jour et validé avec ces deux champs.
@@ -311,7 +319,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **API-23, partie 1** (contrats, D-73) : `HotspotUpdateSchema` et `HotspotResponseSchema` dans `@xplor/shared`, types `z.infer` exportés par `index.ts`. Tests : une réponse valide par type, type inconnu refusé, URL non http/https refusée à la mise à jour. Pas de route, pas d’OpenAPI, pas d’écran.
 - **API-23, partie 2** (liste et création, D-73) : `GET` et `POST` `/api/v1/admin/scenes/:sceneId/hotspots`. Liste triée par `createdAt` croissant. Création 201 `HotspotResponseSchema`, `createdById` = session, `contentVersion` de la visite +1. 404 `SCENE_NOT_FOUND` si la scène parente est absente ou supprimée. 422 `{ error: { code, message } }` via `assertTargets` (réutilisable par PATCH) : `SCENE_LINK_TARGET_MISSING`, `SCENE_LINK_SELF`, `SCENE_LINK_FOREIGN`, `TOUR_LINK_TARGET_MISSING`, `TOUR_LINK_SELF`, `TOUR_LINK_SCENE_FOREIGN` (une cible `DRAFT` reste acceptée), `MEDIA_ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour.
 - **API-23, partie 3** (modification et suppression, D-73) : `PATCH` et `DELETE` `/api/v1/admin/hotspots/:id`. Remplacement complet (`HotspotUpdateSchema`) ; si le type change, les champs des autres types passent à `null` ou `[]` dans la même écriture. Suppression physique, 204. 404 `HOTSPOT_NOT_FOUND` si le hotspot est inconnu ou si la scène parente est supprimée. `contentVersion` +1 dans la même transaction. Mêmes 422 via `assertTargets`. ADMIN et EDITOR. OpenAPI à jour. Pas d’écran admin.
-- **F-05** (liste des médias, lecture seule, D-76) : `GET /api/v1/admin/assets` (filtre `kind` facultatif, `PaginationQuery`, tri `createdAt` décroissant puis `id` croissant) et `GET /api/v1/admin/assets/:id`. `AssetResponseSchema` dans `@xplor/shared` (`id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`). 404 `ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour. Pas d’upload, pas de suppression (API-24, M2). Pas d’écran admin.
+- **F-05** (liste des médias, lecture seule, D-76, D-80) : API en place (`GET /api/v1/admin/assets` et `:id`). `AssetResponseSchema` exporté. Côté back-office, `listAssets` et `getAsset` ajoutés dans `api/catalog.ts`. Composant React contrôlé `AssetPicker` créé : `<select>` filtré par `kind`, affichant l'ID court, le type MIME, les dimensions et le statut de traitement (traduits). Les états de chargement (`common.loading`), erreur et liste vide sont gérés via les clés `catalog.asset.*` (fr, ar, en). Tests Vitest (`AssetPicker.test.tsx`) verts sous jsdom. L'upload, le retraitement et la suppression restent prévus en M2 (API-24). Pas d'écran admin dédié pour le CRUD des médias dans ce jalon, seul le sélecteur est fourni pour le formulaire de visite.
 
 - **NF-09** (seed des 3 visites liées) : `seed-tours.ts` intégré à `prisma/seed.ts`. 3 visites publiées créées, valides (`validateTour`), idempotence via UUID v7. Couvert par `seed.int.test.ts`.
 - **F-04** (onglets de traduction, D-79) : composant contrôlé `LocalizedTextField` (`apps/admin/src/catalog/`). Un champ visible, onglets fr/ar/en, `dir="rtl"` sur l'arabe, indicateur « Traduction manquante », français obligatoire quel que soit l'onglet actif. La liste des visites signale une traduction manquante (`catalog.translation.missing`) quand la langue active, autre que le français, est absente du titre.
