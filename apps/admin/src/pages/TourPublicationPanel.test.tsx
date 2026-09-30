@@ -132,11 +132,6 @@ describe('TourPublicationPanel', () => {
   });
 
   it('publish 200 fait passer le statut à PUBLISHED et affiche Dépublier', async () => {
-    // To verify display change, we need to pass a mocked tour state or verify that onTourUpdated 
-    // triggers a re-render in the parent, but since we are unit testing TourPublicationPanel, 
-    // we should render it with a wrapper that maintains state, or just check onTourUpdated.
-    // The requirement says: "Le test « publish 200 » ne vérifie pas l'affichage. Il contrôle seulement que onTourUpdated est appelé, pas que le statut passe à « Publiée » ni que « Dépublier » apparaît."
-    // Let's create a wrapper to test the UI update!
     
     mockFetch.mockImplementation((url: string | URL | Request) => {
       const urlStr = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;

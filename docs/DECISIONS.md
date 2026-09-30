@@ -616,12 +616,3 @@ Pas de num√©ro de d√©cision tant que le porteur n'a pas tranch√© :
 - **D√©cision :** Le back-office (apps/admin) adoptera Tailwind CSS et shadcn/ui comme impos√© par la section 4.1 du cahier des charges, avec l'utilisation de propri√©t√©s CSS logiques pour assurer la compatibilit√© RTL (Arabe). Aucune API ne sera modifi√©e. Les tests devront rester verts et leurs s√©lecteurs adapt√©s si besoin.
 - **Alternatives :** Rester sur du CSS personnalis√© brut, ce qui s'√©loigne du cahier des charges et rend difficile la maintenance d'une interface homog√®ne.
 - **√Ä valider :** non (consigne du porteur du 30/09/2026)
-
- # #   D - 8 2      P r i o r i t È   a u   f r a n Á a i s   j u s q u ' a u   M 8 
- 
- -   * * D a t e   : * *   3 0 / 0 9 / 2 0 2 6 
- -   * * D È c i s i o n   : * *   J u s q u ' a u   p i l o t e   M 8 ,   l e   p r o j e t   s e   c o n c e n t r e   s u r   l e   f r a n Á a i s .   L ' i n f r a s t r u c t u r e   m u l t i l i n g u e   ( i 1 8 n ,   L o c a l i z e d T e x t ,   C S S   R T L ,   s È l e c t e u r )   e s t   c o n s e r v È e .   L a   t r a d u c t i o n   d e s   n o u v e l l e s   c h a Ó n e s / c o n t e n u s   e n   a r a b e   e t   a n g l a i s ,   l e s   v È r i f i c a t i o n s   v i s u e l l e s   R T L ,   l e s   t e s t s   e x i g e a n t   l e s   3   l a n g u e s   ( l e s   c o n t r Ù l e s   d e   c o m p l È t u d e   s i g n a l e n t   a r / e n   c o m m e   m a n q u a n t s   m a i s   n e   b l o q u e n t   p l u s ,   s e u l   f r   e s t   o b l i g a t o i r e )   e t   l e   c r i t Ë r e   ´   3   l a n g u e s   /   R T L   ª   d e   l a   D o D   s o n t   s u s p e n d u s   a v e c   r e p l i   a u t o m a t i q u e   s u r   l e   f r a n Á a i s .   L e s   t r a d u c t i o n s   e x i s t a n t e s   s o n t   c o n s e r v È e s .   U n   l o t   a v a n t   M 8   t r a i t e r a   l e s   t r a d u c t i o n s   c o m p l Ë t e s   e t   r È a c t i v e r a   c e s   c o n t r Ù l e s . 
- -   * * A l t e r n a t i v e s   : * *   e x i g e r   l e s   3   l a n g u e s   e n   c o n t i n u ,   r a l e n t i s s a n t   l e s   j a l o n s . 
- -   * * ¿   v a l i d e r   : * *   n o n   ( d È c i s i o n   d u   p o r t e u r   l e   3 0 / 0 9 / 2 0 2 6 ) 
-  
- 
