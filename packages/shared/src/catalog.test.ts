@@ -20,6 +20,7 @@ import {
   PaginationQuerySchema,
   ProcessingStatus,
   SceneCreateSchema,
+  SceneListResponseSchema,
   SceneReorderRequestSchema,
   SceneResponseSchema,
   SceneUpdateSchema,
@@ -346,6 +347,31 @@ describe('SceneResponseSchema', () => {
     expect(SceneResponseSchema.safeParse({ ...sceneResponse, createdAt: 'hier' }).success).toBe(
       false,
     );
+  });
+});
+
+describe('SceneListResponseSchema', () => {
+  it('accepte un tableau de scènes', () => {
+    const createdAt = '2026-09-29T18:00:00.000Z';
+    const sceneResponse = {
+      id: id.scene,
+      tourId: id.tour,
+      title: { fr: 'La porte' },
+      panoramaAssetId: id.panorama,
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      weight: 1,
+      hotspotCount: 0,
+      createdAt,
+      updatedAt: createdAt,
+    };
+    const valid = [sceneResponse, { ...sceneResponse, id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9a', weight: 2 }];
+    expect(SceneListResponseSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('refuse un objet simple', () => {
+    expect(SceneListResponseSchema.safeParse({ id: id.scene }).success).toBe(false);
   });
 });
 

@@ -182,6 +182,9 @@ export const SceneResponseSchema = z.object({
 });
 export type SceneResponse = z.infer<typeof SceneResponseSchema>;
 
+export const SceneListResponseSchema = z.array(SceneResponseSchema);
+export type SceneListResponse = z.infer<typeof SceneListResponseSchema>;
+
 /**
  * Corps de `POST .../scenes/reorder` (API-22).
  * Le service exige l'ensemble exact des scènes non supprimées, sans doublon.

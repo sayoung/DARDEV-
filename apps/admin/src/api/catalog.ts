@@ -22,7 +22,15 @@ import {
   type AssetResponse,
   type PaginatedAssetResponse,
   AssetResponseSchema,
-  PaginatedAssetResponseSchema
+  PaginatedAssetResponseSchema,
+  SceneListResponseSchema,
+  SceneResponseSchema,
+  type SceneListResponse,
+  type SceneResponse,
+  type SceneCreate,
+  type SceneUpdate,
+  type SceneReorderRequest,
+  type SetStartSceneRequest
 } from '@xplor/shared';
 import { requestJson } from './client.js';
 
@@ -129,4 +137,42 @@ export async function listAssets(query?: AssetListQuery): Promise<PaginatedAsset
 
 export async function getAsset(id: string): Promise<AssetResponse> {
   return requestJson(`/api/v1/admin/assets/${id}`, AssetResponseSchema);
+}
+
+export async function listScenes(tourId: string): Promise<SceneListResponse> {
+  return requestJson(`/api/v1/admin/tours/${tourId}/scenes`, SceneListResponseSchema);
+}
+
+export async function createScene(tourId: string, data: SceneCreate): Promise<SceneResponse> {
+  return requestJson<SceneResponse>(`/api/v1/admin/tours/${tourId}/scenes`, SceneResponseSchema, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateScene(id: string, data: SceneUpdate): Promise<SceneResponse> {
+  return requestJson<SceneResponse>(`/api/v1/admin/scenes/${id}`, SceneResponseSchema, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteScene(id: string): Promise<void> {
+  await requestJson(`/api/v1/admin/scenes/${id}`, null, {
+    method: 'DELETE',
+  });
+}
+
+export async function reorderScenes(tourId: string, body: SceneReorderRequest): Promise<SceneListResponse> {
+  return requestJson(`/api/v1/admin/tours/${tourId}/scenes/reorder`, SceneListResponseSchema, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function setStartScene(tourId: string, body: SetStartSceneRequest): Promise<TourResponse> {
+  return requestJson(`/api/v1/admin/tours/${tourId}/scenes/set-start`, TourResponseSchema, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 }

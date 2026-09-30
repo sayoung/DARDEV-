@@ -2,6 +2,7 @@ import { useState, useEffect, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { TourForm } from './TourForm.js';
+import { TourScenesSection } from './TourScenesSection.js';
 import { getTour, updateTour, deleteTour } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Role, type TourResponse, type TourUpdate } from '@xplor/shared';
@@ -131,6 +132,7 @@ export function TourDetailPage() {
         isSubmitting={isSubmitting}
         statusText={statusText}
       />
+      <TourScenesSection tour={tour} onTourUpdated={setTour} />
     </div>
   );
 }
