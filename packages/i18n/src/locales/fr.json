@@ -80,6 +80,7 @@
     }
   },
   "nav": {
+    "label": "Navigation principale",
     "tours": "Visites",
     "cities": "Villes",
     "categories": "Catégories"

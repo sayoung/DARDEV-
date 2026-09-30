@@ -82,7 +82,7 @@ describe('langue du back-office', () => {
       ),
     );
     render(<App />);
-    const nav = await screen.findByRole('navigation', { name: resources.fr.common.appName });
+    const nav = await screen.findByRole('navigation', { name: resources.fr.nav.label });
     expect(nav).toBeTruthy();
 
     const linkTours = screen.getByRole('link', { name: 'Visites' });

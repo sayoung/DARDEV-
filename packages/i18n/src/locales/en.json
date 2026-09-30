@@ -80,6 +80,7 @@
     }
   },
   "nav": {
+    "label": "Main navigation",
     "tours": "Tours",
     "cities": "Cities",
     "categories": "Categories"
