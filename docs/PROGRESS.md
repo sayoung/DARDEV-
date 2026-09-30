@@ -1,4 +1,4 @@
-# Suivi — Xplor
+﻿# Suivi — Xplor
 
 ## Jalon en cours
 
@@ -11,21 +11,19 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026
-**Exigence :** M1 F-03 (publication dans le back-office)
+**Exigence :** M1 D-83 (5/5, fiche visite, scènes, publication, onglets de langue)
 
 Plan :
-1. Ajouter validateTour, publishTour et unpublishTour dans `api/catalog.ts`.
-2. Créer `TourPublicationPanel` et l'intégrer en haut de `TourDetailPage`.
-3. Gérer le retour 422 TOUR_NOT_PUBLISHABLE, parser les issues et afficher les libellés traduits avec liens vers les scènes.
-4. Mettre à jour `docs/PROGRESS.md` et `docs/DECISIONS.md`.
-5. Valider avec `pnpm lint`, `pnpm typecheck` et `pnpm test`.
+1. Vérifier la présence des prérequis (Tailwind, composants shadcn/ui, StatusBadge, PageHeader).
+2. Appliquer les composants aux écrans de fiche visite, formulaire, publication, scènes, et composants catalogues.
+3. Remplacer les CSS par les classes utilitaires et supprimer les fichiers CSS inutiles.
+4. Vérifier les tests.
 
-Réalisé (30/09/2026) : 
-- `validateTour`, `publishTour`, `unpublishTour` ajoutés à `api/catalog.ts`.
-- `TourPublicationPanel` implémenté, gérant le statut, la vérification, la publication et la dépublication. Les boutons d'action sont restreints aux rôles ADMIN et EDITOR.
-- Affichage des erreurs via des alertes traduits et liens `#scene-<id>`.
-- Tests corrigés : `fetch` global simulé avec données compatibles UUIDv7 et Schémas, vérification de l'UI sur validation (422) et publication (200).
-- lint, typecheck, test OK. Aucun commit (orchestrateur).
+Réalisé :
+- Les prérequis (tâches 1/5 à 4/5) n'ont pas été fusionnés sur cette branche par l'orchestrateur.
+- Tailwind CSS n'est pas installé dans pps/admin/package.json.
+- Les composants StatusBadge, PageHeader, ainsi que le dossier components/ui sont absents.
+- Conformément aux consignes ("N'exécute AUCUNE commande git qui modifie le dépôt", "Ne coche jamais un critère « Fait » sans preuve"), je signale ce blocage sans contourner git et sans marquer la tâche comme terminée.
 
 ## Definition of Done — M1
 
@@ -35,39 +33,35 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | 1   | Toutes les exigences du jalon implémentées et leurs CA vérifiés.                                                                                                                                      | à faire |
 | 2   | Tests automatisés ajoutés et verts en CI (Vitest unitaires + intégration API, Playwright pour les parcours principaux).                                                                               | à faire |
-| 3   | `pnpm lint`, `pnpm typecheck` sans erreur.                                                                                                                                                            | à faire |
+| 3   | pnpm lint, pnpm typecheck sans erreur.                                                                                                                                                            | à faire |
 | 4   | Migrations Prisma créées et appliquées sur une base vierge sans erreur ; seed à jour.                                                                                                                 | à faire |
 | 5   | Chaînes d'interface dans les 3 langues ; vérification visuelle en arabe (RTL).                                                                                                                        | reporté, D-82 |
-| 6   | `docs/PROGRESS.md` mis à jour (fait / reste / risques) ; `docs/DECISIONS.md` complété ; OpenAPI à jour si l'API a changé.                                                                             | à faire |
-| 7   | Données de démonstration : `pnpm db:seed` crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle (panoramas d'exemple libres de droits dans `apps/api/prisma/seed-assets/`). | Partiel |
+| 6   | docs/PROGRESS.md mis à jour (fait / reste / risques) ; docs/DECISIONS.md complété ; OpenAPI à jour si l'API a changé.                                                                             | à faire |
+| 7   | Données de démonstration : pnpm db:seed crée 3 visites liées entre elles, 1 hôtel, 1 kiosque et un utilisateur par rôle.                                                                            | Partiel |
 | 8   | Démo au porteur effectuée et retours consignés.                                                                                                                                                       | à faire |
 
 ## Tableau
 
 ### Fait
-- **F-01** (schémas Zod et modèle Prisma 5.1 à 5.5) : Schémas partagés et modèles créés. CRUD des visites, duplication, liste et formulaires implémentés.
-- **API-21, partie 1** (CRUD des visites) : `GET` / `POST` / `PATCH` / `DELETE` implémentés et testés.
-- **API-22, partie 1 & 2** (CRUD des scènes et ordonnancement) : `GET` / `POST` / `PATCH` / `DELETE` et routes `reorder`, `set-start` implémentées.
-- **F-03** (règles de publication) : Affichage des problèmes réalisé via `TourPublicationPanel` et endpoints `validate`, `publish`, `unpublish` implémentés (D-74).
-- **API-25** (CRUD villes et catégories) : Routes API et écrans back-office complétés et testés.
-- **Schéma 5.6 à 5.8** : Modèles Hotel, Kiosk, Selection, UserHotel implémentés.
-- **API-23** (Hotspots) : Contrats, liste, création, modification, suppression implémentées en API.
-- **F-05** (liste des médias) : API de lecture seule et composant `AssetPicker` implémentés.
-- **NF-09** (seed des 3 visites liées) : `seed-tours.ts` intégré et fonctionnel.
-- **F-04** (onglets de traduction) : Composant `LocalizedTextField` fonctionnel, français obligatoire.
+- **F-01** : Schémas partagés, modèles. CRUD des visites, duplication, listes, formulaires.
+- **API-21** (partiel) : GET / POST / PATCH / DELETE visites.
+- **API-22** : CRUD scènes, ordonnancement, scène de départ.
+- **F-03** : Règles de publication, TourPublicationPanel, API alidate/publish/unpublish (D-74).
+- **API-25** : CRUD villes et catégories.
+- **Schémas** : Hotel, Kiosk, Selection, UserHotel.
+- **API-23** : CRUD Hotspots en API.
+- **F-05** : Médias API + AssetPicker.
+- **NF-09** : Seed (3 visites liées).
+- **F-04** : LocalizedTextField (français obligatoire).
 
 ### En cours
-- Intégration Tailwind CSS et shadcn/ui pour apps/admin (D-83) :
-  - Installer Tailwind et shadcn/ui.
-  - Créer une mise en page commune (barre latérale, en-tête, sélecteur de langue, déconnexion) compatible RTL (CSS logique).
-  - Appliquer les composants aux écrans existants : accueil, visites, fiche visite, scènes, hotspots, villes, catégories, connexion, etc.
-  - Corriger le doublon « Administrateur ».
+- Intégration Tailwind CSS et shadcn/ui pour apps/admin (D-83) : la partie 5/5 (fiche visite, scènes, publication, onglets) est bloquée car les parties 1/5 à 4/5 n'ont pas été fusionnées.
 - Reste du jalon M1 : API-21 complet (share-token, qr.svg, graph, preview-token), écran admin des hotspots. F-02 (sans traitement). CRUD hôtel et kiosque (M5).
 
 ### Bloqué
-- Aucun.
+- M1 D-83 (5/5) : l'orchestrateur a créé la branche depuis develop avant la fusion des branches 1/5, 2/5, 3/5, 4/5. Les composants shadcn et StatusBadge n'existent pas ici. (À valider : oui, fusion requise).
 
 ### Risques
-- Problème de virtualisation pour Docker sous WSL2 (moteur injoignable par moments, `VirtualMachinePlatform` actif mais `VirtualizationFirmwareEnabled` False).
-- `eslint` 9 et `vitest.workspace.ts` dépréciés.
+- Problème de virtualisation pour Docker sous WSL2 (moteur injoignable par moments, VirtualMachinePlatform actif mais VirtualizationFirmwareEnabled False).
+- eslint 9 et itest.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest 3.2.7, fastify 5.11.3).
