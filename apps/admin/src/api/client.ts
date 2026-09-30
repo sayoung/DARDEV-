@@ -9,6 +9,7 @@ import {
   type LoginRequest,
   type MeResponse,
   type ResetPasswordRequest,
+  type ZodType,
 } from '@xplor/shared';
 
 /** Méthodes sans effet de bord : pas d'en-tête CSRF (même règle que `CsrfGuard`). */
@@ -22,12 +23,14 @@ let csrfToken: string | undefined;
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string | undefined;
+  readonly issues?: unknown;
 
-  constructor(status: number, code: string | undefined) {
+  constructor(status: number, code: string | undefined, issues?: unknown) {
     super(code ?? `HTTP ${String(status)}`);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.issues = issues;
   }
 }
 
@@ -113,19 +116,24 @@ async function readMe(response: Response): Promise<MeResponse> {
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
-  return new ApiError(response.status, await readErrorCode(response));
+  try {
+    const body = await readJson(response);
+    const code = codeFromBody(body);
+    let issues: unknown;
+    if (typeof body === 'object' && body !== null && 'error' in body) {
+      const err = (body as Record<string, unknown>).error;
+      if (typeof err === 'object' && err !== null && 'issues' in err) {
+        issues = (err as Record<string, unknown>).issues;
+      }
+    }
+    return new ApiError(response.status, code, issues);
+  } catch {
+    return new ApiError(response.status, undefined);
+  }
 }
 
 async function readJson(response: Response): Promise<unknown> {
   return response.json() as Promise<unknown>;
-}
-
-async function readErrorCode(response: Response): Promise<string | undefined> {
-  try {
-    return codeFromBody(await readJson(response));
-  } catch {
-    return undefined;
-  }
 }
 
 function codeFromBody(body: unknown): string | undefined {
@@ -148,4 +156,44 @@ function directCode(body: unknown): string | undefined {
     return code;
   }
   return undefined;
+}
+
+export async function requestJson<T>(
+  path: string,
+  schema: ZodType<T>,
+  init?: RequestInit
+): Promise<T>;
+export async function requestJson(
+  path: string,
+  schema: null,
+  init?: RequestInit
+): Promise<void>;
+export async function requestJson<T>(
+  path: string,
+  schema: ZodType<T> | null,
+  init?: RequestInit
+): Promise<T | void> {
+  const headers = new Headers(init?.headers);
+  if (init?.body !== undefined && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const response = await apiFetch(path, {
+    ...init,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+
+  if (response.status === 204) {
+    return undefined;
+  }
+
+  const data = await readJson(response);
+  if (!schema) {
+    return undefined;
+  }
+  return schema.parse(data);
 }
