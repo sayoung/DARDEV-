@@ -3,18 +3,28 @@ import { useSyncExternalStore } from 'react';
 export type Notice = 'reset' | 'invite';
 
 export type AppRoute =
-  | { name: 'session' }
+  | { name: 'home' }
+  | { name: 'cities' }
+  | { name: 'categories' }
+  | { name: 'tours' }
+  | { name: 'tour-new' }
+  | { name: 'tour-detail'; id: string }
   | { name: 'forgot' }
   | { name: 'reset'; token: string }
   | { name: 'invite'; token: string };
 
 const RESET_PATH = /^\/reset\/([^/]+)$/;
 const INVITE_PATH = /^\/invite\/([^/]+)$/;
+const TOUR_DETAIL_PATH = /^\/tours\/([^/]+)$/;
 
 export function parsePathname(pathname: string): AppRoute {
-  if (pathname === '/forgot') {
-    return { name: 'forgot' };
-  }
+  if (pathname === '/forgot') return { name: 'forgot' };
+  if (pathname === '/cities') return { name: 'cities' };
+  if (pathname === '/categories') return { name: 'categories' };
+  if (pathname === '/tours') return { name: 'tours' };
+  if (pathname === '/tours/new') return { name: 'tour-new' };
+  if (pathname === '/') return { name: 'home' };
+
   const resetToken = RESET_PATH.exec(pathname)?.[1];
   if (resetToken !== undefined) {
     return { name: 'reset', token: decodeSegment(resetToken) };
@@ -23,7 +33,11 @@ export function parsePathname(pathname: string): AppRoute {
   if (inviteToken !== undefined) {
     return { name: 'invite', token: decodeSegment(inviteToken) };
   }
-  return { name: 'session' };
+  const tourId = TOUR_DETAIL_PATH.exec(pathname)?.[1];
+  if (tourId !== undefined && tourId !== '') {
+    return { name: 'tour-detail', id: decodeSegment(tourId) };
+  }
+  return { name: 'home' };
 }
 
 export function readNotice(search: string): Notice | null {

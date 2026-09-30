@@ -1,5 +1,5 @@
 import { LANGS, type Lang } from '@xplor/shared';
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AuthProvider, useAuth } from './auth/AuthProvider.js';
@@ -9,7 +9,12 @@ import { LoginPage } from './auth/LoginPage.js';
 import { SetPasswordPage } from './auth/SetPasswordPage.js';
 import { i18n } from './i18n.js';
 import { applyDocumentLang, LANG_STORAGE_KEY, resolveLang } from './lang.js';
-import { useAppLocation, type Notice } from './router.js';
+import { CategoriesPage } from './pages/CategoriesPage.js';
+import { CitiesPage } from './pages/CitiesPage.js';
+import { TourDetailPage } from './pages/TourDetailPage.js';
+import { TourNewPage } from './pages/TourNewPage.js';
+import { ToursPage } from './pages/ToursPage.js';
+import { useAppLocation, type Notice, hrefFor, navigate } from './router.js';
 
 export function App() {
   return (
@@ -26,6 +31,18 @@ const SUCCESS_MESSAGE = {
   Notice,
   'auth.setPassword.successReset' | 'auth.setPassword.successInvite'
 >;
+
+function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0;
+}
+
+function handleNavClick(event: MouseEvent<HTMLAnchorElement>, path: string): void {
+  if (isModifiedClick(event)) {
+    return;
+  }
+  event.preventDefault();
+  navigate(path);
+}
 
 function AdminShell() {
   const { t } = useTranslation();
@@ -48,9 +65,59 @@ function AdminShell() {
     setLang(next);
   }
 
+  const isPublicRoute =
+    route.name === 'forgot' || route.name === 'reset' || route.name === 'invite';
+  const isAuthenticatedRoute = !isPublicRoute;
+  const isAnonymous = auth.state.status === 'anonymous';
+  const isAuthenticated = auth.state.status === 'authenticated';
+
+  const isToursActive =
+    route.name === 'tours' || route.name === 'tour-new' || route.name === 'tour-detail';
+
   return (
     <main aria-busy={auth.state.status === 'loading'}>
       <h1>{t('common.appName')}</h1>
+
+      {isAuthenticated && (
+        <nav aria-label={t('nav.label')}>
+          <ul className="nav-list">
+            <li>
+              <a
+                href={hrefFor('/tours')}
+                aria-current={isToursActive ? 'page' : undefined}
+                onClick={(e) => {
+                  handleNavClick(e, '/tours');
+                }}
+              >
+                {t('nav.tours')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={hrefFor('/cities')}
+                aria-current={route.name === 'cities' ? 'page' : undefined}
+                onClick={(e) => {
+                  handleNavClick(e, '/cities');
+                }}
+              >
+                {t('nav.cities')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={hrefFor('/categories')}
+                aria-current={route.name === 'categories' ? 'page' : undefined}
+                onClick={(e) => {
+                  handleNavClick(e, '/categories');
+                }}
+              >
+                {t('nav.categories')}
+              </a>
+            </li>
+          </ul>
+        </nav>
+      )}
+
       <nav aria-label={t('common.language.label')}>
         <ul className="language-list">
           {LANGS.map((code) => (
@@ -69,16 +136,25 @@ function AdminShell() {
           ))}
         </ul>
       </nav>
+
       {route.name === 'forgot' ? <ForgotPasswordPage /> : null}
       {route.name === 'reset' ? <SetPasswordPage kind="reset" token={route.token} /> : null}
       {route.name === 'invite' ? <SetPasswordPage kind="invite" token={route.token} /> : null}
-      {route.name === 'session' && notice !== null && auth.state.status === 'anonymous' ? (
+
+      {isAuthenticatedRoute && isAnonymous && notice !== null ? (
         <p className="auth-status" role="status">
           {t(SUCCESS_MESSAGE[notice])}
         </p>
       ) : null}
-      {route.name === 'session' && auth.state.status === 'authenticated' ? <HomePage /> : null}
-      {route.name === 'session' && auth.state.status === 'anonymous' ? <LoginPage /> : null}
+
+      {isAuthenticatedRoute && isAnonymous ? <LoginPage /> : null}
+
+      {isAuthenticated && route.name === 'home' ? <HomePage /> : null}
+      {isAuthenticated && route.name === 'cities' ? <CitiesPage /> : null}
+      {isAuthenticated && route.name === 'categories' ? <CategoriesPage /> : null}
+      {isAuthenticated && route.name === 'tours' ? <ToursPage /> : null}
+      {isAuthenticated && route.name === 'tour-new' ? <TourNewPage /> : null}
+      {isAuthenticated && route.name === 'tour-detail' ? <TourDetailPage /> : null}
     </main>
   );
 }

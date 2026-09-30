@@ -78,5 +78,31 @@
       "required": "إلزامي",
       "frRequired": "النص الفرنسي إلزامي."
     }
+  },
+  "nav": {
+    "label": "التنقل الرئيسي",
+    "tours": "الزيارات",
+    "cities": "المدن",
+    "categories": "الفئات"
+  },
+  "page": {
+    "home": {
+      "title": "الرئيسية"
+    },
+    "cities": {
+      "title": "المدن"
+    },
+    "categories": {
+      "title": "الفئات"
+    },
+    "tours": {
+      "title": "الزيارات"
+    },
+    "tourNew": {
+      "title": "زيارة جديدة"
+    },
+    "tourDetail": {
+      "title": "تفاصيل الزيارة"
+    }
   }
 }

@@ -78,5 +78,31 @@
       "required": "required",
       "frRequired": "French is required."
     }
+  },
+  "nav": {
+    "label": "Main navigation",
+    "tours": "Tours",
+    "cities": "Cities",
+    "categories": "Categories"
+  },
+  "page": {
+    "home": {
+      "title": "Home"
+    },
+    "cities": {
+      "title": "Cities"
+    },
+    "categories": {
+      "title": "Categories"
+    },
+    "tours": {
+      "title": "Tours"
+    },
+    "tourNew": {
+      "title": "New tour"
+    },
+    "tourDetail": {
+      "title": "Tour details"
+    }
   }
 }
