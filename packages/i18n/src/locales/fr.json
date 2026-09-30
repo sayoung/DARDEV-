@@ -178,6 +178,28 @@
         "moveDown": "Descendre",
         "setStart": "Définir comme départ"
       }
+    },
+    "publication": {
+      "status": "Statut",
+      "validate": "Vérifier",
+      "publish": "Publier",
+      "unpublish": "Dépublier",
+      "noIssues": "Aucun problème : la visite peut être publiée",
+      "issuesTitle": "Problèmes à corriger avant publication"
+    },
+    "issue": {
+      "START_SCENE_MISSING": "Scène de départ manquante",
+      "START_SCENE_FOREIGN": "La scène de départ n'appartient pas à cette visite",
+      "PANORAMA_NOT_READY": "Le panorama de la scène n'est pas prêt",
+      "SCENE_UNREACHABLE": "Scène inatteignable (aucun lien vers cette scène)",
+      "SCENE_LINK_TARGET_MISSING": "La scène cible du lien est manquante",
+      "SCENE_LINK_SELF": "Un lien pointe vers la même scène",
+      "SCENE_LINK_FOREIGN": "Un lien pointe vers une scène d'une autre visite",
+      "SCENE_LINK_TARGET_DELETED": "Un lien pointe vers une scène supprimée",
+      "TOUR_LINK_TARGET_MISSING": "La visite cible du lien est manquante",
+      "TOUR_LINK_SELF": "Un lien pointe vers la même visite",
+      "TOUR_LINK_TARGET_UNPUBLISHED": "La visite cible n'est pas publiée",
+      "TOUR_LINK_SCENE_FOREIGN": "La scène cible appartient à une autre visite"
     }
   },
   "nav": {

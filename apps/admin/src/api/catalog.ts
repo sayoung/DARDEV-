@@ -30,7 +30,9 @@ import {
   type SceneCreate,
   type SceneUpdate,
   type SceneReorderRequest,
-  type SetStartSceneRequest
+  type SetStartSceneRequest,
+  TourValidationResponseSchema,
+  type TourValidationResponse
 } from '@xplor/shared';
 import { requestJson } from './client.js';
 
@@ -176,3 +178,22 @@ export async function setStartScene(tourId: string, body: SetStartSceneRequest):
     body: JSON.stringify(body),
   });
 }
+
+export async function validateTour(id: string): Promise<TourValidationResponse> {
+  return requestJson(`/api/v1/admin/tours/${id}/validate`, TourValidationResponseSchema, {
+    method: 'POST',
+  });
+}
+
+export async function publishTour(id: string): Promise<TourResponse> {
+  return requestJson(`/api/v1/admin/tours/${id}/publish`, TourResponseSchema, {
+    method: 'POST',
+  });
+}
+
+export async function unpublishTour(id: string): Promise<TourResponse> {
+  return requestJson(`/api/v1/admin/tours/${id}/unpublish`, TourResponseSchema, {
+    method: 'POST',
+  });
+}
+

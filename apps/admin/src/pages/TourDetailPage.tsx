@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { TourForm } from './TourForm.js';
 import { TourScenesSection } from './TourScenesSection.js';
+import { TourPublicationPanel } from './TourPublicationPanel.js';
 import { getTour, updateTour, deleteTour } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Role, type TourResponse, type TourUpdate } from '@xplor/shared';
@@ -123,6 +124,7 @@ export function TourDetailPage() {
   return (
     <div>
       <h2>{t('page.tourDetail.title')}</h2>
+      <TourPublicationPanel tour={tour} onTourUpdated={setTour} />
       {actionError !== null && <div className="form-error" role="alert">{t(actionError)}</div>}
       {successKey !== null && <div className="form-success" role="status">{t(successKey)}</div>}
       <TourForm
