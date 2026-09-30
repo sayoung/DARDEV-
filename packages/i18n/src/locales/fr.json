@@ -109,6 +109,36 @@
       "color": "Couleur",
       "weight": "Poids",
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette catégorie ?"
+    },
+    "tour": {
+      "status": {
+        "DRAFT": "Brouillon",
+        "PUBLISHED": "Publiée"
+      },
+      "columns": {
+        "title": "Titre",
+        "city": "Ville",
+        "status": "Statut",
+        "scenes": "Scènes"
+      },
+      "filters": {
+        "status": "Statut",
+        "allStatus": "Tous les statuts",
+        "city": "Ville",
+        "allCities": "Toutes les villes",
+        "category": "Catégorie",
+        "allCategories": "Toutes les catégories",
+        "search": "Rechercher..."
+      },
+      "actions": {
+        "new": "Nouvelle visite",
+        "duplicate": "Dupliquer"
+      },
+      "pagination": {
+        "prev": "Précédent",
+        "next": "Suivant",
+        "info": "Page {{page}} sur {{total}}"
+      }
     }
   },
   "nav": {

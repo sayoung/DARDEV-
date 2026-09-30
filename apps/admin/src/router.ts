@@ -62,8 +62,12 @@ export function navigate(pathname: string, notice?: Notice): void {
   if (notice !== undefined) {
     params.set('notice', notice);
   }
-  const search = params.toString();
-  const next = search.length === 0 ? pathname : `${pathname}?${search}`;
+  navigateWithSearch(pathname, params.toString());
+}
+
+export function navigateWithSearch(pathname: string, search: string): void {
+  const cleanSearch = search.startsWith('?') ? search.slice(1) : search;
+  const next = cleanSearch.length === 0 ? pathname : `${pathname}?${cleanSearch}`;
   if (`${window.location.pathname}${window.location.search}` === next) {
     return;
   }
@@ -71,12 +75,13 @@ export function navigate(pathname: string, notice?: Notice): void {
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-export function useAppLocation(): { route: AppRoute; notice: Notice | null } {
+export function useAppLocation(): { route: AppRoute; notice: Notice | null; search: string } {
   const key = useSyncExternalStore(subscribe, locationKey, locationKey);
   const url = new URL(key, 'http://localhost');
   return {
     route: parsePathname(url.pathname),
     notice: readNotice(url.search),
+    search: url.search,
   };
 }
 

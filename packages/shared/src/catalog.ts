@@ -43,8 +43,7 @@ export enum ProcessingStatus {
 }
 
 /** Identifiants exposés par l'API : UUID v7 (cahier, section 5). */
-const idSchema = z.uuidv7();
-
+export const idSchema = z.uuidv7();
 const yawSchema = z.number().min(-Math.PI).max(Math.PI);
 const pitchSchema = z
   .number()

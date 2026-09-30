@@ -109,6 +109,36 @@
       "color": "Color",
       "weight": "Weight",
       "deleteConfirm": "Are you sure you want to delete this category?"
+    },
+    "tour": {
+      "status": {
+        "DRAFT": "Draft",
+        "PUBLISHED": "Published"
+      },
+      "columns": {
+        "title": "Title",
+        "city": "City",
+        "status": "Status",
+        "scenes": "Scenes"
+      },
+      "filters": {
+        "status": "Status",
+        "allStatus": "All statuses",
+        "city": "City",
+        "allCities": "All cities",
+        "category": "Category",
+        "allCategories": "All categories",
+        "search": "Search..."
+      },
+      "actions": {
+        "new": "New tour",
+        "duplicate": "Duplicate"
+      },
+      "pagination": {
+        "prev": "Previous",
+        "next": "Next",
+        "info": "Page {{page}} of {{total}}"
+      }
     }
   },
   "nav": {
