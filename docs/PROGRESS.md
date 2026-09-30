@@ -11,19 +11,18 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026
-**Exigence :** M1 D-83 (5/5, fiche visite, scènes, publication, onglets de langue)
+**Exigence :** M1 F-02 (gestion des scènes, version manuelle sans upload) - Correction ESLint
 
 Plan :
-1. Vérifier la présence des prérequis (Tailwind, composants shadcn/ui, StatusBadge, PageHeader).
-2. Appliquer les composants aux écrans de fiche visite, formulaire, publication, scènes, et composants catalogues.
-3. Remplacer les CSS par les classes utilitaires et supprimer les fichiers CSS inutiles.
-4. Vérifier les tests.
+1. Analyser les erreurs `pnpm lint` et `pnpm typecheck` remontées par le relecteur.
+2. Corriger les types `any` et les importations inutilisées dans `SceneDetailPage.tsx`, `SceneForm.tsx` et leurs tests.
+3. Corriger les assertions inutiles et les promesses non gérées (`AssetPicker.tsx`).
+4. S'assurer que `pnpm lint`, `pnpm typecheck`, et `pnpm test` passent à 100%.
 
 Réalisé :
-- Les prérequis (tâches 1/5 à 4/5) n'ont pas été fusionnés sur cette branche par l'orchestrateur.
-- Tailwind CSS n'est pas installé dans pps/admin/package.json.
-- Les composants StatusBadge, PageHeader, ainsi que le dossier components/ui sont absents.
-- Conformément aux consignes ("N'exécute AUCUNE commande git qui modifie le dépôt", "Ne coche jamais un critère « Fait » sans preuve"), je signale ce blocage sans contourner git et sans marquer la tâche comme terminée.
+- Suppression des `any` explicites et des imports non utilisés.
+- Correction des assertions non nécessaires et de la gestion des promesses.
+- Les commandes `lint`, `typecheck` et `test` retournent toutes le code 0. Aucun test cassé.
 
 ## Definition of Done — M1
 

@@ -145,6 +145,10 @@ export async function listScenes(tourId: string): Promise<SceneListResponse> {
   return requestJson(`/api/v1/admin/tours/${tourId}/scenes`, SceneListResponseSchema);
 }
 
+export async function getScene(id: string): Promise<SceneResponse> {
+  return requestJson(`/api/v1/admin/scenes/${id}`, SceneResponseSchema);
+}
+
 export async function createScene(tourId: string, data: SceneCreate): Promise<SceneResponse> {
   return requestJson<SceneResponse>(`/api/v1/admin/tours/${tourId}/scenes`, SceneResponseSchema, {
     method: 'POST',

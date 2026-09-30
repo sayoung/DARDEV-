@@ -3,36 +3,30 @@ import { useTranslation } from 'react-i18next';
 import {
   type TourResponse,
   type SceneResponse,
-  type LocalizedText,
-  SceneCreateSchema,
-  SceneUpdateSchema,
   localize,
-  AssetKind,
-  z
 } from '@xplor/shared';
 import {
   listScenes,
-  createScene,
-  updateScene,
   deleteScene,
   reorderScenes,
   setStartScene,
   getTour,
 } from '../api/catalog.js';
-import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
-import { AssetPicker } from '../catalog/AssetPicker.js';
 import { ApiError } from '../api/client.js';
 
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table.js';
 import { Badge } from '../components/ui/Badge.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
-import { Input } from '../components/ui/Input.js';
-import { Label } from '../components/ui/Label.js';
+import { navigate } from '../router.js';
 
 interface Props {
   tour: TourResponse;
   onTourUpdated: (tour: TourResponse) => void;
+}
+
+function isModifiedClick(event: React.MouseEvent): boolean {
+  return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0;
 }
 
 export function TourScenesSection({ tour, onTourUpdated }: Props) {
@@ -40,17 +34,6 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
   const [scenes, setScenes] = useState<SceneResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const [title, setTitle] = useState<LocalizedText>({ fr: '' });
-  const [caption, setCaption] = useState<LocalizedText>({ fr: '' });
-  const [panoramaAssetId, setPanoramaAssetId] = useState<string>('');
-  const [initialYaw, setInitialYaw] = useState(0);
-  const [initialPitch, setInitialPitch] = useState(0);
-  const [initialZoom, setInitialZoom] = useState(50);
 
   const reloadScenes = async () => {
     try {
@@ -67,79 +50,6 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
   useEffect(() => {
     void reloadScenes();
   }, [tour.id]);
-
-  const handleStartAdd = () => {
-    setIsAdding(true);
-    setEditingId(null);
-    setTitle({ fr: '' });
-    setCaption({ fr: '' });
-    setPanoramaAssetId('');
-    setInitialYaw(0);
-    setInitialPitch(0);
-    setInitialZoom(50);
-    setError(null);
-  };
-
-  const handleStartEdit = (scene: SceneResponse) => {
-    setIsAdding(false);
-    setEditingId(scene.id);
-    setTitle(scene.title);
-    setCaption(scene.caption ?? { fr: '' });
-    setPanoramaAssetId(scene.panoramaAssetId);
-    setInitialYaw(scene.initialYaw);
-    setInitialPitch(scene.initialPitch);
-    setInitialZoom(scene.initialZoom);
-    setError(null);
-  };
-
-  const handleCancelForm = () => {
-    setIsAdding(false);
-    setEditingId(null);
-    setError(null);
-  };
-
-  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
-    const hasCaption = Object.values(caption).some(v => v.trim() !== '');
-
-    const payload = {
-      title,
-      caption: hasCaption ? caption : undefined,
-      panoramaAssetId,
-      initialYaw,
-      initialPitch,
-      initialZoom,
-      weight: isAdding ? scenes.length : (scenes.find((s) => s.id === editingId)?.weight ?? 0),
-    };
-
-    try {
-      if (isAdding) {
-        const data = SceneCreateSchema.parse(payload);
-        await createScene(tour.id, data);
-        const updatedTour = await getTour(tour.id);
-        onTourUpdated(updatedTour);
-      } else if (editingId) {
-        const data = SceneUpdateSchema.parse(payload);
-        await updateScene(editingId, data);
-      }
-      setIsAdding(false);
-      setEditingId(null);
-      await reloadScenes();
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        setError('catalog.errors.invalidForm');
-      } else if (err instanceof ApiError && err.code === 'PANORAMA_ASSET_NOT_FOUND') {
-        setError('catalog.errors.panoramaAssetNotFound');
-      } else {
-        setError('common.error.generic');
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('common.deleteConfirm'))) return;
@@ -184,8 +94,6 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
       setError('common.error.generic');
     }
   };
-
-  const showForm = isAdding || editingId !== null;
 
   return (
     <section className="space-y-6">
@@ -251,7 +159,11 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
                         <Button 
                           variant="secondary"
                           size="sm"
-                          onClick={() => { handleStartEdit(scene); }}
+                          onClick={(e) => {
+                            if (isModifiedClick(e)) return;
+                            e.preventDefault();
+                            navigate(`/tours/${tour.id}/scenes/${scene.id}`);
+                          }}
                         >
                           {t('catalog.edit')}
                         </Button>
@@ -272,59 +184,14 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
         </div>
       )}
 
-      {!showForm && !loading && (
-        <Button onClick={handleStartAdd} className="mt-4">
+      {!loading && (
+        <Button className="mt-4" onClick={(e) => {
+          if (isModifiedClick(e)) return;
+          e.preventDefault();
+          navigate(`/tours/${tour.id}/scenes/new`);
+        }}>
           {t('catalog.scene.actions.add')}
         </Button>
-      )}
-
-      {showForm && (
-        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-6 mt-8 p-6 border rounded-lg bg-gray-50 dark:bg-gray-900">
-          <h4 className="text-lg font-semibold">{isAdding ? t('catalog.scene.actions.add') : t('catalog.edit')}</h4>
-          <LocalizedTextField
-            label={t('catalog.scene.fields.title')}
-            value={title}
-            onChange={setTitle}
-            required
-          />
-          <LocalizedTextField
-            label={t('catalog.scene.fields.caption')}
-            value={caption}
-            onChange={setCaption}
-          />
-
-          <AssetPicker
-            label={t('catalog.scene.fields.panorama')}
-            kind={AssetKind.PANORAMA}
-            value={panoramaAssetId}
-            onChange={setPanoramaAssetId}
-            required
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>{t('catalog.scene.fields.initialYaw')}</Label>
-              <Input type="number" step="0.1" value={initialYaw} onChange={e => { setInitialYaw(Number(e.target.value)); }} required />
-            </div>
-            <div className="space-y-2">
-              <Label>{t('catalog.scene.fields.initialPitch')}</Label>
-              <Input type="number" step="0.1" value={initialPitch} onChange={e => { setInitialPitch(Number(e.target.value)); }} required />
-            </div>
-            <div className="space-y-2">
-              <Label>{t('catalog.scene.fields.initialZoom')}</Label>
-              <Input type="number" min="0" max="100" value={initialZoom} onChange={e => { setInitialZoom(Number(e.target.value)); }} required />
-            </div>
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <Button type="submit" disabled={submitting}>
-              {t('common.save')}
-            </Button>
-            <Button variant="outline" type="button" onClick={handleCancelForm} disabled={submitting}>
-              {t('catalog.cancel')}
-            </Button>
-          </div>
-        </form>
       )}
     </section>
   );

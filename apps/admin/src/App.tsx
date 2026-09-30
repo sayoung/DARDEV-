@@ -12,6 +12,7 @@ import { applyDocumentLang, LANG_STORAGE_KEY, resolveLang } from './lang.js';
 import { CategoriesPage } from './pages/CategoriesPage.js';
 import { CitiesPage } from './pages/CitiesPage.js';
 import { TourDetailPage } from './pages/TourDetailPage.js';
+import { SceneDetailPage } from './pages/SceneDetailPage.js';
 import { TourNewPage } from './pages/TourNewPage.js';
 import { ToursPage } from './pages/ToursPage.js';
 import { useAppLocation, type Notice, hrefFor, navigate } from './router.js';
@@ -72,7 +73,7 @@ function AdminShell() {
   const isAuthenticated = auth.state.status === 'authenticated';
 
   const isToursActive =
-    route.name === 'tours' || route.name === 'tour-new' || route.name === 'tour-detail';
+    route.name === 'tours' || route.name === 'tour-new' || route.name === 'tour-detail' || route.name === 'scene-detail';
 
   return (
     <main aria-busy={auth.state.status === 'loading'}>
@@ -155,6 +156,7 @@ function AdminShell() {
       {isAuthenticated && route.name === 'tours' ? <ToursPage /> : null}
       {isAuthenticated && route.name === 'tour-new' ? <TourNewPage /> : null}
       {isAuthenticated && route.name === 'tour-detail' ? <TourDetailPage /> : null}
+      {isAuthenticated && route.name === 'scene-detail' ? <SceneDetailPage /> : null}
     </main>
   );
 }
