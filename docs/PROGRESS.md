@@ -11,9 +11,115 @@ Definition of Done du jalon : non remplie.
 ## Session en cours
 
 **Date :** 30/09/2026  
-**Exigence :** M1 NF-09 — seed des 3 visites liées.
+**Exigence :** M1 F-04 — revue du composant LocalizedTextField.
 
 Plan :
+
+1. Garder l'exigence sur `fr` quel que soit l'onglet actif (onglet marqué obligatoire, message, envoi bloqué) et tester l'onglet arabe actif avec `fr` vide.
+2. Associer le champ à un `role="tabpanel"` (`aria-labelledby`, `aria-controls`, nom du `tablist`).
+3. Retirer l'`aria-label` de l'indicateur et l'asserter avec `getAllByText`.
+4. Utiliser le vrai i18n (`i18n.changeLanguage('fr')`) et les libellés « Traduction manquante » et « Arabe ».
+5. Vérifier la disparition de l'indicateur par une saisie (`fireEvent.change`) dans un composant qui garde l'état.
+6. `import type` pour `LocalizedText` et `KeyboardEvent`, classes `.ltf-`.
+7. Relancer `pnpm lint`, `pnpm typecheck` et `pnpm test`, et coller la sortie ici.
+
+Réalisé (30/09/2026, Node 22.23.3) : revue de M1 F-04 (`LocalizedTextField`). Le français reste obligatoire quel que soit l'onglet actif : l'onglet fr porte `aria-required` et le libellé « obligatoire », un message signale `value.fr` vide, et l'envoi du formulaire est bloqué. Le champ est dans un `role="tabpanel"` relié aux onglets (`aria-controls`, `aria-labelledby`) ; le `tablist` est nommé par le libellé du champ. L'indicateur « Traduction manquante » est du texte visible, sans `aria-label`. Les tests Vitest (jsdom) utilisent `i18n.changeLanguage('fr')` et les libellés réels ; la disparition de l'indicateur est vérifiée par `fireEvent.change` dans un composant qui garde l'état. Classes CSS préfixées `.ltf-`. Décision D-78 mise à jour. Aucun commit (orchestrateur).
+
+Sortie de `pnpm lint`, `pnpm typecheck` et `pnpm test` (Node 22.23.3) :
+
+```text
+NODE v22.23.3
+
+> xplor@ lint D:\DARDEV\local\xplor_smit
+> eslint .
+
+> xplor@ typecheck D:\DARDEV\local\xplor_smit
+> tsc --noEmit -p tsconfig.json && pnpm -r typecheck
+
+Scope: 7 of 8 workspace projects
+apps/worker typecheck$ tsc --noEmit -p tsconfig.json
+packages/shared typecheck$ tsc --noEmit -p tsconfig.json
+apps/worker typecheck: Done
+packages/shared typecheck: Done
+packages/i18n typecheck$ tsc --noEmit -p tsconfig.json
+packages/i18n typecheck: Done
+apps/api typecheck$ tsc --noEmit -p tsconfig.json
+apps/admin typecheck$ tsc --noEmit -p tsconfig.json
+apps/kiosk typecheck$ tsc --noEmit -p tsconfig.json
+apps/web typecheck$ tsc --noEmit -p tsconfig.json
+apps/web typecheck: Done
+apps/kiosk typecheck: Done
+apps/admin typecheck: Done
+apps/api typecheck: Done
+
+> xplor@ test D:\DARDEV\local\xplor_smit
+> vitest run
+
+ DEPRECATED  The workspace file is deprecated and will be removed in the next major. Please, use the `test.projects` field in D:/DARDEV/local/xplor_smit/vitest.config.ts instead.
+
+ RUN  v3.2.7 D:/DARDEV/local/xplor_smit
+
+ ✓ |@xplor/api| src/config/env.test.ts (4 tests) 12ms
+ ✓ |@xplor/shared| src/catalog.test.ts (72 tests) 55ms
+ ✓ |@xplor/api| src/seed/seed-tours.test.ts (2 tests) 19ms
+ ✓ |@xplor/api| src/openapi/registry.test.ts (4 tests) 221ms
+ ✓ |@xplor/api| src/catalog/tours.service.test.ts (8 tests) 29ms
+ ✓ |@xplor/api| src/catalog/hotspots.service.test.ts (17 tests) 37ms
+ ✓ |@xplor/api| src/auth/password.service.test.ts (6 tests) 156ms
+ ✓ |@xplor/api| src/catalog/tour-publication.service.test.ts (11 tests) 20ms
+ ✓ |@xplor/api| src/catalog/scenes.service.test.ts (10 tests) 26ms
+[Nest] 28356  - 30/09/2026 00:48:51    WARN [AuthService] Envoi de réinitialisation interrompu
+ ✓ |@xplor/api| src/auth/auth.service.test.ts (26 tests) 38ms
+ ✓ |@xplor/api| src/catalog/catalog-http.test.ts (14 tests) 15ms
+ ✓ |@xplor/api| src/catalog/cities.service.test.ts (8 tests) 15ms
+ ✓ |@xplor/api| src/catalog/categories.service.test.ts (6 tests) 14ms
+ ✓ |@xplor/shared| src/auth.test.ts (14 tests) 15ms
+ ✓ |@xplor/api| src/seed/seed-catalog.test.ts (2 tests) 12ms
+ ✓ |@xplor/api| src/users/invitation.test.ts (8 tests) 30ms
+ ✓ |@xplor/api| src/auth/auth.controller.test.ts (16 tests) 22ms
+ ✓ |@xplor/api| src/catalog/publication-rules.test.ts (25 tests) 11ms
+ ✓ |@xplor/api| src/auth/session-store.test.ts (6 tests) 10ms
+ ✓ |@xplor/shared| src/localized-text.test.ts (6 tests) 11ms
+ ✓ |@xplor/api| src/auth/user-token.test.ts (6 tests) 9ms
+ ✓ |@xplor/worker| src/env.test.ts (2 tests) 9ms
+ ✓ |@xplor/api| src/catalog/assets.service.test.ts (4 tests) 12ms
+ ✓ |@xplor/worker| src/main.test.ts (2 tests) 7ms
+ ✓ |@xplor/api| src/catalog/tour-duplicate.test.ts (5 tests) 6ms
+ ✓ |@xplor/api| src/auth/access-policy.test.ts (14 tests) 7ms
+ ✓ |@xplor/api| src/seed/seed-users.test.ts (4 tests) 9ms
+ ✓ |@xplor/api| src/auth/prisma-user.repository.test.ts (8 tests) 10ms
+ ✓ |@xplor/i18n| src/keys.test.ts (4 tests) 8ms
+ ✓ |@xplor/api| src/auth/lockout.test.ts (4 tests) 5ms
+ ✓ |@xplor/api| src/auth/session.guard.test.ts (10 tests) 10ms
+ ✓ |@xplor/api| src/app.module.test.ts (1 test) 83ms
+ ✓ |@xplor/api| src/health/health.service.test.ts (3 tests) 8ms
+ ✓ |@xplor/api| src/mail/render-mail.test.ts (2 tests) 4ms
+ ✓ |@xplor/api| src/auth/user-token.repository.test.ts (6 tests) 9ms
+ ✓ |@xplor/admin| src/lang.test.ts (1 test) 5ms
+ ✓ |@xplor/api| src/mail/fake-mailer.test.ts (1 test) 5ms
+ ✓ |@xplor/admin| src/api/client.test.ts (11 tests) 36ms
+ ✓ |@xplor/api| src/prisma/role.test.ts (1 test) 3ms
+ ✓ |@xplor/shared| src/password.test.ts (1 test) 4ms
+ ✓ |@xplor/api| src/auth/unit-of-work.test.ts (2 tests) 3ms
+ ✓ |@xplor/api| src/auth/prisma-user.lookup.test.ts (2 tests) 3ms
+ ✓ |@xplor/api| src/mail/smtp-mailer.test.ts (1 test) 2ms
+ ✓ |@xplor/admin| src/App.test.tsx (2 tests) 276ms
+ ✓ |@xplor/admin| src/catalog/LocalizedTextField.test.tsx (4 tests) 330ms
+ ✓ |@xplor/admin| src/auth/account-access.test.tsx (8 tests) 505ms
+ ✓ |@xplor/admin| src/session.test.tsx (8 tests) 537ms
+ ✓ |@xplor/web| src/mount.test.ts (2 tests) 4ms
+ ✓ |@xplor/kiosk| src/mount.test.ts (2 tests) 4ms
+
+ Test Files  49 passed (49)
+      Tests  386 passed (386)
+   Start at  00:48:49
+   Duration  5.18s (transform 3.39s, setup 0ms, collect 36.98s, tests 2.68s, environment 20.48s, prepare 10.64s)
+```
+
+**Exigence précédente :** M1 NF-09 — seed des 3 visites liées.
+
+Plan :
+
 1. Intégrer `seed-tours.ts` dans `prisma/seed.ts`.
 2. Vérifier que la création des lignes Asset est correcte (processingStatus READY, originalKey sous seed/). Consigner D-77 pour les fichiers M2.
 3. Vérifier que `test/seed.int.test.ts` confirme le nombre exact de visites (3), scènes (8), hotspots (11) et assets (11), sans duplication au second seed.
@@ -65,10 +171,11 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **F-05** (liste des médias, lecture seule, D-76) : `GET /api/v1/admin/assets` (filtre `kind` facultatif, `PaginationQuery`, tri `createdAt` décroissant puis `id` croissant) et `GET /api/v1/admin/assets/:id`. `AssetResponseSchema` dans `@xplor/shared` (`id`, `kind`, `mimeType`, `sizeBytes`, `width`, `height`, `processingStatus`, `copyright`, `createdAt`). 404 `ASSET_NOT_FOUND`. ADMIN et EDITOR (`canManageContent`). OpenAPI à jour. Pas d’upload, pas de suppression (API-24, M2). Pas d’écran admin.
 
 - **NF-09** (seed des 3 visites liées) : `seed-tours.ts` intégré à `prisma/seed.ts`. 3 visites publiées créées, valides (`validateTour`), idempotence via UUID v7. Couvert par `seed.int.test.ts`.
+- **F-04** (onglets de traduction, D-78) : composant contrôlé `LocalizedTextField` (`apps/admin/src/catalog/`). Un champ visible, onglets fr/ar/en, `dir="rtl"` sur l'arabe, indicateur « Traduction manquante », français obligatoire quel que soit l'onglet actif. Le signalement d'une traduction manquante dans la liste des visites (critère d'acceptation) reste à faire.
 
 ### En cours
 
-- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écrans admin (y compris villes, catégories, visites, scènes, hotspots, médiathèque et affichage des problèmes de publication), F-02 (sans traitement), F-04. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
+- Reste du jalon M1 : API-21 au-delà du CRUD et de la duplication (share-token, qr.svg, graph, preview-token), écrans admin (y compris villes, catégories, visites, scènes, hotspots, médiathèque et affichage des problèmes de publication), F-02 (sans traitement). F-04 : le composant `LocalizedTextField` est en place (D-78) ; le signalement dans la liste des visites reste à faire. F-01 : liste, CRUD, réordonnancement et scène de départ des scènes sont en place ; CRUD des hotspots aussi ; publication et dépublication des visites aussi (D-74) ; la duplication aussi (D-75). F-03 : `validate`, `publish` (422 `TOUR_NOT_PUBLISHABLE`) et `unpublish` sont en place ; l’affichage des problèmes dans l’admin reste à faire. F-05 : la lecture des médias est en place (D-76) ; l’upload, le retraitement et la suppression restent API-24 en M2. Le schéma 5.6 à 5.8 est en place ; le CRUD hôtel et kiosque reste en M5 (D-66).
 
 ### Bloqué
 

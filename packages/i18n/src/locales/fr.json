@@ -66,5 +66,17 @@
       "text": "Pour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) : {link}",
       "html": "<p><a href=\"{link}\">Choisir un nouveau mot de passe</a> (lien valable 1 heure).</p>"
     }
+  },
+  "catalog": {
+    "translation": {
+      "tab": {
+        "en": "Anglais",
+        "fr": "Français",
+        "ar": "Arabe"
+      },
+      "missing": "Traduction manquante",
+      "required": "obligatoire",
+      "frRequired": "Le français est obligatoire."
+    }
   }
 }
