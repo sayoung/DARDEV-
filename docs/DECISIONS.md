@@ -602,3 +602,17 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Création et modification dans des modals (rejeté pour des URL distinctes `/tours/new` et `/tours/:id`). Un seul état `globalError` pour le chargement et l’action (rejeté : il démontait le formulaire et perdait la saisie).
 - **À valider :** non
 
+
+## D-82 — Exception temporaire à D-03 (Focus français)
+
+- **Date :** 30/09/2026
+- **Décision :** Jusqu'au M8, on se concentre sur le français. L'infrastructure multilingue est conservée (toutes les chaînes via `packages/i18n`, champs `LocalizedText` avec `fr` obligatoire, propriétés CSS logiques compatibles RTL, sélecteur de langue). Sont suspendus : la traduction des nouvelles chaînes et contenus en arabe et en anglais (repli sur le français), les vérifications visuelles RTL, les tests exigeant la présence des 3 langues (le contrôle de complétude des clés rend l'arabe et l'anglais optionnels avec simple avertissement, fait en `keys.test.ts`), ainsi que le critère « 3 langues / RTL » de la Definition of Done des jalons (« reporté, D-82 »). Les traductions existantes ne sont pas supprimées. Un lot « traductions ar/en complètes + vérification RTL + réactivation des contrôles 3 langues » est prévu avant le pilote M8.
+- **Alternatives :** Maintenir l'exigence des 3 langues à chaque jalon, ce qui ralentit le développement.
+- **À valider :** non (décision du porteur du 30/09/2026)
+
+## D-83 — Tailwind CSS et shadcn/ui pour apps/admin
+
+- **Date :** 30/09/2026
+- **Décision :** Le back-office (apps/admin) adoptera Tailwind CSS et shadcn/ui comme imposé par la section 4.1 du cahier des charges, avec l'utilisation de propriétés CSS logiques pour assurer la compatibilité RTL (Arabe). Aucune API ne sera modifiée. Les tests devront rester verts et leurs sélecteurs adaptés si besoin.
+- **Alternatives :** Rester sur du CSS personnalisé brut, ce qui s'éloigne du cahier des charges et rend difficile la maintenance d'une interface homogène.
+- **À valider :** non (consigne du porteur du 30/09/2026)
