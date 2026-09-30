@@ -1,4 +1,4 @@
-# Décisions — Xplor
+﻿# Décisions — Xplor
 
 Décisions reprises du cahier des charges v2.0 (section 11.1), plus D-28 à D-30 propres à ce dépôt. « À valider : non » signifie que le porteur a déjà tranché, ou que la consigne de lancement du dépôt l'impose.
 
@@ -610,9 +610,22 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Maintenir l'exigence des 3 langues à chaque jalon, ce qui ralentit le développement.
 - **À valider :** non (décision du porteur du 30/09/2026)
 
-## D-83 — Tailwind CSS et shadcn/ui pour apps/admin
+## D-83 — Tailwind CSS 4 et shadcn/ui pour apps/admin
 
 - **Date :** 30/09/2026
-- **Décision :** Le back-office (apps/admin) adoptera Tailwind CSS et shadcn/ui comme imposé par la section 4.1 du cahier des charges, avec l'utilisation de propriétés CSS logiques pour assurer la compatibilité RTL (Arabe). Aucune API ne sera modifiée. Les tests devront rester verts et leurs sélecteurs adaptés si besoin.
-- **Alternatives :** Rester sur du CSS personnalisé brut, ce qui s'éloigne du cahier des charges et rend difficile la maintenance d'une interface homogène.
+- **Décision :** Le back-office (apps/admin) adopte Tailwind CSS 4 et shadcn/ui comme imposé par la section 4.1 du cahier des charges, avec l'utilisation de propriétés CSS logiques pour assurer la compatibilité RTL (Arabe). Aucune API n'est modifiée.
+- **Alternatives :** Rester sur du CSS personnalisé brut, ce qui s'éloigne du cahier des charges.
 - **À valider :** non (consigne du porteur du 30/09/2026)
+
+| Paquet | Raison | Licence |
+| ------ | ------ | ------- |
+| @radix-ui/react-label | Composant primitif de label pour shadcn/ui. | MIT |
+| @radix-ui/react-slot | Composition de composants polymorphiques pour shadcn/ui. | MIT |
+| @radix-ui/react-tabs | Composant d'onglets pour shadcn/ui (utilisé pour les langues). | MIT |
+| @tailwindcss/vite | Intégration de Tailwind CSS 4 avec Vite. | MIT |
+| tailwindcss | Cadre CSS utilitaire pour la mise en forme (version 4). | MIT |
+| class-variance-authority | Gestion des variantes CSS pour les composants shadcn/ui. | Apache-2.0 |
+| clsx | Utilitaire pour la construction conditionnelle de classes CSS. | MIT |
+| tailwind-merge | Fusion de classes Tailwind pour éviter les conflits (shadcn/ui). | MIT |
+| lucide-react | Icônes SVG pour l'interface utilisateur. | ISC |
+

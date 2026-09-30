@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { type AssetKind, type AssetResponse } from '@xplor/shared';
 import { listAssets } from '../api/catalog.js';
 
+import { Label } from '../components/ui/Label.js';
+import { Select } from '../components/ui/Select.js';
+import { Alert } from '../components/ui/Alert.js';
+
 interface AssetPickerProps {
   label: string;
   kind: AssetKind;
@@ -43,26 +47,25 @@ export function AssetPicker({ label, kind, value, onChange, required }: AssetPic
   }, [kind]);
 
   if (loading) {
-    return <div>{t('common.loading')}</div>;
+    return <div className="p-4 text-sm text-gray-500">{t('common.loading')}</div>;
   }
 
   if (error) {
-    return <div>{t('catalog.asset.error')}</div>;
+    return <Alert variant="destructive">{t('catalog.asset.error')}</Alert>;
   }
 
   if (assets.length === 0) {
-    return <div>{t('catalog.asset.empty')}</div>;
+    return <Alert>{t('catalog.asset.empty')}</Alert>;
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBlockEnd: '1rem' }}>
-      <label htmlFor={id}>{label}</label>
-      <select
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Select
         id={id}
         value={value}
         onChange={(e) => { onChange(e.target.value); }}
         required={required}
-        style={{ paddingInlineStart: '0.5rem' }}
       >
         <option value="">{t('catalog.asset.emptyOption')}</option>
         {assets.map((asset) => {
@@ -76,7 +79,7 @@ export function AssetPicker({ label, kind, value, onChange, required }: AssetPic
             </option>
           );
         })}
-      </select>
+      </Select>
     </div>
   );
 }
