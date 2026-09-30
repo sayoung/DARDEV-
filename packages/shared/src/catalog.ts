@@ -74,6 +74,9 @@ export const CityResponseSchema = z.object({
 });
 export type CityResponse = z.infer<typeof CityResponseSchema>;
 
+export const CityListResponseSchema = z.array(CityResponseSchema);
+export type CityListResponse = z.infer<typeof CityListResponseSchema>;
+
 const categoryShape = {
   name: LocalizedTextSchema,
   icon: z.string().min(1),
@@ -95,6 +98,9 @@ export const CategoryResponseSchema = z.object({
   ...categoryShape,
 });
 export type CategoryResponse = z.infer<typeof CategoryResponseSchema>;
+
+export const CategoryListResponseSchema = z.array(CategoryResponseSchema);
+export type CategoryListResponse = z.infer<typeof CategoryListResponseSchema>;
 
 const tourShape = {
   title: LocalizedTextSchema,

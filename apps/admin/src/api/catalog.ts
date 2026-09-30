@@ -8,77 +8,63 @@ import {
   type PaginatedTourResponse,
   type TourListQuery,
   type TourResponse,
+  CityListResponseSchema,
+  CategoryListResponseSchema,
+  type CityCreate,
+  type CityUpdate,
+  type CityListResponse,
+  type CategoryCreate,
+  type CategoryUpdate,
+  type CategoryListResponse,
+  type TourCreate,
+  type TourUpdate
 } from '@xplor/shared';
 import { requestJson } from './client.js';
 
-export async function listCities(): Promise<CityResponse[]> {
-  const result = await requestJson('/api/v1/admin/cities', {
-    parse: (val: unknown) => {
-      if (!Array.isArray(val)) {
-        throw new Error('Expected array');
-      }
-      return val.map((v) => CityResponseSchema.parse(v));
-    },
-  });
-  return result ?? [];
+export async function listCities(): Promise<CityListResponse> {
+  return requestJson('/api/v1/admin/cities', CityListResponseSchema);
 }
 
-export async function createCity(data: unknown): Promise<CityResponse> {
-  const result = await requestJson('/api/v1/admin/cities', CityResponseSchema, {
+export async function createCity(data: CityCreate): Promise<CityResponse> {
+  return requestJson('/api/v1/admin/cities', CityResponseSchema, {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  if (!result) throw new Error('Expected result');
-  return result;
 }
 
-export async function updateCity(id: string, data: unknown): Promise<CityResponse> {
-  const result = await requestJson(`/api/v1/admin/cities/${id}`, CityResponseSchema, {
+export async function updateCity(id: string, data: CityUpdate): Promise<CityResponse> {
+  return requestJson(`/api/v1/admin/cities/${id}`, CityResponseSchema, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
-  if (!result) throw new Error('Expected result');
-  return result;
 }
 
 export async function deleteCity(id: string): Promise<void> {
-  await requestJson(`/api/v1/admin/cities/${id}`, CityResponseSchema, {
+  await requestJson(`/api/v1/admin/cities/${id}`, null, {
     method: 'DELETE',
   });
 }
 
-export async function listCategories(): Promise<CategoryResponse[]> {
-  const result = await requestJson('/api/v1/admin/categories', {
-    parse: (val: unknown) => {
-      if (!Array.isArray(val)) {
-        throw new Error('Expected array');
-      }
-      return val.map((v) => CategoryResponseSchema.parse(v));
-    },
-  });
-  return result ?? [];
+export async function listCategories(): Promise<CategoryListResponse> {
+  return requestJson('/api/v1/admin/categories', CategoryListResponseSchema);
 }
 
-export async function createCategory(data: unknown): Promise<CategoryResponse> {
-  const result = await requestJson('/api/v1/admin/categories', CategoryResponseSchema, {
+export async function createCategory(data: CategoryCreate): Promise<CategoryResponse> {
+  return requestJson('/api/v1/admin/categories', CategoryResponseSchema, {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  if (!result) throw new Error('Expected result');
-  return result;
 }
 
-export async function updateCategory(id: string, data: unknown): Promise<CategoryResponse> {
-  const result = await requestJson(`/api/v1/admin/categories/${id}`, CategoryResponseSchema, {
+export async function updateCategory(id: string, data: CategoryUpdate): Promise<CategoryResponse> {
+  return requestJson(`/api/v1/admin/categories/${id}`, CategoryResponseSchema, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
-  if (!result) throw new Error('Expected result');
-  return result;
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await requestJson(`/api/v1/admin/categories/${id}`, CategoryResponseSchema, {
+  await requestJson(`/api/v1/admin/categories/${id}`, null, {
     method: 'DELETE',
   });
 }
@@ -93,37 +79,29 @@ export async function listTours(query?: TourListQuery): Promise<PaginatedTourRes
     if (query.categoryId) url.searchParams.set('categoryId', query.categoryId);
     if (query.q) url.searchParams.set('q', query.q);
   }
-  const result = await requestJson(`${url.pathname}${url.search}`, PaginatedTourResponseSchema);
-  if (!result) throw new Error('Expected result');
-  return result;
+  return requestJson(`${url.pathname}${url.search}`, PaginatedTourResponseSchema);
 }
 
 export async function getTour(id: string): Promise<TourResponse> {
-  const result = await requestJson(`/api/v1/admin/tours/${id}`, TourResponseSchema);
-  if (!result) throw new Error('Expected result');
-  return result;
+  return requestJson(`/api/v1/admin/tours/${id}`, TourResponseSchema);
 }
 
-export async function createTour(data: unknown): Promise<TourResponse> {
-  const result = await requestJson('/api/v1/admin/tours', TourResponseSchema, {
+export async function createTour(data: TourCreate): Promise<TourResponse> {
+  return requestJson('/api/v1/admin/tours', TourResponseSchema, {
     method: 'POST',
     body: JSON.stringify(data),
   });
-  if (!result) throw new Error('Expected result');
-  return result;
 }
 
-export async function updateTour(id: string, data: unknown): Promise<TourResponse> {
-  const result = await requestJson(`/api/v1/admin/tours/${id}`, TourResponseSchema, {
+export async function updateTour(id: string, data: TourUpdate): Promise<TourResponse> {
+  return requestJson(`/api/v1/admin/tours/${id}`, TourResponseSchema, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
-  if (!result) throw new Error('Expected result');
-  return result;
 }
 
 export async function deleteTour(id: string): Promise<void> {
-  await requestJson(`/api/v1/admin/tours/${id}`, TourResponseSchema, {
+  await requestJson(`/api/v1/admin/tours/${id}`, null, {
     method: 'DELETE',
   });
 }

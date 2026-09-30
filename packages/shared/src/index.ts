@@ -1,3 +1,4 @@
+export { z, type ZodType } from 'zod';
 export {
   AcceptInviteRequestSchema,
   ForgotPasswordRequestSchema,
@@ -19,9 +20,11 @@ export {
   AssetListQuerySchema,
   AssetResponseSchema,
   CategoryCreateSchema,
+  CategoryListResponseSchema,
   CategoryResponseSchema,
   CategoryUpdateSchema,
   CityCreateSchema,
+  CityListResponseSchema,
   CityResponseSchema,
   CityUpdateSchema,
   HotspotCreateSchema,
@@ -50,9 +53,11 @@ export {
   type AssetListQuery,
   type AssetResponse,
   type CategoryCreate,
+  type CategoryListResponse,
   type CategoryResponse,
   type CategoryUpdate,
   type CityCreate,
+  type CityListResponse,
   type CityResponse,
   type CityUpdate,
   type HotspotCreate,

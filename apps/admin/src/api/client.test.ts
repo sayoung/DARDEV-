@@ -1,4 +1,4 @@
-import { Role, type MeResponse } from '@xplor/shared';
+import { Role, type MeResponse, z } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -151,15 +151,9 @@ function isRequestInit(value: unknown): value is RequestInit {
   return typeof value === 'object' && value !== null;
 }
 
+
 describe('requestJson', () => {
-  const schema = {
-    parse: (val: unknown) => {
-      if (typeof val === 'object' && val !== null && 'ok' in val) {
-        return val as { ok: boolean };
-      }
-      throw new Error('Invalid schema');
-    },
-  };
+  const schema = z.object({ ok: z.boolean() });
 
   beforeEach(() => {
     clearCsrfToken();
@@ -197,7 +191,7 @@ describe('requestJson', () => {
 
   it('jette une erreur si la réponse ne correspond pas au schéma', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { bad: true }));
-    await expect(requestJson('/test', schema)).rejects.toThrow('Invalid schema');
+    await expect(requestJson('/test', schema)).rejects.toThrow();
   });
 
   it('envoie Content-Type application/json si body est présent', async () => {

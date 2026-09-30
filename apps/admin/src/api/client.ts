@@ -9,6 +9,7 @@ import {
   type LoginRequest,
   type MeResponse,
   type ResetPasswordRequest,
+  type ZodType,
 } from '@xplor/shared';
 
 /** Méthodes sans effet de bord : pas d'en-tête CSRF (même règle que `CsrfGuard`). */
@@ -159,9 +160,19 @@ function directCode(body: unknown): string | undefined {
 
 export async function requestJson<T>(
   path: string,
-  schema: { parse: (val: unknown) => T },
+  schema: ZodType<T>,
   init?: RequestInit
-): Promise<T | undefined> {
+): Promise<T>;
+export async function requestJson(
+  path: string,
+  schema: null,
+  init?: RequestInit
+): Promise<void>;
+export async function requestJson<T>(
+  path: string,
+  schema: ZodType<T> | null,
+  init?: RequestInit
+): Promise<T | void> {
   const headers = new Headers(init?.headers);
   if (init?.body !== undefined && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
@@ -181,5 +192,8 @@ export async function requestJson<T>(
   }
 
   const data = await readJson(response);
+  if (!schema) {
+    return undefined;
+  }
   return schema.parse(data);
 }
