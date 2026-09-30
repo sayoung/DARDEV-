@@ -1,4 +1,4 @@
-# Suivi — Xplor
+﻿# Suivi — Xplor
 
 ## Jalon en cours
 
@@ -56,7 +56,9 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **D-83** : Intégration Tailwind CSS et shadcn/ui pour apps/admin (1/5 à 5/5) terminée.
 
 ### En cours
-- Reste du jalon M1 : API-21 complet (share-token, qr.svg, graph, preview-token), écran admin des hotspots. F-02 (sans traitement). CRUD hôtel et kiosque (M5).
+- écran admin des hotspots
+- parcours Playwright du livrable M1
+- contrôle de la DoD
 
 ### Bloqué
 - Aucun. (Le blocage concernant la fusion manquante a été résolu en récupérant les composants manquants).
@@ -65,3 +67,4 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - Problème de virtualisation pour Docker sous WSL2 (moteur injoignable par moments, VirtualMachinePlatform actif mais VirtualizationFirmwareEnabled False).
 - eslint 9 et itest.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest 3.2.7, fastify 5.11.3).
+
