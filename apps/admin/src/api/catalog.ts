@@ -32,7 +32,13 @@ import {
   type SceneReorderRequest,
   type SetStartSceneRequest,
   TourValidationResponseSchema,
-  type TourValidationResponse
+  type TourValidationResponse,
+  HotspotResponseSchema,
+  type HotspotResponse,
+  type HotspotCreate,
+  type HotspotUpdate,
+  HotspotType,
+  HotspotIcon, z
 } from '@xplor/shared';
 import { requestJson } from './client.js';
 
@@ -201,3 +207,32 @@ export async function unpublishTour(id: string): Promise<TourResponse> {
   });
 }
 
+
+export async function listHotspots(sceneId: string): Promise<HotspotResponse[]> {
+  const schema = z.array(HotspotResponseSchema);
+  return requestJson(`/api/v1/admin/scenes/${sceneId}/hotspots`, schema);
+}
+
+export async function getHotspot(id: string): Promise<HotspotResponse> {
+  return requestJson(`/api/v1/admin/hotspots/${id}`, HotspotResponseSchema);
+}
+
+export async function createHotspot(sceneId: string, data: HotspotCreate): Promise<HotspotResponse> {
+  return requestJson(`/api/v1/admin/scenes/${sceneId}/hotspots`, HotspotResponseSchema, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateHotspot(id: string, data: HotspotUpdate): Promise<HotspotResponse> {
+  return requestJson(`/api/v1/admin/hotspots/${id}`, HotspotResponseSchema, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteHotspot(id: string): Promise<void> {
+  await requestJson(`/api/v1/admin/hotspots/${id}`, null, {
+    method: 'DELETE',
+  });
+}

@@ -15,6 +15,8 @@ import { TourDetailPage } from './pages/TourDetailPage.js';
 import { SceneDetailPage } from './pages/SceneDetailPage.js';
 import { TourNewPage } from './pages/TourNewPage.js';
 import { ToursPage } from './pages/ToursPage.js';
+import { HotspotsPage } from './pages/HotspotsPage.js';
+import { HotspotDetailPage } from './pages/HotspotDetailPage.js';
 import { useAppLocation, type Notice, hrefFor, navigate } from './router.js';
 
 export function App() {
@@ -157,6 +159,8 @@ function AdminShell() {
       {isAuthenticated && route.name === 'tour-new' ? <TourNewPage /> : null}
       {isAuthenticated && route.name === 'tour-detail' ? <TourDetailPage /> : null}
       {isAuthenticated && route.name === 'scene-detail' ? <SceneDetailPage /> : null}
+      {isAuthenticated && route.name === 'hotspots' ? <HotspotsPage /> : null}
+      {isAuthenticated && (route.name === 'hotspot-new' || route.name === 'hotspot-detail') ? <HotspotDetailPage /> : null}
     </main>
   );
 }
