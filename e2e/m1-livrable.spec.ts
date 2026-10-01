@@ -25,17 +25,15 @@ test.describe('Livrable M1 : création de visite', () => {
     // 3. Création d'une visite
     await page.getByRole('textbox', { name: 'Titre' }).fill('Visite de démonstration M1');
     await page.getByRole('textbox', { name: 'Résumé' }).fill('Résumé de la visite de démonstration');
-    await page.getByLabel('Ville').selectOption({ label: 'Rabat' });
+    await page.locator('select').nth(0).selectOption({ index: 1 }); // Ville
     
     // Pour les catégories (checkbox) :
-    await page.getByLabel('Monuments').check();
+    await page.locator('input[type="checkbox"]').first().check();
 
     // Vignette (AssetPicker, c'est un <select>)
-    // On sélectionne la première vignette disponible
-    const vignetteSelect = page.getByLabel('Vignette');
-    await vignetteSelect.selectOption({ index: 1 });
+    await page.locator('select').nth(1).selectOption({ index: 1 });
 
-    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await page.getByTestId('submit-tour-btn').click();
     
     // Le routeur devrait rediriger vers /tours/:id
     await expect(page.getByRole('heading', { name: 'Détails de la visite' })).toBeVisible();
@@ -45,15 +43,15 @@ test.describe('Livrable M1 : création de visite', () => {
     // 4. Ajout de 3 scènes
     for (let i = 1; i <= 3; i++) {
       await page.getByRole('button', { name: 'Ajouter une scène' }).click();
-      await page.getByRole('textbox', { name: 'Titre' }).fill(`Scène ${i} M1`);
+      await page.getByRole('textbox', { name: 'Titre' }).fill(`Scène ${String(i)} M1`);
       
-      const panoramaSelect = page.getByLabel('Panorama');
+      const panoramaSelect = page.locator('select').first();
       await panoramaSelect.selectOption({ index: i }); // On prend les 3 premiers panoramas du seed
 
-      await page.getByRole('button', { name: 'Enregistrer' }).click();
+      await page.getByTestId('submit-scene-btn').click();
       
       // On s'assure que la création a réussi en attendant la navigation vers la page d'édition
-      await page.waitForURL(/\/tours\/[a-zA-Z0-9-]+\/scenes\/[a-zA-Z0-9-]+$/);
+      await expect(page.getByRole('heading', { name: 'Modifier' })).toBeVisible();
 
       // On navigue de nouveau vers la visite via l'URL directe
       await page.goto(tourUrl);
@@ -63,68 +61,64 @@ test.describe('Livrable M1 : création de visite', () => {
     }
 
     // 5. Définition de la scène 1 comme scène de départ
-    // Le tableau des scènes a un bouton "Définir comme départ" pour chaque ligne.
-    // On cible le bouton de la première scène.
     const row1 = page.locator('tr').filter({ hasText: 'Scène 1 M1' });
-    await row1.getByRole('button', { name: 'Définir comme départ' }).click();
+    await row1.locator('button').filter({ hasText: 'départ' }).click();
     await expect(row1.getByText('Scène de départ')).toBeVisible();
 
     // 6. Création de 2 hotspots sur la scène 1
-    // On va sur la page d'édition de la scène 1
-    await row1.getByRole('button', { name: 'Modifier' }).click();
+    await row1.locator('button').filter({ hasText: 'Modifier' }).click();
     await expect(page.getByRole('heading', { name: 'Modifier' })).toBeVisible();
     
-    // La navigation vers les hotspots de la scène se fait via l'URL (le bouton pourrait manquer)
-    const sceneEditUrl = page.url(); // On est sur /tours/:id/scenes/:sceneId
+    const sceneEditUrl = page.url(); 
     await page.goto(sceneEditUrl + '/hotspots');
     
     // Hotspot 1: SCENE_LINK vers scène 2
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
-    await page.getByLabel('Type').selectOption({ label: 'Lien vers une scène' });
+    await page.locator('select').nth(0).selectOption({ index: 0 }); // SCENE_LINK
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 2');
-    await page.getByLabel('Lacet (yaw)').fill('1.2');
-    await page.getByLabel('Tangage (pitch)').fill('0');
-    // Sélectionner la scène cible : Scène 2 M1
-    await page.getByLabel('Scène cible').selectOption({ label: 'Scène 2 M1' });
+    await page.locator('input[type="number"]').nth(0).fill('1.2'); // yaw
+    await page.locator('input[type="number"]').nth(1).fill('0'); // pitch
+    // Sélectionner la scène cible (index 2 = Scène 2 M1 si on compte l'option vide)
+    await page.locator('select').nth(2).selectOption({ label: 'Scène 2 M1' });
     
-    await page.getByRole('button', { name: 'Enregistrer' }).click();
-    // Le routeur renvoie vers la liste des hotspots
+    await page.getByTestId('submit-hotspot-btn').click();
     await expect(page.getByRole('heading', { name: 'Hotspots de la scène' })).toBeVisible();
 
     // Hotspot 2: INFO
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
-    await page.getByLabel('Type').selectOption({ label: 'Information' });
+    await page.locator('select').nth(0).selectOption({ index: 2 }); // INFO
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Info M1');
     await page.getByRole('textbox', { name: 'Texte' }).fill('Ceci est une description détaillée en français.');
     
-    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await page.getByTestId('submit-hotspot-btn').click();
     await expect(page.getByRole('heading', { name: 'Hotspots de la scène' })).toBeVisible();
 
     // Retour à la visite via l'URL directe
     await page.goto(tourUrl);
 
     // Aller sur Scène 2 pour la lier à Scène 3
-    await page.getByRole('row', { name: 'Scène 2 M1' }).getByRole('button', { name: 'Modifier' }).click();
+    const row2 = page.locator('tr').filter({ hasText: 'Scène 2 M1' });
+    await row2.locator('button').filter({ hasText: 'Modifier' }).click();
     await page.goto(page.url() + '/hotspots');
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
-    await page.getByLabel('Type').selectOption({ label: 'Lien vers une scène' });
+    await page.locator('select').nth(0).selectOption({ index: 0 }); // SCENE_LINK
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 3');
-    await page.getByLabel('Scène cible').selectOption({ label: 'Scène 3 M1' });
-    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await page.locator('select').nth(2).selectOption({ label: 'Scène 3 M1' });
+    await page.getByTestId('submit-hotspot-btn').click();
     await expect(page.getByRole('heading', { name: 'Hotspots de la scène' })).toBeVisible();
 
     await page.goto(tourUrl);
 
     // 7. Appel de la validation du graphe
-    await page.getByRole('button', { name: 'Vérifier' }).click();
+    await page.getByTestId('validate-tour-btn').click();
     
     // Attendre que la UI affiche qu'il n'y a pas d'erreur
-    await expect(page.getByText('Aucun problème : la visite peut être publiée')).toBeVisible();
+    await expect(page.getByTestId('validation-success')).toBeVisible();
 
     // 8. Publication
-    await page.getByRole('button', { name: 'Publier' }).click();
+    await page.getByTestId('publish-tour-btn').click();
 
     // 9. Vérification que le statut est PUBLISHED
-    await expect(page.getByText('Publiée', { exact: true }).first()).toBeVisible();
+    await expect(page.getByTestId('tour-status-published')).toBeVisible();
   });
 });

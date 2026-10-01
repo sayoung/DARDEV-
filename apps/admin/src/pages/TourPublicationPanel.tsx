@@ -119,11 +119,11 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
         <StatusBadge status={tour.status} />
         {canPublish && (
           <div className="flex gap-2 ml-auto">
-            <Button variant="outline" type="button" onClick={() => { void handleValidate(); }} disabled={submitting}>
+            <Button variant="outline" type="button" data-testid="validate-tour-btn" onClick={() => { void handleValidate(); }} disabled={submitting}>
               {t('catalog.publication.validate')}
             </Button>
             {tour.status === TourStatus.DRAFT && (
-              <Button type="button" onClick={() => { void handlePublish(); }} disabled={submitting}>
+              <Button type="button" data-testid="publish-tour-btn" onClick={() => { void handlePublish(); }} disabled={submitting}>
                 {t('catalog.publication.publish')}
               </Button>
             )}
@@ -137,7 +137,7 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
       </div>
 
       {errorMsg && <Alert variant="destructive">{errorMsg}</Alert>}
-      {successMsg && <div className="text-sm font-medium text-green-600" role="status">{successMsg}</div>}
+      {successMsg && <div className="text-sm font-medium text-green-600" role="status" data-testid="validation-success">{successMsg}</div>}
 
       {issues && issues.length > 0 && (
         <Alert variant="destructive" role="alert">

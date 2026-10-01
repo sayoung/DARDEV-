@@ -131,12 +131,12 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="yaw">{t('catalog.hotspots.fields.yaw')}</Label>
-          <Input id="yaw" type="number" step="0.01" value={yaw} onChange={e => { setYaw(Number(e.target.value)); }} required />
+          <Label>{t('catalog.hotspots.fields.yaw')}</Label>
+          <Input type="number" step="0.01" value={yaw} onChange={e => { setYaw(Number(e.target.value)); }} required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="pitch">{t('catalog.hotspots.fields.pitch')}</Label>
-          <Input id="pitch" type="number" step="0.01" value={pitch} onChange={e => { setPitch(Number(e.target.value)); }} required />
+          <Label>{t('catalog.hotspots.fields.pitch')}</Label>
+          <Input type="number" step="0.01" value={pitch} onChange={e => { setPitch(Number(e.target.value)); }} required />
         </div>
         <div className="space-y-2">
           <Label>{t('catalog.hotspots.fields.arrivalYaw')} ({t('common.optional')})</Label>
@@ -147,8 +147,8 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
       <div className="border-t pt-4 mt-4">
         {type === HotspotType.SCENE_LINK && (
           <div className="space-y-2">
-            <Label htmlFor="targetSceneId">{t('catalog.hotspots.fields.targetSceneId')}</Label>
-            <select id="targetSceneId"
+            <Label>{t('catalog.hotspots.fields.targetSceneId')}</Label>
+            <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
               value={targetSceneId} 
               onChange={(e) => { setTargetSceneId(e.target.value); }}

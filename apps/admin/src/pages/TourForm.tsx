@@ -244,7 +244,7 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
       </div>
 
       <div className="flex gap-4 pt-4">
-        <Button type="submit" disabled={isSubmitting}>{t('common.save')}</Button>
+        <Button type="submit" data-testid="submit-tour-btn" disabled={isSubmitting}>{t('common.save')}</Button>
         {onDelete && (
           <Button variant="destructive" type="button" onClick={handleDelete} disabled={isSubmitting}>
             {t('common.delete')}
