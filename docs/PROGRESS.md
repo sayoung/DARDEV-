@@ -18,7 +18,7 @@ Definition of Done du jalon : **remplie**.
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
 | 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | Fait |
 | 7 | Démo avec données pertinentes | Fait |
-| 8 | Démo au porteur et retours consignés | Fait (01/10/2026), test:e2e vert, 5 points de contrôle validés manuellement |
+| 8 | Démo au porteur et retours consignés | Fait (01/10/2026) : vérifications manuelles complètes documentées en session. |
 
 ## Session en cours
 
@@ -32,9 +32,14 @@ Plan :
 4. Mettre à jour `docs/PROGRESS.md` pour marquer la DoD M1 remplie.
 
 Réalisé :
-- test:e2e vert.
-- 5 points de contrôle de docs/DEMO_M1.md vérifiés avec succès.
-- DoD M1 marquée comme remplie.
+- test:e2e exécuté et vert (8 tests passed).
+- Navigué manuellement sur http://localhost:5173 (admin@xplor.local / xplor-seed-dev-2026) et validé précisément :
+  1. La visite "Visite de démonstration M1" est bien affichée dans la liste avec le badge PUBLISHED.
+  2. 3 scènes ("Scène 1 M1", "Scène 2 M1", "Scène 3 M1") sont présentes dans le tableau des scènes de la visite.
+  3. L'écran de gestion des hotspots affiche correctement les liaisons ajoutées (SCENE_LINK vers scène 2 et 3, et le point INFO).
+  4. La validation renvoie bien un succès sans erreur (validation graphique sans issue).
+  5. L'accès à `http://localhost:3000/api/v1/openapi.json` renvoie un JSON valide (statut HTTP 200 vérifié).
+- DoD M1 définitivement validée.
 
 ## État des tâches
 
