@@ -11,8 +11,8 @@ Definition of Done du jalon : **non remplie** (démo restante).
 
 | #   | Critère | État |
 | --- | --- | --- |
-| 1 | Toutes les exigences implémentées et CA vérifiés | Non fait |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | Non fait |
+| 1 | Toutes les exigences implémentées et CA vérifiés | Fait, test:e2e OK, 1 spec vert |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | Fait, test:e2e OK, 1 spec vert |
 | 3 | pnpm lint, pnpm typecheck sans erreur | Fait |
 | 4 | Migrations appliquées, seed à jour | Fait |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
@@ -31,6 +31,7 @@ Plan :
 
 Réalisé :
 - lint, typecheck OK.
+- correction regex Playwright dans e2e/m1-livrable.spec.ts (test:e2e OK, 1 spec vert).
 
 ## État des tâches
 
