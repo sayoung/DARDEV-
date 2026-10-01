@@ -11,7 +11,7 @@ Definition of Done du jalon : **non remplie** (démo restante).
 
 | #   | Critère | État |
 | --- | --- | --- |
-| 1 | Toutes les exigences implémentées et CA vérifiés | Fait |
+| 1 | Toutes les exigences implémentées et CA vérifiés | Fait, parcours automatisé et documenté |
 | 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | Fait |
 | 3 | pnpm lint, pnpm typecheck sans erreur | Fait |
 | 4 | Migrations appliquées, seed à jour | Fait |
@@ -23,17 +23,14 @@ Definition of Done du jalon : **non remplie** (démo restante).
 ## Session en cours
 
 **Date :** 01/10/2026
-**Exigence :** M1 Playwright (livrable) : créer `e2e/m1-livrable.spec.ts`
+**Exigence :** Création du document de démonstration M1 (`docs/DEMO_M1.md`)
 
 Plan :
-1. Corriger le lint dans le test (`String(i)`).
-2. Supprimer les fichiers PNG à la racine.
-3. Retirer les modifications hors-scope de `HotspotForm.tsx`.
-4. Utiliser des locators robustes (`data-testid`) dans le test et composants.
-5. Exécuter `pnpm test:e2e` pour vérifier.
+1. Créer `docs/DEMO_M1.md` avec les prérequis, parcours technique, capture d'écran, et points de vérification.
+2. Mettre à jour `docs/PROGRESS.md` : critère 1 ("Fait, parcours automatisé et documenté").
 
 Réalisé :
-- lint, typecheck, test OK.
+- lint, typecheck OK.
 
 ## État des tâches
 
