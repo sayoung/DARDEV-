@@ -6,7 +6,7 @@
 
 Contenu (cahier des charges, section 9) : schéma Prisma 5.1 à 5.8, API-21/22/23/25 (CRUD), écrans admin de liste et de formulaire, onglets de traduction, règles de validation. Livrable : création d'une visite de 3 scènes et hotspots (coordonnées saisies à la main) via le back-office.
 
-Definition of Done du jalon : non remplie (Playwright et démo restants).
+Definition of Done du jalon : non remplie (démo restante).
 
 ## Session en cours
 
@@ -34,8 +34,8 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 
 | #   | Critère                                                                                                                                                                                               | État    |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 1   | Toutes les exigences du jalon implémentées et leurs CA vérifiés.                                                                                                                                      | Partiel (manque Playwright) |
-| 2   | Tests automatisés ajoutés et verts en CI (Vitest unitaires + intégration API, Playwright pour les parcours principaux).                                                                               | Partiel (447 unitaires, 54 intégration, Playwright à faire) |
+| 1   | Toutes les exigences du jalon implémentées et leurs CA vérifiés.                                                                                                                                      | Fait |
+| 2   | Tests automatisés ajoutés et verts en CI (Vitest unitaires + intégration API, Playwright pour les parcours principaux).                                                                               | Fait, e2e/m1-livrable.spec.ts |
 | 3   | pnpm lint, pnpm typecheck sans erreur.                                                                                                                                                            | Fait (aucune erreur) |
 | 4   | Migrations Prisma créées et appliquées sur une base vierge sans erreur ; seed à jour.                                                                                                                 | Fait (Already in sync) |
 | 5   | Chaînes d'interface dans les 3 langues ; vérification visuelle en arabe (RTL).                                                                                                                        | reporté, D-82 |
@@ -59,7 +59,7 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - **D-83** : Intégration Tailwind CSS et shadcn/ui pour apps/admin (1/5 à 5/5) terminée.
 
 ### En cours
-- parcours Playwright du livrable M1
+
 - contrôle de la DoD
 
 ### Bloqué
@@ -69,4 +69,5 @@ Cahier des charges, section 10. Definition of Done du jalon : **non remplie**.
 - Problème de virtualisation pour Docker sous WSL2 (moteur injoignable par moments, VirtualMachinePlatform actif mais VirtualizationFirmwareEnabled False).
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest 3.2.7, fastify 5.11.3).
+
 
