@@ -1,4 +1,4 @@
-# Suivi — Xplor
+﻿# Suivi — Xplor
 
 ## Jalon en cours
 
@@ -11,14 +11,14 @@ Definition of Done du jalon : **non remplie** (démo restante).
 
 | #   | Critère | État |
 | --- | --- | --- |
-| 1 | Toutes les exigences implémentées et CA vérifiés | Fait, parcours automatisé et documenté |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | Fait |
+| 1 | Toutes les exigences implémentées et CA vérifiés | Non fait |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | Non fait |
 | 3 | pnpm lint, pnpm typecheck sans erreur | Fait |
 | 4 | Migrations appliquées, seed à jour | Fait |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
 | 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | Fait |
 | 7 | Démo avec données pertinentes | Fait |
-| 8 | Démo au porteur et retours consignés | à faire |
+| 8 | Démo au porteur et retours consignés | Non fait |
 
 ## Session en cours
 
@@ -39,9 +39,10 @@ Réalisé :
 - API-21 à API-25 : Implémentation des points d'accès correspondants.
 - D-83 : Intégration Tailwind CSS et shadcn/ui pour apps/admin (terminée).
 - E2E Playwright : Parcours complet de création de visite M1 automatisé.
+- Tests unitaires (447) et d'intégration (54) validés.
 
 ### En cours
-- validation finale de la DoD par le porteur (démo).
+- finalisation de la DoD M1 (Playwright et documentation de démo)
 
 ### Bloqué
 - Aucun.
@@ -50,5 +51,3 @@ Réalisé :
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest, fastify).
-
-
