@@ -148,7 +148,7 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
         {type === HotspotType.SCENE_LINK && (
           <div className="space-y-2">
             <Label>{t('catalog.hotspots.fields.targetSceneId')}</Label>
-            <select 
+            <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
               value={targetSceneId} 
               onChange={(e) => { setTargetSceneId(e.target.value); }}
@@ -243,3 +243,5 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
     </form>
   );
 }
+
+

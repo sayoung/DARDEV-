@@ -22,7 +22,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   };
 
   return (
-    <Badge variant={getVariant()} className={className}>
+    <Badge variant={getVariant()} className={className} data-testid={`tour-status-${status.toLowerCase()}`}>
       {t(`catalog.tour.status.${status}`)}
     </Badge>
   );
