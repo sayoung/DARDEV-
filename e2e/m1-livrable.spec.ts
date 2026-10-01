@@ -1,4 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, Page } from '@playwright/test';
+
+async function readPost<T>(
+  page: Page,
+  pattern: RegExp,
+  postAfter: () => Promise<void>
+): Promise<T> {
+  const responsePromise = page.waitForResponse(
+    (candidate) =>
+      candidate.url().match(pattern) !== null &&
+      candidate.request().method() === 'POST' &&
+      candidate.status() >= 200 &&
+      candidate.status() < 300
+  );
+  await postAfter();
+  const response = await responsePromise;
+  return response.json() as Promise<T>;
+}
 
 test.describe('Livrable M1 : création de visite', () => {
   test('Créer une visite complète avec scènes, hotspots, validation et publication', async ({
@@ -48,7 +65,13 @@ test.describe('Livrable M1 : création de visite', () => {
       const panoramaSelect = page.locator('select').first();
       await panoramaSelect.selectOption({ index: i }); // On prend les 3 premiers panoramas du seed
 
-      await page.getByTestId('submit-scene-btn').click();
+      await readPost(
+        page,
+        /\/api\/v1\/admin\/tours\/[a-f0-9-]+\/scenes$/,
+        async () => {
+          await page.getByTestId('submit-scene-btn').click();
+        }
+      );
       
       // On s'assure que la création a réussi en attendant la navigation vers la page d'édition
       await expect(page.getByRole('heading', { name: 'Modifier' })).toBeVisible();
@@ -81,7 +104,13 @@ test.describe('Livrable M1 : création de visite', () => {
     // Sélectionner la scène cible (index 2 = Scène 2 M1 si on compte l'option vide)
     await page.locator('select').nth(2).selectOption({ label: 'Scène 2 M1' });
     
-    await page.getByTestId('submit-hotspot-btn').click();
+    await readPost(
+      page,
+      /\/api\/v1\/admin\/scenes\/[a-f0-9-]+\/hotspots$/,
+      async () => {
+        await page.getByTestId('submit-hotspot-btn').click();
+      }
+    );
     await expect(page.getByRole('heading', { name: 'Hotspots de la scène' })).toBeVisible();
 
     // Hotspot 2: INFO
@@ -90,7 +119,13 @@ test.describe('Livrable M1 : création de visite', () => {
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Info M1');
     await page.getByRole('textbox', { name: 'Texte' }).fill('Ceci est une description détaillée en français.');
     
-    await page.getByTestId('submit-hotspot-btn').click();
+    await readPost(
+      page,
+      /\/api\/v1\/admin\/scenes\/[a-f0-9-]+\/hotspots$/,
+      async () => {
+        await page.getByTestId('submit-hotspot-btn').click();
+      }
+    );
     await expect(page.getByRole('heading', { name: 'Hotspots de la scène' })).toBeVisible();
 
     // Retour à la visite via l'URL directe
@@ -104,19 +139,37 @@ test.describe('Livrable M1 : création de visite', () => {
     await page.locator('select').nth(0).selectOption({ index: 0 }); // SCENE_LINK
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 3');
     await page.locator('select').nth(2).selectOption({ label: 'Scène 3 M1' });
-    await page.getByTestId('submit-hotspot-btn').click();
+    await readPost(
+      page,
+      /\/api\/v1\/admin\/scenes\/[a-f0-9-]+\/hotspots$/,
+      async () => {
+        await page.getByTestId('submit-hotspot-btn').click();
+      }
+    );
     await expect(page.getByRole('heading', { name: 'Hotspots de la scène' })).toBeVisible();
 
     await page.goto(tourUrl);
 
     // 7. Appel de la validation du graphe
-    await page.getByTestId('validate-tour-btn').click();
+    await readPost(
+      page,
+      /\/api\/v1\/admin\/tours\/[a-f0-9-]+\/validate$/,
+      async () => {
+        await page.getByTestId('validate-tour-btn').click();
+      }
+    );
     
     // Attendre que la UI affiche qu'il n'y a pas d'erreur
     await expect(page.getByTestId('validation-success')).toBeVisible();
 
     // 8. Publication
-    await page.getByTestId('publish-tour-btn').click();
+    await readPost(
+      page,
+      /\/api\/v1\/admin\/tours\/[a-f0-9-]+\/publish$/,
+      async () => {
+        await page.getByTestId('publish-tour-btn').click();
+      }
+    );
 
     // 9. Vérification que le statut est PUBLISHED
     await expect(page.getByTestId('tour-status-published')).toBeVisible();
