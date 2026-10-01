@@ -1,4 +1,4 @@
-﻿# Suivi — Xplor
+# Suivi — Xplor
 
 ## Jalon en cours
 
