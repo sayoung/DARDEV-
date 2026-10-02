@@ -20,13 +20,11 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-11 (producteur BullMQ côté API)
+**Objectif :** M2 F-10 (lecture des dimensions JPEG)
 
 Plan :
-- Ajouter bullmq aux dependencies de apps/api
-- Créer apps/api/src/queue/panorama-queue.service.ts
-- Créer apps/api/src/queue/queue.module.ts
-- Ajouter test unitaire
+- Ajouter image-size et sharp à apps/api
+- Créer jpeg-dimensions.ts et jpeg-dimensions.test.ts
 - pnpm lint, typecheck, test OK
 
 ## État des tâches
@@ -35,6 +33,7 @@ Plan :
 - M2 F-11 : configuration BullMQ et workers.
 
 ### Fait
+- M2 F-10 (lecture des dimensions JPEG) : ajout de image-size et sharp, création de readImageDimensions et de ses tests. Lint, typecheck et test OK.
 - M2 F-11 (producteur BullMQ côté API) : ajout de `bullmq` à `apps/api`, création de `PanoramaQueueService` (jeton PANORAMA_QUEUE) et `QueueModule`. Import dans `AppModule`. Tests unitaires écrits. Lint, typecheck et test OK.
 - M2 F-11 (dérivé tiles) : Création de `panorama.tiles.ts` pour extraire les 128 tuiles d'un panorama redimensionné (8192x4096), traité par lots de 8 pour limiter la mémoire. Test `panorama.tiles.test.ts` écrit et fonctionnel (timeout 30s). pnpm lint, typecheck, test OK.
 - M2 F-11 (dérivés preview, web, thumb) : réécriture de `panorama.derivatives.ts` pour exporter `generateFlatDerivatives` (preview 512x256, web 4096x2048, thumb 400x225 centré sur vue initiale). Test vérifiant les dimensions sur un buffer généré en mémoire. pnpm lint, typecheck, test OK.
