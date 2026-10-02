@@ -628,3 +628,12 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | clsx | Utilitaire pour la construction conditionnelle de classes CSS. | MIT |
 | tailwind-merge | Fusion de classes Tailwind pour éviter les conflits (shadcn/ui). | MIT |
 | lucide-react | Icônes SVG pour l'interface utilisateur. | ISC |
+
+## D-84 — Dépendances Worker (M2 F-11)
+
+- **Date :** 02/10/2026
+- **Décision :** Ajout de paquets pour le Worker M2.
+  - `sharp` (Apache-2.0) : Génération des dérivés (vignettes, tuiles) pour les panoramas 360°.
+  - `bullmq` (MIT) : Gestion des files d'attente pour le traitement asynchrone des médias (fournit ses propres types, `@types/ioredis` n'est pas nécessaire).
+- **Alternatives :** `jimp` pour les images (plus lent, moins adapté aux très grandes images VR) ; `bull` (version antérieure, moins adaptée à TypeScript).
+- **À valider :** non

@@ -32,9 +32,10 @@ Plan :
 
 ### Fait
 - M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
+- M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
 
 ### En cours
-- Démarrage du jalon M2.
+- M2 F-11 : configuration BullMQ et workers.
 
 ### Bloqué
 - Aucun.
