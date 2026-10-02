@@ -12,6 +12,8 @@ import { RedisModule } from './redis/redis.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { UsersModule } from './users/users.module.js';
 
+import { QueueModule } from './queue/queue.module.js';
+
 @Module({})
 export class AppModule {
   static forRoot(env: Env): DynamicModule {
@@ -21,6 +23,7 @@ export class AppModule {
         ConfigModule.forRoot(env),
         PrismaModule,
         RedisModule,
+        QueueModule,
         MailModule,
         AuthModule,
         UsersModule,

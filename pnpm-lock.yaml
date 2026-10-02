@@ -156,6 +156,9 @@ importers:
       '@xplor/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      bullmq:
+        specifier: ^6.3.11
+        version: 6.3.11(ioredis@6.0.0)
       fastify:
         specifier: 5.11.3
         version: 5.11.3
