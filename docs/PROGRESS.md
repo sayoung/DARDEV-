@@ -35,6 +35,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- M2 F-11 (Worker BullMQ, sans toucher main.ts) : création de `apps/worker/src/panorama.worker.ts` qui configure le worker BullMQ pour traiter les panoramas (via `processPanoramaJob`) et gérer l'échec (via `handlePanoramaFailure` et `repo.markError`). Tests ajoutés dans `panorama.worker.test.ts`. lint, typecheck, test OK.
 - M2 F-11 (stockage S3 du worker) : ajout du client `@aws-sdk/client-s3` au worker, implémentation de `S3WorkerStorage` et ajout des tests unitaires mockés. Vérification lint, typecheck, test OK.
 - Design 6/6 : charte Xplor appliquée à tout le back-office.
 - Design 6b (formulaires hotspot et visite) : dans apps/admin/src/pages/HotspotForm.tsx, remplacement des 5 <select> natifs par le composant Select de components/ui. Dans TourForm.tsx, mise à jour des classes de la case à cocher avec border-input accent-primary focus-visible:ring-ring. Aucune logique modifiée. lint, typecheck, test OK.
