@@ -1,8 +1,10 @@
 import { HttpException } from '@nestjs/common';
 import { AssetKind, ProcessingStatus, type AssetListQuery } from '@xplor/shared';
+import { type Prisma } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { type StorageService } from '../storage/storage.service.js';
 import { AssetsService } from './assets.service.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE } from './catalog.errors.js';
 
@@ -58,8 +60,16 @@ function row(
   };
 }
 
-function harness(rows: AssetRow[]): { service: AssetsService; lists: ListArgs[] } {
+function harness(rows: AssetRow[]): { 
+  service: AssetsService; 
+  lists: ListArgs[]; 
+  creates: Prisma.AssetCreateArgs[]; 
+  updates: Prisma.AssetUpdateArgs[]; 
+  storage: StorageService;
+} {
   const lists: ListArgs[] = [];
+  const creates: Prisma.AssetCreateArgs[] = [];
+  const updates: Prisma.AssetUpdateArgs[] = [];
 
   const prisma = {
     asset: {
@@ -73,10 +83,24 @@ function harness(rows: AssetRow[]): { service: AssetsService; lists: ListArgs[] 
       },
       findUnique: ({ where }: { where: { id: string } }): Promise<AssetRow | null> =>
         Promise.resolve(rows.find((item) => item.id === where.id) ?? null),
+      create: (args: Prisma.AssetCreateArgs) => {
+        creates.push(args);
+        return Promise.resolve({ ...args.data, id: '01990000-0000-7000-8000-newasset0001' } as unknown as AssetRow);
+      },
+      update: (args: Prisma.AssetUpdateArgs) => {
+        updates.push(args);
+        return Promise.resolve({ ...args.data, id: args.where.id } as unknown as AssetRow);
+      }
     },
   } as unknown as PrismaService;
 
-  return { service: new AssetsService(prisma), lists };
+  const storage = {
+    presignPut: (key: string) => {
+      return Promise.resolve(`https://fake-s3.com/${key}?signed=true`);
+    },
+  } as unknown as StorageService;
+
+  return { service: new AssetsService(prisma, storage), lists, creates, updates, storage };
 }
 
 function matches(item: AssetRow, where: { kind?: AssetKind }): boolean {
@@ -189,6 +213,57 @@ describe('AssetsService', () => {
     expect(error.getStatus()).toBe(404);
     expect(error.getResponse()).toEqual({
       error: { code: ASSET_NOT_FOUND, message: ASSET_NOT_FOUND_MESSAGE },
+    });
+  });
+
+  describe('createUploadUrl', () => {
+    it('crée un média, génère une URL signée et nettoie le filename', async () => {
+      const { service, creates, updates } = harness([]);
+      const result = await service.createUploadUrl({
+        kind: AssetKind.IMAGE,
+        mimeType: 'image/jpeg',
+        sizeBytes: 1024,
+        filename: 'mon_image (1).jpg!',
+      });
+
+      expect(creates).toHaveLength(1);
+      expect(creates[0]!.data).toMatchObject({
+        kind: AssetKind.IMAGE,
+        mimeType: 'image/jpeg',
+        sizeBytes: 1024,
+        processingStatus: ProcessingStatus.PENDING,
+      });
+
+      expect(updates).toHaveLength(1);
+      expect(updates[0]!.data.originalKey).toBe('uploads/01990000-0000-7000-8000-newasset0001/mon_image--1-.jpg-');
+
+      expect(result.assetId).toBe('01990000-0000-7000-8000-newasset0001');
+      expect(result.uploadUrl).toBe('https://fake-s3.com/uploads/01990000-0000-7000-8000-newasset0001/mon_image--1-.jpg-?signed=true');
+      expect(result.uploadMethod).toBe('PUT');
+      expect(result.expiresInSeconds).toBe(900);
+    });
+
+    it('refuse d’emblée un panorama qui n’est pas un JPEG', async () => {
+      const { service, creates } = harness([]);
+      const error = await service.createUploadUrl({
+        kind: AssetKind.PANORAMA,
+        mimeType: 'image/png',
+        sizeBytes: 1024,
+        filename: 'pano.png',
+      }).then(
+        () => null,
+        (caught: unknown) => caught,
+      );
+
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) {
+        return;
+      }
+      expect(error.getStatus()).toBe(422);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: 'INVALID_FORMAT' },
+      });
+      expect(creates).toHaveLength(0);
     });
   });
 });

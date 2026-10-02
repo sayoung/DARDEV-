@@ -11,6 +11,8 @@ import {
   AcceptInviteRequestSchema,
   AssetListQuerySchema,
   AssetResponseSchema,
+  AssetUploadRequestSchema,
+  AssetUploadResponseSchema,
   CategoryCreateSchema,
   CategoryResponseSchema,
   CategoryUpdateSchema,
@@ -392,6 +394,7 @@ registerCatalogCrud({
 });
 
 registerAssetReads();
+registerAssetUpload();
 registerTourCrud();
 registerTourValidate();
 registerTourPublish();
@@ -519,6 +522,30 @@ function registerAssetReads(): void {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse(roleDenied, forbiddenError),
       '404': jsonResponse('Média introuvable.', assetMissingError),
+    },
+  });
+}
+
+function registerAssetUpload(): void {
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/assets/upload-url',
+    summary: 'Demander une URL d’upload',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: {
+      body: {
+        content: {
+          'application/json': { schema: AssetUploadRequestSchema },
+        },
+      },
+    },
+    responses: {
+      '201': jsonResponse('URL signée générée.', AssetUploadResponseSchema),
+      '400': jsonResponse('Corps invalide.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Rôle autre que ADMIN ou EDITOR ou CSRF manquant.', forbiddenError),
+      '422': jsonResponse('Règles de panorama non respectées.', referenceError),
     },
   });
 }
