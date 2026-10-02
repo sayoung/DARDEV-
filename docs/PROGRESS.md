@@ -20,13 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** Design 1/6 (thème Xplor) - Mise en place du thème shadcn et des polices.
+**Objectif :** Design 2/6 (mise en page commune)
 
 Plan :
-- Appliquer les couleurs de la charte Xplor dans `apps/admin/src/style.css`.
-- Installer et importer les polices Montserrat et Comfortaa.
-- Importer les logos.
-- Mettre à jour `DECISIONS.md` et `PROGRESS.md`.
+- Créer apps/admin/src/components/AppLayout.tsx avec la barre latérale, l'en-tête, le sélecteur de langue et la session.
+- Supprimer les styles inutiles de style.css (.nav-list, .language-list).
+- Adapter App.tsx pour utiliser AppLayout.
+- Adapter les tests existants et s'assurer que lint, typecheck, et test sont au vert.
 
 ## État des tâches
 
@@ -34,6 +34,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- Design 2/6 (mise en page commune) : Création de `AppLayout.tsx` (barre latérale violette avec logo blanc, navigation avec mise en évidence, en-tête avec langue et bouton de déconnexion shadcn). Suppression des règles obsolètes de `style.css`. Adaptation des sélecteurs de `session.test.tsx` pour l'existence de plusieurs instances de noms ou de boutons de déconnexion. lint, typecheck, test OK.
 - Design 1/6 (thème Xplor) : application des variables de thème shadcn (primary, background, etc.), ajout des polices auto-hébergées Montserrat et Comfortaa, copie des logos SVG de la charte. lint, typecheck, test OK.
 - M2 F-11 (empreinte du fichier) : création de `apps/worker/src/derivatives/content-hash.ts` et `content-hash.test.ts` (sha256 hex 64 chars). lint, typecheck, test OK.
 - M2 F-11 (configuration du worker) : extension du schéma Zod avec les variables S3 et DATABASE_URL. Validation complète avec retour des noms de variables manquantes. Tests de loadEnv et du boot mis à jour. lint, typecheck, test OK.
