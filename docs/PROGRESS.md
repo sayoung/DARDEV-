@@ -20,12 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-11 (dérivé tiles)
+**Objectif :** M2 F-11 (producteur BullMQ côté API)
 
 Plan :
-- Créer apps/worker/src/derivatives/panorama.tiles.ts avec `generateTiles(input: Buffer)`
-- Redimensionner une seule fois (8192x4096), extraire par lots de 8, jpeg quality 82.
-- Test panorama.tiles.test.ts.
+- Ajouter bullmq aux dependencies de apps/api
+- Créer apps/api/src/queue/panorama-queue.service.ts
+- Créer apps/api/src/queue/queue.module.ts
+- Ajouter test unitaire
 - pnpm lint, typecheck, test OK
 
 ## État des tâches
@@ -34,6 +35,7 @@ Plan :
 - M2 F-11 : configuration BullMQ et workers.
 
 ### Fait
+- M2 F-11 (producteur BullMQ côté API) : ajout de `bullmq` à `apps/api`, création de `PanoramaQueueService` (jeton PANORAMA_QUEUE) et `QueueModule`. Import dans `AppModule`. Tests unitaires écrits. Lint, typecheck et test OK.
 - M2 F-11 (dérivé tiles) : Création de `panorama.tiles.ts` pour extraire les 128 tuiles d'un panorama redimensionné (8192x4096), traité par lots de 8 pour limiter la mémoire. Test `panorama.tiles.test.ts` écrit et fonctionnel (timeout 30s). pnpm lint, typecheck, test OK.
 - M2 F-11 (dérivés preview, web, thumb) : réécriture de `panorama.derivatives.ts` pour exporter `generateFlatDerivatives` (preview 512x256, web 4096x2048, thumb 400x225 centré sur vue initiale). Test vérifiant les dimensions sur un buffer généré en mémoire. pnpm lint, typecheck, test OK.
 - M2 F-11 (grille des tuiles, fonction pure) : Création de `tileGrid()` et des constantes associées dans `apps/worker/src/derivatives/tile-grid.ts`. Tests unitaires complets écrits en premier dans `tile-grid.test.ts` (128 tuiles, bornes, unicité). pnpm lint, typecheck, test OK.
