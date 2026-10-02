@@ -1,33 +1,43 @@
 import sharp from 'sharp';
 
-export interface PanoramaMetadata {
+export interface FlatDerivatives {
+  preview: Buffer;
+  web: Buffer;
+  thumb: Buffer;
   width: number;
   height: number;
-  format: string;
 }
 
-export interface DerivativeResult {
-  thumbnailBuffer: Buffer;
-  metadata: PanoramaMetadata;
-}
+export async function generateFlatDerivatives(input: Buffer): Promise<FlatDerivatives> {
+  const metadata = await sharp(input).metadata();
 
-export async function generatePanoramaDerivatives(
-  inputBuffer: Buffer,
-): Promise<DerivativeResult> {
-  const image = sharp(inputBuffer);
-  const metadata = await image.metadata();
+  const width = metadata.width;
+  const height = metadata.height;
 
-  const thumbnailBuffer = await image
-    .resize({ width: 800, height: 400, fit: 'inside' })
+  if (!width || !height) {
+    throw new Error("Les dimensions de l'image (largeur et hauteur) sont introuvables.");
+  }
+
+  const preview = await sharp(input)
+    .resize({ width: 512, height: 256, fit: 'fill' })
+    .jpeg({ quality: 70 })
+    .toBuffer();
+
+  const web = await sharp(input)
+    .resize({ width: 4096, height: 2048 })
+    .jpeg({ quality: 80, mozjpeg: true })
+    .toBuffer();
+
+  const extractWidth = Math.round(width / 4);
+  const extractHeight = Math.round((extractWidth * 225) / 400);
+  const extractLeft = Math.round((width - extractWidth) / 2);
+  const extractTop = Math.round((height - extractHeight) / 2);
+
+  const thumb = await sharp(input)
+    .extract({ width: extractWidth, height: extractHeight, left: extractLeft, top: extractTop })
+    .resize({ width: 400, height: 225 })
     .jpeg({ quality: 80 })
     .toBuffer();
 
-  return {
-    thumbnailBuffer,
-    metadata: {
-      width: metadata.width,
-      height: metadata.height,
-      format: metadata.format,
-    },
-  };
+  return { preview, web, thumb, width, height };
 }
