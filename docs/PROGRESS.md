@@ -27,6 +27,7 @@ Plan :
 - Ajouter StorageModule global.
 - Tests unitaires simulant le S3Client.
 - Vérifier lint, typecheck, test.
+- Correction des erreurs lint (@typescript-eslint/no-non-null-assertion) dans assets.service.test.ts effectuées.
 
 ## État des tâches
 
@@ -36,6 +37,7 @@ Plan :
 - M2 API-24 (1/2) : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
 - M2 API-24 (2/2) : `StorageService` S3 et `StorageModule` global avec tests unitaires mockés via S3Client simulé (lint, typecheck, test OK).
 - M2 F-10 : Règles de validation des panoramas (`validatePanoramaUpload`) avec tests unitaires (lint, typecheck, test OK).
+- M2 API-24 : Route d'upload `POST /api/v1/admin/assets/upload-url` et logique S3 via `AssetsService`. Lint, typecheck et tests unitaires OK. `test:int` échoue car le service PostgreSQL n'est pas joignable (hors de mon périmètre).
 
 ### En cours
 - M2 F-11 : configuration BullMQ et workers.

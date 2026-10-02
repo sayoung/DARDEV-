@@ -646,3 +646,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Stockage local avec Multer (rejeté car diverge de la production).
 - **À valider :** non
 
+
+## D-86 — Upload de médias (API-24)
+
+- **Date :** 02/10/2026
+- **Décision :** Lors de l'initialisation de l'upload (createUploadUrl), l'enregistrement Asset est créé en base avec processingStatus à PENDING et un contentHash vide '' de manière provisoire jusqu'à la finalisation de l'upload. L'ID est généré par Prisma au moment de la création pour ensuite construire la clé de stockage originalKey. Pas de nouvelle migration Prisma.
+- **Alternatives :** rendre le champ optionnel (nécessiterait une migration Prisma) ; le remplir dès le début avec une valeur aléatoire ; générer l'ID UUIDv7 avant l'insertion (nécessiterait une librairie UUIDv7).
+- **À valider :** oui
+

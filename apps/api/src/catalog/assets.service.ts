@@ -1,19 +1,27 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { AssetKind as PrismaAssetKind, Prisma, type Asset } from '@prisma/client';
+import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { AssetKind as PrismaAssetKind, ProcessingStatus, Prisma, type Asset } from '@prisma/client';
 import {
   AssetKind,
   AssetResponseSchema,
+  PanoramaUploadIssueCode,
+  PANORAMA_MAX_BYTES,
   type AssetListQuery,
   type AssetResponse,
+  type AssetUploadRequest,
+  type AssetUploadResponse,
   type Paginated,
 } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { StorageService, UPLOAD_URL_TTL_SECONDS } from '../storage/storage.service.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE, missingException } from './catalog.errors.js';
 
 @Injectable()
 export class AssetsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(StorageService) private readonly storage: StorageService,
+  ) {}
 
   async list(query: AssetListQuery): Promise<Paginated<AssetResponse>> {
     const where = listWhere(query);
@@ -40,6 +48,52 @@ export class AssetsService {
       throw missingException(ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE);
     }
     return toAsset(row);
+  }
+
+  async createUploadUrl(input: AssetUploadRequest): Promise<AssetUploadResponse> {
+    if (input.kind === AssetKind.PANORAMA) {
+      if (input.mimeType !== 'image/jpeg') {
+        throw new HttpException(
+          { error: { code: PanoramaUploadIssueCode.INVALID_FORMAT, message: 'Le format doit être image/jpeg' } },
+          422,
+        );
+      }
+      if (input.sizeBytes > PANORAMA_MAX_BYTES) {
+        throw new HttpException(
+          { error: { code: PanoramaUploadIssueCode.FILE_TOO_LARGE, message: 'Fichier trop volumineux' } },
+          422,
+        );
+      }
+    }
+
+    const cleanFilename = input.filename.replace(/[^A-Za-z0-9._-]/g, '-');
+
+    const row = await this.prisma.asset.create({
+      data: {
+        kind: toPrismaKind(input.kind),
+        mimeType: input.mimeType,
+        sizeBytes: input.sizeBytes,
+        originalKey: '', // Provisoire
+        contentHash: '', // Provisoire
+        processingStatus: ProcessingStatus.PENDING,
+      },
+    });
+
+    const originalKey = `uploads/${row.id}/${cleanFilename}`;
+
+    await this.prisma.asset.update({
+      where: { id: row.id },
+      data: { originalKey },
+    });
+
+    const uploadUrl = await this.storage.presignPut(originalKey, input.mimeType, input.sizeBytes);
+
+    return {
+      assetId: row.id,
+      uploadUrl,
+      uploadMethod: 'PUT',
+      expiresInSeconds: UPLOAD_URL_TTL_SECONDS,
+    };
   }
 }
 

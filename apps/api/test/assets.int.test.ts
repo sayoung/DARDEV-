@@ -12,6 +12,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { AssetKind, PrismaClient, ProcessingStatus } from '@prisma/client';
 import {
   AssetResponseSchema,
+  AssetUploadResponseSchema,
   MeResponseSchema,
   PaginatedAssetResponseSchema,
   type PaginatedAssetResponse,
@@ -180,6 +181,61 @@ describe('médias HTTP', () => {
     expect(parseJson(missing.body)).toEqual({
       error: { code: ASSET_NOT_FOUND, message: ASSET_NOT_FOUND_MESSAGE },
     });
+  });
+
+  it('génère une URL d’upload', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const partner = await login(PARTNER_EMAIL);
+
+    const payload = JSON.stringify({
+      kind: AssetKind.IMAGE,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+      filename: 'test.jpg',
+    });
+
+    const noSession = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/upload-url',
+      headers: { 'content-type': 'application/json' },
+      payload,
+    });
+    expect(noSession.statusCode).toBe(401);
+
+    const noCsrf = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/upload-url',
+      headers: { cookie: sessionCookie(editor.sessionId), 'content-type': 'application/json' },
+      payload,
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const forbidden = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/upload-url',
+      headers: {
+        cookie: sessionCookie(partner.sessionId),
+        'x-csrf-token': partner.csrfToken,
+        'content-type': 'application/json',
+      },
+      payload,
+    });
+    expect(forbidden.statusCode).toBe(403);
+
+    const success = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/upload-url',
+      headers: {
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+        'content-type': 'application/json',
+      },
+      payload,
+    });
+    expect(success.statusCode).toBe(201);
+    const body = AssetUploadResponseSchema.parse(parseJson(success.body));
+    expect(body.uploadUrl).toContain('uploads/');
+    expect(body.uploadMethod).toBe('PUT');
   });
 });
 
