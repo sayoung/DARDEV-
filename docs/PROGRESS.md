@@ -20,12 +20,12 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-11 (dérivés preview, web, thumb)
+**Objectif :** M2 F-11 (dérivé tiles)
 
 Plan :
-- Réécrire apps/worker/src/derivatives/panorama.derivatives.ts pour exporter generateFlatDerivatives.
-- Vérifier les dimensions avec sharp et recadrage centré pour la miniature.
-- Remplacer et mettre à jour les tests unitaires.
+- Créer apps/worker/src/derivatives/panorama.tiles.ts avec `generateTiles(input: Buffer)`
+- Redimensionner une seule fois (8192x4096), extraire par lots de 8, jpeg quality 82.
+- Test panorama.tiles.test.ts.
 - pnpm lint, typecheck, test OK
 
 ## État des tâches
@@ -34,6 +34,7 @@ Plan :
 - M2 F-11 : configuration BullMQ et workers.
 
 ### Fait
+- M2 F-11 (dérivé tiles) : Création de `panorama.tiles.ts` pour extraire les 128 tuiles d'un panorama redimensionné (8192x4096), traité par lots de 8 pour limiter la mémoire. Test `panorama.tiles.test.ts` écrit et fonctionnel (timeout 30s). pnpm lint, typecheck, test OK.
 - M2 F-11 (dérivés preview, web, thumb) : réécriture de `panorama.derivatives.ts` pour exporter `generateFlatDerivatives` (preview 512x256, web 4096x2048, thumb 400x225 centré sur vue initiale). Test vérifiant les dimensions sur un buffer généré en mémoire. pnpm lint, typecheck, test OK.
 - M2 F-11 (grille des tuiles, fonction pure) : Création de `tileGrid()` et des constantes associées dans `apps/worker/src/derivatives/tile-grid.ts`. Tests unitaires complets écrits en premier dans `tile-grid.test.ts` (128 tuiles, bornes, unicité). pnpm lint, typecheck, test OK.
 - M2 F-11 (file panorama, contrat partagé) : Création de `packages/shared/src/panorama-queue.ts` avec les types, constantes (file BullMQ) et fonctions utilitaires (`panoramaDerivativeKeys`, `panoramaTileKey`). Ajout de tests unitaires (lint, typecheck, test OK).
