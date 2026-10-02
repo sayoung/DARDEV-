@@ -148,10 +148,10 @@ export function LocalizedTextField({
               >
                 {t(`catalog.translation.tab.${lang}`)}
                 {lang === 'fr' && required === true ? (
-                  <span className="ml-1 text-red-500">{t('catalog.translation.required')}</span>
+                  <span className="ms-1 text-red-500">{t('catalog.translation.required')}</span>
                 ) : null}
                 {empty ? (
-                  <Badge variant="secondary" className="ml-2 text-[10px] leading-none px-1 py-0.5 font-normal h-4">
+                  <Badge variant="secondary" className="ms-2 text-[10px] leading-none px-1 py-0.5 font-normal h-4">
                     {t('catalog.translation.missing')}
                   </Badge>
                 ) : null}

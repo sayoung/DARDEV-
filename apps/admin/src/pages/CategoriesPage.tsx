@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   CategoryCreateSchema,
@@ -11,6 +11,13 @@ import { useAuth } from '../auth/AuthProvider.js';
 import { listCategories, createCategory, updateCategory, deleteCategory } from '../api/catalog.js';
 import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { ApiError } from '../api/client.js';
+import { PageHeader } from '../components/PageHeader.js';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
+import { Button } from '../components/ui/Button.js';
+import { Badge } from '../components/ui/Badge.js';
+import { Alert } from '../components/ui/Alert.js';
+import { Input } from '../components/ui/Input.js';
+import { Label } from '../components/ui/Label.js';
 
 export function CategoriesPage() {
   const { t, i18n } = useTranslation();
@@ -30,6 +37,8 @@ export function CategoriesPage() {
   const [weight, setWeight] = useState('0');
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     void fetchCategories();
@@ -63,6 +72,7 @@ export function CategoriesPage() {
     setColor(category.color);
     setWeight(String(category.weight));
     setFormError(null);
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
   async function handleDelete(category: CategoryResponse) {
@@ -116,60 +126,75 @@ export function CategoriesPage() {
   }
 
   return (
-    <div className="page-categories">
-      <h2>{t('page.categories.title')}</h2>
+    <div className="page-categories space-y-8">
+      <PageHeader
+        title={t('page.categories.title')}
+        actions={
+          canWrite && (
+            <Button onClick={() => { formRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>
+              {t('catalog.category.createTitle')}
+            </Button>
+          )
+        }
+      />
 
-      {fetchError && <p className="error" role="alert">{fetchError}</p>}
+      {fetchError && <Alert variant="destructive" role="alert">{fetchError}</Alert>}
       
       {loading ? (
         <p>{t('common.loading')}</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>{t('catalog.category.name')}</th>
-              <th>{t('catalog.category.icon')}</th>
-              <th>{t('catalog.category.color')}</th>
-              <th>{t('catalog.category.weight')}</th>
-              {canWrite && <th>{t('catalog.actions')}</th>}
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('catalog.category.name')}</TableHead>
+              <TableHead>{t('catalog.category.icon')}</TableHead>
+              <TableHead>{t('catalog.category.color')}</TableHead>
+              <TableHead>{t('catalog.category.weight')}</TableHead>
+              {canWrite && <TableHead>{t('catalog.actions')}</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {categories.map((category) => {
               const baseLang = i18n.language.split('-')[0];
               const isMissingTranslation = !category.name[baseLang as keyof typeof category.name] && baseLang !== 'fr';
               return (
-                <tr key={category.id}>
-                  <td>
-                    <span>{localize(category.name, i18n.language)}</span>
-                    {isMissingTranslation ? (
-                      <span className="missing-translation">{t('catalog.translation.missing')}</span>
-                    ) : null}
-                  </td>
-                  <td>{category.icon}</td>
-                  <td>
-                    <div style={{ width: '20px', height: '20px', backgroundColor: category.color }} />
-                    {category.color}
-                  </td>
-                  <td>{category.weight}</td>
+                <TableRow key={category.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span>{localize(category.name, i18n.language)}</span>
+                      {isMissingTranslation && (
+                        <Badge variant="destructive">{t('catalog.translation.missing')}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{category.icon}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="rounded border border-gray-200" style={{ width: '20px', height: '20px', backgroundColor: category.color }} />
+                      {category.color}
+                    </div>
+                  </TableCell>
+                  <TableCell>{category.weight}</TableCell>
                   {canWrite && (
-                    <td>
-                      <button type="button" onClick={() => { handleEdit(category); }}>{t('catalog.edit')}</button>
-                      <button type="button" onClick={() => { void handleDelete(category); }}>{t('catalog.delete')}</button>
-                    </td>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => { handleEdit(category); }}>{t('catalog.edit')}</Button>
+                        <Button variant="destructive" size="sm" onClick={() => { void handleDelete(category); }}>{t('catalog.delete')}</Button>
+                      </div>
+                    </TableCell>
                   )}
-                </tr>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
 
       {canWrite && (
-        <form onSubmit={(e) => { void handleSubmit(e); }} className="category-form">
-          <h3>{editingId ? t('catalog.category.editTitle') : t('catalog.category.createTitle')}</h3>
+        <form ref={formRef} onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4 max-w-xl">
+          <h3 className="text-xl font-semibold">{editingId ? t('catalog.category.editTitle') : t('catalog.category.createTitle')}</h3>
           
-          {formError && <p className="error" role="alert">{formError}</p>}
+          {formError && <Alert variant="destructive" role="alert">{formError}</Alert>}
           
           <LocalizedTextField
             label={t('catalog.category.name')}
@@ -178,9 +203,9 @@ export function CategoriesPage() {
             required
           />
           
-          <div>
-            <label htmlFor="icon">{t('catalog.category.icon')}</label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="icon">{t('catalog.category.icon')}</Label>
+            <Input
               id="icon"
               value={icon}
               onChange={(e) => { setIcon(e.target.value); }}
@@ -188,20 +213,21 @@ export function CategoriesPage() {
             />
           </div>
           
-          <div>
-            <label htmlFor="color">{t('catalog.category.color')}</label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="color">{t('catalog.category.color')}</Label>
+            <Input
               id="color"
               type="color"
+              className="h-10 w-24 p-1"
               value={color}
               onChange={(e) => { setColor(e.target.value); }}
               required
             />
           </div>
           
-          <div>
-            <label htmlFor="weight">{t('catalog.category.weight')}</label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="weight">{t('catalog.category.weight')}</Label>
+            <Input
               id="weight"
               inputMode="decimal"
               value={weight}
@@ -209,15 +235,17 @@ export function CategoriesPage() {
             />
           </div>
           
-          <button type="submit" disabled={saving}>
-            {saving ? t('catalog.saving') : t('catalog.save')}
-          </button>
-          
-          {editingId && (
-            <button type="button" onClick={resetForm} disabled={saving}>
-              {t('catalog.cancel')}
-            </button>
-          )}
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={saving}>
+              {saving ? t('catalog.saving') : t('catalog.save')}
+            </Button>
+            
+            {editingId && (
+              <Button type="button" variant="outline" onClick={resetForm} disabled={saving}>
+                {t('catalog.cancel')}
+              </Button>
+            )}
+          </div>
         </form>
       )}
     </div>

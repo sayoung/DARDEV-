@@ -20,13 +20,14 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** Design 2/6 (mise en page commune)
+**Objectif :** Design 4/6 (listes simples)
 
 Plan :
-- Créer apps/admin/src/components/AppLayout.tsx avec la barre latérale, l'en-tête, le sélecteur de langue et la session.
-- Supprimer les styles inutiles de style.css (.nav-list, .language-list).
-- Adapter App.tsx pour utiliser AppLayout.
-- Adapter les tests existants et s'assurer que lint, typecheck, et test sont au vert.
+- Refaire CitiesPage et CategoriesPage avec les composants shadcn (Table, Button, Badge, Alert, Input, Label).
+- Vérifier les propriétés logiques RTL (`ms-`, `pe-`, `text-start`).
+- Ajouter la couleur `success` (vert anis) à la charte et mettre à jour `Badge`.
+- Adapter `LocalizedTextField` pour le RTL.
+- S'assurer que lint, typecheck, et test sont au vert.
 
 ## État des tâches
 
@@ -34,6 +35,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- Design 4/6 (listes simples) : `CitiesPage` et `CategoriesPage` réécrites avec les composants shadcn/ui (`Table`, `Button`, `Badge`, `Alert`, `Input`, `Label`). Utilisation de `PageHeader`. Ajout de la couleur `--success` (vert anis) dans la configuration du thème et mise à jour de `Badge`. Correction des espacements RTL (remplacement des marges et espacements absolus par les propriétés logiques `ms-`, `pe-`, `text-start` dans `LocalizedTextField` et `Table`). lint, typecheck, test OK.
 - Design 2/6 (mise en page commune) : Création de `AppLayout.tsx` (barre latérale violette avec logo blanc, navigation avec mise en évidence, en-tête avec langue et bouton de déconnexion shadcn). Suppression des règles obsolètes de `style.css`. Adaptation des sélecteurs de `session.test.tsx` pour l'existence de plusieurs instances de noms ou de boutons de déconnexion. lint, typecheck, test OK.
 - Design 1/6 (thème Xplor) : application des variables de thème shadcn (primary, background, etc.), ajout des polices auto-hébergées Montserrat et Comfortaa, copie des logos SVG de la charte. lint, typecheck, test OK.
 - M2 F-11 (empreinte du fichier) : création de `apps/worker/src/derivatives/content-hash.ts` et `content-hash.test.ts` (sha256 hex 64 chars). lint, typecheck, test OK.

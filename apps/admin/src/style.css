@@ -20,6 +20,8 @@
   --border: 252.7 30.5% 77.8%;
   --input: 252.7 30.5% 77.8%;
   --ring: 252.7 30.5% 77.8%;
+  --success: 68 68% 53%;
+  --success-foreground: 60 1% 23.3%;
   --radius: 0.75rem;
 }
 
@@ -40,6 +42,8 @@
   --color-accent-foreground: hsl(var(--accent-foreground));
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
