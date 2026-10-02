@@ -121,7 +121,7 @@ export function LocalizedTextField({
         <Label id={labelId} htmlFor={fieldId}>
           {label}
         </Label>
-        <div role="tablist" aria-labelledby={labelId} className="inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 text-gray-500 max-w-fit">
+        <div role="tablist" aria-labelledby={labelId} className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground max-w-fit">
           {LANGS.map((lang) => {
             const empty = isBlank(value[lang]);
             const tabId = `${idPrefix}-tab-${lang}`;
@@ -143,12 +143,12 @@ export function LocalizedTextField({
                   setActiveTab(lang);
                 }}
                 onKeyDown={handleKeyDown}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === lang ? 'bg-white text-gray-950 shadow-sm' : 'hover:bg-gray-200/50 hover:text-gray-900'}`}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === lang ? 'bg-background text-foreground shadow-sm' : 'hover:bg-muted-foreground/10 hover:text-foreground'}`}
                 dir={lang === 'ar' ? 'rtl' : 'ltr'}
               >
                 {t(`catalog.translation.tab.${lang}`)}
                 {lang === 'fr' && required === true ? (
-                  <span className="ms-1 text-red-500">{t('catalog.translation.required')}</span>
+                  <span className="ms-1 text-destructive">{t('catalog.translation.required')}</span>
                 ) : null}
                 {empty ? (
                   <Badge variant="secondary" className="ms-2 text-[10px] leading-none px-1 py-0.5 font-normal h-4">
@@ -190,7 +190,7 @@ export function LocalizedTextField({
         role="tabpanel"
         id={panelId}
         aria-labelledby={`${idPrefix}-tab-${activeTab}`}
-        className="mt-2 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+        className="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         {multiline ? (
           <Textarea

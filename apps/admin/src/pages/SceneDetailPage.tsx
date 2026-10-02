@@ -8,6 +8,7 @@ import { Role, type SceneResponse, type SceneCreate, z } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
+import { Alert } from '../components/ui/Alert.js';
 import { SceneCreateSchema, SceneUpdateSchema } from '@xplor/shared';
 
 export function SceneDetailPage() {
@@ -153,8 +154,8 @@ export function SceneDetailPage() {
       <PageHeader 
         title={isNew ? t('catalog.scene.actions.add') : t('catalog.edit')} 
       />
-      {actionError !== null && <div className="text-sm font-medium text-destructive" role="alert">{t(actionError)}</div>}
-      {successKey !== null && <div className="text-sm font-medium text-green-600" role="status">{t(successKey)}</div>}
+      {actionError !== null && <Alert variant="destructive" role="alert">{t(actionError)}</Alert>}
+      {successKey !== null && <Alert variant="default" role="status">{t(successKey)}</Alert>}
       <Card>
         <CardContent className="pt-6">
           <SceneForm

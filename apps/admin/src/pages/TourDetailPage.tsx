@@ -10,6 +10,7 @@ import { Role, type TourResponse, type TourUpdate } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
+import { Alert } from '../components/ui/Alert.js';
 
 function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0;
@@ -130,8 +131,8 @@ export function TourDetailPage() {
         title={t('page.tourDetail.title')} 
       />
       <TourPublicationPanel tour={tour} onTourUpdated={setTour} />
-      {actionError !== null && <div className="text-sm font-medium text-destructive" role="alert">{t(actionError)}</div>}
-      {successKey !== null && <div className="text-sm font-medium text-green-600" role="status">{t(successKey)}</div>}
+      {actionError !== null && <Alert variant="destructive" role="alert">{t(actionError)}</Alert>}
+      {successKey !== null && <Alert variant="default" role="status">{t(successKey)}</Alert>}
       <Card>
         <CardContent className="pt-6">
           <TourForm
