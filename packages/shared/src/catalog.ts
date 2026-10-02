@@ -307,6 +307,7 @@ export const AssetResponseSchema = z.object({
   width: z.number().int().min(0).nullable(),
   height: z.number().int().min(0).nullable(),
   processingStatus: z.enum(ProcessingStatus),
+  processingLog: z.string().nullable(),
   copyright: z.string().nullable(),
   createdAt: z.iso.datetime(),
 });

@@ -25,6 +25,7 @@ describe('AssetPicker', () => {
           width: 800,
           height: 600,
           processingStatus: 'READY',
+          processingLog: null,
           copyright: null,
           createdAt: new Date().toISOString()
         }
