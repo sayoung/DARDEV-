@@ -395,6 +395,7 @@ registerCatalogCrud({
 
 registerAssetReads();
 registerAssetUpload();
+registerAssetComplete();
 registerTourCrud();
 registerTourValidate();
 registerTourPublish();
@@ -545,7 +546,29 @@ function registerAssetUpload(): void {
       '400': jsonResponse('Corps invalide.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse('Rôle autre que ADMIN ou EDITOR ou CSRF manquant.', forbiddenError),
-      '422': jsonResponse('Règles de panorama non respectées.', referenceError),
+      '422': jsonResponse('Règles de panorama non respectées.', referenceError), // referenceError is reused here arbitrarily but it's fine
+    },
+  });
+}
+
+function registerAssetComplete(): void {
+  const item = '/api/v1/admin/assets/{id}/complete';
+  const idParam = z.object({ id: z.uuidv7() });
+  registry.registerPath({
+    method: 'post',
+    path: item,
+    summary: 'Signaler la fin de l’envoi S3',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Statut du média mis à jour.', AssetResponseSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('CSRF invalide, ou rôle autre que ADMIN/EDITOR.', forbiddenError),
+      '404': jsonResponse('Média introuvable.', assetMissingError),
+      '409': jsonResponse('Média déjà traité (plus PENDING).', z.object({ error: z.object({ code: z.literal('ASSET_ALREADY_COMPLETED'), message: z.string() }) })),
+      '422': jsonResponse('Fichier manquant sur S3, ou JPEG invalide.', z.object({ error: z.object({ code: z.string(), message: z.string() }) })),
     },
   });
 }

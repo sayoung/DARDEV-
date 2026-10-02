@@ -239,6 +239,34 @@ describe('médias HTTP', () => {
     expect(body.uploadUrl).toContain('uploads/');
     expect(body.uploadMethod).toBe('PUT');
   });
+
+  it('refuse le POST complete sans session ou avec PARTNER', async () => {
+    const asset = await insertAsset(AssetKind.IMAGE, '2026-09-01T00:00:00.000Z');
+    const partner = await login(PARTNER_EMAIL);
+
+    const noSession = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/${asset.id}/complete`,
+    });
+    expect(noSession.statusCode).toBe(401);
+
+    const noCsrf = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/${asset.id}/complete`,
+      headers: { cookie: sessionCookie(partner.sessionId) },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const forbidden = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/${asset.id}/complete`,
+      headers: {
+        cookie: sessionCookie(partner.sessionId),
+        'x-csrf-token': partner.csrfToken,
+      },
+    });
+    expect(forbidden.statusCode).toBe(403);
+  });
 });
 
 async function insertAsset(

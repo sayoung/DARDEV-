@@ -16,8 +16,7 @@ describe('StorageService', () => {
   let s3: S3Client;
   let env: Env;
   let service: StorageService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let sendSpy: MockInstance<any>;
+  let sendSpy: MockInstance;
 
   beforeEach(() => {
     s3 = new S3Client({

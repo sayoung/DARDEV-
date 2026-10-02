@@ -389,9 +389,7 @@ export enum ValidationIssueCode {
  * `sceneId` et `hotspotId` sont des UUID facultatifs.
  */
 export const ValidationIssueSchema = z.object({
-  // F-03 impose `z.nativeEnum`. Zod 4 le marque déprécié : c'est l'alias de `z.enum`.
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  code: z.nativeEnum(ValidationIssueCode),
+  code: z.enum(ValidationIssueCode),
   sceneId: z.uuid().optional(),
   hotspotId: z.uuid().optional(),
   message: z.string(),
@@ -411,8 +409,7 @@ export type TourValidationResponse = z.infer<typeof TourValidationResponseSchema
  * Corps de création d'un upload de média (API-24).
  */
 export const AssetUploadRequestSchema = z.object({
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
-  kind: z.nativeEnum(AssetKind),
+  kind: z.enum(AssetKind),
   mimeType: z.string().min(1),
   sizeBytes: z.number().int().positive(),
   filename: z.string().min(1).max(200),

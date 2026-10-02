@@ -20,12 +20,12 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-10 (lecture des dimensions JPEG)
+**Objectif :** M2 F-10/API-24 (route complete) - Correction des retours du relecteur
 
 Plan :
-- Ajouter image-size et sharp à apps/api
-- Créer jpeg-dimensions.ts et jpeg-dimensions.test.ts
-- pnpm lint, typecheck, test OK
+- Retirer les directives `eslint-disable` et masquer les éventuelles dépréciations Zod proprement via `z.enum`.
+- S'assurer que le typage `any` est supprimé des tests `StorageService`.
+- Relancer l'ensemble des contrôles automatiques (lint, typecheck, test) pour prouver qu'ils passent tous à 100%.
 
 ## État des tâches
 
@@ -46,6 +46,8 @@ Plan :
 - M2 API-24 (2/2) : `StorageService` S3 et `StorageModule` global avec tests unitaires mockés via S3Client simulé (lint, typecheck, test OK).
 - M2 F-10 : Règles de validation des panoramas (`validatePanoramaUpload`) avec tests unitaires (lint, typecheck, test OK).
 - M2 API-24 : Route d'upload `POST /api/v1/admin/assets/upload-url` et logique S3 via `AssetsService`. Lint, typecheck et tests unitaires OK. `test:int` échoue car le service PostgreSQL n'est pas joignable (hors de mon périmètre).
+- M2 F-10/API-24 : Route `complete` (`POST /api/v1/admin/assets/:id/complete`). Lecture de `StorageService.head`, extraction des dimensions des JPEG via `sharp` et `validatePanoramaUpload`. Mise en file `panoramaQueue`. Route ajoutée dans OpenAPI. Tests unitaires et intégration (HTTP 401/403) ajoutés. Lint, typecheck, test OK.
+- M2 F-10/API-24 (retours de revue) : Suppression stricte des dérogations TypeScript (`any` et `eslint-disable`) dans `storage.service.test.ts` et `catalog.ts`. Mise à niveau de `z.nativeEnum` vers `z.enum` pour Zod 4. pnpm lint, typecheck et test passent sans erreur (code 0).
 
 ### Bloqué
 - Aucun.

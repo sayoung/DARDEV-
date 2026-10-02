@@ -5,6 +5,7 @@ import {
   AssetResponseSchema,
   PanoramaUploadIssueCode,
   PANORAMA_MAX_BYTES,
+  validatePanoramaUpload,
   type AssetListQuery,
   type AssetResponse,
   type AssetUploadRequest,
@@ -13,14 +14,17 @@ import {
 } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PanoramaQueueService } from '../queue/panorama-queue.service.js';
 import { StorageService, UPLOAD_URL_TTL_SECONDS } from '../storage/storage.service.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE, missingException } from './catalog.errors.js';
+import { readImageDimensions } from './jpeg-dimensions.js';
 
 @Injectable()
 export class AssetsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(StorageService) private readonly storage: StorageService,
+    @Inject(PanoramaQueueService) private readonly panoramaQueue: PanoramaQueueService,
   ) {}
 
   async list(query: AssetListQuery): Promise<Paginated<AssetResponse>> {
@@ -94,6 +98,91 @@ export class AssetsService {
       uploadMethod: 'PUT',
       expiresInSeconds: UPLOAD_URL_TTL_SECONDS,
     };
+  }
+
+  async complete(id: string): Promise<AssetResponse> {
+    const asset = await this.prisma.asset.findUnique({ where: { id } });
+    if (asset === null) {
+      throw missingException(ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE);
+    }
+    if (asset.processingStatus !== ProcessingStatus.PENDING) {
+      throw new HttpException(
+        { error: { code: 'ASSET_ALREADY_COMPLETED', message: 'Asset is already completed' } },
+        409,
+      );
+    }
+
+    const head = await this.storage.head(asset.originalKey);
+    if (head === null) {
+      throw new HttpException(
+        { error: { code: 'UPLOAD_MISSING', message: 'No file uploaded to storage' } },
+        422,
+      );
+    }
+
+    if (asset.kind === PrismaAssetKind.PANORAMA) {
+      const buffer = await this.storage.getRange(asset.originalKey, 0, 65535);
+      const dimensions = readImageDimensions(buffer);
+
+      if (dimensions === null) {
+        throw new HttpException(
+          { error: { code: PanoramaUploadIssueCode.INVALID_FORMAT, message: 'Dimensions illisibles' } },
+          422,
+        );
+      }
+
+      const issues = validatePanoramaUpload({
+        mimeType: head.contentType ?? asset.mimeType,
+        sizeBytes: head.sizeBytes,
+        width: dimensions.width,
+        height: dimensions.height,
+      });
+
+      if (issues.length > 0) {
+        const issue = issues[0];
+        if (!issue) throw new Error('Impossible');
+        const message = `attendu : ${issue.expected} ; reçu : ${issue.received}`;
+        await this.prisma.asset.update({
+          where: { id },
+          data: {
+            processingStatus: ProcessingStatus.ERROR,
+            processingLog: message,
+          },
+        });
+        throw new HttpException(
+          {
+            error: {
+              code: issue.code,
+              message,
+              issues,
+            },
+          },
+          422,
+        );
+      }
+
+      const updatedAsset = await this.prisma.asset.update({
+        where: { id },
+        data: {
+          width: dimensions.width,
+          height: dimensions.height,
+          sizeBytes: head.sizeBytes,
+          processingStatus: ProcessingStatus.PROCESSING,
+        },
+      });
+
+      await this.panoramaQueue.enqueue(id);
+      return toAsset(updatedAsset);
+    } else {
+      const updatedAsset = await this.prisma.asset.update({
+        where: { id },
+        data: {
+          sizeBytes: head.sizeBytes,
+          processingStatus: ProcessingStatus.READY,
+        },
+      });
+      return toAsset(updatedAsset);
+    }
   }
 }
 
