@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AssetUploadRequestSchema, type AssetResponse, type AssetUploadResponse, type Paginated } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
@@ -34,5 +34,12 @@ export class AssetsController {
   ): Promise<AssetUploadResponse> {
     requireContentManager(request);
     return this.assets.createUploadUrl(AssetUploadRequestSchema.parse(body));
+  }
+
+  @Post(':id/complete')
+  @HttpCode(200)
+  complete(@Req() request: SessionRequest, @Param('id') id: string): Promise<AssetResponse> {
+    requireContentManager(request);
+    return this.assets.complete(parseResourceId(id));
   }
 }

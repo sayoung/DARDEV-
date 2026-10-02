@@ -1,9 +1,11 @@
 import { HttpException } from '@nestjs/common';
 import { AssetKind, ProcessingStatus, type AssetListQuery } from '@xplor/shared';
 import { type Prisma } from '@prisma/client';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import sharp from 'sharp';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { type PanoramaQueueService } from '../queue/panorama-queue.service.js';
 import { type StorageService } from '../storage/storage.service.js';
 import { AssetsService } from './assets.service.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE } from './catalog.errors.js';
@@ -68,6 +70,7 @@ function harness(rows: AssetRow[]): {
   creates: Prisma.AssetCreateArgs[]; 
   updates: Prisma.AssetUpdateArgs[]; 
   storage: StorageService;
+  panoramaQueue: PanoramaQueueService;
 } {
   const lists: ListArgs[] = [];
   const creates: Prisma.AssetCreateArgs[] = [];
@@ -91,7 +94,8 @@ function harness(rows: AssetRow[]): {
       },
       update: (args: Prisma.AssetUpdateArgs) => {
         updates.push(args);
-        return Promise.resolve({ ...args.data, id: args.where.id } as unknown as AssetRow);
+        const existing = rows.find(r => r.id === args.where.id);
+        return Promise.resolve({ ...existing, ...args.data } as unknown as AssetRow);
       }
     },
   } as unknown as PrismaService;
@@ -100,9 +104,15 @@ function harness(rows: AssetRow[]): {
     presignPut: (key: string) => {
       return Promise.resolve(`https://fake-s3.com/${key}?signed=true`);
     },
+    head: () => Promise.resolve(null),
+    getRange: () => Promise.resolve(Buffer.alloc(0)),
   } as unknown as StorageService;
 
-  return { service: new AssetsService(prisma, storage), lists, creates, updates, storage };
+  const panoramaQueue = {
+    enqueue: () => Promise.resolve(),
+  } as unknown as PanoramaQueueService;
+
+  return { service: new AssetsService(prisma, storage, panoramaQueue), lists, creates, updates, storage, panoramaQueue };
 }
 
 function matches(item: AssetRow, where: { kind?: AssetKind }): boolean {
@@ -268,6 +278,106 @@ describe('AssetsService', () => {
         error: { code: 'INVALID_FORMAT' },
       });
       expect(creates).toHaveLength(0);
+    });
+  });
+
+  describe('complete', () => {
+    const PANO_ID = '01990000-0000-7000-8000-000000000004';
+
+    it('met en file un panorama 4096x2048 conforme', async () => {
+      const asset = row(PANO_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
+      const { service, storage, panoramaQueue, updates } = harness([asset]);
+      const imageBuffer = await sharp({
+        create: { width: 4096, height: 2048, channels: 3, background: { r: 255, g: 0, b: 0 } }
+      }).jpeg().toBuffer();
+      
+      vi.spyOn(storage, 'head').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
+      vi.spyOn(storage, 'getRange').mockResolvedValue(imageBuffer);
+      const enqueueSpy = vi.spyOn(panoramaQueue, 'enqueue');
+
+      const result = await service.complete(PANO_ID);
+
+      expect(updates).toHaveLength(1);
+      expect(updates[0]?.data).toMatchObject({
+        width: 4096,
+        height: 2048,
+        sizeBytes: imageBuffer.length,
+        processingStatus: ProcessingStatus.PROCESSING,
+      });
+      expect(enqueueSpy).toHaveBeenCalledWith(PANO_ID);
+      expect(result.processingStatus).toBe(ProcessingStatus.PROCESSING);
+    });
+
+    it('refuse 4000x2000 avec 422 INVALID_DIMENSIONS et message attendu/reçu', async () => {
+      const asset = row(PANO_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
+      const { service, storage, updates } = harness([asset]);
+      const imageBuffer = await sharp({
+        create: { width: 4000, height: 2000, channels: 3, background: { r: 255, g: 0, b: 0 } }
+      }).jpeg().toBuffer();
+      
+      vi.spyOn(storage, 'head').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
+      vi.spyOn(storage, 'getRange').mockResolvedValue(imageBuffer);
+
+      const error = await service.complete(PANO_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(422);
+      expect(error.getResponse()).toMatchObject({
+        error: { 
+          code: 'INVALID_DIMENSIONS',
+          message: 'attendu : >= 4096 ; reçu : 4000',
+        },
+      });
+      expect(updates).toHaveLength(1);
+      expect(updates[0]?.data.processingStatus).toBe(ProcessingStatus.ERROR);
+      expect(updates[0]?.data.processingLog).toBe('attendu : >= 4096 ; reçu : 4000');
+    });
+
+    it('refuse ratio 8000x4100 en INVALID_RATIO', async () => {
+      const asset = row(PANO_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
+      const { service, storage, updates } = harness([asset]);
+      const imageBuffer = await sharp({
+        create: { width: 8000, height: 4100, channels: 3, background: { r: 255, g: 0, b: 0 } }
+      }).jpeg().toBuffer();
+      
+      vi.spyOn(storage, 'head').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
+      vi.spyOn(storage, 'getRange').mockResolvedValue(imageBuffer);
+
+      const error = await service.complete(PANO_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(422);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: 'INVALID_RATIO' },
+      });
+      expect(updates[0]?.data.processingStatus).toBe(ProcessingStatus.ERROR);
+    });
+
+    it('répond 409 sur un asset déjà PROCESSING', async () => {
+      const asset = row(PANO_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PROCESSING });
+      const { service } = harness([asset]);
+
+      const error = await service.complete(PANO_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(409);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: 'ASSET_ALREADY_COMPLETED' },
+      });
+    });
+
+    it('répond 422 UPLOAD_MISSING', async () => {
+      const asset = row(PANO_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
+      const { service, storage } = harness([asset]);
+      vi.spyOn(storage, 'head').mockResolvedValue(null);
+
+      const error = await service.complete(PANO_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(422);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: 'UPLOAD_MISSING' },
+      });
     });
   });
 });
