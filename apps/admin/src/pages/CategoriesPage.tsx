@@ -170,7 +170,7 @@ export function CategoriesPage() {
                   <TableCell>{category.icon}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="rounded border border-gray-200" style={{ width: '20px', height: '20px', backgroundColor: category.color }} />
+                      <div className="rounded border border-border" style={{ width: '20px', height: '20px', backgroundColor: category.color }} />
                       {category.color}
                     </div>
                   </TableCell>

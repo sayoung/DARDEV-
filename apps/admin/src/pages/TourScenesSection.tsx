@@ -109,13 +109,13 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
               <TableRow>
                 <TableHead>{t('catalog.scene.fields.title')}</TableHead>
                 <TableHead>{t('catalog.scene.fields.hotspotCount')}</TableHead>
-                <TableHead className="text-right">{t('catalog.actions')}</TableHead>
+                <TableHead className="text-end">{t('catalog.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {scenes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center text-gray-500">
+                  <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
                     {t('common.empty')}
                   </TableCell>
                 </TableRow>
@@ -131,7 +131,7 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
                       </div>
                     </TableCell>
                     <TableCell>{scene.hotspotCount}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <div className="flex justify-end gap-2 flex-wrap">
                         <Button
                           variant="outline"

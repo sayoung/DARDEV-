@@ -118,7 +118,7 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
         <span className="text-sm font-medium">{t('catalog.publication.status')}:</span>
         <StatusBadge status={tour.status} />
         {canPublish && (
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2 ms-auto">
             <Button variant="outline" type="button" data-testid="validate-tour-btn" onClick={() => { void handleValidate(); }} disabled={submitting}>
               {t('catalog.publication.validate')}
             </Button>
@@ -137,12 +137,12 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
       </div>
 
       {errorMsg && <Alert variant="destructive">{errorMsg}</Alert>}
-      {successMsg && <div className="text-sm font-medium text-green-600" role="status" data-testid="validation-success">{successMsg}</div>}
+      {successMsg && <Alert variant="default" role="status" data-testid="validation-success">{successMsg}</Alert>}
 
       {issues && issues.length > 0 && (
         <Alert variant="destructive" role="alert">
           <h4 className="font-semibold mb-2">{t('catalog.publication.issuesTitle')}</h4>
-          <ul className="list-disc pl-5 space-y-1 text-sm">
+          <ul className="list-disc ps-5 space-y-1 text-sm">
             {issues.map((issue, idx) => {
               const label = t(`catalog.issue.${issue.code}`);
               const title = issue.sceneId ? sceneTitles[issue.sceneId] : null;
@@ -152,7 +152,7 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
                   {issue.sceneId && (
                     <>
                       {' - '}
-                      <a href={`#scene-${issue.sceneId}`} className="underline hover:text-red-800 dark:hover:text-red-400">
+                      <a href={`#scene-${issue.sceneId}`} className="hover:underline text-destructive">
                         {title || issue.sceneId}
                       </a>
                     </>

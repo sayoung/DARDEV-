@@ -49,7 +49,7 @@ export function AssetPicker({ label, kind, value, onChange, required }: AssetPic
   }, [kind]);
 
   if (loading) {
-    return <div className="p-4 text-sm text-gray-500">{t('common.loading')}</div>;
+    return <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>;
   }
 
   if (error) {

@@ -51,7 +51,7 @@ function AdminShell() {
       {route.name === 'invite' ? <SetPasswordPage kind="invite" token={route.token} /> : null}
 
       {isAuthenticatedRoute && isAnonymous && notice !== null ? (
-        <p className="auth-status" role="status">
+        <p className="p-4 text-muted-foreground" role="status">
           {t(SUCCESS_MESSAGE[notice])}
         </p>
       ) : null}
