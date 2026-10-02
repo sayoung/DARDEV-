@@ -4,6 +4,8 @@ import {
   AssetKind,
   AssetListQuerySchema,
   AssetResponseSchema,
+  AssetUploadRequestSchema,
+  AssetUploadResponseSchema,
   CategoryCreateSchema,
   CategoryResponseSchema,
   CategoryUpdateSchema,
@@ -855,5 +857,59 @@ describe('paginated', () => {
 
   it('refuse un total négatif', () => {
     expect(paginated(CityResponseSchema).safeParse({ ...cityPage, total: -1 }).success).toBe(false);
+  });
+});
+
+describe('AssetUploadRequestSchema', () => {
+  it('accepte une requête d\'upload valide', () => {
+    const req = {
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1048576,
+      filename: 'photo.jpg',
+    };
+    expect(AssetUploadRequestSchema.parse(req)).toEqual(req);
+  });
+
+  it('refuse une taille de 0', () => {
+    const req = {
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 0,
+      filename: 'photo.jpg',
+    };
+    expect(AssetUploadRequestSchema.safeParse(req).success).toBe(false);
+  });
+
+  it('refuse un nom de fichier vide', () => {
+    const req = {
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1048576,
+      filename: '',
+    };
+    expect(AssetUploadRequestSchema.safeParse(req).success).toBe(false);
+  });
+});
+
+describe('AssetUploadResponseSchema', () => {
+  it('accepte une réponse d\'upload valide', () => {
+    const res = {
+      assetId: id.media,
+      uploadUrl: 'https://minio.local/bucket/obj',
+      uploadMethod: 'PUT' as const,
+      expiresInSeconds: 3600,
+    };
+    expect(AssetUploadResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it('refuse une méthode d\'upload différente de PUT', () => {
+    const res = {
+      assetId: id.media,
+      uploadUrl: 'https://minio.local/bucket/obj',
+      uploadMethod: 'POST',
+      expiresInSeconds: 3600,
+    };
+    expect(AssetUploadResponseSchema.safeParse(res).success).toBe(false);
   });
 });

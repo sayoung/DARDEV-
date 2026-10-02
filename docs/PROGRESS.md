@@ -20,19 +20,19 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** Initialisation du jalon M2
+**Objectif :** API-24 (schémas partagés de l'upload)
 
 Plan :
-- Archiver l'état M1 dans docs/archive/PROGRESS-M1.md
-- Mettre à jour docs/PROGRESS.md pour le jalon M2
-- Retirer le code en avance du worker.
-- Vérifier lint, typecheck et tests
+- Ajouter AssetUploadRequestSchema et AssetUploadResponseSchema
+- Ajouter les tests dans catalog.test.ts
+- Vérifier pnpm lint, typecheck, test
 
 ## État des tâches
 
 ### Fait
 - M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
 - M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
+- M2 API-24 : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
 
 ### En cours
 - M2 F-11 : configuration BullMQ et workers.
