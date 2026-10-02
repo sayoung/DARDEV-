@@ -20,14 +20,11 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-11 (file panorama, contrat partagé)
+**Objectif :** M2 F-11 (grille des tuiles, fonction pure, tests d'abord)
 
 Plan :
-- Créer packages/shared/src/panorama-queue.ts exporté par index.ts
-- Ajouter constantes PANORAMA_QUEUE_NAME, PANORAMA_JOB_ATTEMPTS, PANORAMA_JOB_BACKOFF_MS, PANORAMA_WORKER_CONCURRENCY
-- Ajouter PanoramaJobDataSchema (assetId uuid v7) et le type dérivé
-- Ajouter panoramaDerivativeKeys et panoramaTileKey
-- Ajouter les tests unitaires
+- Créer apps/worker/src/derivatives/tile-grid.test.ts avec les tests
+- Créer apps/worker/src/derivatives/tile-grid.ts avec les constantes et la fonction
 - pnpm lint, typecheck, test OK
 
 ## État des tâches
@@ -36,6 +33,7 @@ Plan :
 - M2 F-11 : configuration BullMQ et workers.
 
 ### Fait
+- M2 F-11 (grille des tuiles, fonction pure) : Création de `tileGrid()` et des constantes associées dans `apps/worker/src/derivatives/tile-grid.ts`. Tests unitaires complets écrits en premier dans `tile-grid.test.ts` (128 tuiles, bornes, unicité). pnpm lint, typecheck, test OK.
 - M2 F-11 (file panorama, contrat partagé) : Création de `packages/shared/src/panorama-queue.ts` avec les types, constantes (file BullMQ) et fonctions utilitaires (`panoramaDerivativeKeys`, `panoramaTileKey`). Ajout de tests unitaires (lint, typecheck, test OK).
 - M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
 - M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
