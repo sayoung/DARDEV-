@@ -63,20 +63,6 @@ h1 {
   margin-inline: 0;
 }
 
-.language-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-block-start: 1rem;
-  margin-block-end: 0;
-  margin-inline: 0;
-  padding-inline-start: 0;
-  list-style: none;
-}
-
-.language-list button[aria-pressed='true'] {
-  font-weight: 700;
-}
 
 .auth-form,
 .home-session {

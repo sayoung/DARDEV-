@@ -63,7 +63,7 @@ describe('session du back-office', () => {
     render(<App />);
     await submitLogin('ada@xplor.test', 'correct-horse');
 
-    expect(await screen.findByText(profile.name)).toBeTruthy();
+    expect(await screen.findAllByText(profile.name)).toBeTruthy();
     expect(screen.getByText(resources.fr.auth.role.ADMIN)).toBeTruthy();
     expect(screen.queryByText(profile.role)).toBeNull();
     expect(screen.queryByRole('form', { name: resources.fr.auth.login.title })).toBeNull();
@@ -173,10 +173,10 @@ describe('session du back-office', () => {
       return Promise.resolve(jsonResponse(200, profile));
     });
     render(<App />);
-    expect(await screen.findByText(profile.name)).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('button', { name: resources.fr.auth.logout }));
-
+    expect(await screen.findAllByText(profile.name)).toBeTruthy();
+    const logoutButton = screen.getAllByRole('button', { name: resources.fr.auth.logout })[0];
+    if (!logoutButton) throw new Error('Logout button not found');
+    fireEvent.click(logoutButton);
     expect(
       await screen.findByRole('heading', { name: resources.fr.auth.login.title }),
     ).toBeTruthy();
