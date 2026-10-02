@@ -169,7 +169,7 @@ export function LocalizedTextField({
 
       {required === true ? (
         <Input
-          className="absolute h-0 w-0 p-0 overflow-hidden border-0 bg-transparent text-transparent opacity-0"
+          className="sr-only pointer-events-none"
           value={value.fr}
           onChange={(event) => {
             updateLang('fr', event.target.value);
