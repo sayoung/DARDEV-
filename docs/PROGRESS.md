@@ -20,10 +20,14 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-11 (processeur de job, logique pure)
+**Objectif :** M2 F-11 (stockage S3 du worker)
 
 Plan :
-- Terminer la tâche courante (M2 F-11 processeur de job, logique pure).
+- Mettre à jour `apps/worker/package.json` (@aws-sdk/client-s3).
+- Ajouter la décision D-91 dans `docs/DECISIONS.md`.
+- Implémenter `S3WorkerStorage` et `createS3Client` dans `apps/worker/src/storage.ts`.
+- Ajouter les tests unitaires dans `storage.test.ts`.
+- Vérifier avec `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 
 ## État des tâches
 
@@ -31,6 +35,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- M2 F-11 (stockage S3 du worker) : ajout du client `@aws-sdk/client-s3` au worker, implémentation de `S3WorkerStorage` et ajout des tests unitaires mockés. Vérification lint, typecheck, test OK.
 - Design 6/6 : charte Xplor appliquée à tout le back-office.
 - Design 6b (formulaires hotspot et visite) : dans apps/admin/src/pages/HotspotForm.tsx, remplacement des 5 <select> natifs par le composant Select de components/ui. Dans TourForm.tsx, mise à jour des classes de la case à cocher avec border-input accent-primary focus-visible:ring-ring. Aucune logique modifiée. lint, typecheck, test OK.
 - Design 6a (composants ui aux couleurs du thème) : dans apps/admin/src/components/ui, remplacement dans Alert.tsx, Input.tsx, Select.tsx et Textarea.tsx de toutes les couleurs Tailwind codées en dur par les variables du thème (border-input, bg-card, text-foreground, placeholder:text-muted-foreground, focus-visible:ring-ring, ring-offset-background). Variante destructive d'Alert mise à jour. Ajout du support RTL (start-4, ps-7) dans Alert.tsx. lint, typecheck, test OK.
