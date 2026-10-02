@@ -258,6 +258,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@prisma/client':
+        specifier: ^6.19.3
+        version: 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
       bullmq:
         specifier: ^6.3.11
         version: 6.3.11(ioredis@6.0.0)
@@ -271,6 +274,9 @@ importers:
       '@types/node':
         specifier: ^22.19.1
         version: 22.20.4
+      prisma:
+        specifier: ^6.19.3
+        version: 6.19.3(magicast@0.3.5)(typescript@5.9.3)
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
