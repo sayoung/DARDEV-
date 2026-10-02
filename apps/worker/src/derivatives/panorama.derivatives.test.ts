@@ -1,44 +1,43 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generatePanoramaDerivatives } from './panorama.derivatives.js';
+import { describe, it, expect } from 'vitest';
 import sharp from 'sharp';
+import { generateFlatDerivatives } from './panorama.derivatives.js';
 
-const mockToBuffer = vi.fn<() => Promise<Buffer>>();
-const mockJpeg = vi.fn<(options?: { quality?: number }) => { toBuffer: typeof mockToBuffer }>();
-const mockResize = vi.fn<(options: { width: number; height: number; fit: string }) => { jpeg: typeof mockJpeg }>();
-const mockMetadata = vi.fn<() => Promise<{ width?: number; height?: number; format?: string }>>();
+describe('generateFlatDerivatives', () => {
+  it('should generate preview, web, and thumb derivatives from a valid panorama', async () => {
+    const inputBuffer = await sharp({
+      create: {
+        width: 4096,
+        height: 2048,
+        channels: 3,
+        background: { r: 255, g: 0, b: 0 },
+      },
+    })
+      .jpeg()
+      .toBuffer();
 
-vi.mock('sharp', () => {
-  return {
-    default: vi.fn(() => ({
-      metadata: mockMetadata,
-      resize: mockResize,
-    })),
-  };
-});
+    const result = await generateFlatDerivatives(inputBuffer);
 
-describe('generatePanoramaDerivatives', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockResize.mockReturnValue({ jpeg: mockJpeg });
-    mockJpeg.mockReturnValue({ toBuffer: mockToBuffer });
+    expect(result.width).toBe(4096);
+    expect(result.height).toBe(2048);
+
+    const previewMeta = await sharp(result.preview).metadata();
+    expect(previewMeta.width).toBe(512);
+    expect(previewMeta.height).toBe(256);
+    expect(previewMeta.format).toBe('jpeg');
+
+    const webMeta = await sharp(result.web).metadata();
+    expect(webMeta.width).toBe(4096);
+    expect(webMeta.height).toBe(2048);
+    expect(webMeta.format).toBe('jpeg');
+
+    const thumbMeta = await sharp(result.thumb).metadata();
+    expect(thumbMeta.width).toBe(400);
+    expect(thumbMeta.height).toBe(225);
+    expect(thumbMeta.format).toBe('jpeg');
   });
 
-  it('should generate derivatives successfully', async () => {
-    const fakeBuffer = Buffer.from('fake-image');
-    const fakeThumbBuffer = Buffer.from('fake-thumb');
-
-    mockMetadata.mockResolvedValue({ width: 4000, height: 2000, format: 'jpeg' });
-    mockToBuffer.mockResolvedValue(fakeThumbBuffer);
-
-    const result = await generatePanoramaDerivatives(fakeBuffer);
-
-    expect(result.metadata.width).toBe(4000);
-    expect(result.thumbnailBuffer).toBe(fakeThumbBuffer);
-
-    expect(vi.mocked(sharp)).toHaveBeenCalledWith(fakeBuffer);
-    expect(mockResize).toHaveBeenCalledWith({ width: 800, height: 400, fit: 'inside' });
-    expect(mockJpeg).toHaveBeenCalledWith({ quality: 80 });
-    expect(mockToBuffer).toHaveBeenCalled();
+  it('should reject with an error when buffer is invalid', async () => {
+    const invalidBuffer = Buffer.from('not an image');
+    await expect(generateFlatDerivatives(invalidBuffer)).rejects.toThrow();
   });
-
 });

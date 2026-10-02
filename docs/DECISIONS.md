@@ -662,3 +662,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Placer ces constantes dans apps/worker ou apps/api uniquement (rejeté car elles doivent être partagées pour les soumissions et les lectures).
 - **À valider :** non
 
+
+## D-88 — Dérivés de panorama (F-11)
+
+- **Date :** 02/10/2026
+- **Décision :** La génération des dérivés (preview, web, thumb) se fait via des instances de sharp(input) séparées. La miniature (thumb 400x225) extrait d'abord le centre de la vue initiale (yaw 0, c'est-à-dire le centre de l'image équirectangulaire), avant de redimensionner. L'extraction prend un quart de la largeur originale. Une erreur est levée si les métadonnées de l'image ne comportent pas de dimensions.
+- **Alternatives :** Redimensionner l'image entière pour la miniature (déformé ou non pertinent).
+- **À valider :** non
+
