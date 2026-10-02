@@ -20,12 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-10/API-24 (route complete) - Correction des retours du relecteur
+**Objectif :** Design 1/6 (thème Xplor) - Mise en place du thème shadcn et des polices.
 
 Plan :
-- Retirer les directives `eslint-disable` et masquer les éventuelles dépréciations Zod proprement via `z.enum`.
-- S'assurer que le typage `any` est supprimé des tests `StorageService`.
-- Relancer l'ensemble des contrôles automatiques (lint, typecheck, test) pour prouver qu'ils passent tous à 100%.
+- Appliquer les couleurs de la charte Xplor dans `apps/admin/src/style.css`.
+- Installer et importer les polices Montserrat et Comfortaa.
+- Importer les logos.
+- Mettre à jour `DECISIONS.md` et `PROGRESS.md`.
 
 ## État des tâches
 
@@ -33,6 +34,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- Design 1/6 (thème Xplor) : application des variables de thème shadcn (primary, background, etc.), ajout des polices auto-hébergées Montserrat et Comfortaa, copie des logos SVG de la charte. lint, typecheck, test OK.
 - M2 F-11 (empreinte du fichier) : création de `apps/worker/src/derivatives/content-hash.ts` et `content-hash.test.ts` (sha256 hex 64 chars). lint, typecheck, test OK.
 - M2 F-11 (configuration du worker) : extension du schéma Zod avec les variables S3 et DATABASE_URL. Validation complète avec retour des noms de variables manquantes. Tests de loadEnv et du boot mis à jour. lint, typecheck, test OK.
 - M2 F-10 (lecture des dimensions JPEG) : ajout de image-size et sharp, création de readImageDimensions et de ses tests. Lint, typecheck et test OK.
