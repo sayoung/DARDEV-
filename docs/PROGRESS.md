@@ -1,8 +1,8 @@
 # Suivi — Xplor
 
-## Jalon en cours
+## Jalon en cours : M2 — Pipeline 360 (S7–S10)
 
-**M2 — Pipeline 360 (S7–S10)**. Exigences : F-10, F-11, F-12, API-24.
+Exigences : F-10, F-11, F-12, API-24.
 
 Livrable : Upload de 10 panoramas Insta360 → tous READY.
 
@@ -25,6 +25,7 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 Plan :
 - Archiver l'état M1 dans docs/archive/PROGRESS-M1.md
 - Mettre à jour docs/PROGRESS.md pour le jalon M2
+- Retirer le code en avance du worker.
 - Vérifier lint, typecheck et tests
 
 ## État des tâches
