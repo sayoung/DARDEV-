@@ -674,3 +674,16 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Redimensionner l'image entière pour la miniature (déformé ou non pertinent).
 - **À valider :** non
 
+
+## D-89 — Charte graphique Xplor et polices
+
+- **Date :** 02/10/2026
+- **Décision :** Application de la charte Xplor au back-office (pps/admin). Couleurs shadcn modifiées (primary #6958A5, gris #E6E7E9, etc.). Polices Montserrat et Comfortaa auto-hébergées via @fontsource/montserrat et @fontsource/comfortaa (licence OFL), importées dans main.tsx pour éviter toute requête vers Google Fonts (permettant le mode hors ligne). Logos SVG importés dans src/assets/brand/.
+- **Alternatives :** Utiliser Google Fonts (rejeté pour le mode hors ligne du kiosque) ; conserver le thème par défaut.
+- **À valider :** non
+
+| Paquet                  | Raison                                                                              | Licence |
+| ----------------------- | ----------------------------------------------------------------------------------- | ------- |
+| @fontsource/montserrat  | Police principale de la charte Xplor (titres, interface, texte courant).            | OFL     |
+| @fontsource/comfortaa   | Police secondaire pour touches de marque.                                           | OFL     |
+
