@@ -20,19 +20,21 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** API-24 (schémas partagés de l'upload)
+**Objectif :** API-24 (StorageService S3)
 
 Plan :
-- Ajouter AssetUploadRequestSchema et AssetUploadResponseSchema
-- Ajouter les tests dans catalog.test.ts
-- Vérifier pnpm lint, typecheck, test
+- Ajouter StorageService avec méthodes S3 (presignPut, head, getRange, delete).
+- Ajouter StorageModule global.
+- Tests unitaires simulant le S3Client.
+- Vérifier lint, typecheck, test.
 
 ## État des tâches
 
 ### Fait
 - M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
 - M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
-- M2 API-24 : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
+- M2 API-24 (1/2) : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
+- M2 API-24 (2/2) : `StorageService` S3 et `StorageModule` global avec tests unitaires mockés via S3Client simulé (lint, typecheck, test OK).
 - M2 F-10 : Règles de validation des panoramas (`validatePanoramaUpload`) avec tests unitaires (lint, typecheck, test OK).
 
 ### En cours
