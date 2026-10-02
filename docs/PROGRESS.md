@@ -33,6 +33,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- M2 F-11 (empreinte du fichier) : création de `apps/worker/src/derivatives/content-hash.ts` et `content-hash.test.ts` (sha256 hex 64 chars). lint, typecheck, test OK.
 - M2 F-11 (configuration du worker) : extension du schéma Zod avec les variables S3 et DATABASE_URL. Validation complète avec retour des noms de variables manquantes. Tests de loadEnv et du boot mis à jour. lint, typecheck, test OK.
 - M2 F-10 (lecture des dimensions JPEG) : ajout de image-size et sharp, création de readImageDimensions et de ses tests. Lint, typecheck et test OK.
 - M2 F-11 (producteur BullMQ côté API) : ajout de `bullmq` à `apps/api`, création de `PanoramaQueueService` (jeton PANORAMA_QUEUE) et `QueueModule`. Import dans `AppModule`. Tests unitaires écrits. Lint, typecheck et test OK.
