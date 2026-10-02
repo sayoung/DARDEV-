@@ -5,6 +5,12 @@ import { isAccountLocked, isInvalidCredentials } from '../api/client.js';
 import { hrefFor, navigate } from '../router.js';
 import { useAuth } from './AuthProvider.js';
 
+import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '../components/ui/Card.js';
+import { Input } from '../components/ui/Input.js';
+import { Label } from '../components/ui/Label.js';
+import { Button } from '../components/ui/Button.js';
+import { Alert } from '../components/ui/Alert.js';
+import { AuthLayout } from './AuthLayout.js';
 type LoginErrorKey = 'auth.login.error' | 'auth.login.locked' | 'auth.login.failed';
 
 export function LoginPage() {
@@ -30,34 +36,48 @@ export function LoginPage() {
   }
 
   return (
-    <form className="auth-form" aria-labelledby="login-title" onSubmit={onSubmit}>
-      <h2 id="login-title">{t('auth.login.title')}</h2>
-      {errorKey !== null ? (
-        <p className="auth-alert" role="alert">
-          {t(errorKey)}
-        </p>
-      ) : null}
-      <div className="auth-field">
-        <label htmlFor="login-email">{t('auth.login.email')}</label>
-        <input id="login-email" name="email" type="email" autoComplete="username" required />
-      </div>
-      <div className="auth-field">
-        <label htmlFor="login-password">{t('auth.login.password')}</label>
-        <input
-          id="login-password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
-      </div>
-      <button type="submit" disabled={pending}>
-        {t('auth.login.submit')}
-      </button>
-      <a className="auth-link" href={hrefFor('/forgot')} onClick={goToForgot}>
-        {t('auth.forgot.link')}
-      </a>
-    </form>
+    <AuthLayout>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle id="login-title">{t('auth.login.title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form aria-labelledby="login-title" onSubmit={onSubmit} className="flex flex-col gap-4">
+            {errorKey !== null ? (
+              <Alert variant="destructive">
+                {t(errorKey)}
+              </Alert>
+            ) : null}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="login-email">{t('auth.login.email')}</Label>
+              <Input id="login-email" name="email" type="email" autoComplete="username" required />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="login-password">{t('auth.login.password')}</Label>
+              <Input
+                id="login-password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={pending} className="w-full mt-2">
+              {t('auth.login.submit')}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <a 
+            href={hrefFor('/forgot')} 
+            onClick={goToForgot}
+            className="text-primary underline-offset-4 hover:underline text-sm font-medium"
+          >
+            {t('auth.forgot.link')}
+          </a>
+        </CardFooter>
+      </Card>
+    </AuthLayout>
   );
 }
 

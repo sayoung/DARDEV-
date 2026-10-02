@@ -5,6 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { acceptInvite, ApiError, resetPassword } from '../api/client.js';
 import { hrefFor, navigate, type Notice } from '../router.js';
 
+import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '../components/ui/Card.js';
+import { Input } from '../components/ui/Input.js';
+import { Label } from '../components/ui/Label.js';
+import { Button } from '../components/ui/Button.js';
+import { Alert } from '../components/ui/Alert.js';
+import { AuthLayout } from './AuthLayout.js';
+
 type SetPasswordErrorKey =
   | 'auth.setPassword.mismatch'
   | 'auth.errors.TOKEN_INVALID'
@@ -53,40 +60,54 @@ export function SetPasswordPage({ kind, token }: { kind: Notice; token: string }
   }
 
   return (
-    <form className="auth-form" aria-labelledby="set-password-title" onSubmit={onSubmit}>
-      <h2 id="set-password-title">{t(TITLE_KEY[kind])}</h2>
-      {errorKey !== null ? (
-        <p className="auth-alert" role="alert">
-          {t(errorKey)}
-        </p>
-      ) : null}
-      <div className="auth-field">
-        <label htmlFor="set-password">{t('auth.setPassword.password')}</label>
-        <input
-          id="set-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-        />
-      </div>
-      <div className="auth-field">
-        <label htmlFor="set-password-confirm">{t('auth.setPassword.confirm')}</label>
-        <input
-          id="set-password-confirm"
-          name="confirm"
-          type="password"
-          autoComplete="new-password"
-          required
-        />
-      </div>
-      <button type="submit" disabled={pending}>
-        {t('auth.setPassword.submit')}
-      </button>
-      <a className="auth-link" href={hrefFor('/')} onClick={goToLogin}>
-        {t('auth.setPassword.back')}
-      </a>
-    </form>
+    <AuthLayout>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle id="set-password-title">{t(TITLE_KEY[kind])}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form aria-labelledby="set-password-title" onSubmit={onSubmit} className="flex flex-col gap-4">
+            {errorKey !== null ? (
+              <Alert variant="destructive">
+                {t(errorKey)}
+              </Alert>
+            ) : null}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="set-password">{t('auth.setPassword.password')}</Label>
+              <Input
+                id="set-password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="set-password-confirm">{t('auth.setPassword.confirm')}</Label>
+              <Input
+                id="set-password-confirm"
+                name="confirm"
+                type="password"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={pending} className="w-full mt-2">
+              {t('auth.setPassword.submit')}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <a 
+            href={hrefFor('/')} 
+            onClick={goToLogin}
+            className="text-primary underline-offset-4 hover:underline text-sm font-medium"
+          >
+            {t('auth.setPassword.back')}
+          </a>
+        </CardFooter>
+      </Card>
+    </AuthLayout>
   );
 }
 
