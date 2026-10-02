@@ -25,7 +25,7 @@ describe('StorageService', () => {
       credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
     });
     // We use vi.spyOn to avoid unbound method errors
-    sendSpy = vi.spyOn(s3, 'send').mockImplementation(() => Promise.resolve());
+    sendSpy = vi.spyOn(s3, 'send').mockResolvedValue(undefined);
 
     env = {
       NODE_ENV: 'test',
@@ -101,9 +101,7 @@ describe('StorageService', () => {
 
       const mockResponse: GetObjectCommandOutput = {
         $metadata: {},
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error Mocking SDK response body
-        Body: mockBody,
+        Body: mockBody as never,
       };
       sendSpy.mockResolvedValueOnce(mockResponse);
 
