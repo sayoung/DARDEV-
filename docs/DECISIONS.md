@@ -694,3 +694,14 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** Le worker (apps/worker) utilise le client Prisma généré à partir de `apps/api/prisma/schema.prisma` pour lire et mettre à jour le statut des `Asset`. `@prisma/client` a été ajouté au worker avec la même version que l'API. Un script `prisma:generate` a été ajouté au `package.json` du worker pour générer le client.
 - **Alternatives :** Mise à jour par l'API via QueueEvents, ou maintenir un deuxième schéma pour le worker (rejeté car cela viole le principe d'une seule source de vérité pour le schéma et ajoute de la complexité réseau/API).
 - **À valider :** non
+
+## D-91 — Client S3 pour le worker (M2 F-11)
+
+- **Date :** 02/10/2026
+- **Décision :** Ajout de `@aws-sdk/client-s3` au worker pour lire les originaux et écrire les dérivés. `S3WorkerStorage` implémente `WorkerStorage`.
+- **Alternatives :** API partagée ou accès FS.
+- **À valider :** non
+
+| Paquet             | Raison                                                                | Licence    |
+| ------------------ | --------------------------------------------------------------------- | ---------- |
+| @aws-sdk/client-s3 | Lecture des originaux et écriture des dérivés depuis le worker (M2).  | Apache-2.0 |

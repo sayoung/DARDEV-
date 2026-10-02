@@ -11,6 +11,7 @@
     "prebuild": "pnpm prisma:generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1142.0",
     "@prisma/client": "^6.19.3",
     "@xplor/shared": "workspace:^",
     "bullmq": "^6.3.11",
