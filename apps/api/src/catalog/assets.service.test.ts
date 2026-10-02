@@ -227,7 +227,7 @@ describe('AssetsService', () => {
       });
 
       expect(creates).toHaveLength(1);
-      expect(creates[0]!.data).toMatchObject({
+      expect(creates[0]?.data).toMatchObject({
         kind: AssetKind.IMAGE,
         mimeType: 'image/jpeg',
         sizeBytes: 1024,
@@ -235,7 +235,7 @@ describe('AssetsService', () => {
       });
 
       expect(updates).toHaveLength(1);
-      expect(updates[0]!.data.originalKey).toBe('uploads/01990000-0000-7000-8000-newasset0001/mon_image--1-.jpg-');
+      expect(updates[0]?.data.originalKey).toBe('uploads/01990000-0000-7000-8000-newasset0001/mon_image--1-.jpg-');
 
       expect(result.assetId).toBe('01990000-0000-7000-8000-newasset0001');
       expect(result.uploadUrl).toBe('https://fake-s3.com/uploads/01990000-0000-7000-8000-newasset0001/mon_image--1-.jpg-?signed=true');

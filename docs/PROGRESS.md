@@ -27,6 +27,7 @@ Plan :
 - Ajouter StorageModule global.
 - Tests unitaires simulant le S3Client.
 - Vérifier lint, typecheck, test.
+- Correction des erreurs lint (@typescript-eslint/no-non-null-assertion) dans assets.service.test.ts effectuées.
 
 ## État des tâches
 
