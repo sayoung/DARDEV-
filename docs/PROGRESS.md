@@ -20,14 +20,10 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-11 (accès base depuis le worker)
+**Objectif :** M2 F-11 (processeur de job, logique pure)
 
 Plan :
-- Ajouter @prisma/client et prisma (dev) au worker.
-- Ajouter un script prisma:generate dans le package.json du worker.
-- Créer PrismaAssetRepository.
-- Écrire des tests unitaires mockés.
-- S'assurer que lint, typecheck, et test sont au vert.
+- Terminer la tâche courante (M2 F-11 processeur de job, logique pure).
 
 ## État des tâches
 
@@ -35,6 +31,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- M2 F-11 (processeur de job, logique pure) : création de `apps/worker/src/processors/panorama.processor.ts` et des tests `panorama.processor.test.ts`. Validation Zod de `PanoramaJobData`, téléchargement via `WorkerStorage`, génération du hash (sha256Hex), génération des 3 dérivés (`generateFlatDerivatives`) et des 128 tuiles (`generateTiles`), puis écriture sur S3. Enfin, marquage `READY` dans la base. lint, typecheck, test OK.
 - M2 F-11 (accès base depuis le worker) : Ajout de @prisma/client au worker. Création de `PrismaAssetRepository` pour lire et mettre à jour le statut des médias directement en base. Ajout des tests unitaires mockés. lint, typecheck, test OK.
 - Design 5/6 (liste des visites) : `ToursPage` réécrite avec les composants shadcn/ui (`Table`, `Button`, `Badge`, `Alert`, `Input`, `Label`, `Select`, `PageHeader`). Bouton « Nouvelle visite » mis en valeur. Filtres de recherche alignés sur une ligne avec `gap-4` et `flex-wrap`. Badge `success` pour le statut publié. Suppression des classes CSS obsolètes (`.tour-*`, `.missing-translation`) de `style.css`. lint, typecheck, test OK.
 - Design 4/6 (listes simples) : `CitiesPage` et `CategoriesPage` réécrites avec les composants shadcn/ui (`Table`, `Button`, `Badge`, `Alert`, `Input`, `Label`). Utilisation de `PageHeader`. Ajout de la couleur `--success` (vert anis) dans la configuration du thème et mise à jour de `Badge`. Correction des espacements RTL (remplacement des marges et espacements absolus par les propriétés logiques `ms-`, `pe-`, `text-start` dans `LocalizedTextField` et `Table`). lint, typecheck, test OK.

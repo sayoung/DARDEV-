@@ -261,6 +261,9 @@ importers:
       '@prisma/client':
         specifier: ^6.19.3
         version: 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
+      '@xplor/shared':
+        specifier: workspace:^
+        version: link:../../packages/shared
       bullmq:
         specifier: ^6.3.11
         version: 6.3.11(ioredis@6.0.0)
