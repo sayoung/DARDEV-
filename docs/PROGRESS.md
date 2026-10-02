@@ -33,6 +33,7 @@ Plan :
 - M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
 - M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
 - M2 API-24 : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
+- M2 F-10 : Règles de validation des panoramas (`validatePanoramaUpload`) avec tests unitaires (lint, typecheck, test OK).
 
 ### En cours
 - M2 F-11 : configuration BullMQ et workers.
