@@ -28,10 +28,10 @@ export function HomePage() {
       listTours({ page: 1, pageSize: 1 })
         .then((res) => { setTotalTours(res.total); })
         .catch(() => { /* ignore */ });
-      listTours({ page: 1, pageSize: 1, status: 'DRAFT' as TourStatus.DRAFT })
+      listTours({ page: 1, pageSize: 1, status: TourStatus.DRAFT })
         .then((res) => { setDraftTours(res.total); })
         .catch(() => { /* ignore */ });
-      listTours({ page: 1, pageSize: 1, status: 'PUBLISHED' as TourStatus.PUBLISHED })
+      listTours({ page: 1, pageSize: 1, status: TourStatus.PUBLISHED })
         .then((res) => { setPublishedTours(res.total); })
         .catch(() => { /* ignore */ });
     }

@@ -157,9 +157,7 @@ describe('réinitialisation et invitation', () => {
     expect(heading).toBeTruthy();
     const form = screen.getByRole('form', { name: resources.ar.auth.setPassword.titleReset });
     expect(form).not.toBeNull();
-    if (form !== null) {
-      expect(getComputedStyle(form).direction).toBe('rtl');
-    }
+    expect(getComputedStyle(form).direction).toBe('rtl');
   });
 });
 
