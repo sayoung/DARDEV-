@@ -5,6 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { forgotPassword } from '../api/client.js';
 import { hrefFor, navigate } from '../router.js';
 
+import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '../components/ui/Card.js';
+import { Input } from '../components/ui/Input.js';
+import { Label } from '../components/ui/Label.js';
+import { Button } from '../components/ui/Button.js';
+import { Alert } from '../components/ui/Alert.js';
+import logoUrl from '../assets/brand/xplor-logo.svg';
+
 type ForgotErrorKey = 'auth.forgot.invalidEmail' | 'auth.errors.request';
 
 export function ForgotPasswordPage() {
@@ -40,37 +47,69 @@ export function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <section className="auth-form" aria-labelledby="forgot-title">
-        <h2 id="forgot-title">{t('auth.forgot.title')}</h2>
-        <p className="auth-status" role="status">
-          {t('auth.forgot.sent')}
-        </p>
-        <a className="auth-link" href={hrefFor('/')} onClick={goToLogin}>
-          {t('auth.forgot.back')}
-        </a>
-      </section>
+      <div className="flex flex-col items-center justify-center min-h-[80vh]">
+        <img src={logoUrl} alt="Xplor" className="h-12 mb-2" />
+        <p className="font-comfortaa text-xl mb-6 text-foreground">Votre voyage commence ici</p>
+        
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle id="forgot-title">{t('auth.forgot.title')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <Alert variant="default" role="status">
+              {t('auth.forgot.sent')}
+            </Alert>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <a 
+              href={hrefFor('/')} 
+              onClick={goToLogin}
+              className="text-primary underline-offset-4 hover:underline text-sm font-medium"
+            >
+              {t('auth.forgot.back')}
+            </a>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <form className="auth-form" aria-labelledby="forgot-title" onSubmit={onSubmit}>
-      <h2 id="forgot-title">{t('auth.forgot.title')}</h2>
-      {errorKey !== null ? (
-        <p className="auth-alert" role="alert">
-          {t(errorKey)}
-        </p>
-      ) : null}
-      <div className="auth-field">
-        <label htmlFor="forgot-email">{t('auth.forgot.email')}</label>
-        <input id="forgot-email" name="email" type="email" autoComplete="username" required />
-      </div>
-      <button type="submit" disabled={pending}>
-        {t('auth.forgot.submit')}
-      </button>
-      <a className="auth-link" href={hrefFor('/')} onClick={goToLogin}>
-        {t('auth.forgot.back')}
-      </a>
-    </form>
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+      <img src={logoUrl} alt="Xplor" className="h-12 mb-2" />
+      <p className="font-comfortaa text-xl mb-6 text-foreground">Votre voyage commence ici</p>
+      
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle id="forgot-title">{t('auth.forgot.title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form aria-labelledby="forgot-title" onSubmit={onSubmit} className="flex flex-col gap-4">
+            {errorKey !== null ? (
+              <Alert variant="destructive">
+                {t(errorKey)}
+              </Alert>
+            ) : null}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="forgot-email">{t('auth.forgot.email')}</Label>
+              <Input id="forgot-email" name="email" type="email" autoComplete="username" required />
+            </div>
+            <Button type="submit" disabled={pending} className="w-full mt-2">
+              {t('auth.forgot.submit')}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <a 
+            href={hrefFor('/')} 
+            onClick={goToLogin}
+            className="text-primary underline-offset-4 hover:underline text-sm font-medium"
+          >
+            {t('auth.forgot.back')}
+          </a>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
