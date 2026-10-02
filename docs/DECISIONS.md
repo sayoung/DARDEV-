@@ -687,3 +687,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | @fontsource/montserrat  | Police principale de la charte Xplor (titres, interface, texte courant).            | OFL     |
 | @fontsource/comfortaa   | Police secondaire pour touches de marque.                                           | OFL     |
 
+
+## D-90 — Dépendance et accès base pour le Worker (M2 F-11)
+
+- **Date :** 02/10/2026
+- **Décision :** Le worker (apps/worker) utilise le client Prisma généré à partir de `apps/api/prisma/schema.prisma` pour lire et mettre à jour le statut des `Asset`. `@prisma/client` a été ajouté au worker avec la même version que l'API. Un script `prisma:generate` a été ajouté au `package.json` du worker pour générer le client.
+- **Alternatives :** Mise à jour par l'API via QueueEvents, ou maintenir un deuxième schéma pour le worker (rejeté car cela viole le principe d'une seule source de vérité pour le schéma et ajoute de la complexité réseau/API).
+- **À valider :** non
