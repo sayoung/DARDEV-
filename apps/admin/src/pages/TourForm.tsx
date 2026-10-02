@@ -189,7 +189,7 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
                 value={c.id}
                 checked={categoryIds.includes(c.id)}
                 onChange={e => { handleCategoryChange(c.id, e.target.checked); }}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                className="h-4 w-4 rounded border-input accent-primary focus-visible:ring-ring"
               />
               {localize(c.name, i18n.language)}
             </label>

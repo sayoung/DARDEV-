@@ -9,6 +9,7 @@ import { MultiAssetPicker } from '../catalog/MultiAssetPicker.js';
 import { Button } from '../components/ui/Button.js';
 import { Input } from '../components/ui/Input.js';
 import { Label } from '../components/ui/Label.js';
+import { Select } from '../components/ui/Select.js';
 import { listTours, listScenes } from '../api/catalog.js';
 
 interface Props {
@@ -90,9 +91,9 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="type">{t('catalog.hotspots.fields.type')}</Label>
-          <select 
+          <Select 
             id="type"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+            
             value={type} 
             onChange={(e) => { 
               const val = z.enum(HotspotType).safeParse(e.target.value);
@@ -102,13 +103,13 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
             {Object.values(HotspotType).map((tVal) => (
               <option key={tVal} value={tVal}>{t(`catalog.hotspots.type.${tVal}`)}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="icon">{t('catalog.hotspots.fields.icon')}</Label>
-          <select 
+          <Select 
             id="icon"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+            
             value={icon} 
             onChange={(e) => { 
               const val = z.enum(HotspotIcon).safeParse(e.target.value);
@@ -118,7 +119,7 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
             {Object.values(HotspotIcon).map((iVal) => (
               <option key={iVal} value={iVal}>{t(`catalog.hotspots.icon.${iVal}`)}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -148,8 +149,8 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
         {type === HotspotType.SCENE_LINK && (
           <div className="space-y-2">
             <Label>{t('catalog.hotspots.fields.targetSceneId')}</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+            <Select
+              
               value={targetSceneId} 
               onChange={(e) => { setTargetSceneId(e.target.value); }}
               required
@@ -158,7 +159,7 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
               {currentTourScenes.map((s) => (
                 <option key={s.id} value={s.id}>{s.title.fr || s.id}</option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
 
@@ -172,8 +173,8 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
                 value={tourSearch} 
                 onChange={(e) => { setTourSearch(e.target.value); }} 
               />
-              <select 
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background mt-2"
+              <Select 
+                className="mt-2"
                 value={targetTourId} 
                 onChange={(e) => { setTargetTourId(e.target.value); }}
                 required
@@ -185,12 +186,12 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
                 {!foundTours.find(ft => ft.id === targetTourId) && targetTourId && (
                   <option value={targetTourId}>{targetTourId}</option>
                 )}
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>{t('catalog.hotspots.fields.targetTourSceneId')} ({t('common.optional')})</Label>
-              <select 
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+              <Select 
+                
                 value={targetTourSceneId} 
                 onChange={(e) => { setTargetTourSceneId(e.target.value); }}
               >
@@ -198,7 +199,7 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
                 {foundTourScenes.map((s) => (
                   <option key={s.id} value={s.id}>{s.title.fr || s.id}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
         )}
