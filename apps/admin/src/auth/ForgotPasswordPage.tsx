@@ -10,7 +10,7 @@ import { Input } from '../components/ui/Input.js';
 import { Label } from '../components/ui/Label.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
-import logoUrl from '../assets/brand/xplor-logo.svg';
+import { AuthLayout } from './AuthLayout.js';
 
 type ForgotErrorKey = 'auth.forgot.invalidEmail' | 'auth.errors.request';
 
@@ -47,10 +47,7 @@ export function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh]">
-        <img src={logoUrl} alt="Xplor" className="h-12 mb-2" />
-        <p className="font-comfortaa text-xl mb-6 text-foreground">Votre voyage commence ici</p>
-        
+      <AuthLayout>
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle id="forgot-title">{t('auth.forgot.title')}</CardTitle>
@@ -70,15 +67,12 @@ export function ForgotPasswordPage() {
             </a>
           </CardFooter>
         </Card>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh]">
-      <img src={logoUrl} alt="Xplor" className="h-12 mb-2" />
-      <p className="font-comfortaa text-xl mb-6 text-foreground">Votre voyage commence ici</p>
-      
+    <AuthLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle id="forgot-title">{t('auth.forgot.title')}</CardTitle>
@@ -109,7 +103,7 @@ export function ForgotPasswordPage() {
           </a>
         </CardFooter>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
 

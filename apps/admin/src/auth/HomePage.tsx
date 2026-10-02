@@ -27,13 +27,13 @@ export function HomePage() {
     if (auth.state.status === 'authenticated') {
       listTours({ page: 1, pageSize: 1 })
         .then((res) => { setTotalTours(res.total); })
-        .catch(() => { /* ignore */ });
+        .catch((err: unknown) => { console.error('Failed to load total tours', err); });
       listTours({ page: 1, pageSize: 1, status: TourStatus.DRAFT })
         .then((res) => { setDraftTours(res.total); })
-        .catch(() => { /* ignore */ });
+        .catch((err: unknown) => { console.error('Failed to load draft tours', err); });
       listTours({ page: 1, pageSize: 1, status: TourStatus.PUBLISHED })
         .then((res) => { setPublishedTours(res.total); })
-        .catch(() => { /* ignore */ });
+        .catch((err: unknown) => { console.error('Failed to load published tours', err); });
     }
   }, [auth.state.status]);
 
@@ -47,7 +47,7 @@ export function HomePage() {
     <section className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold font-sans text-primary">{t('page.home.title')}</h2>
-        <div className="text-right flex items-baseline gap-2">
+        <div className="text-end flex items-baseline gap-2">
           <p className="font-semibold text-lg">{profile.name}</p>
           {profile.name !== translatedRole && (
             <p className="text-sm text-muted-foreground">{translatedRole}</p>
@@ -58,7 +58,7 @@ export function HomePage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium text-muted-foreground">Visites totales</CardTitle>
+            <CardTitle className="text-lg font-medium text-muted-foreground">{t('page.home.stats.total')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalTours ?? '-'}</div>
@@ -66,7 +66,7 @@ export function HomePage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium text-muted-foreground">Brouillons</CardTitle>
+            <CardTitle className="text-lg font-medium text-muted-foreground">{t('page.home.stats.drafts')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{draftTours ?? '-'}</div>
@@ -74,7 +74,7 @@ export function HomePage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium text-muted-foreground">Publiées</CardTitle>
+            <CardTitle className="text-lg font-medium text-muted-foreground">{t('page.home.stats.published')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{publishedTours ?? '-'}</div>
@@ -82,26 +82,26 @@ export function HomePage() {
         </Card>
       </div>
 
-      <h3 className="text-xl font-bold mt-4">Raccourcis</h3>
+      <h3 className="text-xl font-bold mt-4">{t('page.home.shortcuts.title')}</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <a href={hrefFor('/tours')} onClick={(e) => { e.preventDefault(); navigate('/tours'); }} className="block">
           <Card className="hover:bg-muted transition-colors cursor-pointer h-full">
             <CardHeader>
-              <CardTitle className="text-base text-primary">Gérer les visites</CardTitle>
+              <CardTitle className="text-base text-primary">{t('page.home.shortcuts.manageTours')}</CardTitle>
             </CardHeader>
           </Card>
         </a>
         <a href={hrefFor('/cities')} onClick={(e) => { e.preventDefault(); navigate('/cities'); }} className="block">
           <Card className="hover:bg-muted transition-colors cursor-pointer h-full">
             <CardHeader>
-              <CardTitle className="text-base text-primary">Gérer les villes</CardTitle>
+              <CardTitle className="text-base text-primary">{t('page.home.shortcuts.manageCities')}</CardTitle>
             </CardHeader>
           </Card>
         </a>
         <a href={hrefFor('/categories')} onClick={(e) => { e.preventDefault(); navigate('/categories'); }} className="block">
           <Card className="hover:bg-muted transition-colors cursor-pointer h-full">
             <CardHeader>
-              <CardTitle className="text-base text-primary">Gérer les catégories</CardTitle>
+              <CardTitle className="text-base text-primary">{t('page.home.shortcuts.manageCategories')}</CardTitle>
             </CardHeader>
           </Card>
         </a>

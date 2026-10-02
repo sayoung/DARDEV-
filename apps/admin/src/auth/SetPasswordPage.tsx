@@ -10,7 +10,7 @@ import { Input } from '../components/ui/Input.js';
 import { Label } from '../components/ui/Label.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
-import logoUrl from '../assets/brand/xplor-logo.svg';
+import { AuthLayout } from './AuthLayout.js';
 
 type SetPasswordErrorKey =
   | 'auth.setPassword.mismatch'
@@ -60,10 +60,7 @@ export function SetPasswordPage({ kind, token }: { kind: Notice; token: string }
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh]">
-      <img src={logoUrl} alt="Xplor" className="h-12 mb-2" />
-      <p className="font-comfortaa text-xl mb-6 text-foreground">Votre voyage commence ici</p>
-      
+    <AuthLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle id="set-password-title">{t(TITLE_KEY[kind])}</CardTitle>
@@ -110,7 +107,7 @@ export function SetPasswordPage({ kind, token }: { kind: Notice; token: string }
           </a>
         </CardFooter>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
 

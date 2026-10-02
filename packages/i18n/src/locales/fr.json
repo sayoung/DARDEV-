@@ -16,6 +16,7 @@
     }
   },
   "auth": {
+    "slogan": "Votre voyage commence ici",
     "login": {
       "title": "Connexion",
       "email": "Adresse e-mail",
@@ -258,7 +259,18 @@
   },
   "page": {
     "home": {
-      "title": "Accueil"
+      "title": "Accueil",
+      "stats": {
+        "total": "Visites totales",
+        "drafts": "Brouillons",
+        "published": "Publiées"
+      },
+      "shortcuts": {
+        "title": "Raccourcis",
+        "manageTours": "Gérer les visites",
+        "manageCities": "Gérer les villes",
+        "manageCategories": "Gérer les catégories"
+      }
     },
     "cities": {
       "title": "Villes"
