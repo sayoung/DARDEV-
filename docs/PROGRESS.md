@@ -30,9 +30,10 @@ Plan :
 ## État des tâches
 
 ### En cours
-- M2 F-11 : configuration BullMQ et workers.
+- Aucune tâche en cours pour le moment.
 
 ### Fait
+- M2 F-11 (configuration du worker) : extension du schéma Zod avec les variables S3 et DATABASE_URL. Validation complète avec retour des noms de variables manquantes. Tests de loadEnv et du boot mis à jour. lint, typecheck, test OK.
 - M2 F-10 (lecture des dimensions JPEG) : ajout de image-size et sharp, création de readImageDimensions et de ses tests. Lint, typecheck et test OK.
 - M2 F-11 (producteur BullMQ côté API) : ajout de `bullmq` à `apps/api`, création de `PanoramaQueueService` (jeton PANORAMA_QUEUE) et `QueueModule`. Import dans `AppModule`. Tests unitaires écrits. Lint, typecheck et test OK.
 - M2 F-11 (dérivé tiles) : Création de `panorama.tiles.ts` pour extraire les 128 tuiles d'un panorama redimensionné (8192x4096), traité par lots de 8 pour limiter la mémoire. Test `panorama.tiles.test.ts` écrit et fonctionnel (timeout 30s). pnpm lint, typecheck, test OK.
