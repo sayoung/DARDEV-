@@ -97,40 +97,6 @@ h1 {
   color: inherit;
 }
 
-.missing-translation {
-  margin-inline-start: 0.5rem;
-}
-
-.tour-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: end;
-  margin-block-end: 1rem;
-}
-
-.tour-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.tour-search {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.tour-new {
-  margin-inline-start: auto;
-}
-
-.tour-pagination {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  margin-block-start: 1rem;
-}
 
 
 

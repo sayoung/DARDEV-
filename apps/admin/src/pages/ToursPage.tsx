@@ -13,6 +13,14 @@ import {
 import { useAuth } from '../auth/AuthProvider.js';
 import { duplicateTour, listCategories, listCities, listTours } from '../api/catalog.js';
 import { navigate, navigateWithSearch, useAppLocation } from '../router.js';
+import { PageHeader } from '../components/PageHeader.js';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
+import { Button } from '../components/ui/Button.js';
+import { Badge } from '../components/ui/Badge.js';
+import { Alert } from '../components/ui/Alert.js';
+import { Input } from '../components/ui/Input.js';
+import { Label } from '../components/ui/Label.js';
+import { Select } from '../components/ui/Select.js';
 
 const pageSchema = z.number().int().min(1);
 
@@ -159,24 +167,37 @@ export function ToursPage() {
   const duplicating = duplicateInProgressId !== null;
 
   return (
-    <div className="page-tours">
-      <h2>{t('page.tours.title')}</h2>
+    <div className="page-tours space-y-8">
+      <PageHeader
+        title={t('page.tours.title')}
+        actions={
+          canWrite && (
+            <Button
+              onClick={() => {
+                navigate('/tours/new');
+              }}
+            >
+              {t('catalog.tour.actions.new')}
+            </Button>
+          )
+        }
+      />
 
       {fetchError ? (
-        <p className="error" role="alert">
+        <Alert variant="destructive" role="alert">
           {fetchError}
-        </p>
+        </Alert>
       ) : null}
       {actionError ? (
-        <p className="error" role="alert">
+        <Alert variant="destructive" role="alert">
           {actionError}
-        </p>
+        </Alert>
       ) : null}
 
-      <div className="tour-filters">
-        <div className="tour-filter">
-          <label htmlFor="tour-filter-status">{t('catalog.tour.filters.status')}</label>
-          <select
+      <div className="flex flex-wrap items-end gap-4 mb-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tour-filter-status">{t('catalog.tour.filters.status')}</Label>
+          <Select
             id="tour-filter-status"
             value={status ?? ''}
             onChange={(event) => {
@@ -186,12 +207,12 @@ export function ToursPage() {
             <option value="">{t('catalog.tour.filters.allStatus')}</option>
             <option value={TourStatus.DRAFT}>{t('catalog.tour.status.DRAFT')}</option>
             <option value={TourStatus.PUBLISHED}>{t('catalog.tour.status.PUBLISHED')}</option>
-          </select>
+          </Select>
         </div>
 
-        <div className="tour-filter">
-          <label htmlFor="tour-filter-city">{t('catalog.tour.filters.city')}</label>
-          <select
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tour-filter-city">{t('catalog.tour.filters.city')}</Label>
+          <Select
             id="tour-filter-city"
             value={cityId ?? ''}
             onChange={(event) => {
@@ -204,12 +225,12 @@ export function ToursPage() {
                 {localize(city.name, i18n.language)}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <div className="tour-filter">
-          <label htmlFor="tour-filter-category">{t('catalog.tour.filters.category')}</label>
-          <select
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tour-filter-category">{t('catalog.tour.filters.category')}</Label>
+          <Select
             id="tour-filter-category"
             value={categoryId ?? ''}
             onChange={(event) => {
@@ -222,12 +243,12 @@ export function ToursPage() {
                 {localize(category.name, i18n.language)}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <form className="tour-search" onSubmit={handleSearchSubmit}>
-          <label htmlFor="tour-filter-q">{t('catalog.tour.filters.search')}</label>
-          <input
+        <form className="flex flex-col gap-1.5" onSubmit={handleSearchSubmit}>
+          <Label htmlFor="tour-filter-q">{t('catalog.tour.filters.search')}</Label>
+          <Input
             id="tour-filter-q"
             type="search"
             value={qInput}
@@ -236,107 +257,106 @@ export function ToursPage() {
             }}
           />
         </form>
-
-        {canWrite ? (
-          <button
-            type="button"
-            className="tour-new"
-            onClick={() => {
-              navigate('/tours/new');
-            }}
-          >
-            {t('catalog.tour.actions.new')}
-          </button>
-        ) : null}
       </div>
 
       {loading ? (
         <p>{t('common.loading')}</p>
       ) : (
         <>
-          <table>
-            <thead>
-              <tr>
-                <th>{t('catalog.tour.columns.title')}</th>
-                <th>{t('catalog.tour.columns.city')}</th>
-                <th>{t('catalog.tour.columns.status')}</th>
-                <th>{t('catalog.tour.columns.scenes')}</th>
-                <th>{t('catalog.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('catalog.tour.columns.title')}</TableHead>
+                <TableHead>{t('catalog.tour.columns.city')}</TableHead>
+                <TableHead>{t('catalog.tour.columns.status')}</TableHead>
+                <TableHead>{t('catalog.tour.columns.scenes')}</TableHead>
+                <TableHead>{t('catalog.actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {items.map((tour) => {
                 const baseLang = i18n.language.split('-')[0];
                 const isMissingTranslation =
                   baseLang !== 'fr' && !tour.title[baseLang as keyof typeof tour.title];
                 const city = cities.find((item) => item.id === tour.cityId);
                 return (
-                  <tr key={tour.id}>
-                    <td>
-                      <a
-                        href={`/tours/${tour.id}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          navigate(`/tours/${tour.id}`);
-                        }}
-                      >
-                        {localize(tour.title, i18n.language)}
-                      </a>
-                      {isMissingTranslation ? (
-                        <span className="missing-translation">{t('catalog.translation.missing')}</span>
-                      ) : null}
-                    </td>
-                    <td>{city ? localize(city.name, i18n.language) : ''}</td>
-                    <td>{t(`catalog.tour.status.${tour.status}`)}</td>
-                    <td>{tour.sceneCount}</td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigate(`/tours/${tour.id}`);
-                        }}
-                      >
-                        {t('catalog.edit')}
-                      </button>
-                      {canWrite ? (
-                        <button
-                          type="button"
-                          disabled={duplicating}
-                          onClick={() => {
-                            void handleDuplicate(tour.id);
+                  <TableRow key={tour.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`/tours/${tour.id}`}
+                          className="text-primary hover:underline font-semibold"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            navigate(`/tours/${tour.id}`);
                           }}
                         >
-                          {t('catalog.tour.actions.duplicate')}
-                        </button>
-                      ) : null}
-                    </td>
-                  </tr>
+                          {localize(tour.title, i18n.language)}
+                        </a>
+                        {isMissingTranslation ? (
+                          <Badge variant="destructive">{t('catalog.translation.missing')}</Badge>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell>{city ? localize(city.name, i18n.language) : ''}</TableCell>
+                    <TableCell>
+                      <Badge variant={tour.status === TourStatus.PUBLISHED ? 'success' : 'secondary'}>
+                        {t(`catalog.tour.status.${tour.status}`)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{tour.sceneCount}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigate(`/tours/${tour.id}`);
+                          }}
+                        >
+                          {t('catalog.edit')}
+                        </Button>
+                        {canWrite ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={duplicating}
+                            onClick={() => {
+                              void handleDuplicate(tour.id);
+                            }}
+                          >
+                            {t('catalog.tour.actions.duplicate')}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
 
           {totalPages > 1 ? (
-            <div className="tour-pagination">
-              <button
-                type="button"
+            <div className="flex items-center gap-4 mt-4">
+              <Button
+                variant="outline"
                 disabled={page <= 1}
                 onClick={() => {
                   updateFilter('page', String(page - 1));
                 }}
               >
                 {t('catalog.tour.pagination.prev')}
-              </button>
-              <span>{t('catalog.tour.pagination.info', { page, total: totalPages })}</span>
-              <button
-                type="button"
+              </Button>
+              <span className="text-sm text-muted-foreground">{t('catalog.tour.pagination.info', { page, total: totalPages })}</span>
+              <Button
+                variant="outline"
                 disabled={page >= totalPages}
                 onClick={() => {
                   updateFilter('page', String(page + 1));
                 }}
               >
                 {t('catalog.tour.pagination.next')}
-              </button>
+              </Button>
             </div>
           ) : null}
         </>
