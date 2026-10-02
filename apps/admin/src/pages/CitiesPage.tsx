@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   CityCreateSchema,
@@ -11,6 +11,13 @@ import { useAuth } from '../auth/AuthProvider.js';
 import { listCities, createCity, updateCity, deleteCity } from '../api/catalog.js';
 import { LocalizedTextField } from '../catalog/LocalizedTextField.js';
 import { ApiError } from '../api/client.js';
+import { PageHeader } from '../components/PageHeader.js';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
+import { Button } from '../components/ui/Button.js';
+import { Badge } from '../components/ui/Badge.js';
+import { Alert } from '../components/ui/Alert.js';
+import { Input } from '../components/ui/Input.js';
+import { Label } from '../components/ui/Label.js';
 
 export function CitiesPage() {
   const { t, i18n } = useTranslation();
@@ -30,6 +37,8 @@ export function CitiesPage() {
   const [lng, setLng] = useState<number | ''>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     void fetchCities();
@@ -63,6 +72,7 @@ export function CitiesPage() {
     setLat(city.lat);
     setLng(city.lng);
     setFormError(null);
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
   async function handleDelete(city: CityResponse) {
@@ -116,57 +126,70 @@ export function CitiesPage() {
   }
 
   return (
-    <div className="page-cities">
-      <h2>{t('page.cities.title')}</h2>
+    <div className="page-cities space-y-8">
+      <PageHeader
+        title={t('page.cities.title')}
+        actions={
+          canWrite && (
+            <Button onClick={() => { formRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>
+              {t('catalog.city.createTitle')}
+            </Button>
+          )
+        }
+      />
 
-      {fetchError && <p className="error" role="alert">{fetchError}</p>}
+      {fetchError && <Alert variant="destructive" role="alert">{fetchError}</Alert>}
       
       {loading ? (
         <p>{t('common.loading')}</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>{t('catalog.city.name')}</th>
-              <th>{t('catalog.city.region')}</th>
-              <th>{t('catalog.city.lat')}</th>
-              <th>{t('catalog.city.lng')}</th>
-              {canWrite && <th>{t('catalog.actions')}</th>}
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('catalog.city.name')}</TableHead>
+              <TableHead>{t('catalog.city.region')}</TableHead>
+              <TableHead>{t('catalog.city.lat')}</TableHead>
+              <TableHead>{t('catalog.city.lng')}</TableHead>
+              {canWrite && <TableHead>{t('catalog.actions')}</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {cities.map((city) => {
               const baseLang = i18n.language.split('-')[0];
               const isMissingTranslation = !city.name[baseLang as keyof typeof city.name] && baseLang !== 'fr';
               return (
-                <tr key={city.id}>
-                  <td>
-                    <span>{localize(city.name, i18n.language)}</span>
-                    {isMissingTranslation ? (
-                      <span className="missing-translation">{t('catalog.translation.missing')}</span>
-                    ) : null}
-                  </td>
-                  <td>{city.region}</td>
-                  <td>{city.lat}</td>
-                  <td>{city.lng}</td>
+                <TableRow key={city.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span>{localize(city.name, i18n.language)}</span>
+                      {isMissingTranslation && (
+                        <Badge variant="destructive">{t('catalog.translation.missing')}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{city.region}</TableCell>
+                  <TableCell>{city.lat}</TableCell>
+                  <TableCell>{city.lng}</TableCell>
                   {canWrite && (
-                    <td>
-                      <button type="button" onClick={() => { handleEdit(city); }}>{t('catalog.edit')}</button>
-                      <button type="button" onClick={() => { void handleDelete(city); }}>{t('catalog.delete')}</button>
-                    </td>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => { handleEdit(city); }}>{t('catalog.edit')}</Button>
+                        <Button variant="destructive" size="sm" onClick={() => { void handleDelete(city); }}>{t('catalog.delete')}</Button>
+                      </div>
+                    </TableCell>
                   )}
-                </tr>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
 
       {canWrite && (
-        <form onSubmit={(e) => { void handleSubmit(e); }} className="city-form">
-          <h3>{editingId ? t('catalog.city.editTitle') : t('catalog.city.createTitle')}</h3>
+        <form ref={formRef} onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4 max-w-xl">
+          <h3 className="text-xl font-semibold">{editingId ? t('catalog.city.editTitle') : t('catalog.city.createTitle')}</h3>
           
-          {formError && <p className="error" role="alert">{formError}</p>}
+          {formError && <Alert variant="destructive" role="alert">{formError}</Alert>}
           
           <LocalizedTextField
             label={t('catalog.city.name')}
@@ -175,9 +198,9 @@ export function CitiesPage() {
             required
           />
           
-          <div>
-            <label htmlFor="region">{t('catalog.city.region')}</label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="region">{t('catalog.city.region')}</Label>
+            <Input
               id="region"
               value={region}
               onChange={(e) => { setRegion(e.target.value); }}
@@ -185,9 +208,9 @@ export function CitiesPage() {
             />
           </div>
           
-          <div>
-            <label htmlFor="lat">{t('catalog.city.lat')}</label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="lat">{t('catalog.city.lat')}</Label>
+            <Input
               id="lat"
               type="number"
               step="any"
@@ -197,9 +220,9 @@ export function CitiesPage() {
             />
           </div>
           
-          <div>
-            <label htmlFor="lng">{t('catalog.city.lng')}</label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="lng">{t('catalog.city.lng')}</Label>
+            <Input
               id="lng"
               type="number"
               step="any"
@@ -209,15 +232,17 @@ export function CitiesPage() {
             />
           </div>
           
-          <button type="submit" disabled={saving}>
-            {saving ? t('catalog.saving') : t('catalog.save')}
-          </button>
-          
-          {editingId && (
-            <button type="button" onClick={resetForm} disabled={saving}>
-              {t('catalog.cancel')}
-            </button>
-          )}
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={saving}>
+              {saving ? t('catalog.saving') : t('catalog.save')}
+            </Button>
+            
+            {editingId && (
+              <Button type="button" variant="outline" onClick={resetForm} disabled={saving}>
+                {t('catalog.cancel')}
+              </Button>
+            )}
+          </div>
         </form>
       )}
     </div>
