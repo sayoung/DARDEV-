@@ -405,3 +405,26 @@ export const TourValidationResponseSchema = z.object({
   issues: z.array(ValidationIssueSchema),
 });
 export type TourValidationResponse = z.infer<typeof TourValidationResponseSchema>;
+
+/**
+ * Corps de création d'un upload de média (API-24).
+ */
+export const AssetUploadRequestSchema = z.object({
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  kind: z.nativeEnum(AssetKind),
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().int().positive(),
+  filename: z.string().min(1).max(200),
+});
+export type AssetUploadRequest = z.infer<typeof AssetUploadRequestSchema>;
+
+/**
+ * Réponse d'initialisation d'un upload (API-24).
+ */
+export const AssetUploadResponseSchema = z.object({
+  assetId: idSchema,
+  uploadUrl: z.httpUrl(),
+  uploadMethod: z.literal('PUT'),
+  expiresInSeconds: z.number().int().positive(),
+});
+export type AssetUploadResponse = z.infer<typeof AssetUploadResponseSchema>;
