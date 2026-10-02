@@ -654,3 +654,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** rendre le champ optionnel (nécessiterait une migration Prisma) ; le remplir dès le début avec une valeur aléatoire ; générer l'ID UUIDv7 avant l'insertion (nécessiterait une librairie UUIDv7).
 - **À valider :** oui
 
+
+## D-87 — File panorama (contrat partagé) (M2 F-11)
+
+- **Date :** 02/10/2026
+- **Décision :** Création des constantes et types pour la file d'attente BullMQ dédiée aux panoramas (packages/shared/src/panorama-queue.ts). La file s'appelle 'panorama', a 3 tentatives, un backoff de 5000ms et une concurrence de 2. Les clés de stockage dérivées (preview, web, thumb, tiles) sont centralisées pour être partagées par le worker et l'API.
+- **Alternatives :** Placer ces constantes dans apps/worker ou apps/api uniquement (rejeté car elles doivent être partagées pour les soumissions et les lectures).
+- **À valider :** non
+
