@@ -143,7 +143,7 @@ export function LocalizedTextField({
                   setActiveTab(lang);
                 }}
                 onKeyDown={handleKeyDown}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === lang ? 'bg-background text-foreground shadow-sm' : 'hover:bg-muted-foreground/10 hover:text-foreground'}`}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === lang ? 'bg-card text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
                 dir={lang === 'ar' ? 'rtl' : 'ltr'}
               >
                 {t(`catalog.translation.tab.${lang}`)}
@@ -168,8 +168,8 @@ export function LocalizedTextField({
       ) : null}
 
       {required === true ? (
-        <input
-          className="absolute h-0 w-0 p-0 overflow-hidden border-0 bg-transparent text-transparent opacity-0"
+        <Input
+          className="sr-only pointer-events-none"
           value={value.fr}
           onChange={(event) => {
             updateLang('fr', event.target.value);

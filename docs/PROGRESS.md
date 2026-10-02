@@ -35,6 +35,7 @@ Plan :
 - Aucune tâche en cours pour le moment.
 
 ### Fait
+- Design 6c (champs multilingues et sélecteurs de médias) : dans `apps/admin/src/catalog/LocalizedTextField.tsx`, onglets de langue passés aux couleurs du thème, remplacement du `<input>` natif par `Input` de shadcn/ui, et correction de l'input masqué (sr-only pointer-events-none). `AssetPicker` et `MultiAssetPicker` déjà conformes au thème. lint, typecheck, test OK.
 - M2 F-11 (Worker BullMQ, sans toucher main.ts) : création de `apps/worker/src/panorama.worker.ts` qui configure le worker BullMQ pour traiter les panoramas (via `processPanoramaJob`) et gérer l'échec (via `handlePanoramaFailure` et `repo.markError`). Tests ajoutés dans `panorama.worker.test.ts`. lint, typecheck, test OK.
 - M2 F-11 (stockage S3 du worker) : ajout du client `@aws-sdk/client-s3` au worker, implémentation de `S3WorkerStorage` et ajout des tests unitaires mockés. Vérification lint, typecheck, test OK.
 - Design 6/6 : charte Xplor appliquée à tout le back-office.
