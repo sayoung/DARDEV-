@@ -126,6 +126,7 @@ function toAsset(row: Asset): AssetResponse {
     width: row.width,
     height: row.height,
     processingStatus: row.processingStatus,
+    processingLog: row.processingLog,
     copyright: row.copyright,
     createdAt: row.createdAt.toISOString(),
   });

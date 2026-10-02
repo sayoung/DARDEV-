@@ -159,6 +159,7 @@ describe('médias HTTP', () => {
       'id',
       'kind',
       'mimeType',
+      'processingLog',
       'processingStatus',
       'sizeBytes',
       'width',
@@ -172,6 +173,7 @@ describe('médias HTTP', () => {
       width: 800,
       height: 600,
       processingStatus: ProcessingStatus.READY,
+      processingLog: null,
       copyright: 'Libre',
       createdAt: '2026-09-01T00:00:00.000Z',
     });

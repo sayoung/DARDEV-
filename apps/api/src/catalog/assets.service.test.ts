@@ -21,6 +21,7 @@ interface AssetRow {
   width: number | null;
   height: number | null;
   processingStatus: ProcessingStatus;
+  processingLog: string | null;
   copyright: string | null;
   createdAt: Date;
   originalKey: string;
@@ -44,7 +45,7 @@ function row(
   id: string,
   kind: AssetKind,
   createdAt: string,
-  extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus'>> = {},
+  extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus' | 'processingLog'>> = {},
 ): AssetRow {
   return {
     id,
@@ -54,6 +55,7 @@ function row(
     width: extra.width === undefined ? null : extra.width,
     height: extra.height === undefined ? null : extra.height,
     processingStatus: extra.processingStatus ?? ProcessingStatus.PENDING,
+    processingLog: extra.processingLog === undefined ? null : extra.processingLog,
     copyright: extra.copyright === undefined ? null : extra.copyright,
     createdAt: new Date(createdAt),
     originalKey: `unit/${id}`,
@@ -153,6 +155,7 @@ describe('AssetsService', () => {
           width: null,
           height: null,
           processingStatus: ProcessingStatus.PENDING,
+          processingLog: null,
           copyright: null,
           createdAt: '2026-09-02T00:00:00.000Z',
         },
@@ -180,6 +183,7 @@ describe('AssetsService', () => {
         width: 800,
         height: 600,
         processingStatus: ProcessingStatus.READY,
+        processingLog: null,
         copyright: 'Libre',
         createdAt: '2026-09-01T00:00:00.000Z',
       },

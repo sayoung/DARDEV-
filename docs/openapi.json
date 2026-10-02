@@ -3025,6 +3025,12 @@
                               "ERROR"
                             ]
                           },
+                          "processingLog": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "copyright": {
                             "type": [
                               "string",
@@ -3044,6 +3050,7 @@
                           "width",
                           "height",
                           "processingStatus",
+                          "processingLog",
                           "copyright",
                           "createdAt"
                         ]
@@ -3237,6 +3244,12 @@
                         "ERROR"
                       ]
                     },
+                    "processingLog": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "copyright": {
                       "type": [
                         "string",
@@ -3256,6 +3269,7 @@
                     "width",
                     "height",
                     "processingStatus",
+                    "processingLog",
                     "copyright",
                     "createdAt"
                   ]

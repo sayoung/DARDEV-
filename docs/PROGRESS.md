@@ -31,16 +31,17 @@ Plan :
 
 ## État des tâches
 
+### En cours
+- M2 F-11 : configuration BullMQ et workers.
+
 ### Fait
 - M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
 - M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
+- M2 F-11 (2/n) : Ajout du journal d'erreur (migration `asset_processing_log`, champ `processingLog` sur le modèle `Asset` et `AssetResponse`).
 - M2 API-24 (1/2) : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
 - M2 API-24 (2/2) : `StorageService` S3 et `StorageModule` global avec tests unitaires mockés via S3Client simulé (lint, typecheck, test OK).
 - M2 F-10 : Règles de validation des panoramas (`validatePanoramaUpload`) avec tests unitaires (lint, typecheck, test OK).
 - M2 API-24 : Route d'upload `POST /api/v1/admin/assets/upload-url` et logique S3 via `AssetsService`. Lint, typecheck et tests unitaires OK. `test:int` échoue car le service PostgreSQL n'est pas joignable (hors de mon périmètre).
-
-### En cours
-- M2 F-11 : configuration BullMQ et workers.
 
 ### Bloqué
 - Aucun.

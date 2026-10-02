@@ -704,6 +704,7 @@ describe('AssetResponseSchema', () => {
     width: 4000,
     height: 2000,
     processingStatus: ProcessingStatus.READY,
+    processingLog: null,
     copyright: 'Libre de droits',
     createdAt,
   };
@@ -715,6 +716,11 @@ describe('AssetResponseSchema', () => {
   it('accepte width, height et copyright à null', () => {
     const unknown = { ...asset, width: null, height: null, copyright: null };
     expect(AssetResponseSchema.parse(unknown)).toEqual(unknown);
+  });
+
+  it('accepte un processingLog non nul', () => {
+    const withLog = { ...asset, processingLog: 'Traitement en cours...' };
+    expect(AssetResponseSchema.parse(withLog)).toEqual(withLog);
   });
 
   it('refuse un kind inconnu ou une taille négative', () => {
@@ -750,6 +756,7 @@ describe('PaginatedAssetResponseSchema', () => {
           width: null,
           height: null,
           processingStatus: ProcessingStatus.PENDING,
+          processingLog: null,
           copyright: null,
           createdAt: '2026-09-29T12:00:00.000Z',
         },

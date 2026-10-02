@@ -130,6 +130,7 @@ model Asset {
   height           Int?
   contentHash      String
   processingStatus ProcessingStatus @default(PENDING)
+  processingLog    String?
   derivatives      Json             @default("{}")
   copyright        String?
   createdAt        DateTime         @default(now())
