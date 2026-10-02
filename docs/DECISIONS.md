@@ -637,3 +637,12 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
   - `bullmq` (MIT) : Gestion des files d'attente pour le traitement asynchrone des médias (fournit ses propres types, `@types/ioredis` n'est pas nécessaire).
 - **Alternatives :** `jimp` pour les images (plus lent, moins adapté aux très grandes images VR) ; `bull` (version antérieure, moins adaptée à TypeScript).
 - **À valider :** non
+
+## D-85 — Stockage S3 uniquement (M2 API-24)
+
+- **Date :** 02/10/2026
+- **Décision :** Stockage S3 uniquement (MinIO en local) pour les médias. Pas de fournisseur « local » simulé. Utilisation de @aws-sdk/s3-request-presigner (licence Apache-2.0) pour générer les URL présignées d'upload.
+- **Raison :** Simplifie l'architecture en unifiant le pipeline de stockage entre les environnements de développement et de production. Évite de maintenir deux implémentations de stockage.
+- **Alternatives :** Stockage local avec Multer (rejeté car diverge de la production).
+- **À valider :** non
+
