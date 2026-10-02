@@ -20,14 +20,15 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** API-24 (StorageService S3)
+**Objectif :** M2 F-11 (file panorama, contrat partagé)
 
 Plan :
-- Ajouter StorageService avec méthodes S3 (presignPut, head, getRange, delete).
-- Ajouter StorageModule global.
-- Tests unitaires simulant le S3Client.
-- Vérifier lint, typecheck, test.
-- Correction des erreurs lint (@typescript-eslint/no-non-null-assertion) dans assets.service.test.ts effectuées.
+- Créer packages/shared/src/panorama-queue.ts exporté par index.ts
+- Ajouter constantes PANORAMA_QUEUE_NAME, PANORAMA_JOB_ATTEMPTS, PANORAMA_JOB_BACKOFF_MS, PANORAMA_WORKER_CONCURRENCY
+- Ajouter PanoramaJobDataSchema (assetId uuid v7) et le type dérivé
+- Ajouter panoramaDerivativeKeys et panoramaTileKey
+- Ajouter les tests unitaires
+- pnpm lint, typecheck, test OK
 
 ## État des tâches
 
@@ -35,6 +36,7 @@ Plan :
 - M2 F-11 : configuration BullMQ et workers.
 
 ### Fait
+- M2 F-11 (file panorama, contrat partagé) : Création de `packages/shared/src/panorama-queue.ts` avec les types, constantes (file BullMQ) et fonctions utilitaires (`panoramaDerivativeKeys`, `panoramaTileKey`). Ajout de tests unitaires (lint, typecheck, test OK).
 - M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
 - M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
 - M2 F-11 (2/n) : Ajout du journal d'erreur (migration `asset_processing_log`, champ `processingLog` sur le modèle `Asset` et `AssetResponse`).
