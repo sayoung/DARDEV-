@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 03/10/2026 — M3 API-10/API-11 (1/2, type partagé TourGraph) : créer packages/shared/src/tour-graph.ts avec des schémas Zod suivant la section 7.4 du cahier (.orchestrator/do… — Les schémas Zod TourGraph, TourGraphScene et TourGraphHotspot sont conformes à la tâche et à la section 7.4 du cahier, exportés depuis index.ts, avec lint, typecheck et test verts. (9fa8c1e)
 - 03/10/2026 — M3 Suivi (bilan M2, docs uniquement) : M2 a été validé par le porteur à la démo. Créer docs/archive/PROGRESS-M2.md en y copiant le tableau DoD M2 et les section… — Archive M2 créée et PROGRESS.md recentré sur M3 conformément à la demande, docs uniquement, fichier de 1,3 Ko, contrôles verts. (a261afc)
 
 ### Bloqué
