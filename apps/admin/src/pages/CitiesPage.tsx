@@ -126,7 +126,7 @@ export function CitiesPage() {
   }
 
   return (
-    <div className="page-cities space-y-8">
+    <div className="space-y-8">
       <PageHeader
         title={t('page.cities.title')}
         actions={

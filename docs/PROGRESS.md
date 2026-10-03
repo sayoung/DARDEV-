@@ -25,11 +25,13 @@ Jalon précédent : M1, DoD remplie : non, critère 2 : local uniquement, CI non
 **Objectif :** Clôture de M1 et ouverture de M2
 
 Plan :
-- Mettre au propre PROGRESS.md en archivant M1.
-- Lancer les tests locaux (lint, typecheck, test).
+- Appliquer les composants shadcn aux dernières pages (Tours, Cities, Categories, etc.).
+- Retirer les classes CSS faites main (.page-tours, .page-cities, etc.).
+- Nettoyer src/style.css.
+- Adapter et lancer les tests locaux.
 
 État :
-- Nettoyage effectué.
+- Charte graphique et shadcn/ui appliqués avec succès. Test, lint, typecheck verts.
 
 ## État des tâches
 
@@ -37,6 +39,7 @@ Plan :
 - Aucun.
 
 ### Fait
+- Design 6/6 : Charte Xplor appliquée à tout le back-office, nettoyage des classes CSS personnalisées.
 - M2 F-11/F-12 : Mise en file rejouable (signature de enqueue modifiée).
 - M2 F-11 : Démarrage du worker (fonction boot asynchrone).
 - M2 F-11 : Worker BullMQ (panorama.worker.ts).
