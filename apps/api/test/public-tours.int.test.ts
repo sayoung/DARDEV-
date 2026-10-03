@@ -147,11 +147,12 @@ describe('public tours API', () => {
 
     const hotspots = graph.scenes[0]?.hotspots;
     expect(hotspots).toHaveLength(1);
-    const hotspot = hotspots?.[0];
-    expect(hotspot?.type).toBe(HotspotType.SCENE_LINK);
-    if (hotspot?.type === HotspotType.SCENE_LINK) {
-      expect(hotspot.targetSceneId).toBe(jardin.id);
-    }
+    expect(hotspots?.[0]).toEqual(
+      expect.objectContaining({
+        type: HotspotType.SCENE_LINK,
+        targetSceneId: jardin.id,
+      }),
+    );
 
     const bodyStr = response.body;
     expect(bodyStr).not.toContain('int/pano-');
@@ -279,11 +280,13 @@ describe('public tours API', () => {
 
     const hotspots = graph.scenes[0]?.hotspots;
     expect(hotspots).toHaveLength(1);
-    const hotspot = hotspots?.[0];
-    expect(hotspot?.type).toBe(HotspotType.SCENE_LINK);
-    if (hotspot?.type === HotspotType.SCENE_LINK) {
-      expect(hotspot.targetSceneId).toBe(jardin.id);
-    }
+    expect(hotspots?.[0]).toEqual(
+      expect.objectContaining({
+        type: HotspotType.SCENE_LINK,
+        targetSceneId: jardin.id,
+      }),
+    );
+    expect(hotspots?.some((h) => h.type === HotspotType.TOUR_LINK)).toBe(false);
   });
 });
 
