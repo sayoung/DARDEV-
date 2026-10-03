@@ -8,6 +8,7 @@ import { AppModule } from '../app.module.js';
 import { CatalogModule } from '../catalog/catalog.module.js';
 import { AssetsService } from '../catalog/assets.service.js';
 import { parseReprocessArgs } from './reprocess-args.js';
+import { formatCliError } from './format-error.js';
 import { loadEnv } from '../config/env.js';
 
 function loadLocalEnvFile(): void {
@@ -57,11 +58,7 @@ async function bootstrap() {
     await app.close();
     process.exit(0);
   } catch (error) {
-    if (error instanceof Error) {
-      logger.error(`Erreur: ${error.message}`);
-    } else {
-      logger.error('Erreur inattendue.');
-    }
+    logger.error(`Erreur: ${formatCliError(error)}`);
     await app.close();
     process.exit(1);
   }
