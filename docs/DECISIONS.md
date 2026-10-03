@@ -730,3 +730,12 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Raison :** Exécution de scripts TypeScript partageant le code du monorepo.
 - **Alternatives :** `ts-node`, compilation en js au préalable.
 - **À valider :** non
+
+
+## D-95 — e2e en série
+
+- **Date :** 03/10/2026
+- **Décision :** e2e en série, car une connexion supprime les autres sessions de l'utilisateur.
+- **Raison :** AuthService.login (apps/api/src/auth/auth.service.ts, appel à sessions.destroyAllForUser) supprime toutes les sessions de l'utilisateur à chaque connexion.
+- **Alternatives :** Modifier le comportement de sécurité (rejeté).
+- **À valider :** non
