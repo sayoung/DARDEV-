@@ -100,10 +100,10 @@ test.describe('Livrable M1 : création de visite', () => {
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
     await page.getByLabel('Type').selectOption({ label: 'Lien vers une scène' });
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 2');
-    await page.locator('#yaw').fill('1.2'); // yaw
-    await page.locator('#pitch').fill('0'); // pitch
+    await page.getByLabel('Lacet (yaw)').fill('1.2'); // yaw
+    await page.getByLabel('Tangage (pitch)').fill('0'); // pitch
     // Sélectionner la scène cible (index 2 = Scène 2 M1 si on compte l'option vide)
-    await page.locator('#targetSceneId').selectOption({ label: `Scène 2 M1 ${uniqueSuffix}` });
+    await page.getByLabel('Scène cible').selectOption({ label: `Scène 2 M1 ${uniqueSuffix}` });
     
     await readPost(
       page,
@@ -139,7 +139,7 @@ test.describe('Livrable M1 : création de visite', () => {
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
     await page.getByLabel('Type').selectOption({ label: 'Lien vers une scène' });
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 3');
-    await page.locator('#targetSceneId').selectOption({ label: `Scène 3 M1 ${uniqueSuffix}` });
+    await page.getByLabel('Scène cible').selectOption({ label: `Scène 3 M1 ${uniqueSuffix}` });
     await readPost(
       page,
       /\/api\/v1\/admin\/scenes\/[a-f0-9-]+\/hotspots$/,
