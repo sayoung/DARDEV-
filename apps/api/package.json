@@ -15,7 +15,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
-    "openapi": "tsx src/openapi/write-openapi.ts"
+    "openapi": "tsx src/openapi/write-openapi.ts",
+    "cli": "tsx src/cli/main.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
