@@ -1,4 +1,3 @@
-import { LocalizedTextSchema } from '@xplor/shared';
 import { SceneSource } from './tour-graph-scene.js';
 
 export function collectAssetIds(scenes: SceneSource[]): string[] {
@@ -9,9 +8,10 @@ export function collectAssetIds(scenes: SceneSource[]): string[] {
       ids.add(scene.ambientAsset.id);
     }
 
-    const parsedNar = LocalizedTextSchema.safeParse(scene.narration);
-    if (parsedNar.success) {
-      for (const val of Object.values(parsedNar.data)) {
+    if (scene.narration && typeof scene.narration === 'object' && !Array.isArray(scene.narration)) {
+      const nar = scene.narration as Record<string, unknown>;
+      for (const lang of ['fr', 'ar', 'en']) {
+        const val = nar[lang];
         if (typeof val === 'string' && val.length > 0) {
           ids.add(val);
         }

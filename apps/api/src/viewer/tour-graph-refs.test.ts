@@ -144,6 +144,39 @@ describe('tour-graph-refs', () => {
 
       expect(collectAssetIds(scenes)).toEqual([]);
     });
+
+    it('collects partial narration without fr and ignores non-string values', () => {
+      const scenes: SceneSource[] = [
+        {
+          id: 's1',
+          title: {},
+          caption: {},
+          weight: 0,
+          initialYaw: 0,
+          initialPitch: 0,
+          initialZoom: 0,
+          panoramaAsset: { derivatives: {} },
+          ambientAsset: null,
+          narration: { en: 'x', ar: 'y' },
+          hotspots: [],
+        },
+        {
+          id: 's2',
+          title: {},
+          caption: {},
+          weight: 0,
+          initialYaw: 0,
+          initialPitch: 0,
+          initialZoom: 0,
+          panoramaAsset: { derivatives: {} },
+          ambientAsset: null,
+          narration: { fr: 'a', ar: 5 },
+          hotspots: [],
+        },
+      ];
+
+      expect(collectAssetIds(scenes)).toEqual(['a', 'x', 'y']);
+    });
   });
 
   describe('collectTargetTourIds', () => {
