@@ -42,4 +42,11 @@ export class AssetsController {
     requireContentManager(request);
     return this.assets.complete(parseResourceId(id));
   }
+
+  @Post(':id/reprocess')
+  @HttpCode(200)
+  reprocess(@Req() request: SessionRequest, @Param('id') id: string): Promise<AssetResponse> {
+    requireContentManager(request);
+    return this.assets.reprocess(parseResourceId(id));
+  }
 }
