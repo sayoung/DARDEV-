@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 Stockage (bug bloquant de la démo) : la démo pnpm demo:m2 donne 10 panoramas en ERROR « The specified key does not exist ». Cause : .env.example met STORAGE_… — Le worker refuse STORAGE_PROVIDER=local, .env.example passe à s3, la colonne « raison » du script de démo est en place, avec les tests demandés ; lint, typecheck et test sont verts. (5dccb1e)
 - 03/10/2026 — M2 F-11 (admin 6/n, rafraîchissement) : dans MediaPage, tant qu'au moins un asset affiché est PENDING ou PROCESSING, recharger la page courante toutes les 3 s (… — Polling 3 s de MediaPage et fonction pure needsPolling livrés avec leurs tests, contrôles verts ; réserves mineures : spinner absent lors d'un changement de page après un rafraîchissement, polling arr… (00e214e)
 - 03/10/2026 — M2 API-24 (admin 5/n, actions) : dans le tableau de MediaPage, ajouter une colonne Actions avec deux boutons : « Retraiter » (`media.actions.reprocess`), qui ap… — Colonne Actions (Retraiter/Supprimer) conforme à la demande, 409 gérée, 4 tests ajoutés, lint/typecheck/test verts. (026246a)
 - 03/10/2026 — M2 F-10/API-24 (admin 4/n, envoi) : créer apps/admin/src/catalog/PanoramaUploader.tsx : un champ fichier (Label + Input type=file, accept="image/jpeg", multiple… — PanoramaUploader envoie en série avec progression et erreurs par fichier, il est intégré dans MediaPage, le test demandé est présent, les chaînes fr existent et les contrôles sont verts. (b79702a)
@@ -79,7 +80,6 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - M2 API-24 (1/2) : Schémas partagés d'upload de médias.
 - M2 API-24 (2/2) : StorageService S3 et StorageModule global.
 - M2 F-10 : Règles de validation des panoramas.
-- M2 API-24 : Route d'upload POST /api/v1/admin/assets/upload-url.
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
