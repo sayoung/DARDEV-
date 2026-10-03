@@ -9,3 +9,4 @@
 - M2 F-11 (2/n) : Ajout du journal d'erreur.
 - M2 F-11 (1/n) : Initialisation du worker et module des dérivés.
 - M2 F-11 : File panorama, contrat partagé (panorama-queue.ts).
+- M2 F-11 : Grille des tuiles (tileGrid).
