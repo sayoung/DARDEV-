@@ -400,8 +400,8 @@ describe('médias HTTP', () => {
       },
     });
     expect(conflict.statusCode).toBe(409);
-    expect(parseJson(conflict.body)).toEqual({
-      error: expect.objectContaining({ code: 'ASSET_IN_USE' }),
+    expect(parseJson(conflict.body)).toMatchObject({
+      error: { code: 'ASSET_IN_USE' },
     });
 
     // 4. Succès sur un asset libre (204)

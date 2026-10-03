@@ -32,7 +32,7 @@ Plan :
 - Lancer lint, typecheck, et test:int.
 
 État :
-lint, typecheck et tests OK.
+Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lint, typecheck et tests 100% OK.
 
 ## État des tâches
 
