@@ -20,14 +20,17 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Mise à jour des preuves M1 DoD
+**Objectif :** Mise à jour des sections de l'archive M1 DoD (tâche 2/3)
 
 Plan :
-- Lancer `gh run list` pour vérifier la CI.
-- Lancer `pnpm test`, `pnpm lint`, `pnpm typecheck`.
-- Mettre à jour le tableau "Definition of Done" dans `docs/archive/PROGRESS-M1.md` avec les preuves exactes et sans modifier de code.
-- Vérifier les règles sur la DoD non remplie à cause de la CI.
-- Tâche terminée.
+- Lire les tâches M1 actuelles.
+- Ajouter un résumé d'une ligne par lot dans `docs/archive/PROGRESS-M1.md`.
+- Compléter les sections "Bloqué", "Risques" et "En cours".
+- Lancer `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+
+État :
+- `docs/archive/PROGRESS-M1.md` mis à jour selon les consignes de la tâche 2/3.
+- lint, typecheck, test OK.
 
 ## État des tâches
 
@@ -35,7 +38,8 @@ Plan :
 - Aucun.
 
 ### Fait
-- M1 DoD : mise à jour des preuves dans l'archive docs/archive/PROGRESS-M1.md (vérification de la CI échouée, exécution de lint, typecheck, tests locaux).
+- M1 DoD (2/3) : mise à jour des sections Fait, En cours, Bloqué et Risques dans `docs/archive/PROGRESS-M1.md`. lint, typecheck, test OK.
+- M1 DoD (1/3) : mise à jour des preuves dans l'archive docs/archive/PROGRESS-M1.md (vérification de la CI échouée, exécution de lint, typecheck, tests locaux).
 - M1 Playwright (parcours du livrable) : création et validation du test end-to-end `e2e/m1-livrable.spec.ts` pour la création d'une visite avec scènes et hotspots. Mise à jour de `docs/DEMO_M1.md` et `docs/PROGRESS.md` (critère 8). lint, typecheck, test, test:e2e OK.
 - M1 D-83 (4/5, écrans de liste, finition) : dans `apps/admin/src/pages/ToursPage.tsx`, remplacement du composant `Badge` en dur pour le statut par le composant `StatusBadge` existant. Le `Badge` de l'indicateur de traduction manquante est conservé. Tests non modifiés car ils n'utilisent pas le sélecteur `data-testid`. lint, typecheck, test OK.
 - M1 D-83 (3b/5, tests du tableau de bord d'accueil) : création de `apps/admin/src/auth/HomePage.test.tsx` (Vitest, jsdom) pour tester les compteurs, l'alerte 500 et l'accès au bouton "Nouvelle visite" selon le rôle. Adaptation des tests selon les retours de revue (valeurs non ambiguës, association avec les libellés via within, tests séparés par rôle, mock de la pagination corrigé). lint, typecheck, test OK.
