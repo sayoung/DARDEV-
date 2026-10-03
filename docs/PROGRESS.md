@@ -77,3 +77,6 @@ Plan :
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest, fastify).
+
+### Fait (Suite)
+- M0 NF-08 : Exécution et correction des tests d'intégration (test:int). Base xplor_test recréée pour purger le schéma des contraintes résiduelles (createdById sur Asset). Correction de AssetUploadResponseSchema (z.string().url() au lieu de z.httpUrl()) pour autoriser le port local de MinIO. pnpm lint, typecheck, test, et test:int (56 tests verts) passent.

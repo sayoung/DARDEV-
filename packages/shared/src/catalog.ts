@@ -421,7 +421,7 @@ export type AssetUploadRequest = z.infer<typeof AssetUploadRequestSchema>;
  */
 export const AssetUploadResponseSchema = z.object({
   assetId: idSchema,
-  uploadUrl: z.httpUrl(),
+  uploadUrl: z.url(),
   uploadMethod: z.literal('PUT'),
   expiresInSeconds: z.number().int().positive(),
 });

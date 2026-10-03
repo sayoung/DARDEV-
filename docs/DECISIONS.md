@@ -705,3 +705,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | Paquet             | Raison                                                                | Licence    |
 | ------------------ | --------------------------------------------------------------------- | ---------- |
 | @aws-sdk/client-s3 | Lecture des originaux et écriture des dérivés depuis le worker (M2).  | Apache-2.0 |
+
+## D-78 — Zod HTTP URL et environnements locaux (M0)
+
+- **Date :** 03/10/2026
+- **Décision :** Remplacement de z.httpUrl() par z.string().url() dans AssetUploadResponseSchema. z.httpUrl() exige un nom de domaine avec TLD (pattern regex strict), ce qui fait échouer les tests d'intégration (et l'usage en développement) avec des URL vers http://localhost:9000 (MinIO local). Le changement s'applique uniquement à l'URL système générée (uploadUrl) ; les URL saisies par l'utilisateur (comme pour Hotspot) restent validées par z.httpUrl() pour obliger un nom de domaine public et prévenir XSS.
+- **Alternatives :** Configurer un faux TLD dans /etc/hosts pour MinIO en dev ; mocker le retour de StorageService dans les tests HTTP (ce qui réduirait la valeur de test:int).
+- **À valider :** oui
