@@ -75,10 +75,13 @@ test.describe('Livrable M1 : création de visite', () => {
         { message: 'Moins de 3 panoramas prêts disponibles' }
       ).toBeGreaterThanOrEqual(3);
 
-      const allOptions = await panoramaSelect.locator('option').allInnerTexts();
-      const readyOptions = allOptions.filter((text) => text.trim().endsWith('Prêt'));
+      const allTexts = await panoramaSelect.locator('option').allInnerTexts();
+      const readyIndices = allTexts
+        .map((text, index) => ({ text, index }))
+        .filter(({ text }) => text.trim().endsWith('Prêt'))
+        .map(({ index }) => index);
 
-      await panoramaSelect.selectOption({ label: readyOptions[i - 1] });
+      await panoramaSelect.selectOption({ index: readyIndices[i - 1] });
 
       await readPost(
         page,
