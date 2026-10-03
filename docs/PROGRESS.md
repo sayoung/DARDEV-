@@ -6,33 +6,23 @@ Exigences : F-10, F-11, F-12, NF-03, API-24 (partiel, selon section 9 du cahier)
 
 Livrable : Upload de 10 panoramas Insta360 → tous READY.
 
-| # | Critère | État |
-|---|---|---|
-| 1 | Toutes les exigences implémentées et CA vérifiés | à faire |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | à faire |
-| 3 | pnpm lint, pnpm typecheck sans erreur | à faire |
-| 4 | Migrations appliquées, seed à jour | à faire |
-| 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
-| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | à faire |
-| 7 | Démo avec données pertinentes | à faire |
-| 8 | Démo au porteur et retours consignés | à faire |
+| # | Critère | État | Preuve |
+|---|---|---|---|
+| 1 | Toutes les exigences implémentées et CA vérifiés | fait | OK (panorama-rules.ts, assets.service.ts) |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | écart | OK (642 tests), CI distante à confirmer par le porteur. test:e2e ÉCHEC |
+| 3 | pnpm lint, pnpm typecheck sans erreur | fait | pnpm lint, pnpm typecheck OK |
+| 4 | Migrations appliquées, seed à jour | fait | pnpm db:migrate, pnpm db:seed OK |
+| 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) | - |
+| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | fait | docs/openapi.json OK |
+| 7 | Démo avec données pertinentes | fait | docs/DEMO_M2.md OK |
+| 8 | Démo au porteur et retours consignés | à faire | (démo au porteur) |
+
+DoD M2 remplie : non (hors critère 8)
 
 Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confirmée, détail dans docs/archive/PROGRESS-M1.md)
 - e2e local OK (03/10/2026)
 
-## Session en cours
-
-**Date :** 03/10/2026
-**Objectif :** M2 API-24 : Ajouter la route DELETE `/api/v1/admin/assets/:id`
-
-Plan :
-- Ajouter le contrôleur `remove` dans `AssetsController` (appelle `AssetsService.remove`).
-- Ajouter les tests HTTP (204 libre, 409 utilisé, 403 gestionnaire, 403 pas de CSRF).
-- Mettre à jour OpenAPI.
-- Lancer lint, typecheck, et test:int.
-
-État :
-Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lint, typecheck et tests 100% OK.
+## Contrôle DoD M2
 
 ## État des tâches
 
@@ -83,6 +73,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
+- M2 critère 2, pnpm test:e2e en échec (getByText('Administrateur').first() non visible)
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
