@@ -261,7 +261,20 @@
   },
   "media": {
     "title": "Médiathèque",
-    "subtitle": "Gérez les images, panoramas et sons."
+    "subtitle": "Gérez les images, panoramas et sons.",
+    "empty": "Aucun média trouvé.",
+    "columns": {
+      "date": "Date de création",
+      "dimensions": "Dimensions",
+      "size": "Taille (Mo)",
+      "status": "Statut"
+    },
+    "status": {
+      "PENDING": "En attente",
+      "PROCESSING": "En cours",
+      "READY": "Prêt",
+      "ERROR": "Erreur"
+    }
   },
   "page": {
     "home": {
