@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 03/10/2026 — M3 API-11 (5a/6, URL des médias audio) : dans apps/api/src/viewer/tour-graph-scene.ts, renommer `SceneCtx.narrationById` en `assetUrlById: ReadonlyMap<string, s… — Renommage assetUrlById et ambientAsset {id} corrects, test ambiance absente ajouté, décision D-99 consignée, contrôles verts. (b9a1f01)
 - 03/10/2026 — M3 API-11 (4b/5, mappeur de visite, logique pure) : créer apps/api/src/viewer/tour-graph.ts avec `toTourGraph(source: TourSource, ctx: SceneCtx): TourGraph`, en… — toTourGraph conforme à la spécification (repli fr, location null, erreur startSceneId, availableOffline selon l'audience), tests pertinents et contrôles verts. (30cbfec)
 - 03/10/2026 — M3 API-11 (4a/5, mappeur de scène, logique pure) : créer apps/api/src/viewer/tour-graph-scene.ts. Il exporte les types locaux `SceneSource` (id, title/caption/l… — Mappeur de scène conforme à la spécification (repli fr, narration, ambiance, hotspots filtrés, validation Zod) avec les 4 tests demandés ; lint, typecheck et test sont verts. (3878cea)
 - 03/10/2026 — M3 API-11 (3c/5, mappeur de hotspots, TOUR_LINK, URL et décision) : dans apps/api/src/viewer/tour-graph-hotspot.ts, ajouter TOUR_LINK : retourne null si targetT… — TOUR_LINK et URL sont implémentés avec les garde-fous kiosk et httpUrl, les tests demandés sont ajoutés et D-97 est consigné ; lint, typecheck et test sont verts. (14a1ab6)
