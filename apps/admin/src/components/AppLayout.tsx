@@ -141,8 +141,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </nav>
       </aside>
 
-      <div className="flex-1 flex flex-col bg-muted">
-        <header className="bg-background border-b border-border px-6 py-4 flex justify-between items-center">
+      <div className="flex-1 flex flex-col bg-background">
+        <header className="bg-card border-b border-border px-6 py-4 flex justify-between items-center">
           <div className="flex-1"></div>
           <div className="flex items-center gap-4">
             <nav aria-label={t('common.language.label')}>

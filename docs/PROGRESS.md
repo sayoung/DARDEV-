@@ -31,7 +31,7 @@ Plan :
 - Adapter et lancer les tests locaux.
 
 État :
-- Charte graphique et shadcn/ui appliqués avec succès. Test, lint, typecheck verts.
+- Charte graphique et shadcn/ui appliqués avec succès. Test, lint, typecheck verts. Terminé.
 
 ## État des tâches
 
