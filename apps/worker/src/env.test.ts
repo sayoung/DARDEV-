@@ -13,7 +13,12 @@ describe('loadEnv', () => {
   };
 
   it('accepte les variables valides', () => {
-    expect(loadEnv(validEnv)).toEqual(validEnv);
+    expect(loadEnv(validEnv)).toEqual({ ...validEnv, STORAGE_PROVIDER: 's3' });
+  });
+
+  it('refuse STORAGE_PROVIDER=local avec un message clair', () => {
+    const withLocal = { ...validEnv, STORAGE_PROVIDER: 'local' };
+    expect(() => loadEnv(withLocal)).toThrow(/Le worker ne supporte pas STORAGE_PROVIDER=local/);
   });
 
   it('refuse une variable absente ou vide et la nomme', () => {

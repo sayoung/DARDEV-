@@ -28,5 +28,10 @@ export function loadEnv(source: Record<string, string | undefined>): WorkerEnv {
     const missingKeys = parsed.error.issues.map((issue) => issue.path.join('.')).join(', ');
     throw new Error(`Invalid environment variables: ${missingKeys}`);
   }
+  
+  if (parsed.data.STORAGE_PROVIDER === 'local') {
+    throw new Error(`Le worker ne supporte pas STORAGE_PROVIDER=local. Utilisez s3 (pas de stockage disque partagé entre API et worker).`);
+  }
+
   return parsed.data;
 }
