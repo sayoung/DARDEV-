@@ -721,10 +721,4 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Aucune.
 - **À valider :** non
 
-## D-94 — Mise à jour des actions GitHub vers Node 24 (CI M1)
-
-- **Date :** 03/10/2026
-- **Décision :** Mise à jour des actions de .github/workflows/ci.yml vers leurs versions majeures compatibles Node 24 : \ctions/checkout@v7\, \pnpm/action-setup@v6\, \ctions/setup-node@v7\, \ctions/upload-artifact@v7\. Les paramètres (dont \include-hidden-files\) restent inchangés car ils n'ont pas été renommés d'après les notes de version de ces actions.
-- **Alternatives :** Rester sur Node 20 / actions v4, ce qui entraîne des avertissements de dépréciation dans la CI.
-- **À valider :** non
-
+- [03/10/2026] Mise à jour des actions CI vers Node 24 : actions/checkout@v7, pnpm/action-setup@v6, actions/setup-node@v7, actions/upload-artifact@v7. À valider : non
