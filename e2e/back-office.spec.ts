@@ -52,8 +52,8 @@ test('une connexion réussie affiche le nom et le rôle, puis la déconnexion re
 
   await submitLogin(page);
 
-  await expect(page.getByText(api.profile.name, { exact: true })).toBeVisible();
-  await expect(page.getByText(ROLE_LABEL[api.profile.role], { exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByText(api.profile.name, { exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByText(ROLE_LABEL[api.profile.role])).toBeVisible();
   await expect(page.getByRole('heading', { name: fr.auth.login.title, exact: true })).toHaveCount(
     0,
   );
