@@ -5,6 +5,9 @@ import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { StorageService, STORAGE_SERVICE } from '../storage/storage.service.js';
+import { collectAssetIds, collectTargetTourIds } from './tour-graph-refs.js';
+import type { SceneSource } from './tour-graph-scene.js';
+import { toTourGraph, type TourSource } from './tour-graph.js';
 
 @Injectable()
 export class ViewerService {
@@ -50,7 +53,105 @@ export class ViewerService {
   }
 
   public async getPublicGraph(shareToken: string, lang: Lang): Promise<TourGraph> {
-    await this.loadPublicTour(shareToken);
-    throw new Error('not implemented for lang ' + lang);
+    const tour = await this.loadPublicTour(shareToken);
+
+    const scenes: SceneSource[] = tour.scenes.map((s) => ({
+      id: s.id,
+      title: s.title,
+      caption: s.caption,
+      weight: s.weight,
+      initialYaw: s.initialYaw,
+      initialPitch: s.initialPitch,
+      initialZoom: s.initialZoom,
+      panoramaAsset: { derivatives: s.panoramaAsset.derivatives },
+      ambientAsset: s.ambientAsset ? { id: s.ambientAsset.id } : null,
+      narration: s.narration,
+      hotspots: s.hotspots.map((h) => ({
+        id: h.id,
+        type: h.type,
+        yaw: h.yaw,
+        pitch: h.pitch,
+        label: h.label,
+        targetSceneId: h.targetSceneId,
+        targetTourId: h.targetTourId,
+        targetTourSceneId: h.targetTourSceneId,
+        body: h.body,
+        mediaAssetIds: h.mediaAssetIds,
+        url: h.url,
+        icon: h.icon,
+        arrivalYaw: h.arrivalYaw,
+      })),
+    }));
+
+    const source: Omit<TourSource, 'linkedTours'> = {
+      id: tour.id,
+      contentVersion: tour.contentVersion,
+      title: tour.title,
+      summary: tour.summary,
+      practicalInfo: tour.practicalInfo,
+      startSceneId: tour.startSceneId,
+      lat: tour.lat,
+      lng: tour.lng,
+      city: { name: tour.city.name },
+      categories: tour.categories.map((c) => ({ category: { name: c.category.name } })),
+      coverAsset: { derivatives: tour.coverAsset.derivatives },
+      scenes,
+    };
+
+    const assetIds = collectAssetIds(scenes);
+    const media = new Map<string, { url: string; mimeType: string }>();
+    const assetUrlById = new Map<string, string>();
+
+    if (assetIds.length > 0) {
+      const assets = await this.prisma.asset.findMany({
+        where: { id: { in: assetIds }, processingStatus: 'READY' },
+      });
+      for (const asset of assets) {
+        const url = await this.storage.getSignedUrl(asset.originalKey, 3600);
+        media.set(asset.id, { url, mimeType: asset.mimeType });
+        assetUrlById.set(asset.id, url);
+      }
+    }
+
+    const targetTourIds = collectTargetTourIds(scenes);
+    let linkedTours: TourSource['linkedTours'] = [];
+    let allowedTourIds = new Set<string>();
+
+    if (targetTourIds.length > 0) {
+      const tours = await this.prisma.tour.findMany({
+        where: {
+          id: { in: targetTourIds },
+          status: 'PUBLISHED',
+          publicShare: true,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          title: true,
+          shareToken: true,
+          coverAsset: true,
+        },
+      });
+
+      linkedTours = tours.map((t) => ({
+        id: t.id,
+        title: t.title,
+        shareToken: t.shareToken,
+        coverAsset: { derivatives: t.coverAsset.derivatives },
+      }));
+      allowedTourIds = new Set(tours.map((t) => t.id));
+    }
+
+    return toTourGraph(
+      { ...source, linkedTours },
+      {
+        lang,
+        audience: 'public',
+        mediaBase: this.env.MEDIA_PUBLIC_URL,
+        media,
+        assetUrlById,
+        allowedTourIds,
+      },
+    );
   }
 }
