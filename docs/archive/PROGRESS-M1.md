@@ -7,18 +7,20 @@
 Contenu : schéma Prisma, API CRUD, écrans admin, traduction, règles de validation.
 Livrable : création d'une visite de 3 scènes et hotspots via le back-office.
 
-Definition of Done du jalon : **remplie**.
+Definition of Done du jalon : **non remplie (critère 2)**.
 
 | #   | Critère | État |
 | --- | --- | --- |
-| 1 | Toutes les exigences implémentées et CA vérifiés | Fait, test:e2e OK, 1 spec vert |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | Fait, test:e2e OK, 1 spec vert |
-| 3 | pnpm lint, pnpm typecheck sans erreur | Fait |
-| 4 | Migrations appliquées, seed à jour | Fait |
+| 1 | Toutes les exigences implémentées et CA vérifiés | Fait (e2e/m1-livrable.spec.ts, commit bd03c40 fusion 2f91947, docs/DEMO_M1.md) |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | local uniquement, CI non confirmée (aucun run success sur 2f91947 ou un commit postérieur ; 529 tests via pnpm test) |
+| 3 | pnpm lint, pnpm typecheck sans erreur | Fait (pnpm lint et pnpm typecheck à 0 erreur sur 2f91947) |
+| 4 | Migrations appliquées, seed à jour | Fait (migrations apps/api/prisma/migrations 20260929022909_init_users, 20260929043449_user_tokens, 20260929172452_content_model et 20260929183235_hotels_kiosks, pnpm db:seed) |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
-| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | Fait |
-| 7 | Démo avec données pertinentes | Fait |
-| 8 | Démo au porteur et retours consignés | Fait (01/10/2026) : vérifications manuelles complètes documentées en session. |
+| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | Fait (docs/DECISIONS.md D-65 à D-83 et docs/openapi.json) |
+| 7 | Démo avec données pertinentes | Fait (docs/DEMO_M1.md et la visite seedée « Visite de démonstration M1 » (3 scènes)) |
+| 8 | Démo au porteur et retours consignés | Fait (démo validée par le porteur le 01/10/2026) |
+
+DoD M1 remplie : non, critère 2 : local uniquement, CI non confirmée
 
 ## Session en cours
 
