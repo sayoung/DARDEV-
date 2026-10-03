@@ -64,7 +64,24 @@ test.describe('Livrable M1 : création de visite', () => {
       await page.getByRole('button', { name: 'Ajouter une scène' }).click();
       await page.getByRole('textbox', { name: 'Titre' }).fill(`Scène ${String(i)} M1 ${uniqueSuffix}`);
       
-      await page.getByLabel('Panorama').selectOption({ index: i }); // On prend les 3 premiers panoramas du seed
+      const panoramaSelect = page.getByLabel('Panorama');
+      await expect(panoramaSelect).toBeVisible();
+
+      await expect.poll(
+        async () => {
+          const texts = await panoramaSelect.locator('option').allInnerTexts();
+          return texts.filter((text) => text.trim().endsWith('Prêt')).length;
+        },
+        { message: 'Moins de 3 panoramas prêts disponibles' }
+      ).toBeGreaterThanOrEqual(3);
+
+      const allTexts = await panoramaSelect.locator('option').allInnerTexts();
+      const readyIndices = allTexts
+        .map((text, index) => ({ text, index }))
+        .filter(({ text }) => text.trim().endsWith('Prêt'))
+        .map(({ index }) => index);
+
+      await panoramaSelect.selectOption({ index: readyIndices[i - 1] });
 
       await readPost(
         page,
