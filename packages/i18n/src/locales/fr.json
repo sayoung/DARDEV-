@@ -274,6 +274,13 @@
       "PROCESSING": "En cours",
       "READY": "Prêt",
       "ERROR": "Erreur"
+    },
+    "upload": {
+      "submit": "Envoyer",
+      "uploading": "En cours",
+      "done": "Envoyé",
+      "error": "Erreur",
+      "select_files": "Sélectionner des fichiers"
     }
   },
   "page": {

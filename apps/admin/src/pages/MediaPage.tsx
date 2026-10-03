@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssetKind, ProcessingStatus, z, type PaginatedAssetResponse } from '@xplor/shared';
 import { listAssets } from '../api/catalog.js';
@@ -7,7 +7,9 @@ import { PageHeader } from '../components/PageHeader.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
+import { Card, CardContent } from '../components/ui/Card.js';
 import { ProcessingStatusBadge } from '../components/ProcessingStatusBadge.js';
+import { PanoramaUploader } from '../catalog/PanoramaUploader.js';
 
 const pageSchema = z.number().int().min(1);
 
@@ -30,36 +32,42 @@ export function MediaPage() {
   const [assetsData, setAssetsData] = useState<PaginatedAssetResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    let mounted = true;
-    async function fetchAssets() {
-      try {
-        setFetchError(null);
-        setLoading(true);
-        const data = await listAssets({
-          kind: AssetKind.PANORAMA,
-          page,
-          pageSize,
-        });
-        if (mounted) {
-          setAssetsData(data);
-        }
-      } catch {
-        if (mounted) {
-          setFetchError(t('catalog.asset.error'));
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+  const fetchAssets = useCallback(async (mounted: { current: boolean }) => {
+    try {
+      setFetchError(null);
+      setLoading(true);
+      const data = await listAssets({
+        kind: AssetKind.PANORAMA,
+        page,
+        pageSize,
+      });
+      if (mounted.current) {
+        setAssetsData(data);
+      }
+    } catch {
+      if (mounted.current) {
+        setFetchError(t('catalog.asset.error'));
+      }
+    } finally {
+      if (mounted.current) {
+        setLoading(false);
       }
     }
-    void fetchAssets();
+  }, [page, pageSize, t]);
+
+  useEffect(() => {
+    const mounted = { current: true };
+    void fetchAssets(mounted);
     return () => {
-      mounted = false;
+      mounted.current = false;
     };
-  }, [page, t]);
+  }, [fetchAssets, refreshKey]);
+
+  const handleUploaded = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   function updatePage(newPage: number) {
     const next = new URLSearchParams(searchParams);
@@ -77,6 +85,12 @@ export function MediaPage() {
         title={t('media.title')}
         subtitle={t('media.subtitle')}
       />
+
+      <Card>
+        <CardContent className="pt-6">
+          <PanoramaUploader onUploaded={handleUploaded} />
+        </CardContent>
+      </Card>
 
       {fetchError ? (
         <Alert variant="destructive" role="alert">
