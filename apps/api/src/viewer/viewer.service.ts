@@ -49,9 +49,8 @@ export class ViewerService {
     return tour;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async getPublicGraph(shareToken: string, _lang: Lang): Promise<TourGraph> {
+  public async getPublicGraph(shareToken: string, lang: Lang): Promise<TourGraph> {
     await this.loadPublicTour(shareToken);
-    throw new Error('not implemented');
+    throw new Error('not implemented for lang ' + lang);
   }
 }

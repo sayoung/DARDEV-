@@ -2,18 +2,22 @@ import { NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Env } from '../config/env.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { ViewerService } from './viewer.service.js';
 
 describe('ViewerService', () => {
   let viewerService: ViewerService;
   
+  const findFirstMock = vi.fn();
+
   const prismaMock = {
     tour: {
-      findFirst: vi.fn(),
+      findFirst: findFirstMock,
     },
-  };
+  } as unknown as PrismaService;
   
-  const storageMock = {};
+  const storageMock = {} as unknown as StorageService;
   
   const envMock: Pick<Env, 'MEDIA_PUBLIC_URL'> = {
     MEDIA_PUBLIC_URL: 'https://cdn.example.com',
@@ -22,29 +26,30 @@ describe('ViewerService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     
-    // @ts-expect-error Mock partiel pour les tests unitaires sans typage forcé (as)
     viewerService = new ViewerService(prismaMock, storageMock, envMock);
   });
 
   describe('getPublicGraph', () => {
     it('should throw NotFoundException if tour is not found', async () => {
-      prismaMock.tour.findFirst.mockResolvedValue(null);
+      findFirstMock.mockResolvedValue(null);
 
       await expect(viewerService.getPublicGraph('fake-token', 'fr')).rejects.toThrow(
         NotFoundException,
       );
       
-      expect(prismaMock.tour.findFirst).toHaveBeenCalledTimes(1);
+      expect(findFirstMock).toHaveBeenCalledTimes(1);
     });
 
     it('should query Prisma with correct parameters', async () => {
-      prismaMock.tour.findFirst.mockResolvedValue({ id: 'some-tour-id' });
+      // Mock d'un objet partiel
+      const fakeTour = { id: 'some-tour-id' };
+      findFirstMock.mockResolvedValue(fakeTour);
 
       await expect(viewerService.getPublicGraph('fake-token', 'fr')).rejects.toThrow(
-        'not implemented',
+        'not implemented for lang fr',
       );
 
-      expect(prismaMock.tour.findFirst).toHaveBeenCalledWith(
+      expect(findFirstMock).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
             shareToken: 'fake-token',
