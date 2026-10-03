@@ -113,7 +113,7 @@ describe('session du back-office', () => {
     expect(await screen.findByText(resources.ar.auth.role.ADMIN)).toBeTruthy();
     expect(screen.queryByText(profile.role)).toBeNull();
     expect(document.documentElement.getAttribute('dir')).toBe('rtl');
-    const home = screen.getByText(resources.ar.auth.role.ADMIN).closest('section');
+    const home = screen.getByText(resources.ar.auth.role.ADMIN).closest('header');
     expect(home).not.toBeNull();
     if (home !== null) {
       expect(getComputedStyle(home).direction).toBe('rtl');
