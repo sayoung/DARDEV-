@@ -9,28 +9,27 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 | # | Critère | État |
 |---|---|---|
 | 1 | Toutes les exigences implémentées et CA vérifiés | à faire |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | OK (56 tests int) |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | à faire |
 | 3 | pnpm lint, pnpm typecheck sans erreur | à faire |
 | 4 | Migrations appliquées, seed à jour | à faire |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
 | 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | à faire |
 | 7 | Démo avec données pertinentes | à faire |
-| 8 | Démo au porteur et retours consignés | Fait, e2e/m1-livrable.spec.ts |
+| 8 | Démo au porteur et retours consignés | à faire |
+
+Jalon précédent : M1, DoD remplie : non, critère 2 : local uniquement, CI non confirmée (détail : docs/archive/PROGRESS-M1.md)
 
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Mise à jour des sections de l'archive M1 DoD (tâche 2/3)
+**Objectif :** Clôture de M1 et ouverture de M2
 
 Plan :
-- Lire les tâches M1 actuelles.
-- Ajouter un résumé d'une ligne par lot dans `docs/archive/PROGRESS-M1.md`.
-- Compléter les sections "Bloqué", "Risques" et "En cours".
-- Lancer `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+- Mettre au propre PROGRESS.md en archivant M1.
+- Lancer les tests locaux (lint, typecheck, test).
 
 État :
-- `docs/archive/PROGRESS-M1.md` mis à jour selon les consignes de la tâche 2/3.
-- lint, typecheck, test OK.
+- Nettoyage effectué.
 
 ## État des tâches
 
@@ -38,59 +37,34 @@ Plan :
 - Aucun.
 
 ### Fait
-- M1 DoD (2/3) : mise à jour des sections Fait, En cours, Bloqué et Risques dans `docs/archive/PROGRESS-M1.md`. lint, typecheck, test OK.
-- M1 DoD (1/3) : mise à jour des preuves dans l'archive docs/archive/PROGRESS-M1.md (vérification de la CI échouée, exécution de lint, typecheck, tests locaux).
-- M1 Playwright (parcours du livrable) : création et validation du test end-to-end `e2e/m1-livrable.spec.ts` pour la création d'une visite avec scènes et hotspots. Mise à jour de `docs/DEMO_M1.md` et `docs/PROGRESS.md` (critère 8). lint, typecheck, test, test:e2e OK.
-- M1 D-83 (4/5, écrans de liste, finition) : dans `apps/admin/src/pages/ToursPage.tsx`, remplacement du composant `Badge` en dur pour le statut par le composant `StatusBadge` existant. Le `Badge` de l'indicateur de traduction manquante est conservé. Tests non modifiés car ils n'utilisent pas le sélecteur `data-testid`. lint, typecheck, test OK.
-- M1 D-83 (3b/5, tests du tableau de bord d'accueil) : création de `apps/admin/src/auth/HomePage.test.tsx` (Vitest, jsdom) pour tester les compteurs, l'alerte 500 et l'accès au bouton "Nouvelle visite" selon le rôle. Adaptation des tests selon les retours de revue (valeurs non ambiguës, association avec les libellés via within, tests séparés par rôle, mock de la pagination corrigé). lint, typecheck, test OK.
-- M1 D-83 (3a/5, compléter le tableau de bord d'accueil) : ajout d'une 4e Card « Scènes » via `listTours({ page: 1, pageSize: 100 })` qui fournit aussi le total, passage de la grille en `md:grid-cols-2 lg:grid-cols-4`, ajout de `Promise.all` avec états de chargement (`role="status"`) et d'erreur (`Alert`), et ajout du raccourci "Nouvelle visite" conditionné par rôle (`Role.ADMIN` ou `Role.EDITOR`). Ajout des traductions FR pour ces états. pnpm lint, typecheck, test OK.
-- M1 D-83 (2b/5, test de la mise en page) : Création de `apps/admin/src/components/AppLayout.test.tsx` pour tester `AppLayout`, avec assertions sur le nom, le rôle, la navigation et le bouton de déconnexion. lint, typecheck, test OK.
-- M1 D-83 (2a/5, compléter la mise en page commune) : ajout du lien Accueil, badge de rôle dans l'en-tête, nettoyage de HomePage, CSS responsive. lint, typecheck, test OK.
-- M1 D-83 : Tailwind 4 + shadcn/ui installés dans apps/admin (plugin Vite, cn, composants ui dont Tabs) ; lint, typecheck, test OK.
-- M1 D-83 (3/4, autres composants + Tabs) : `Input`, `Textarea`, `Select`, `Table`, `Card` et `Label` réécrits avec `cn` au lieu de `${className || ''}`. `Label` mis à jour pour utiliser la primitive `@radix-ui/react-label`. Création de `Tabs` depuis `@radix-ui/react-tabs` avec `cn` et son test unitaire Vitest / RTL (`Tabs.test.tsx` vérifiant le changement de `data-state` au clic). lint, typecheck, test OK.
-- M1 D-83 (2/4, composants à variantes avec cva + cn) : réécriture de Button.tsx, Badge.tsx et Alert.tsx avec class-variance-authority et cn. Les variantes, tailles, ref et asChild (Slot) sont conservés. Classes CSS logiques employées. lint, typecheck, test OK, build OK.
-- M1 D-83 (1/4, plugin Vite + cn) : ajout de `@tailwindcss/vite` dans `apps/admin/vite.config.ts`, création de `cn.ts` et `cn.test.ts` (Vitest). La compilation produit bien le CSS Tailwind. lint, typecheck, test OK.
-- M0 F-90 (Parcours réel de bout en bout) : script Node e2e exécuté le 03/10/2026. L'API et le proxy Vite répondent correctement sans erreur ECONNREFUSED.
-  - Critère 2 (DoD M0) : Connexion au back-office prouvée en local avec proxy `http://localhost:5173` (`/api/health` 200, `openapi.json` 200, login 200 avec `xplor_sid`, `auth/me` 200, forgot 202).
-  - Critère 9 (DoD M0) : `docs/DEMO_M0.md` mis à jour avec les preuves techniques (codes HTTP, Mailpit) ; documentation à jour.
-- M0 NF-08 : Base xplor_test recréée pour purger le schéma des contraintes résiduelles, sans modifier de migration déjà fusionnée. lint, typecheck, test, test:int OK.
-- M2 F-11/F-12 (mise en file rejouable) : signature de `enqueue` modifiée pour accepter `reason` et générer un `jobId` unique (avec Date.now) lors d'un 'reprocess'. Tests adaptés. lint, typecheck, test OK.
-- M2 F-11 (démarrage du worker) : fonction boot asynchrone implémentée (injection de dépendances, tests mockés validant l'environnement et l'ordre de fermeture, construction S3 avant Prisma, gestion de SIGINT/SIGTERM avec exit). lint, typecheck, test OK.
-- Design 6c (champs multilingues et sélecteurs de médias) : dans `apps/admin/src/catalog/LocalizedTextField.tsx`, onglets de langue passés aux couleurs du thème, remplacement du `<input>` natif par `Input` de shadcn/ui, et correction de l'input masqué (sr-only pointer-events-none). `AssetPicker` et `MultiAssetPicker` déjà conformes au thème. lint, typecheck, test OK.
-- M2 F-11 (Worker BullMQ, sans toucher main.ts) : création de `apps/worker/src/panorama.worker.ts` qui configure le worker BullMQ pour traiter les panoramas (via `processPanoramaJob`) et gérer l'échec (via `handlePanoramaFailure` et `repo.markError`). Tests ajoutés dans `panorama.worker.test.ts`. lint, typecheck, test OK.
-- M2 F-11 (stockage S3 du worker) : ajout du client `@aws-sdk/client-s3` au worker, implémentation de `S3WorkerStorage` et ajout des tests unitaires mockés. Vérification lint, typecheck, test OK.
-- Design 6/6 : charte Xplor appliquée à tout le back-office.
-- Design 6b (formulaires hotspot et visite) : dans apps/admin/src/pages/HotspotForm.tsx, remplacement des 5 <select> natifs par le composant Select de components/ui. Dans TourForm.tsx, mise à jour des classes de la case à cocher avec border-input accent-primary focus-visible:ring-ring. Aucune logique modifiée. lint, typecheck, test OK.
-- Design 6a (composants ui aux couleurs du thème) : dans apps/admin/src/components/ui, remplacement dans Alert.tsx, Input.tsx, Select.tsx et Textarea.tsx de toutes les couleurs Tailwind codées en dur par les variables du thème (border-input, bg-card, text-foreground, placeholder:text-muted-foreground, focus-visible:ring-ring, ring-offset-background). Variante destructive d'Alert mise à jour. Ajout du support RTL (start-4, ps-7) dans Alert.tsx. lint, typecheck, test OK.
-- Design 3/6 (écrans d'authentification) : LoginPage, ForgotPasswordPage, SetPasswordPage et HomePage réécrites avec les composants shadcn/ui. Suppression des règles obsolètes de `style.css`. Application des propriétés RTL et variables de la charte Xplor. Ajout du composant Card avec les classes Tailwind. Adaptation des tests unitaires `account-access.test.tsx` et `session.test.tsx` pour l'existence de plusieurs instances de noms ou de formulaires. Correction des erreurs linter sur `TourStatus` et `account-access.test.tsx`. (Corrections de revue : ajout de `AuthLayout` partagé, déplacement du slogan et textes HomePage vers i18n, gestion erreur `listTours` avec `console.error`). lint, typecheck, test OK.
-- M2 F-11 (processeur de job, logique pure) : création de `apps/worker/src/processors/panorama.processor.ts` et des tests `panorama.processor.test.ts`. Validation Zod de `PanoramaJobData`, téléchargement via `WorkerStorage`, génération du hash (sha256Hex), génération des 3 dérivés (`generateFlatDerivatives`) et des 128 tuiles (`generateTiles`), puis écriture sur S3. Enfin, marquage `READY` dans la base. lint, typecheck, test OK.
-- M2 F-11 (accès base depuis le worker) : Ajout de @prisma/client au worker. Création de `PrismaAssetRepository` pour lire et mettre à jour le statut des médias directement en base. Ajout des tests unitaires mockés. lint, typecheck, test OK.
-- Design 5/6 (liste des visites) : `ToursPage` réécrite avec les composants shadcn/ui (`Table`, `Button`, `Badge`, `Alert`, `Input`, `Label`, `Select`, `PageHeader`). Bouton « Nouvelle visite » mis en valeur. Filtres de recherche alignés sur une ligne avec `gap-4` et `flex-wrap`. Badge `success` pour le statut publié. Suppression des classes CSS obsolètes (`.tour-*`, `.missing-translation`) de `style.css`. lint, typecheck, test OK.
-- Design 4/6 (listes simples) : `CitiesPage` et `CategoriesPage` réécrites avec les composants shadcn/ui (`Table`, `Button`, `Badge`, `Alert`, `Input`, `Label`). Utilisation de `PageHeader`. Ajout de la couleur `--success` (vert anis) dans la configuration du thème et mise à jour de `Badge`. Correction des espacements RTL (remplacement des marges et espacements absolus par les propriétés logiques `ms-`, `pe-`, `text-start` dans `LocalizedTextField` et `Table`). lint, typecheck, test OK.
-- Design 2/6 (mise en page commune) : Création de `AppLayout.tsx` (barre latérale violette avec logo blanc, navigation avec mise en évidence, en-tête avec langue et bouton de déconnexion shadcn). Suppression des règles obsolètes de `style.css`. Adaptation des sélecteurs de `session.test.tsx` pour l'existence de plusieurs instances de noms ou de boutons de déconnexion. lint, typecheck, test OK.
-- Design 1/6 (thème Xplor) : application des variables de thème shadcn (primary, background, etc.), ajout des polices auto-hébergées Montserrat et Comfortaa, copie des logos SVG de la charte. lint, typecheck, test OK.
-- M2 F-11 (empreinte du fichier) : création de `apps/worker/src/derivatives/content-hash.ts` et `content-hash.test.ts` (sha256 hex 64 chars). lint, typecheck, test OK.
-- M2 F-11 (configuration du worker) : extension du schéma Zod avec les variables S3 et DATABASE_URL. Validation complète avec retour des noms de variables manquantes. Tests de loadEnv et du boot mis à jour. lint, typecheck, test OK.
-- M2 F-10 (lecture des dimensions JPEG) : ajout de image-size et sharp, création de readImageDimensions et de ses tests. Lint, typecheck et test OK.
-- M2 F-11 (producteur BullMQ côté API) : ajout de `bullmq` à `apps/api`, création de `PanoramaQueueService` (jeton PANORAMA_QUEUE) et `QueueModule`. Import dans `AppModule`. Tests unitaires écrits. Lint, typecheck et test OK.
-- M2 F-11 (dérivé tiles) : Création de `panorama.tiles.ts` pour extraire les 128 tuiles d'un panorama redimensionné (8192x4096), traité par lots de 8 pour limiter la mémoire. Test `panorama.tiles.test.ts` écrit et fonctionnel (timeout 30s). pnpm lint, typecheck, test OK.
-- M2 F-11 (dérivés preview, web, thumb) : réécriture de `panorama.derivatives.ts` pour exporter `generateFlatDerivatives` (preview 512x256, web 4096x2048, thumb 400x225 centré sur vue initiale). Test vérifiant les dimensions sur un buffer généré en mémoire. pnpm lint, typecheck, test OK.
-- M2 F-11 (grille des tuiles, fonction pure) : Création de `tileGrid()` et des constantes associées dans `apps/worker/src/derivatives/tile-grid.ts`. Tests unitaires complets écrits en premier dans `tile-grid.test.ts` (128 tuiles, bornes, unicité). pnpm lint, typecheck, test OK.
-- M2 F-11 (file panorama, contrat partagé) : Création de `packages/shared/src/panorama-queue.ts` avec les types, constantes (file BullMQ) et fonctions utilitaires (`panoramaDerivativeKeys`, `panoramaTileKey`). Ajout de tests unitaires (lint, typecheck, test OK).
-- M1 validé par le porteur le 01/10/2026, détail dans docs/archive/PROGRESS-M1.md.
-- M2 F-11 (1/n) : Initialisation du worker, module des dérivés (sharp), retrait du code en avance.
-- M2 F-11 (2/n) : Ajout du journal d'erreur (migration `asset_processing_log`, champ `processingLog` sur le modèle `Asset` et `AssetResponse`).
-- M2 API-24 (1/2) : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
-- M2 API-24 (2/2) : `StorageService` S3 et `StorageModule` global avec tests unitaires mockés via S3Client simulé (lint, typecheck, test OK).
-- M2 F-10 : Règles de validation des panoramas (`validatePanoramaUpload`) avec tests unitaires (lint, typecheck, test OK).
-- M2 API-24 : Route d'upload `POST /api/v1/admin/assets/upload-url` et logique S3 via `AssetsService`. Lint, typecheck et tests unitaires OK.
-- M2 F-10/API-24 : Route `complete` (`POST /api/v1/admin/assets/:id/complete`). Lecture de `StorageService.head`, extraction des dimensions des JPEG via `sharp` et `validatePanoramaUpload`. Mise en file `panoramaQueue`. Route ajoutée dans OpenAPI. Tests unitaires et intégration (HTTP 401/403) ajoutés. Lint, typecheck, test OK.
-- M2 F-10/API-24 (retours de revue) : Suppression stricte des dérogations TypeScript (`any` et `eslint-disable`) dans `storage.service.test.ts` et `catalog.ts`. Mise à niveau de `z.nativeEnum` vers `z.enum` pour Zod 4. pnpm lint, typecheck et test passent sans erreur (code 0).
+- M2 F-11/F-12 : Mise en file rejouable (signature de enqueue modifiée).
+- M2 F-11 : Démarrage du worker (fonction boot asynchrone).
+- M2 F-11 : Worker BullMQ (panorama.worker.ts).
+- M2 F-11 : Stockage S3 du worker (@aws-sdk/client-s3).
+- M2 F-11 : Processeur de job, logique pure (panorama.processor.ts).
+- M2 F-11 : Accès base depuis le worker (PrismaAssetRepository).
+- M2 F-11 : Empreinte du fichier (content-hash.ts).
+- M2 F-11 : Configuration du worker (validation Zod).
+- M2 F-10 : Lecture des dimensions JPEG (image-size et sharp).
+- M2 F-11 : Producteur BullMQ côté API (PanoramaQueueService).
+- M2 F-11 : Dérivé tiles (panorama.tiles.ts).
+- M2 F-11 : Dérivés preview, web, thumb (panorama.derivatives.ts).
+- M2 F-11 : Grille des tuiles (tileGrid).
+- M2 F-11 : File panorama, contrat partagé (panorama-queue.ts).
+- M2 F-11 (1/n) : Initialisation du worker et module des dérivés.
+- M2 F-11 (2/n) : Ajout du journal d'erreur.
+- M2 API-24 (1/2) : Schémas partagés d'upload de médias.
+- M2 API-24 (2/2) : StorageService S3 et StorageModule global.
+- M2 F-10 : Règles de validation des panoramas.
+- M2 API-24 : Route d'upload POST /api/v1/admin/assets/upload-url.
+- M2 F-10/API-24 : Route complete.
+- M2 F-10/API-24 (retours de revue) : Suppression stricte des dérogations TypeScript.
 
 ### Bloqué
-- Aucun.
+- Critère 2 : CI distante non confirmée, run GitHub Actions à fournir.
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest, fastify).
+- Tests verts en local uniquement, CI non confirmée.
