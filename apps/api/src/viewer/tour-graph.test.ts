@@ -64,6 +64,7 @@ describe('toTourGraph', () => {
         id: 'tour-2',
         title: { fr: 'Tour lié' },
         coverAsset: null,
+        shareToken: null,
       }
     ],
   });

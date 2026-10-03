@@ -24,6 +24,7 @@ export type TourSource = {
     id: string;
     title: unknown;
     coverAsset: { derivatives: unknown } | null;
+    shareToken: string | null;
   }[];
 };
 
@@ -100,6 +101,7 @@ export function toTourGraph(source: TourSource, ctx: SceneCtx): TourGraph {
       title: tTitle,
       coverUrl: tCoverUrl,
       availableOffline,
+      shareToken: t.shareToken,
     };
   });
 
