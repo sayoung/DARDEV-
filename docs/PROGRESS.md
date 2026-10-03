@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 03/10/2026 — M3 API-11 (5e/6, route publique) : créer apps/api/src/viewer/public-tours.controller.ts (@Controller('public/tours'), @Get(':shareToken'), contrôleur fin sans P… — Route publique GET /public/tours/:shareToken conforme (Zod, 404/400, Cache-Control, ThrottlerGuard comme auth), module et app.module câblés, tests ajoutés, lint/typecheck OK. (6fde51d)
 - 03/10/2026 — M3 API-11 (5d/6, service de lecture publique, 3/3 : module) : créer apps/api/src/viewer/viewer.module.ts : `@Module({ providers: [ViewerService], exports: [View… — ViewerModule créé conformément à la consigne (providers/exports ViewerService, sans import, non enregistré dans AppModule) avec un test de résolution du module ; lint, typecheck et test verts. (32d7bb9)
 - 03/10/2026 — M3 API-11 (5d/6, service de lecture publique, 2/3 : médias, visites liées, graphe) : dans apps/api/src/viewer/viewer.service.ts, implémenter `getPublicGraph`. 1… — getPublicGraph implémenté conformément à la demande (adaptation Prisma, médias READY signés, visites liées filtrées, pas d'appel Prisma si listes vides) avec tests complets ; lint, typecheck et test v… (ddc7479)
 - 03/10/2026 — M3 API-11 (5d/6, service de lecture publique, 1/3 : chargement de la visite) : créer apps/api/src/viewer/viewer.service.ts. Classe `ViewerService` décorée `@Inj… — ViewerService.loadPublicTour/getPublicGraph et leurs tests conformes à la demande ; contrôles verts, PROGRESS.md intact. (67ac18c)
