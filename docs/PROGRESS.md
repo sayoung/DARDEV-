@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 03/10/2026 — M3 API-11 (3c/5, mappeur de hotspots, TOUR_LINK, URL et décision) : dans apps/api/src/viewer/tour-graph-hotspot.ts, ajouter TOUR_LINK : retourne null si targetT… — TOUR_LINK et URL sont implémentés avec les garde-fous kiosk et httpUrl, les tests demandés sont ajoutés et D-97 est consigné ; lint, typecheck et test sont verts. (14a1ab6)
 - 03/10/2026 — M3 API-11 (3b/5, mappeur de hotspots, INFO et MEDIA) : dans apps/api/src/viewer/tour-graph-hotspot.ts, ajouter les cas INFO et MEDIA à `toGraphHotspot`. INFO :… — Les cas INFO et MEDIA de toGraphHotspot sont conformes à la spec (échappement, paragraphes, repli fr, ordre des médias, null si vide), testés, et lint/typecheck/test passent. (8b452cc)
 - 03/10/2026 — M3 API-11 (3a/5, mappeur de hotspots, socle + SCENE_LINK) : créer apps/api/src/viewer/tour-graph-hotspot.ts. Y déclarer en local, sans @prisma/client, le type `… — Mappeur SCENE_LINK conforme (label localisé avec repli fr, validation Zod, null pour cible absente et pour les types non implémentés), tests pertinents, contrôles verts, PROGRESS.md intact. (23f56b5)
 - 03/10/2026 — M3 API-10/API-11 (2c/5, URL publique des médias) : dans docker-compose.yml, le service minio-init existe déjà (utilise `mc alias set local …`) : y ajouter, aprè… — minio-init rend le préfixe panoramas/ public (bucket via S3_BUCKET) et D-96 est consignée correctement; PROGRESS.md intact, contrôles verts. (3f52b02)
