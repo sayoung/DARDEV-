@@ -8,6 +8,7 @@ import { PublicToursController } from './public-tours.controller.js';
 import { ViewerService } from './viewer.service.js';
 
 const GUARDS_METADATA = '__guards__';
+const HEADERS_METADATA = '__headers__';
 
 describe('PublicToursController', () => {
   const getPublicGraphMock = vi.fn();
@@ -27,10 +28,18 @@ describe('PublicToursController', () => {
     expect(() => controller.get('a'.repeat(23), 'fr')).toThrow(NotFoundException);
   });
 
-  it('devrait être protégé par ThrottlerGuard', () => {
+  it('devrait être protégé par ThrottlerGuard et Cache-Control', () => {
     const descriptor = Object.getOwnPropertyDescriptor(PublicToursController.prototype, 'get');
-    if (!descriptor || typeof descriptor.value !== 'function') throw new Error('Method not found');
-    expect(Reflect.getMetadata(GUARDS_METADATA, descriptor.value as object)).toEqual([ThrottlerGuard]);
+    const val: unknown = descriptor?.value;
+    if (typeof val !== 'function') {
+      throw new Error('Method not found');
+    }
+    const getMethod: object = val;
+
+    expect(Reflect.getMetadata(GUARDS_METADATA, getMethod)).toEqual([ThrottlerGuard]);
+    expect(Reflect.getMetadata(HEADERS_METADATA, getMethod)).toEqual([
+      { name: 'Cache-Control', value: 'public, max-age=60' },
+    ]);
   });
 
   it('devrait rejeter une langue invalide avec une 400', () => {
@@ -38,7 +47,7 @@ describe('PublicToursController', () => {
   });
 
   it('devrait appeler le service avec lang par défaut "fr" si lang est undefined', async () => {
-    const mockGraph = { id: 'mock-graph' } as unknown as TourGraph;
+    const mockGraph: Partial<TourGraph> = { id: 'mock-graph' };
     getPublicGraphMock.mockResolvedValue(mockGraph);
 
     const result = await controller.get('validToken123', undefined);
@@ -48,7 +57,7 @@ describe('PublicToursController', () => {
   });
 
   it('devrait appeler le service avec la langue spécifiée', async () => {
-    const mockGraph = { id: 'mock-graph' } as unknown as TourGraph;
+    const mockGraph: Partial<TourGraph> = { id: 'mock-graph' };
     getPublicGraphMock.mockResolvedValue(mockGraph);
 
     const result = await controller.get('validToken123', 'ar');
