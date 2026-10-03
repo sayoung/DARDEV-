@@ -71,3 +71,4 @@ lint, typecheck, test OK
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest, fastify).
 - Tests verts en local uniquement, CI non confirmée.
+
