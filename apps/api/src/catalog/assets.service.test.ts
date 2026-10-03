@@ -70,12 +70,14 @@ function harness(rows: AssetRow[]): {
   lists: ListArgs[]; 
   creates: Prisma.AssetCreateArgs[]; 
   updates: Prisma.AssetUpdateArgs[]; 
+  deletes: Prisma.AssetDeleteArgs[];
   storage: StorageService;
   panoramaQueue: PanoramaQueueService;
 } {
   const lists: ListArgs[] = [];
   const creates: Prisma.AssetCreateArgs[] = [];
   const updates: Prisma.AssetUpdateArgs[] = [];
+  const deletes: Prisma.AssetDeleteArgs[] = [];
 
   const prisma = {
     asset: {
@@ -89,8 +91,23 @@ function harness(rows: AssetRow[]): {
         const result = (args.skip !== undefined && args.take !== undefined) ? sorted.slice(args.skip, args.skip + args.take) : sorted;
         return Promise.resolve(result);
       },
-      findUnique: ({ where }: { where: { id: string } }): Promise<AssetRow | null> =>
-        Promise.resolve(rows.find((item) => item.id === where.id) ?? null),
+      findUnique: (args: { where: { id: string }; include?: { _count?: unknown } }): Promise<AssetRow | null> => {
+        const item = rows.find((r) => r.id === args.where.id);
+        if (!item) return Promise.resolve(null);
+        if (args.include?._count !== undefined) {
+          const withCount = item as AssetRow & { _count?: { coverOf?: number; panoramas?: number; ambientOf?: number; hotelLogos?: number } };
+          return Promise.resolve({
+            ...item,
+            _count: {
+              coverOf: withCount._count?.coverOf ?? 0,
+              panoramas: withCount._count?.panoramas ?? 0,
+              ambientOf: withCount._count?.ambientOf ?? 0,
+              hotelLogos: withCount._count?.hotelLogos ?? 0,
+            }
+          } as unknown as AssetRow);
+        }
+        return Promise.resolve(item);
+      },
       create: (args: Prisma.AssetCreateArgs) => {
         creates.push(args);
         return Promise.resolve({ ...args.data, id: '01990000-0000-7000-8000-newasset0001' } as unknown as AssetRow);
@@ -99,6 +116,11 @@ function harness(rows: AssetRow[]): {
         updates.push(args);
         const existing = rows.find(r => r.id === args.where.id);
         return Promise.resolve({ ...existing, ...args.data } as unknown as AssetRow);
+      },
+      delete: (args: Prisma.AssetDeleteArgs) => {
+        deletes.push(args);
+        const existing = rows.find(r => r.id === args.where.id);
+        return Promise.resolve(existing as unknown as AssetRow);
       }
     },
   } as unknown as PrismaService;
@@ -109,13 +131,14 @@ function harness(rows: AssetRow[]): {
     },
     headObject: () => Promise.resolve(null),
     getRange: () => Promise.resolve(Buffer.alloc(0)),
+    deleteObject: () => Promise.resolve(),
   } as unknown as StorageService;
 
   const panoramaQueue = {
     enqueue: () => Promise.resolve(),
   } as unknown as PanoramaQueueService;
 
-  return { service: new AssetsService(prisma, storage, panoramaQueue), lists, creates, updates, storage, panoramaQueue };
+  return { service: new AssetsService(prisma, storage, panoramaQueue), lists, creates, updates, deletes, storage, panoramaQueue };
 }
 
 function matches(item: AssetRow, where: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } }): boolean {
@@ -468,4 +491,54 @@ describe('AssetsService', () => {
       expect(updates).toHaveLength(2);
     });
   });
+
+  describe('remove', () => {
+    it('répond 404 si l\'asset est introuvable', async () => {
+      const { service } = harness([]);
+      const error = await service.remove(UNKNOWN_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(404);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: ASSET_NOT_FOUND },
+      });
+    });
+
+    it('répond 409 si l\'asset est utilisé', async () => {
+      const asset = {
+        ...row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z'),
+        _count: { coverOf: 1, panoramas: 0, ambientOf: 2, hotelLogos: 0 },
+      };
+      const { service, deletes } = harness([asset]);
+
+      const error = await service.remove(MIDDLE_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(409);
+      expect(error.getResponse()).toEqual({
+        error: {
+          code: 'ASSET_IN_USE',
+          message: 'Impossible de supprimer ce média : il est utilisé à 3 endroit(s).',
+          count: 3,
+        },
+      });
+      expect(deletes).toHaveLength(0);
+    });
+
+    it('supprime l\'asset s\'il n\'est pas utilisé', async () => {
+      const asset = {
+        ...row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z'),
+        _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 0 },
+      };
+      const { service, storage, deletes } = harness([asset]);
+      const deleteObjectSpy = vi.spyOn(storage, 'deleteObject');
+
+      await service.remove(MIDDLE_ID);
+
+      expect(deletes).toHaveLength(1);
+      expect(deletes[0]?.where.id).toBe(MIDDLE_ID);
+      expect(deleteObjectSpy).toHaveBeenCalledWith(asset.originalKey);
+    });
+  });
 });
+

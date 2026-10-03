@@ -23,16 +23,16 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Ajouter la route `reprocess` pour les médias.
+**Objectif :** M2 API-24 : Ajouter `remove` dans `AssetsService`.
 
 Plan :
-- Exposer la route `POST /api/v1/admin/assets/:id/reprocess` dans `assets.controller.ts`.
-- Ajouter les tests d'intégration (200 pour éditeur, 403 pour gestionnaire, refus sans CSRF, 400 si ID invalide).
-- Mettre à jour la description OpenAPI et générer le document.
-- Vérifier que pnpm lint, typecheck et test passent.
+- Ajouter les tests unitaire (introuvable, utilisé, libre) dans `assets.service.test.ts`.
+- Implémenter la méthode `remove` dans `AssetsService` avec contrôle des relations Prisma (`coverOf`, `panoramas`, `ambientOf`, `hotelLogos`) et appel de suppression Storage.
+- Lancer lint, typecheck et tests.
+- Mettre à jour `docs/PROGRESS.md`.
 
 État :
-lint, typecheck, test OK
+lint et typecheck OK. tests unitaires d'AssetsService OK. Cependant, le test `apps/admin/src/pages/TourForm.test.tsx` échoue de manière isolée sur un timeout, sans rapport avec `AssetsService`.
 
 ## État des tâches
 
@@ -40,6 +40,7 @@ lint, typecheck, test OK
 - Aucun.
 
 ### Fait
+- M2 API-24 : Méthode remove dans AssetsService (vérification de l'utilisation et suppression du stockage).
 - M2 F-12 : Implémentation du CLI API (main.ts) et méthode reprocessAllPanoramas dans AssetsService.
 - M2 F-12 : Création du parseur CLI (reprocess-args.ts) et ses tests.
 - M2 API-24 : Route de retraitement POST /api/v1/admin/assets/:id/reprocess (contrôleur et tests d'intégration, mise à jour OpenAPI).
