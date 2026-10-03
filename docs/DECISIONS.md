@@ -712,3 +712,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** Remplacement de `z.httpUrl()` (méthode métier stricte sur le TLD) par `z.url()` dans `AssetUploadResponseSchema`. Les deux options étaient `z.url()` ou `z.string().url()`, mais la seconde est dépréciée. Le choix de `z.url()` permet de valider les environnements locaux avec des URL vers `http://localhost:9000` (MinIO local), ce que la validation stricte de `z.httpUrl()` bloquait en exigeant un nom de domaine public (TLD). Le changement s'applique uniquement à l'URL système générée (`uploadUrl`) ; les URL saisies par l'utilisateur (ex. Hotspots) restent validées par `z.httpUrl()` pour obliger un nom de domaine public et prévenir les XSS. Le commentaire JSDoc dans `catalog.ts` explique l'abandon de `z.httpUrl()` ici.
 - **Alternatives :** Configurer un faux TLD dans `/etc/hosts` pour MinIO en dev ; mocker le retour de `StorageService` dans les tests HTTP (ce qui réduirait la valeur de test:int).
 - **À valider :** oui
+
+## D-93 — Client S3 et présignatures (M2 API-24)
+
+- **Date :** 03/10/2026
+- **Décision :** Utilisation des packages @aws-sdk/client-s3 et @aws-sdk/s3-request-presigner (licence Apache-2.0) pour l'API de stockage et la génération d'URL présignées.
+- **Raison :** Implémentation du StorageService S3 demandé pour le pipeline médias.
+- **Alternatives :** Aucune.
+- **À valider :** non

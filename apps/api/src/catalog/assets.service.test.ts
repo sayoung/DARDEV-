@@ -101,10 +101,10 @@ function harness(rows: AssetRow[]): {
   } as unknown as PrismaService;
 
   const storage = {
-    presignPut: (key: string) => {
+    generatePresignedUploadUrl: (key: string) => {
       return Promise.resolve(`https://fake-s3.com/${key}?signed=true`);
     },
-    head: () => Promise.resolve(null),
+    headObject: () => Promise.resolve(null),
     getRange: () => Promise.resolve(Buffer.alloc(0)),
   } as unknown as StorageService;
 
@@ -291,7 +291,7 @@ describe('AssetsService', () => {
         create: { width: 4096, height: 2048, channels: 3, background: { r: 255, g: 0, b: 0 } }
       }).jpeg().toBuffer();
       
-      vi.spyOn(storage, 'head').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
+      vi.spyOn(storage, 'headObject').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
       vi.spyOn(storage, 'getRange').mockResolvedValue(imageBuffer);
       const enqueueSpy = vi.spyOn(panoramaQueue, 'enqueue');
 
@@ -315,7 +315,7 @@ describe('AssetsService', () => {
         create: { width: 4000, height: 2000, channels: 3, background: { r: 255, g: 0, b: 0 } }
       }).jpeg().toBuffer();
       
-      vi.spyOn(storage, 'head').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
+      vi.spyOn(storage, 'headObject').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
       vi.spyOn(storage, 'getRange').mockResolvedValue(imageBuffer);
 
       const error = await service.complete(PANO_ID).catch((e: unknown) => e);
@@ -340,7 +340,7 @@ describe('AssetsService', () => {
         create: { width: 8000, height: 4100, channels: 3, background: { r: 255, g: 0, b: 0 } }
       }).jpeg().toBuffer();
       
-      vi.spyOn(storage, 'head').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
+      vi.spyOn(storage, 'headObject').mockResolvedValue({ sizeBytes: imageBuffer.length, contentType: 'image/jpeg' });
       vi.spyOn(storage, 'getRange').mockResolvedValue(imageBuffer);
 
       const error = await service.complete(PANO_ID).catch((e: unknown) => e);
@@ -369,7 +369,7 @@ describe('AssetsService', () => {
     it('répond 422 UPLOAD_MISSING', async () => {
       const asset = row(PANO_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
       const { service, storage } = harness([asset]);
-      vi.spyOn(storage, 'head').mockResolvedValue(null);
+      vi.spyOn(storage, 'headObject').mockResolvedValue(null);
 
       const error = await service.complete(PANO_ID).catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);

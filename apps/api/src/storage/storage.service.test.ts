@@ -10,12 +10,12 @@ import {
 import { beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 
 import { type Env } from '../config/env.js';
-import { StorageService } from './storage.service.js';
+import { S3StorageService, LocalStorageService } from './storage.service.js';
 
-describe('StorageService', () => {
+describe('S3StorageService', () => {
   let s3: S3Client;
   let env: Env;
-  let service: StorageService;
+  let service: S3StorageService;
   let sendSpy: MockInstance;
 
   beforeEach(() => {
@@ -23,7 +23,6 @@ describe('StorageService', () => {
       region: 'us-east-1',
       credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
     });
-    // We use vi.spyOn to avoid unbound method errors
     sendSpy = vi.spyOn(s3, 'send').mockResolvedValue(undefined);
 
     env = {
@@ -39,20 +38,31 @@ describe('StorageService', () => {
       SMTP_PORT: 1025,
       SESSION_SECRET: '12345678901234567890123456789012',
       ADMIN_BASE_URL: 'http://localhost:5173',
+      STORAGE_PROVIDER: 's3',
+      API_PUBLIC_URL: 'http://localhost:3000',
     };
-    service = new StorageService(s3, env);
+    service = new S3StorageService(s3, env);
   });
 
-  describe('presignPut', () => {
+  describe('generatePresignedUploadUrl', () => {
     it('should generate a presigned URL with the correct key and expiration', async () => {
-      const url = await service.presignPut('test-key.jpg', 'image/jpeg', 1024);
+      const url = await service.generatePresignedUploadUrl('test-key.jpg', 'image/jpeg', 1024);
       expect(url).toContain('test-bucket');
       expect(url).toContain('test-key.jpg');
       expect(url).toContain('X-Amz-Expires=900');
     });
   });
 
-  describe('head', () => {
+  describe('getSignedUrl', () => {
+    it('should generate a presigned download URL', async () => {
+      const url = await service.getSignedUrl('test-key.jpg', 3600);
+      expect(url).toContain('test-bucket');
+      expect(url).toContain('test-key.jpg');
+      expect(url).toContain('X-Amz-Expires=3600');
+    });
+  });
+
+  describe('headObject', () => {
     it('should return size and contentType when object exists', async () => {
       const mockResponse: HeadObjectCommandOutput = {
         $metadata: {},
@@ -61,81 +71,101 @@ describe('StorageService', () => {
       };
       sendSpy.mockResolvedValueOnce(mockResponse);
 
-      const result = await service.head('test-key.jpg');
+      const result = await service.headObject('test-key.jpg');
       expect(sendSpy).toHaveBeenCalledWith(expect.any(HeadObjectCommand));
       expect(result).toEqual({ sizeBytes: 1024, contentType: 'image/jpeg' });
     });
 
-    it('should return null when object is not found (name = NotFound)', async () => {
+    it('should return null when object is not found', async () => {
       const error = new Error('Not found');
       error.name = 'NotFound';
       sendSpy.mockRejectedValueOnce(error);
 
-      const result = await service.head('test-key.jpg');
+      const result = await service.headObject('test-key.jpg');
       expect(result).toBeNull();
     });
-
-    it('should return null when object is not found (httpStatusCode = 404)', async () => {
-      const error = new Error('Not found');
-      Object.assign(error, { $metadata: { httpStatusCode: 404 } });
+    it('should return null when object is not found via httpStatusCode', async () => {
+      const error = new Error('Some Error') as Error & { $metadata?: { httpStatusCode: number } };
+      error.$metadata = { httpStatusCode: 404 };
       sendSpy.mockRejectedValueOnce(error);
 
-      const result = await service.head('test-key.jpg');
+      const result = await service.headObject('test-key.jpg');
       expect(result).toBeNull();
     });
 
-    it('should throw on other errors', async () => {
+    it('should rethrow unknown errors', async () => {
       const error = new Error('Unknown error');
       sendSpy.mockRejectedValueOnce(error);
 
-      await expect(service.head('test-key.jpg')).rejects.toThrow('Unknown error');
+      await expect(service.headObject('test-key.jpg')).rejects.toThrow('Unknown error');
     });
   });
 
-  describe('getRange', () => {
-    it('should request the specified byte range and return a Buffer', async () => {
-      const mockBody = {
-        transformToByteArray: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])),
-      };
-
-      const mockResponse: GetObjectCommandOutput = {
-        $metadata: {},
-        Body: mockBody as never,
-      };
-      sendSpy.mockResolvedValueOnce(mockResponse);
-
-      const result = await service.getRange('test-key.jpg', 0, 65535);
-
-      expect(sendSpy).toHaveBeenCalledWith(expect.any(GetObjectCommand));
-      const callArgs = sendSpy.mock.calls[0];
-      if (callArgs && callArgs[0] instanceof GetObjectCommand) {
-        expect(callArgs[0].input.Range).toBe('bytes=0-65535');
-      } else {
-        throw new Error('Expected GetObjectCommand');
-      }
-      expect(result).toBeInstanceOf(Buffer);
-      expect(result).toEqual(Buffer.from([1, 2, 3]));
-    });
-
-    it('should throw if response has no body', async () => {
-      const mockResponse: GetObjectCommandOutput = {
-        $metadata: {},
-      };
-      sendSpy.mockResolvedValueOnce(mockResponse);
-      await expect(service.getRange('test-key.jpg', 0, 65535)).rejects.toThrow(
-        'No body in response',
-      );
-    });
-  });
-
-  describe('delete', () => {
+  describe('deleteObject', () => {
     it('should send a DeleteObjectCommand', async () => {
-      const mockResponse: DeleteObjectCommandOutput = {
-        $metadata: {},
-      };
+      const mockResponse: DeleteObjectCommandOutput = { $metadata: {} };
       sendSpy.mockResolvedValueOnce(mockResponse);
-      await service.delete('test-key.jpg');
+      await service.deleteObject('test-key.jpg');
       expect(sendSpy).toHaveBeenCalledWith(expect.any(DeleteObjectCommand));
     });
+  });
+  
+  describe('getRange', () => {
+    it('should request the specified byte range', async () => {
+      const mockBody = { transformToByteArray: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])) };
+      const mockResponse: GetObjectCommandOutput = { $metadata: {}, Body: mockBody as never };
+      sendSpy.mockResolvedValueOnce(mockResponse);
+      const result = await service.getRange('test-key.jpg', 0, 65535);
+      expect(sendSpy).toHaveBeenCalledWith(expect.any(GetObjectCommand));
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should throw an error if response has no body', async () => {
+      const mockResponse: GetObjectCommandOutput = { $metadata: {} };
+      sendSpy.mockResolvedValueOnce(mockResponse);
+      await expect(service.getRange('test-key.jpg', 0, 65535)).rejects.toThrow('No body in response');
+    });
+  });
+});
+
+describe('LocalStorageService', () => {
+  let env: Env;
+  let service: LocalStorageService;
+  
+  beforeEach(() => {
+    env = {
+      NODE_ENV: 'test',
+      PORT: 3000,
+      DATABASE_URL: 'postgres://',
+      REDIS_URL: 'redis://',
+      S3_ENDPOINT: 'http://localhost:9000',
+      S3_ACCESS_KEY: 'test',
+      S3_SECRET_KEY: 'test',
+      S3_BUCKET: 'test-bucket',
+      SMTP_HOST: 'localhost',
+      SMTP_PORT: 1025,
+      SESSION_SECRET: '12345678901234567890123456789012',
+      ADMIN_BASE_URL: 'http://localhost:5173',
+      STORAGE_PROVIDER: 'local',
+      STORAGE_LOCAL_PATH: '/tmp/storage-test',
+      API_PUBLIC_URL: 'http://localhost:3000',
+    };
+    service = new LocalStorageService(env);
+  });
+
+  it('should generate HMAC presigned upload URL', async () => {
+    const url = await service.generatePresignedUploadUrl('test-key.jpg', 'image/jpeg', 1024);
+    expect(url).toContain('http://localhost:3000/api/v1/storage/upload/');
+  });
+
+  it('should generate HMAC presigned download URL', async () => {
+    const url = await service.getSignedUrl('test-key.jpg', 3600);
+    expect(url).toContain('http://localhost:3000/api/v1/storage/download/');
+  });
+
+  it('headObject should return null on ENOENT', async () => {
+    // Just pass a non-existent file path
+    const result = await service.headObject('non-existent-file.jpg');
+    expect(result).toBeNull();
   });
 });

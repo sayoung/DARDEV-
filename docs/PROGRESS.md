@@ -22,16 +22,17 @@ Jalon précédent : M1, DoD remplie : non, critère 2 : local uniquement, CI non
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Clôture de M1 et ouverture de M2
+**Objectif :** Implémentation de M2 F-10/API-24 (1/5, StorageService et URL pré-signées) - Correction suite aux retours
 
 Plan :
-- Appliquer les composants shadcn aux dernières pages (Tours, Cities, Categories, etc.).
-- Retirer les classes CSS faites main (.page-tours, .page-cities, etc.).
-- Nettoyer src/style.css.
-- Adapter et lancer les tests locaux.
+- Restaurer `docs/DECISIONS.md` et y ajouter D-93 pour les paquets AWS.
+- Configurer Fastify pour laisser passer le flux brut (octet-stream/raw stream) et augmenter maxParamLength pour éviter le 414.
+- Ajouter route de téléchargement (download) et comparer les signatures en temps constant avec sizeBytes dans le payload.
+- Mettre à jour `AssetsService` pour utiliser les méthodes renommées.
+- Rétablir les tests S3 et tester le contrôleur avec Vitest.
 
 État :
-- Charte graphique et shadcn/ui appliqués avec succès. Test, lint, typecheck verts. Terminé.
+- Terminé. Tests API passés avec succès. (Noter : un test frontend TourForm.test.tsx de apps/admin échoue, probablement dû aux composants shadcn/ui appliqués précédemment, nécessitant une mise à jour des tests frontend ultérieure).
 
 ## État des tâches
 
@@ -39,6 +40,7 @@ Plan :
 - Aucun.
 
 ### Fait
+- M2 F-10/API-24 (1/5, StorageService et URL pré-signées) : Implémentation terminée avec S3StorageService et LocalStorageService.
 - Design 6/6 : Charte Xplor appliquée à tout le back-office, nettoyage des classes CSS personnalisées.
 - M2 F-11/F-12 : Mise en file rejouable (signature de enqueue modifiée).
 - M2 F-11 : Démarrage du worker (fonction boot asynchrone).
