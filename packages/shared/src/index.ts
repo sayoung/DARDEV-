@@ -115,3 +115,12 @@ export {
   panoramaTileKey,
   type PanoramaJobData,
 } from './panorama-queue.js';
+export {
+  TourGraphSchema,
+  TourGraphSceneSchema,
+  TourGraphHotspotSchema,
+  type TourGraph,
+  type TourGraphScene,
+  type TourGraphHotspot,
+} from './tour-graph.js';
+
