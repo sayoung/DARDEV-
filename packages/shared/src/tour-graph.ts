@@ -11,7 +11,7 @@ export const TourGraphHotspotSchema = z.discriminatedUnion('type', [
     label: z.string(),
     icon: z.enum(HotspotIcon),
     targetSceneId: z.string(),
-    arrivalYaw: z.number().nullable(),
+    arrivalYaw: z.number().nullable().optional(),
   }),
   z.object({
     type: z.literal(HotspotType.TOUR_LINK),
@@ -21,8 +21,8 @@ export const TourGraphHotspotSchema = z.discriminatedUnion('type', [
     label: z.string(),
     icon: z.enum(HotspotIcon),
     targetTourId: z.string(),
-    targetSceneId: z.string().nullable(),
-    arrivalYaw: z.number().nullable(),
+    targetSceneId: z.string().nullable().optional(),
+    arrivalYaw: z.number().nullable().optional(),
   }),
   z.object({
     type: z.literal(HotspotType.INFO),
