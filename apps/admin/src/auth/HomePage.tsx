@@ -1,4 +1,4 @@
-import { type Role, TourStatus } from '@xplor/shared';
+import { TourStatus } from '@xplor/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -7,13 +7,6 @@ import { useAuth } from './AuthProvider.js';
 import { hrefFor, navigate } from '../router.js';
 
 import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card.js';
-
-const ROLE_LABEL = {
-  ADMIN: 'auth.role.ADMIN',
-  EDITOR: 'auth.role.EDITOR',
-  HOTEL_MANAGER: 'auth.role.HOTEL_MANAGER',
-  PARTNER: 'auth.role.PARTNER',
-} as const satisfies Record<Role, `auth.role.${Role}`>;
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -40,19 +33,11 @@ export function HomePage() {
   if (auth.state.status !== 'authenticated') {
     return null;
   }
-  const { profile } = auth.state;
-  const translatedRole = t(ROLE_LABEL[profile.role]);
 
   return (
     <section className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold font-sans text-primary">{t('page.home.title')}</h2>
-        <div className="text-end flex items-baseline gap-2">
-          <p className="font-semibold text-lg">{profile.name}</p>
-          {profile.name !== translatedRole && (
-            <p className="text-sm text-muted-foreground">{translatedRole}</p>
-          )}
-        </div>
       </div>
       
       <div className="grid gap-4 md:grid-cols-3">

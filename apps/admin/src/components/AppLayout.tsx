@@ -1,6 +1,13 @@
-import { LANGS, type Lang } from '@xplor/shared';
+import { LANGS, type Lang, type Role } from '@xplor/shared';
 import { type MouseEvent, type ReactNode, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+const ROLE_LABEL = {
+  ADMIN: 'auth.role.ADMIN',
+  EDITOR: 'auth.role.EDITOR',
+  HOTEL_MANAGER: 'auth.role.HOTEL_MANAGER',
+  PARTNER: 'auth.role.PARTNER',
+} as const satisfies Record<Role, `auth.role.${Role}`>;
 
 import xplorLogoWhite from '../assets/brand/xplor-logo-white.svg';
 import { useAuth } from '../auth/AuthProvider.js';
@@ -8,6 +15,7 @@ import { i18n } from '../i18n.js';
 import { LANG_STORAGE_KEY, applyDocumentLang, resolveLang } from '../lang.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Button } from './ui/Button.js';
+import { Badge } from './ui/Badge.js';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -38,6 +46,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     event.preventDefault();
     navigate(path);
   }
+
+  const isHomeActive = route.name === 'home';
 
   const isToursActive =
     route.name === 'tours' ||
@@ -80,13 +90,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-primary text-primary-foreground flex flex-col">
+    <div className="flex flex-col md:flex-row min-h-screen">
+      <aside className="w-full md:w-64 bg-primary text-primary-foreground flex flex-col">
         <div className="p-6">
           <img src={xplorLogoWhite} alt={t('common.appName')} className="h-8" />
         </div>
         <nav aria-label={t('nav.label')} className="flex-1 px-4 py-6">
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-row flex-wrap md:flex-col gap-2">
+            <li>
+              <a
+                href={hrefFor('/')}
+                aria-current={isHomeActive ? 'page' : undefined}
+                onClick={(e) => { handleNavClick(e, '/'); }}
+                className={`block px-4 py-2 rounded-md transition-colors ${isHomeActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+              >
+                {t('nav.home')}
+              </a>
+            </li>
             <li>
               <a
                 href={hrefFor('/tours')}
@@ -145,6 +165,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </nav>
             <div className="flex items-center gap-4 border-s border-border ps-4">
               <span className="text-sm font-medium">{auth.state.profile.name}</span>
+              <Badge variant="secondary">{t(ROLE_LABEL[auth.state.profile.role])}</Badge>
               <Button type="button" variant="outline" size="sm" onClick={() => { void auth.logout(); }}>
                 {t('auth.logout')}
               </Button>

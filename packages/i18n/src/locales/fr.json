@@ -253,6 +253,7 @@
   },
   "nav": {
     "label": "Navigation principale",
+    "home": "Accueil",
     "tours": "Visites",
     "cities": "Villes",
     "categories": "Catégories"
