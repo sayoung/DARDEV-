@@ -20,19 +20,20 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 02/10/2026
-**Objectif :** M2 F-11 (stockage S3 du worker)
+**Objectif :** M2 F-11 (démarrage du worker)
 
 Plan :
-- Mettre à jour `apps/worker/package.json` (@aws-sdk/client-s3).
-- Ajouter la décision D-91 dans `docs/DECISIONS.md`.
-- Implémenter `S3WorkerStorage` et `createS3Client` dans `apps/worker/src/storage.ts`.
-- Ajouter les tests unitaires dans `storage.test.ts`.
-- Vérifier avec `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+- Rendre la fonction `boot` asynchrone avec injections de dépendances (factories).
+- Charger l'environnement, S3, Prisma, les dépendances des dérivés et lancer le worker.
+- Connecter le retour à `shutdown` pour les signaux SIGINT et SIGTERM.
+- Adapter `main.test.ts` pour utiliser des mocks et vérifier le boot.
+- Mettre à jour `docs/PROGRESS.md`.
+- Vérifier avec `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 
 ## État des tâches
 
 ### En cours
-- Aucune tâche en cours pour le moment.
+- M2 F-11 (démarrage du worker) : fonction boot asynchrone implémentée (injection de dépendances, tests mockés validant l'environnement et l'ordre de fermeture, construction S3 avant Prisma, gestion de SIGINT/SIGTERM avec exit). lint, typecheck, test OK.
 
 ### Fait
 - Design 6c (champs multilingues et sélecteurs de médias) : dans `apps/admin/src/catalog/LocalizedTextField.tsx`, onglets de langue passés aux couleurs du thème, remplacement du `<input>` natif par `Input` de shadcn/ui, et correction de l'input masqué (sr-only pointer-events-none). `AssetPicker` et `MultiAssetPicker` déjà conformes au thème. lint, typecheck, test OK.
