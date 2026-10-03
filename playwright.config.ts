@@ -7,9 +7,17 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     browserName: 'chromium',
   },
-  webServer: {
-    command: 'pnpm --filter @xplor/admin dev',
-    port: 5173,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    ...(process.env.CI ? [] : [{
+      command: 'pnpm --filter @xplor/api dev',
+      url: 'http://127.0.0.1:3000/api/health',
+      reuseExistingServer: true,
+      timeout: 120000,
+    }]),
+    {
+      command: 'pnpm --filter @xplor/admin dev',
+      port: 5173,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 });
