@@ -20,6 +20,7 @@ const envKeys = [
   'STORAGE_PROVIDER',
   'STORAGE_LOCAL_PATH',
   'API_PUBLIC_URL',
+  'MEDIA_PUBLIC_URL',
 ] as const;
 
 export const envSchema = z.object({
@@ -38,6 +39,10 @@ export const envSchema = z.object({
   STORAGE_PROVIDER: z.enum(['s3', 'local']).default('s3'),
   STORAGE_LOCAL_PATH: z.string().optional(),
   API_PUBLIC_URL: z.url().default('http://localhost:3000'),
+  MEDIA_PUBLIC_URL: z
+    .url()
+    .refine((val) => !val.endsWith('/'), { message: "L'URL ne doit pas se terminer par un '/'" })
+    .default('http://localhost:9000/xplor'),
 });
 
 export type Env = z.infer<typeof envSchema>;

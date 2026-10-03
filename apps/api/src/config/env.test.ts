@@ -62,4 +62,21 @@ describe('loadEnv', () => {
     delete source.DATABASE_URL;
     expect(() => loadEnv(source)).toThrow(/DATABASE_URL/);
   });
+
+  it('defaults MEDIA_PUBLIC_URL and validates its format', () => {
+    // Default
+    expect(loadEnv(exampleEnv()).MEDIA_PUBLIC_URL).toBe('http://localhost:9000/xplor');
+    // Valid value
+    expect(
+      loadEnv({ ...exampleEnv(), MEDIA_PUBLIC_URL: 'https://media.xplor.local' }).MEDIA_PUBLIC_URL,
+    ).toBe('https://media.xplor.local');
+    // Reject trailing slash
+    expect(() =>
+      loadEnv({ ...exampleEnv(), MEDIA_PUBLIC_URL: 'https://media.xplor.local/' }),
+    ).toThrow(/MEDIA_PUBLIC_URL/);
+    // Reject invalid URL
+    expect(() => loadEnv({ ...exampleEnv(), MEDIA_PUBLIC_URL: 'not-a-url' })).toThrow(
+      /MEDIA_PUBLIC_URL/,
+    );
+  });
 });
