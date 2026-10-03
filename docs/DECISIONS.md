@@ -747,3 +747,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Raison :** clés immuables à empreinte, donc cache long et pas de fuite d'énumération utile ; originaux privés
 - **Alternatives :** URL signées/présignées par visite
 - **À valider :** oui
+
+## D-97 — Échappement HTML des hotspots INFO
+
+- **Date :** 03/10/2026
+- **Décision :** Le `bodyHtml` des hotspots de type INFO est produit par échappement strict du texte saisi (`&`, `<`, `>`, `"`, `'`). Cette méthode est plus stricte que `sanitize-html` et ne requiert l'ajout d'aucun paquet externe.
+- **Alternatives :** Utiliser la librairie `sanitize-html`.
+- **À valider :** oui
