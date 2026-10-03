@@ -28,7 +28,7 @@ Plan :
 ## État des tâches
 
 ### En cours
-- Aucune tâche en cours.
+- M1 D-83 : Tailwind 4 + shadcn/ui installés dans apps/admin (plugin Vite, cn, composants ui dont Tabs) ; lint, typecheck, test OK.
 
 ### Fait
 - M1 D-83 (3/4, autres composants + Tabs) : `Input`, `Textarea`, `Select`, `Table`, `Card` et `Label` réécrits avec `cn` au lieu de `${className || ''}`. `Label` mis à jour pour utiliser la primitive `@radix-ui/react-label`. Création de `Tabs` depuis `@radix-ui/react-tabs` avec `cn` et son test unitaire Vitest / RTL (`Tabs.test.tsx` vérifiant le changement de `data-state` au clic). lint, typecheck, test OK.
