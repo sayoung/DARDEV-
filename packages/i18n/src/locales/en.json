@@ -203,6 +203,13 @@
       "PROCESSING": "Processing",
       "READY": "Ready",
       "ERROR": "Error"
+    },
+    "upload": {
+      "submit": "Envoyer",
+      "uploading": "En cours",
+      "done": "Envoyé",
+      "error": "Erreur",
+      "select_files": "Sélectionner des fichiers"
     }
   },
   "page": {

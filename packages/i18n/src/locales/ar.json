@@ -203,6 +203,13 @@
       "PROCESSING": "قيد المعالجة",
       "READY": "جاهز",
       "ERROR": "خطأ"
+    },
+    "upload": {
+      "submit": "Envoyer",
+      "uploading": "En cours",
+      "done": "Envoyé",
+      "error": "Erreur",
+      "select_files": "Sélectionner des fichiers"
     }
   },
   "page": {
