@@ -30,6 +30,7 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 NF e2e (Playwright démarre l'API en local) : les e2e m1-livrable et m2-medias échouent à la connexion (« La connexion a échoué. Réessayez. », clé auth.failed… — playwright.config.ts démarre désormais l'API en local (hors CI) via un webServer en tableau, conforme à la demande, sans autre fichier modifié ; lint, typecheck et test verts, résultat de test:e2e non… (ec1070a)
 - 03/10/2026 — M2 DoD (mise à jour de docs/PROGRESS.md uniquement). Lire les trois fichiers $env:TEMP\dod_m2_c1a.txt, dod_m2_c1b.txt et dod_m2_c234.txt, produits par les tâche… — PROGRESS.md mis à jour fidèlement (tableau DoD M2 avec preuves, écart e2e réel consigné dans Bloqué, « DoD M2 remplie : non »), aucun autre fichier touché, contrôles verts. (5b1c22e)
 - 03/10/2026 — M2 DoD (critères 2, 3 et 4) : démarrer Docker (`docker compose up -d`), puis lancer dans l'ordre `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`, `p… — Tâche de vérification exécutée sans toucher au dépôt (diff vide, git propre) : lint, typecheck, db:migrate, db:seed, test (584) et test:int (58) sont OK. Les tests e2e ont échoué (2 tests, getByText('… (d582cd0)
 - 03/10/2026 — M2 DoD (critère 1, F-12 et API-24, puis critères 6 et 7) : sans modifier de code, vérifier ce qui suit. (a) F-12 : la commande CLI `reprocess` accepte `--all` e… — Vérification M2 DoD faite sans modifier le dépôt (diff vide, git propre) ; le fichier de résultat hors dépôt contient 4 lignes OK, recoupées par recherche dans les fichiers cités. (f9280dd)
@@ -69,7 +70,6 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 - M2 F-10 : Lecture des dimensions JPEG (image-size et sharp).
 - M2 F-11 : Producteur BullMQ côté API (PanoramaQueueService).
 - M2 F-11 : Dérivé tiles (panorama.tiles.ts).
-- M2 F-11 : Dérivés preview, web, thumb (panorama.derivatives.ts).
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
