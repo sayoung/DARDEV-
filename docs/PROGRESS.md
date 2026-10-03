@@ -73,7 +73,7 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
-- M2 critère 2, pnpm test:e2e en échec (getByText('Administrateur').first() non visible)
+- M2 critère 2, pnpm test:e2e en échec (locators 'validation-success' et 'attendu : >= 4096 ; reçu : 200' non visibles dans m1-livrable et m2-medias)
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
