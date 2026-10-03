@@ -196,7 +196,8 @@
       "date": "تاريخ الإنشاء",
       "dimensions": "الأبعاد",
       "size": "الحجم (ميجابايت)",
-      "status": "الحالة"
+      "status": "الحالة",
+      "actions": "إجراءات"
     },
     "status": {
       "PENDING": "قيد الانتظار",
@@ -210,6 +211,14 @@
       "done": "Envoyé",
       "error": "Erreur",
       "select_files": "Sélectionner des fichiers"
+    },
+    "actions": {
+      "reprocess": "إعادة معالجة",
+      "delete": "حذف",
+      "confirmDelete": "هل أنت متأكد أنك تريد حذف هذه الوسائط؟"
+    },
+    "errors": {
+      "inUse": "تُستخدم هذه الوسائط بواسطة مشهد أو نقطة اهتمام."
     }
   },
   "page": {

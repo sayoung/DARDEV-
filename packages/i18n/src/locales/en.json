@@ -196,7 +196,8 @@
       "date": "Creation date",
       "dimensions": "Dimensions",
       "size": "Size (MB)",
-      "status": "Status"
+      "status": "Status",
+      "actions": "Actions"
     },
     "status": {
       "PENDING": "Pending",
@@ -210,6 +211,14 @@
       "done": "Envoyé",
       "error": "Erreur",
       "select_files": "Sélectionner des fichiers"
+    },
+    "actions": {
+      "reprocess": "Reprocess",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this media?"
+    },
+    "errors": {
+      "inUse": "This media is used by a scene or hotspot."
     }
   },
   "page": {

@@ -267,7 +267,8 @@
       "date": "Date de création",
       "dimensions": "Dimensions",
       "size": "Taille (Mo)",
-      "status": "Statut"
+      "status": "Statut",
+      "actions": "Actions"
     },
     "status": {
       "PENDING": "En attente",
@@ -281,6 +282,14 @@
       "done": "Envoyé",
       "error": "Erreur",
       "select_files": "Sélectionner des fichiers"
+    },
+    "actions": {
+      "reprocess": "Retraiter",
+      "delete": "Supprimer",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce média ?"
+    },
+    "errors": {
+      "inUse": "Ce média est utilisé par une scène ou un point d'intérêt."
     }
   },
   "page": {

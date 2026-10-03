@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { AssetKind, ProcessingStatus, Role, type AssetResponse, type MeResponse, type PaginatedAssetResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -115,6 +115,111 @@ describe('MediaPage', () => {
     
     // Vérifier le log de l'erreur
     expect(screen.getByText('Image trop petite')).toBeTruthy();
+  });
+
+  it('reprocess met à jour le badge', async () => {
+    render(<App />);
+    await screen.findByText('8192 × 4096');
+
+    // On mocke la réponse de reprocess
+    fetchMock.mockImplementationOnce((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/reprocess') && methodOf(input, init) === 'POST') {
+        return Promise.resolve(jsonResponse(200, {
+          ...mockErrorAsset,
+          processingStatus: ProcessingStatus.PENDING,
+          processingLog: null,
+        }));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    const reprocessButtons = screen.getAllByRole('button', { name: resources.fr.media.actions.reprocess });
+    expect(reprocessButtons.length).toBe(2);
+    
+    // On clique sur le bouton Retraiter de la ligne en erreur
+    if (reprocessButtons[1]) fireEvent.click(reprocessButtons[1]);
+
+    // On vérifie que le badge a été mis à jour
+    expect(await screen.findByText(resources.fr.media.status.PENDING)).toBeTruthy();
+  });
+
+  it('delete confirmé recharge la liste', async () => {
+    render(<App />);
+    await screen.findByText('8192 × 4096');
+
+    // On mocke la confirmation
+    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true);
+
+    // On mocke la réponse de delete
+    fetchMock.mockImplementationOnce((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith(mockReadyAsset.id) && methodOf(input, init) === 'DELETE') {
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    // On mocke la réponse de rechargement de la liste
+    fetchMock.mockImplementationOnce((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.includes('/admin/assets') && methodOf(input, init) === 'GET') {
+        return Promise.resolve(jsonResponse(200, {
+          items: [mockErrorAsset], // on enlève l'asset supprimé
+          total: 1,
+          page: 1,
+          pageSize: 20
+        } satisfies PaginatedAssetResponse));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    const deleteButtons = screen.getAllByRole('button', { name: resources.fr.media.actions.delete });
+    if (deleteButtons[0]) fireEvent.click(deleteButtons[0]);
+
+    expect(confirmSpy).toHaveBeenCalledWith(resources.fr.media.actions.confirmDelete);
+    
+    // La liste se recharge et mockReadyAsset disparait
+    await waitFor(() => {
+      expect(screen.queryByText('8192 × 4096')).toBeNull();
+    });
+  });
+
+  it('delete en 409 affiche l\'alerte', async () => {
+    render(<App />);
+    await screen.findByText('8192 × 4096');
+
+    vi.spyOn(window, 'confirm').mockImplementation(() => true);
+
+    fetchMock.mockImplementationOnce((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith(mockReadyAsset.id) && methodOf(input, init) === 'DELETE') {
+        return Promise.resolve(jsonResponse(409, { error: { code: 'CONFLICT' } }));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    const deleteButtons = screen.getAllByRole('button', { name: resources.fr.media.actions.delete });
+    if (deleteButtons[0]) fireEvent.click(deleteButtons[0]);
+
+    // On vérifie l'alerte
+    expect(await screen.findByText(resources.fr.media.errors.inUse)).toBeTruthy();
+  });
+
+  it('delete annulé n\'appelle pas l\'API', async () => {
+    render(<App />);
+    await screen.findByText('8192 × 4096');
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => false);
+
+    const deleteButtons = screen.getAllByRole('button', { name: resources.fr.media.actions.delete });
+    if (deleteButtons[0]) fireEvent.click(deleteButtons[0]);
+
+    expect(confirmSpy).toHaveBeenCalled();
+    
+    // Le fetch ne doit pas être appelé pour le DELETE
+    // On peut vérifier en comptant le nombre d'appels à fetchMock (1 pour /me, 1 pour /assets)
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

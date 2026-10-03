@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssetKind, ProcessingStatus, z, type PaginatedAssetResponse } from '@xplor/shared';
 import { listAssets } from '../api/catalog.js';
+import { reprocessAsset, deleteAsset, ApiError } from '../api/client.js';
 import { navigateWithSearch, useAppLocation } from '../router.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
@@ -33,6 +34,8 @@ export function MediaPage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   const fetchAssets = useCallback(async (mounted: { current: boolean }) => {
     try {
@@ -69,6 +72,51 @@ export function MediaPage() {
     setRefreshKey(prev => prev + 1);
   }, []);
 
+  const handleReprocess = async (id: string) => {
+    setActionError(null);
+    setProcessingIds(prev => new Set(prev).add(id));
+    try {
+      const updatedAsset = await reprocessAsset(id);
+      setAssetsData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map(a => a.id === id ? updatedAsset : a)
+        };
+      });
+    } catch (error) {
+      setActionError(error instanceof ApiError && error.message ? error.message : t('catalog.asset.error'));
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('media.actions.confirmDelete'))) return;
+    setActionError(null);
+    setProcessingIds(prev => new Set(prev).add(id));
+    try {
+      await deleteAsset(id);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setActionError(t('media.errors.inUse'));
+      } else {
+        setActionError(error instanceof ApiError && error.message ? error.message : t('catalog.asset.error'));
+      }
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
   function updatePage(newPage: number) {
     const next = new URLSearchParams(searchParams);
     next.set('page', String(newPage));
@@ -98,6 +146,12 @@ export function MediaPage() {
         </Alert>
       ) : null}
 
+      {actionError ? (
+        <Alert variant="destructive" role="alert">
+          {actionError}
+        </Alert>
+      ) : null}
+
       {loading ? (
         <p>{t('common.loading')}</p>
       ) : items.length === 0 ? (
@@ -111,6 +165,7 @@ export function MediaPage() {
                 <TableHead>{t('media.columns.dimensions')}</TableHead>
                 <TableHead>{t('media.columns.size')}</TableHead>
                 <TableHead>{t('media.columns.status')}</TableHead>
+                <TableHead>{t('media.columns.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -141,6 +196,26 @@ export function MediaPage() {
                             {asset.processingLog}
                           </span>
                         )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={processingIds.has(asset.id) || (asset.processingStatus !== ProcessingStatus.READY && asset.processingStatus !== ProcessingStatus.ERROR)}
+                          onClick={() => void handleReprocess(asset.id)}
+                        >
+                          {processingIds.has(asset.id) ? t('common.loading') : t('media.actions.reprocess')}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={processingIds.has(asset.id)}
+                          onClick={() => void handleDelete(asset.id)}
+                        >
+                          {t('media.actions.delete')}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
