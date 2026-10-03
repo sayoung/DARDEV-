@@ -722,3 +722,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **À valider :** non
 
 - [03/10/2026] Mise à jour des actions CI vers Node 24 : actions/checkout@v7, pnpm/action-setup@v6, actions/setup-node@v7, actions/upload-artifact@v7. À valider : non
+
+## D-94 — Scripts locaux (tsx, @xplor/shared)
+
+- **Date :** 03/10/2026
+- **Décision :** Utilisation de `tsx` (en racine, licence MIT) pour l'exécution du script `scripts/demo-m2-upload.ts` via `pnpm demo:m2`. Ajout de `@xplor/shared` (`workspace:^`) aux dépendances de développement à la racine pour les scripts. La démo considère `ERROR` (enum `ProcessingStatus`) comme statut d'échec.
+- **Raison :** Exécution de scripts TypeScript partageant le code du monorepo.
+- **Alternatives :** `ts-node`, compilation en js au préalable.
+- **À valider :** non
