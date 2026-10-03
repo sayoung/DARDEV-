@@ -145,6 +145,55 @@ jobs:
           SEED_DEFAULT_PASSWORD: xplor-seed-dev-2026
           API_BASE_URL: http://127.0.0.1:3000
 
+      - name: Installer Chromium pour Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Attendre l'API
+        run: |
+          set -euo pipefail
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3000/api/health >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo "---- journal API ----"
+            node --input-type=module -e "import { readFileSync } from 'node:fs'; const secret = process.env.SEED_DEFAULT_PASSWORD ?? ''; let text = ''; try { text = readFileSync(process.env.RUNNER_TEMP + '/xplor-api.log', 'utf8'); } catch { process.exit(0); } if (secret !== '') text = text.split(secret).join('[redacted]'); process.stdout.write(text);" || true
+            exit 1
+          fi
+        env:
+          SEED_DEFAULT_PASSWORD: xplor-seed-dev-2026
+
+      - name: Tests de bout en bout
+        run: pnpm test:e2e
+        env:
+          CI: "true"
+          NODE_ENV: development
+          PORT: "3000"
+          DATABASE_URL: postgresql://xplor:xplor@localhost:5432/xplor
+          REDIS_URL: redis://localhost:6379
+          S3_ENDPOINT: http://localhost:9000
+          S3_ACCESS_KEY: xplor
+          S3_SECRET_KEY: xplor-dev-secret
+          S3_BUCKET: xplor
+          SMTP_HOST: localhost
+          SMTP_PORT: "1025"
+          SESSION_SECRET: dev-only-session-secret-not-for-production
+          ADMIN_BASE_URL: http://localhost:5173
+          SEED_DEFAULT_PASSWORD: xplor-seed-dev-2026
+          API_BASE_URL: http://127.0.0.1:3000
+
+      - name: Publier les résultats Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: test-results/
+          include-hidden-files: true
+
       - name: Arrêter l'API
         if: always()
         run: |
@@ -166,21 +215,9 @@ jobs:
           }
           kill_tree "$pid"
 
-      - name: Installer Chromium pour Playwright
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Tests de bout en bout
-        run: pnpm test:e2e
-        env:
-          CI: "true"
-
-      - name: Publier les résultats Playwright
+      - name: Arrêter MinIO
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: test-results/
-          include-hidden-files: true
+        run: docker rm -f minio || true
 
       - name: Tests
         run: pnpm test
