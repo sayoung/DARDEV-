@@ -5,3 +5,4 @@
 - M2 API-24 : Route d'upload POST /api/v1/admin/assets/upload-url.
 - M2 F-10 : Règles de validation des panoramas.
 - M2 API-24 (2/2) : StorageService S3 et StorageModule global.
+- M2 API-24 (1/2) : Schémas partagés d'upload de médias.

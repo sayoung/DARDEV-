@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 F-12 (exécution de la commande de retraitement) : sur les données de la démo M2 (Docker, API et worker démarrés), lancer `pnpm --filter api cli reprocess --a… — formatCliError (with unit tests) fixes the CLI error message for unknown assets, and the 'Retraitement (F-12)' section is added to DEMO_M2.md; lint, typecheck and test pass and PROGRESS.md is untouche… (ccb59ca)
 - 03/10/2026 — M2 Démo (exécution, livrable) : Docker démarré (`docker compose up -d`), `pnpm db:migrate`, `pnpm db:seed`, `.env` avec STORAGE_PROVIDER=s3, puis lancer l'API e… — Section « Résultat du 03/10/2026 » ajoutée à DEMO_M2.md avec tableau et code de sortie 0, sans toucher à PROGRESS.md; lint, typecheck et tests verts. Réserves: absence de fichiers invalide_* dans le d… (8276a11)
 - 03/10/2026 — M2 F-10 (e2e) : ajouter e2e/m2-medias.spec.ts (Playwright, même connexion admin du seed que e2e/m1-livrable.spec.ts). Il génère dans le test un petit JPEG inval… — Le test e2e M2 génère un JPEG 200×100 en mémoire et vérifie le message F-10 « attendu : >= 4096 ; reçu : 200 » (refus 422 à la complétion) ; il correspond au code réel et lint, typecheck et test sont… (8686886)
 - 03/10/2026 — M2 Stockage (bug bloquant de la démo) : la démo pnpm demo:m2 donne 10 panoramas en ERROR « The specified key does not exist ». Cause : .env.example met STORAGE_… — Le worker refuse STORAGE_PROVIDER=local, .env.example passe à s3, la colonne « raison » du script de démo est en place, avec les tests demandés ; lint, typecheck et test sont verts. (5dccb1e)
@@ -79,7 +80,6 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - M2 F-11 : File panorama, contrat partagé (panorama-queue.ts).
 - M2 F-11 (1/n) : Initialisation du worker et module des dérivés.
 - M2 F-11 (2/n) : Ajout du journal d'erreur.
-- M2 API-24 (1/2) : Schémas partagés d'upload de médias.
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
