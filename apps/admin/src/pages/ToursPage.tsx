@@ -14,6 +14,7 @@ import { useAuth } from '../auth/AuthProvider.js';
 import { duplicateTour, listCategories, listCities, listTours } from '../api/catalog.js';
 import { navigate, navigateWithSearch, useAppLocation } from '../router.js';
 import { PageHeader } from '../components/PageHeader.js';
+import { StatusBadge } from '../components/StatusBadge.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
 import { Button } from '../components/ui/Button.js';
 import { Badge } from '../components/ui/Badge.js';
@@ -300,9 +301,7 @@ export function ToursPage() {
                     </TableCell>
                     <TableCell>{city ? localize(city.name, i18n.language) : ''}</TableCell>
                     <TableCell>
-                      <Badge variant={tour.status === TourStatus.PUBLISHED ? 'success' : 'secondary'}>
-                        {t(`catalog.tour.status.${tour.status}`)}
-                      </Badge>
+                      <StatusBadge status={tour.status} />
                     </TableCell>
                     <TableCell>{tour.sceneCount}</TableCell>
                     <TableCell>
