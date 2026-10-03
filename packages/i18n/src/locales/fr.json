@@ -261,13 +261,17 @@
   "page": {
     "home": {
       "title": "Accueil",
+      "loading": "Chargement du tableau de bord…",
+      "error": "Impossible de charger le tableau de bord.",
       "stats": {
         "total": "Visites totales",
         "drafts": "Brouillons",
-        "published": "Publiées"
+        "published": "Publiées",
+        "scenes": "Scènes"
       },
       "shortcuts": {
         "title": "Raccourcis",
+        "newTour": "Nouvelle visite",
         "manageTours": "Gérer les visites",
         "manageCities": "Gérer les villes",
         "manageCategories": "Gérer les catégories"

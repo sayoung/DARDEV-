@@ -20,10 +20,10 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M1 D-83 (2a/5, compléter la mise en page commune)
+**Objectif :** M1 D-83 (3a/5, compléter le tableau de bord d'accueil)
 
 Plan :
-- Tâche terminée, attente de la prochaine.
+- Tâche terminée. Attente de la suite.
 
 ## État des tâches
 
@@ -31,6 +31,7 @@ Plan :
 - Aucun.
 
 ### Fait
+- M1 D-83 (3a/5, compléter le tableau de bord d'accueil) : ajout d'une 4e Card « Scènes » via `listTours({ page: 1, pageSize: 100 })` qui fournit aussi le total, passage de la grille en `md:grid-cols-2 lg:grid-cols-4`, ajout de `Promise.all` avec états de chargement (`role="status"`) et d'erreur (`Alert`), et ajout du raccourci "Nouvelle visite" conditionné par rôle (`Role.ADMIN` ou `Role.EDITOR`). Ajout des traductions FR pour ces états. pnpm lint, typecheck, test OK.
 - M1 D-83 (2b/5, test de la mise en page) : Création de `apps/admin/src/components/AppLayout.test.tsx` pour tester `AppLayout`, avec assertions sur le nom, le rôle, la navigation et le bouton de déconnexion. lint, typecheck, test OK.
 - M1 D-83 (2a/5, compléter la mise en page commune) : ajout du lien Accueil, badge de rôle dans l'en-tête, nettoyage de HomePage, CSS responsive. lint, typecheck, test OK.
 - M1 D-83 : Tailwind 4 + shadcn/ui installés dans apps/admin (plugin Vite, cn, composants ui dont Tabs) ; lint, typecheck, test OK.
