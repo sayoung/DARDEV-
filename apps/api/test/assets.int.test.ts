@@ -267,6 +267,55 @@ describe('médias HTTP', () => {
     });
     expect(forbidden.statusCode).toBe(403);
   });
+
+  it('gère correctement le POST reprocess (200, 403, CSRF, 400)', async () => {
+    const asset = await insertAsset(AssetKind.PANORAMA, '2026-09-01T00:00:00.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    const editor = await login(EDITOR_EMAIL);
+    const manager = await login(MANAGER_EMAIL);
+
+    // Éditeur reçoit 200
+    const success = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/${asset.id}/reprocess`,
+      headers: {
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+      },
+    });
+    expect(success.statusCode).toBe(200);
+
+    // Gestionnaire d'hôtel reçoit 403
+    const forbidden = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/${asset.id}/reprocess`,
+      headers: {
+        cookie: sessionCookie(manager.sessionId),
+        'x-csrf-token': manager.csrfToken,
+      },
+    });
+    expect(forbidden.statusCode).toBe(403);
+
+    // Sans jeton CSRF est refusé
+    const noCsrf = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/${asset.id}/reprocess`,
+      headers: { cookie: sessionCookie(editor.sessionId) },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    // ID non UUID donne 400
+    const notUuid = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/not-a-uuid/reprocess`,
+      headers: {
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+      },
+    });
+    expect(notUuid.statusCode).toBe(400);
+  });
 });
 
 async function insertAsset(

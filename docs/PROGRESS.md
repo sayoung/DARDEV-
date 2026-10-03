@@ -23,15 +23,13 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Corriger la CI M1 pour l'environnement de bout en bout (e2e) et mettre à jour les actions GitHub vers Node 24
+**Objectif :** Ajouter la route `reprocess` pour les médias.
 
 Plan :
-- Déplacer l'arrêt de l'API et de MinIO après les tests e2e.
-- Ajouter une boucle d'attente pour la santé de l'API avec affichage du journal.
-- Remplacer le proxy '/api' localhost par 127.0.0.1 dans l'admin.
-- Mettre à jour les actions GitHub vers Node 24 (checkout, pnpm, setup-node, upload-artifact).
+- Exposer la route `POST /api/v1/admin/assets/:id/reprocess` dans `assets.controller.ts`.
+- Ajouter les tests d'intégration (200 pour éditeur, 403 pour gestionnaire, refus sans CSRF, 400 si ID invalide).
+- Mettre à jour la description OpenAPI et générer le document.
 - Vérifier que pnpm lint, typecheck et test passent.
-- Mettre à jour PROGRESS.md.
 
 État :
 lint, typecheck, test OK
@@ -42,6 +40,7 @@ lint, typecheck, test OK
 - Aucun.
 
 ### Fait
+- M2 API-24 : Route d'upload POST /api/v1/admin/assets/:id/reprocess (contrôleur et tests d'intégration, mise à jour OpenAPI).
 - M1 CI : Correction de la décision D-94 (formatage) et vérification des versions Node 24 (runs.using=node24).
 - M1 CI : Mise à jour des actions GitHub vers leurs versions Node 24 (checkout@v7, pnpm/action-setup@v6, setup-node@v7, upload-artifact@v7).
 - M1 CI : Déplacement de l'arrêt de l'API et MinIO après Playwright, ajout de l'attente de l'API et du proxy 127.0.0.1.
