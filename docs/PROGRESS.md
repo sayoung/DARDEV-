@@ -23,16 +23,16 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M2 API-24 : Ajouter `remove` dans `AssetsService`.
+**Objectif :** M2 API-24 : Ajouter la route DELETE `/api/v1/admin/assets/:id`
 
 Plan :
-- Ajouter les tests unitaire (introuvable, utilisé, libre) dans `assets.service.test.ts`.
-- Implémenter la méthode `remove` dans `AssetsService` avec contrôle des relations Prisma (`coverOf`, `panoramas`, `ambientOf`, `hotelLogos`) et appel de suppression Storage.
-- Lancer lint, typecheck et tests.
-- Mettre à jour `docs/PROGRESS.md`.
+- Ajouter le contrôleur `remove` dans `AssetsController` (appelle `AssetsService.remove`).
+- Ajouter les tests HTTP (204 libre, 409 utilisé, 403 gestionnaire, 403 pas de CSRF).
+- Mettre à jour OpenAPI.
+- Lancer lint, typecheck, et test:int.
 
 État :
-lint et typecheck OK. tests unitaires d'AssetsService OK. Cependant, le test `apps/admin/src/pages/TourForm.test.tsx` échoue de manière isolée sur un timeout, sans rapport avec `AssetsService`.
+Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lint, typecheck et tests 100% OK.
 
 ## État des tâches
 
@@ -40,6 +40,7 @@ lint et typecheck OK. tests unitaires d'AssetsService OK. Cependant, le test `ap
 - Aucun.
 
 ### Fait
+- M2 API-24 : exposer DELETE /api/v1/admin/assets/:id.
 - M2 API-24 : Méthode remove dans AssetsService (vérification de l'utilisation et suppression du stockage).
 - M2 F-12 : Implémentation du CLI API (main.ts) et méthode reprocessAllPanoramas dans AssetsService.
 - M2 F-12 : Création du parseur CLI (reprocess-args.ts) et ses tests.

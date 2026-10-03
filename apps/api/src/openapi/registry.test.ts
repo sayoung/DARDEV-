@@ -81,7 +81,7 @@ describe('document OpenAPI', () => {
     const readAsset = doc.paths?.['/api/v1/admin/assets/{id}']?.get?.responses;
     expect(readAsset?.['200']).toBeDefined();
     expect(readAsset?.['404']).toBeDefined();
-    expect(doc.paths?.['/api/v1/admin/assets/{id}']?.delete).toBeUndefined();
+    expect(doc.paths?.['/api/v1/admin/assets/{id}']?.delete).toBeDefined();
     expect(body).toContain('ASSET_NOT_FOUND');
     const listTours = doc.paths?.['/api/v1/admin/tours']?.get?.responses;
     expect(listTours?.['403']).toBeDefined();
