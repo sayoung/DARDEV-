@@ -20,13 +20,10 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M1 D-83 (2/4, composants à variantes avec cva + cn)
+**Objectif :** M1 D-83 (4/4, ou tâches suivantes)
 
 Plan :
-- Réécrire `Button.tsx`, `Badge.tsx` et `Alert.tsx` pour utiliser `cva` et `cn`.
-- Conserver les props, tailles et variantes existantes.
-- Passer `asChild` via `Slot` sur `Button.tsx`.
-- Valider le build, le lint, le typecheck et les tests.
+- Attente de la prochaine tâche.
 
 ## État des tâches
 
@@ -34,6 +31,7 @@ Plan :
 - Aucune tâche en cours.
 
 ### Fait
+- M1 D-83 (3/4, autres composants + Tabs) : `Input`, `Textarea`, `Select`, `Table`, `Card` et `Label` réécrits avec `cn` au lieu de `${className || ''}`. `Label` mis à jour pour utiliser la primitive `@radix-ui/react-label`. Création de `Tabs` depuis `@radix-ui/react-tabs` avec `cn` et son test unitaire Vitest / RTL (`Tabs.test.tsx` vérifiant le changement de `data-state` au clic). lint, typecheck, test OK.
 - M1 D-83 (2/4, composants à variantes avec cva + cn) : réécriture de Button.tsx, Badge.tsx et Alert.tsx avec class-variance-authority et cn. Les variantes, tailles, ref et asChild (Slot) sont conservés. Classes CSS logiques employées. lint, typecheck, test OK, build OK.
 - M1 D-83 (1/4, plugin Vite + cn) : ajout de `@tailwindcss/vite` dans `apps/admin/vite.config.ts`, création de `cn.ts` et `cn.test.ts` (Vitest). La compilation produit bien le CSS Tailwind. lint, typecheck, test OK.
 - M0 F-90 (Parcours réel de bout en bout) : script Node e2e exécuté le 03/10/2026. L'API et le proxy Vite répondent correctement sans erreur ECONNREFUSED.
