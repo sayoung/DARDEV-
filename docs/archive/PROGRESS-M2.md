@@ -1,0 +1,63 @@
+| # | Critère | État | Preuve |
+|---|---|---|---|
+| 1 | Toutes les exigences implémentées et CA vérifiés | fait | OK (panorama-rules.ts, assets.service.ts) |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | fait | test 584, test:int 58, e2e 9 OK ; CI distante à confirmer par le porteur |
+| 3 | pnpm lint, pnpm typecheck sans erreur | fait | pnpm lint, pnpm typecheck OK |
+| 4 | Migrations appliquées, seed à jour | fait | pnpm db:migrate, pnpm db:seed OK |
+| 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) | - |
+| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | fait | docs/openapi.json OK |
+| 7 | Démo avec données pertinentes | fait | docs/DEMO_M2.md OK |
+| 8 | Démo au porteur et retours consignés | à faire | (démo au porteur) |
+
+Démo validée par le porteur (03/10/2026)
+
+### Fait
+- 03/10/2026 — M2 DoD (clôture du critère 2, docs/PROGRESS.md uniquement) : prérequis, les tâches « M2 NF e2e (sessions concurrentes) » et « M2 NF e2e (m1-livrable indépendant… — Seul docs/PROGRESS.md est modifié : critère 2 à « fait » avec la preuve demandée, ligne bloquée retirée, DoD M2 « oui (hors critère 8) » et « Terminé » ajoutés, fichier de 11 Ko sans sortie de command… (2f67273)
+- 03/10/2026 — Récupération du travail non commité — Le test e2e M1 attend et sélectionne désormais des panoramas au statut « Prêt » au lieu de se fier à l'ordre des options, ce qui le rend indépendant de l'état de la base ; le changement est correct, m… (da9a500)
+- 03/10/2026 — M2 NF e2e (sessions concurrentes) : dans playwright.config.ts, ajouter `workers: 1` et `fullyParallel: false` à la racine de defineConfig, sans rien changer d'a… — Config Playwright en série (workers: 1, fullyParallel: false) et entrée D-95 ajoutées, sans toucher à l'API ni à PROGRESS.md ; lint, typecheck et test verts ; l'e2e m2-medias n'a pas pu être confirmé… (f04a709)
+- 03/10/2026 — M2 DoD (clôture du critère 2, docs/PROGRESS.md uniquement) : prérequis, la tâche « M2 NF e2e (Playwright démarre l'API en local) » est fusionnée. Docker démarré… — L'e2e échoue encore ; la cause est mise à jour en une ligne dans « Bloqué », le critère reste non validé et seul docs/PROGRESS.md est modifié, comme demandé pour ce cas. (70acddb)
+- 03/10/2026 — M2 NF e2e (Playwright démarre l'API en local) : les e2e m1-livrable et m2-medias échouent à la connexion (« La connexion a échoué. Réessayez. », clé auth.failed… — playwright.config.ts démarre désormais l'API en local (hors CI) via un webServer en tableau, conforme à la demande, sans autre fichier modifié ; lint, typecheck et test verts, résultat de test:e2e non… (ec1070a)
+- 03/10/2026 — M2 DoD (mise à jour de docs/PROGRESS.md uniquement). Lire les trois fichiers $env:TEMP\dod_m2_c1a.txt, dod_m2_c1b.txt et dod_m2_c234.txt, produits par les tâche… — PROGRESS.md mis à jour fidèlement (tableau DoD M2 avec preuves, écart e2e réel consigné dans Bloqué, « DoD M2 remplie : non »), aucun autre fichier touché, contrôles verts. (5b1c22e)
+- 03/10/2026 — M2 DoD (critères 2, 3 et 4) : démarrer Docker (`docker compose up -d`), puis lancer dans l'ordre `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:int`, `p… — Tâche de vérification exécutée sans toucher au dépôt (diff vide, git propre) : lint, typecheck, db:migrate, db:seed, test (584) et test:int (58) sont OK. Les tests e2e ont échoué (2 tests, getByText('… (d582cd0)
+- 03/10/2026 — M2 DoD (critère 1, F-12 et API-24, puis critères 6 et 7) : sans modifier de code, vérifier ce qui suit. (a) F-12 : la commande CLI `reprocess` accepte `--all` e… — Vérification M2 DoD faite sans modifier le dépôt (diff vide, git propre) ; le fichier de résultat hors dépôt contient 4 lignes OK, recoupées par recherche dans les fichiers cités. (f9280dd)
+- 03/10/2026 — M2 DoD (critère 1, F-10 et F-11) : sans modifier de code, vérifier dans le code et les tests que F-10 et F-11 sont couverts. F-10 : ratio 2:1 à ±1 %, largeur ≥… — Aucun fichier du dépôt modifié ; le fichier temporaire contient une ligne OK par exigence F-10/F-11, et deux de ces lignes sont recoupées par Grep. (7b1c888)
+- 03/10/2026 — M2 F-12 (exécution de la commande de retraitement) : sur les données de la démo M2 (Docker, API et worker démarrés), lancer `pnpm --filter api cli reprocess --a… — formatCliError (with unit tests) fixes the CLI error message for unknown assets, and the 'Retraitement (F-12)' section is added to DEMO_M2.md; lint, typecheck and test pass and PROGRESS.md is untouche… (ccb59ca)
+- 03/10/2026 — M2 Démo (exécution, livrable) : Docker démarré (`docker compose up -d`), `pnpm db:migrate`, `pnpm db:seed`, `.env` avec STORAGE_PROVIDER=s3, puis lancer l'API e… — Section « Résultat du 03/10/2026 » ajoutée à DEMO_M2.md avec tableau et code de sortie 0, sans toucher à PROGRESS.md; lint, typecheck et tests verts. Réserves: absence de fichiers invalide_* dans le d… (8276a11)
+- 03/10/2026 — M2 F-10 (e2e) : ajouter e2e/m2-medias.spec.ts (Playwright, même connexion admin du seed que e2e/m1-livrable.spec.ts). Il génère dans le test un petit JPEG inval… — Le test e2e M2 génère un JPEG 200×100 en mémoire et vérifie le message F-10 « attendu : >= 4096 ; reçu : 200 » (refus 422 à la complétion) ; il correspond au code réel et lint, typecheck et test sont… (8686886)
+- 03/10/2026 — M2 Stockage (bug bloquant de la démo) : la démo pnpm demo:m2 donne 10 panoramas en ERROR « The specified key does not exist ». Cause : .env.example met STORAGE_… — Le worker refuse STORAGE_PROVIDER=local, .env.example passe à s3, la colonne « raison » du script de démo est en place, avec les tests demandés ; lint, typecheck et test sont verts. (5dccb1e)
+- 03/10/2026 — M2 F-11 (admin 6/n, rafraîchissement) : dans MediaPage, tant qu'au moins un asset affiché est PENDING ou PROCESSING, recharger la page courante toutes les 3 s (… — Polling 3 s de MediaPage et fonction pure needsPolling livrés avec leurs tests, contrôles verts ; réserves mineures : spinner absent lors d'un changement de page après un rafraîchissement, polling arr… (00e214e)
+- 03/10/2026 — M2 API-24 (admin 5/n, actions) : dans le tableau de MediaPage, ajouter une colonne Actions avec deux boutons : « Retraiter » (`media.actions.reprocess`), qui ap… — Colonne Actions (Retraiter/Supprimer) conforme à la demande, 409 gérée, 4 tests ajoutés, lint/typecheck/test verts. (026246a)
+- 03/10/2026 — M2 F-10/API-24 (admin 4/n, envoi) : créer apps/admin/src/catalog/PanoramaUploader.tsx : un champ fichier (Label + Input type=file, accept="image/jpeg", multiple… — PanoramaUploader envoie en série avec progression et erreurs par fichier, il est intégré dans MediaPage, le test demandé est présent, les chaînes fr existent et les contrôles sont verts. (b79702a)
+- 03/10/2026 — M2 F-10/API-24 (admin 3/n, liste) : dans MediaPage.tsx, charger les panoramas avec `listAssets({ kind: 'PANORAMA', page, pageSize: 20 })` (apps/admin/src/api/ca… — Liste des panoramas implémentée conformément à la demande (tableau, badge de statut, journal ERROR, états vide/chargement/erreur, pagination), tests présents et contrôles verts. (f760293)
+- 03/10/2026 — M2 F-10/API-24 (admin 2/n, route et navigation) : dans apps/admin/src/router.ts, ajouter la route `{ name: 'media' }` pour le chemin `/media` (parsePathname et… — Route /media, lien de navigation « Médias », MediaPage avec PageHeader (titre + sous-titre), clés i18n et tests mis à jour ; lint, typecheck et test verts, charte respectée, pas de changement d'API. (6739cb3)
+- 03/10/2026 — M2 Démo (3/3, documentation) : écrire docs/DEMO_M2.md, sans modifier aucun code, en repartant de la version de la branche agent/20261003-144021-m2-demo-3-3-docu… — docs/DEMO_M2.md est conforme : tous les blocs ont un tag de langage, aucun espace en fin de ligne, contenu complet et cohérent avec le script demo:m2, aucun code ni PROGRESS.md modifié, contrôles vert… (9f89c88)
+- 03/10/2026 — M2 Démo (2/3, script réseau) : créer scripts/demo-m2-upload.ts, exécuté par `pnpm demo:m2` (tsx, déjà configuré). Il s'appuie sur les fonctions de scripts/demo-… — Le script scripts/demo-m2-upload.ts respecte le cahier des charges de la tâche (flux login/CSRF/upload/poll, réutilisation de demo-m2-lib, aucun secret en dur) et les contrôles sont verts. (0651848)
+- 03/10/2026 — M2 Démo (1/3, socle et logique pure) : reprendre le travail de la branche agent/20261003-141215-m2-demo-1-3-socle-et-logique-pure-1-dans (lecture seule via `git… — Socle demo:m2 (tsx, lib pure + tests, projet vitest scripts) conforme, D-94 ajoutée après la ligne CI, pas de temp_dec.md, PROGRESS.md intact, contrôles verts. (0414b5c)
+- M2 F-10/API-24 (admin, 1/n) : Ajout des fonctions client.ts (uploadPanorama, etc.) avec typage complet partagé, et tests HTTP ok.
+- M2 API-24 : exposer DELETE /api/v1/admin/assets/:id.
+- M2 API-24 : Méthode remove dans AssetsService (vérification de l'utilisation et suppression du stockage).
+- M2 F-12 : Implémentation du CLI API (main.ts) et méthode reprocessAllPanoramas dans AssetsService.
+- M2 F-12 : Création du parseur CLI (reprocess-args.ts) et ses tests.
+- M2 API-24 : Route de retraitement POST /api/v1/admin/assets/:id/reprocess (contrôleur et tests d'intégration, mise à jour OpenAPI).
+- M1 CI : Correction de la décision D-94 (formatage) et vérification des versions Node 24 (runs.using=node24).
+- M1 CI : Mise à jour des actions GitHub vers leurs versions Node 24 (checkout@v7, pnpm/action-setup@v6, setup-node@v7, upload-artifact@v7).
+- M1 CI : Déplacement de l'arrêt de l'API et MinIO après Playwright, ajout de l'attente de l'API et du proxy 127.0.0.1.
+- M2 API-24 : Méthode reprocess dans AssetsService avec gestion des erreurs 404, 422, 409 et appel à la file BullMQ.
+- M2 F-10/API-24 (1/5, StorageService et URL pré-signées) : Implémentation terminée avec S3StorageService et LocalStorageService.
+- Design 6/6 : Charte Xplor appliquée à tout le back-office, nettoyage des classes CSS personnalisées.
+- M2 F-11/F-12 : Mise en file rejouable (signature de enqueue modifiée).
+- M2 F-11 : Démarrage du worker (fonction boot asynchrone).
+- M2 F-11 : Worker BullMQ (panorama.worker.ts).
+- M2 F-11 : Stockage S3 du worker (@aws-sdk/client-s3).
+- M2 F-11 : Processeur de job, logique pure (panorama.processor.ts).
+- M2 F-11 : Accès base depuis le worker (PrismaAssetRepository).
+- M2 F-11 : Empreinte du fichier (content-hash.ts).
+
+### Bloqué
+- M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
+
+### Risques
+- Problème de virtualisation pour Docker sous WSL2 (moteur instable).
+- eslint 9 et test.workspace.ts dépréciés.
+- Avis audit sous le seuil CI (Vitest, fastify).
+- Tests verts en local uniquement, CI non confirmée.
