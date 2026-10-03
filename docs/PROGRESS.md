@@ -1,8 +1,8 @@
 # Suivi — Xplor
 
-## Jalon en cours : M2 — Pipeline 360 (S7–S10)
+## Jalon en cours : M2 — Pipeline médias
 
-Exigences : F-10, F-11, F-12, API-24.
+Exigences : F-10, F-11, F-12, NF-03, API-24 (partiel, selon section 9 du cahier)
 
 Livrable : Upload de 10 panoramas Insta360 → tous READY.
 
@@ -17,22 +17,20 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 | 7 | Démo avec données pertinentes | à faire |
 | 8 | Démo au porteur et retours consignés | à faire |
 
-Jalon précédent : M1, DoD remplie : non, critère 2 : local uniquement, CI non confirmée (détail : docs/archive/PROGRESS-M1.md)
+Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confirmée, détail dans docs/archive/PROGRESS-M1.md)
 
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Implémentation de M2 F-10/API-24 (1/5, StorageService et URL pré-signées) - Correction suite aux retours
+**Objectif :** Contrôle final de la DoD M1 et passage à M2
 
 Plan :
-- Restaurer `docs/DECISIONS.md` et y ajouter D-93 pour les paquets AWS.
-- Configurer Fastify pour laisser passer le flux brut (octet-stream/raw stream) et augmenter maxParamLength pour éviter le 414.
-- Ajouter route de téléchargement (download) et comparer les signatures en temps constant avec sizeBytes dans le payload.
-- Mettre à jour `AssetsService` pour utiliser les méthodes renommées.
-- Rétablir les tests S3 et tester le contrôleur avec Vitest.
+- Vérifier la DoD de M1 dans le code et PROGRESS.md.
+- S'assurer que les commandes locales (lint, typecheck, tests) passent sans erreur.
+- Mettre à jour PROGRESS.md pour préparer le jalon M2.
 
 État :
-- Terminé. Tests API passés avec succès. (Noter : un test frontend TourForm.test.tsx de apps/admin échoue, probablement dû aux composants shadcn/ui appliqués précédemment, nécessitant une mise à jour des tests frontend ultérieure).
+lint, typecheck, test OK
 
 ## État des tâches
 
@@ -66,10 +64,11 @@ Plan :
 - M2 F-10/API-24 (retours de revue) : Suppression stricte des dérogations TypeScript.
 
 ### Bloqué
-- Critère 2 : CI distante non confirmée, run GitHub Actions à fournir.
+- M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest, fastify).
 - Tests verts en local uniquement, CI non confirmée.
+
