@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 Démo (3/3, documentation) : écrire docs/DEMO_M2.md, sans modifier aucun code, en repartant de la version de la branche agent/20261003-144021-m2-demo-3-3-docu… — docs/DEMO_M2.md est conforme : tous les blocs ont un tag de langage, aucun espace en fin de ligne, contenu complet et cohérent avec le script demo:m2, aucun code ni PROGRESS.md modifié, contrôles vert… (9f89c88)
 - 03/10/2026 — M2 Démo (2/3, script réseau) : créer scripts/demo-m2-upload.ts, exécuté par `pnpm demo:m2` (tsx, déjà configuré). Il s'appuie sur les fonctions de scripts/demo-… — Le script scripts/demo-m2-upload.ts respecte le cahier des charges de la tâche (flux login/CSRF/upload/poll, réutilisation de demo-m2-lib, aucun secret en dur) et les contrôles sont verts. (0651848)
 - 03/10/2026 — M2 Démo (1/3, socle et logique pure) : reprendre le travail de la branche agent/20261003-141215-m2-demo-1-3-socle-et-logique-pure-1-dans (lecture seule via `git… — Socle demo:m2 (tsx, lib pure + tests, projet vitest scripts) conforme, D-94 ajoutée après la ligne CI, pas de temp_dec.md, PROGRESS.md intact, contrôles verts. (0414b5c)
 - M2 F-10/API-24 (admin, 1/n) : Ajout des fonctions client.ts (uploadPanorama, etc.) avec typage complet partagé, et tests HTTP ok.
