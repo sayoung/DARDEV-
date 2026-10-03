@@ -52,7 +52,7 @@ Le script va soumettre les panoramas à l'API et attendre que le Worker les trai
 
 | fichier | dimensions | status | durée | raison |
 |---|---|---|---|---|
-| acoustical_shell.jpg | 8192x4096 | READY | 4s | - |
+| acoustical_shell.jpg | 8192x4096 | READY | 6s | - |
 | altanka.jpg | 8192x4096 | READY | 2s | - |
 | amphitheatre_zanzibar_fort.jpg | 8192x4096 | READY | 4s | - |
 | balcony.jpg | 8192x4096 | READY | 2s | - |
@@ -62,5 +62,7 @@ Le script va soumettre les panoramas à l'API et attendre que le Worker les trai
 | castel_st_angelo_roof.jpg | 8192x4096 | READY | 4s | - |
 | entrance_hall.jpg | 8192x4096 | READY | 2s | - |
 | hotel_room.jpg | 8192x4096 | READY | 2s | - |
+
+*(Le dossier de test ne contient aucun fichier invalide_*, ils ne figurent donc pas dans ce tableau avec le statut ERROR)*
 
 Code de sortie : 0
