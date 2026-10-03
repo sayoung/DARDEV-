@@ -52,14 +52,22 @@ Réalisé :
 - E2E Playwright : Parcours complet de création de visite M1 automatisé.
 - Tests unitaires (447) et d'intégration (54) validés.
 - Validation et exécution de la Démo M1 (DoD remplie).
+- M1 Playwright : e2e/m1-livrable.spec.ts.
+- M1 D-83 : 1/4 à 4/4 et 2a, 2b, 3a, 3b et 4/5 (Tailwind 4, shadcn/ui, AppLayout, tableau de bord d'accueil, StatusBadge).
+- Design : 1/6 à 6/6 (charte Xplor, D-89).
+
+#### Reliquats M0 traités pendant M1
+- M0 F-90 : Parcours réel de bout en bout.
+- M0 NF-08 : Base xplor_test recréée.
 
 ### En cours
-- Jalon M1 terminé, attente lancement M2 — Pipeline médias.
+- Aucun, jalon clos.
 
 ### Bloqué
-- Aucun.
+- Critère 2 : CI distante non confirmée, run GitHub Actions à fournir.
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest, fastify).
+- Tests verts en local uniquement, CI non confirmée.
