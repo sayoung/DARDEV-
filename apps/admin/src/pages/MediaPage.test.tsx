@@ -260,8 +260,8 @@ describe('MediaPage', () => {
     expect(listAssetsCount).toBe(1);
 
     // Avance de 3s
-    act(() => {
-      vi.advanceTimersByTime(3000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
     });
 
     // Deuxième rendu: READY
@@ -269,8 +269,8 @@ describe('MediaPage', () => {
     expect(listAssetsCount).toBe(2);
 
     // Avance de 10s
-    act(() => {
-      vi.advanceTimersByTime(10000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
     });
 
     // Aucun nouvel appel
