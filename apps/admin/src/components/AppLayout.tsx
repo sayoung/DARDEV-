@@ -60,6 +60,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const isCitiesActive = route.name === 'cities';
   const isCategoriesActive = route.name === 'categories';
+  const isMediaActive = route.name === 'media';
 
   if (auth.state.status !== 'authenticated') {
     return (
@@ -135,6 +136,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 className={`block px-4 py-2 rounded-md transition-colors ${isCategoriesActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.categories')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={hrefFor('/media')}
+                aria-current={isMediaActive ? 'page' : undefined}
+                onClick={(e) => { handleNavClick(e, '/media'); }}
+                className={`block px-4 py-2 rounded-md transition-colors ${isMediaActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+              >
+                {t('nav.media')}
               </a>
             </li>
           </ul>

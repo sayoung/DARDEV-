@@ -16,6 +16,7 @@ describe('router', () => {
       expect(parsePathname('/tours')).toEqual({ name: 'tours' });
       expect(parsePathname('/tours/new')).toEqual({ name: 'tour-new' });
       expect(parsePathname('/tours/456')).toEqual({ name: 'tour-detail', id: '456' });
+      expect(parsePathname('/media')).toEqual({ name: 'media' });
     });
 
     it('decode id for tour-detail', () => {
