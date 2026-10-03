@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- M2 F-10/API-24 (admin, 1/n) : Ajout des fonctions client.ts (uploadPanorama, etc.) avec typage complet partagé, et tests HTTP ok.
 - M2 API-24 : exposer DELETE /api/v1/admin/assets/:id.
 - M2 API-24 : Méthode remove dans AssetsService (vérification de l'utilisation et suppression du stockage).
 - M2 F-12 : Implémentation du CLI API (main.ts) et méthode reprocessAllPanoramas dans AssetsService.
