@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 DoD (critère 1, F-12 et API-24, puis critères 6 et 7) : sans modifier de code, vérifier ce qui suit. (a) F-12 : la commande CLI `reprocess` accepte `--all` e… — Vérification M2 DoD faite sans modifier le dépôt (diff vide, git propre) ; le fichier de résultat hors dépôt contient 4 lignes OK, recoupées par recherche dans les fichiers cités. (f9280dd)
 - 03/10/2026 — M2 DoD (critère 1, F-10 et F-11) : sans modifier de code, vérifier dans le code et les tests que F-10 et F-11 sont couverts. F-10 : ratio 2:1 à ±1 %, largeur ≥… — Aucun fichier du dépôt modifié ; le fichier temporaire contient une ligne OK par exigence F-10/F-11, et deux de ces lignes sont recoupées par Grep. (7b1c888)
 - 03/10/2026 — M2 F-12 (exécution de la commande de retraitement) : sur les données de la démo M2 (Docker, API et worker démarrés), lancer `pnpm --filter api cli reprocess --a… — formatCliError (with unit tests) fixes the CLI error message for unknown assets, and the 'Retraitement (F-12)' section is added to DEMO_M2.md; lint, typecheck and test pass and PROGRESS.md is untouche… (ccb59ca)
 - 03/10/2026 — M2 Démo (exécution, livrable) : Docker démarré (`docker compose up -d`), `pnpm db:migrate`, `pnpm db:seed`, `.env` avec STORAGE_PROVIDER=s3, puis lancer l'API e… — Section « Résultat du 03/10/2026 » ajoutée à DEMO_M2.md avec tableau et code de sortie 0, sans toucher à PROGRESS.md; lint, typecheck et tests verts. Réserves: absence de fichiers invalide_* dans le d… (8276a11)
@@ -79,7 +80,6 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - M2 F-11 : Dérivés preview, web, thumb (panorama.derivatives.ts).
 - M2 F-11 : Grille des tuiles (tileGrid).
 - M2 F-11 : File panorama, contrat partagé (panorama-queue.ts).
-- M2 F-11 (1/n) : Initialisation du worker et module des dérivés.
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
