@@ -30,6 +30,7 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 - Aucun.
 
 ### Fait
+- 03/10/2026 — Récupération du travail non commité — Le test e2e M1 attend et sélectionne désormais des panoramas au statut « Prêt » au lieu de se fier à l'ordre des options, ce qui le rend indépendant de l'état de la base ; le changement est correct, m… (da9a500)
 - 03/10/2026 — M2 NF e2e (sessions concurrentes) : dans playwright.config.ts, ajouter `workers: 1` et `fullyParallel: false` à la racine de defineConfig, sans rien changer d'a… — Config Playwright en série (workers: 1, fullyParallel: false) et entrée D-95 ajoutées, sans toucher à l'API ni à PROGRESS.md ; lint, typecheck et test verts ; l'e2e m2-medias n'a pas pu être confirmé… (f04a709)
 - 03/10/2026 — M2 DoD (clôture du critère 2, docs/PROGRESS.md uniquement) : prérequis, la tâche « M2 NF e2e (Playwright démarre l'API en local) » est fusionnée. Docker démarré… — L'e2e échoue encore ; la cause est mise à jour en une ligne dans « Bloqué », le critère reste non validé et seul docs/PROGRESS.md est modifié, comme demandé pour ce cas. (70acddb)
 - 03/10/2026 — M2 NF e2e (Playwright démarre l'API en local) : les e2e m1-livrable et m2-medias échouent à la connexion (« La connexion a échoué. Réessayez. », clé auth.failed… — playwright.config.ts démarre désormais l'API en local (hors CI) via un webServer en tableau, conforme à la demande, sans autre fichier modifié ; lint, typecheck et test verts, résultat de test:e2e non… (ec1070a)
@@ -69,7 +70,6 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 - M2 F-11 : Accès base depuis le worker (PrismaAssetRepository).
 - M2 F-11 : Empreinte du fichier (content-hash.ts).
 - M2 F-11 : Configuration du worker (validation Zod).
-- M2 F-10 : Lecture des dimensions JPEG (image-size et sharp).
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
