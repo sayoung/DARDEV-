@@ -29,52 +29,63 @@ const defaultFactories: BootFactories = {
   startWorker: startPanoramaWorker,
 };
 
-export function boot(
+export async function boot(
   source: Record<string, string | undefined>,
   log: (message: string) => void,
   factories: BootFactories = defaultFactories,
-): () => Promise<void> {
+): Promise<() => Promise<void>> {
   const env = loadEnv(source);
-  
-  const prisma = factories.createPrisma();
-  const repo = new PrismaAssetRepository(prisma);
-  
+
   const s3Client = createS3Client(env);
   const storage = new S3WorkerStorage(s3Client, env.S3_BUCKET);
-  
-  const worker = factories.startWorker({
-    redisUrl: env.REDIS_URL,
-    deps: {
-      repo,
-      storage,
-      generateFlat: generateFlatDerivatives,
-      generateTiles: generateTiles,
-    },
-    log,
-  });
 
-  log(`worker prêt (file ${PANORAMA_QUEUE_NAME}, concurrence ${String(PANORAMA_WORKER_CONCURRENCY)})`);
+  const prisma = factories.createPrisma();
 
-  return async () => {
-    await worker.close();
+  try {
+    const repo = new PrismaAssetRepository(prisma);
+
+    const worker = factories.startWorker({
+      redisUrl: env.REDIS_URL,
+      deps: {
+        repo,
+        storage,
+        generateFlat: generateFlatDerivatives,
+        generateTiles: generateTiles,
+      },
+      log,
+    });
+
+    log(`worker prêt (file ${PANORAMA_QUEUE_NAME}, concurrence ${String(PANORAMA_WORKER_CONCURRENCY)})`);
+
+    return async () => {
+      await worker.close();
+      await prisma.$disconnect();
+    };
+  } catch (error) {
     await prisma.$disconnect();
-  };
+    throw error;
+  }
 }
 
 if (process.env.VITEST !== 'true') {
   loadLocalEnvFile();
-  try {
-    const shutdown = boot(process.env, (message) => {
-      console.log(message);
-    });
+  boot(process.env, (message) => {
+    console.log(message);
+  }).then((shutdown) => {
+    let shuttingDown = false;
     const handleSignal = () => {
-      void shutdown().finally(() => process.exit(0)).catch(() => process.exit(1));
+      if (shuttingDown) return;
+      shuttingDown = true;
+      void shutdown().then(
+        () => process.exit(0),
+        () => process.exit(1)
+      );
     };
     process.on('SIGINT', handleSignal);
     process.on('SIGTERM', handleSignal);
-  } catch (error: unknown) {
+  }).catch((error: unknown) => {
     const message = error instanceof Error ? error.message : 'Unknown startup error';
     console.error(message);
     process.exit(1);
-  }
+  });
 }

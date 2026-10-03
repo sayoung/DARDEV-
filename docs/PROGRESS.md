@@ -33,7 +33,7 @@ Plan :
 ## État des tâches
 
 ### En cours
-- M2 F-11 (démarrage du worker) : asynchronisme de la fonction boot avec fabriques par défaut. Validation environnement, chargement des modules S3/Prisma/BullMQ et log de démarrage prêts. lint, typecheck, test OK.
+- M2 F-11 (démarrage du worker) : fonction boot asynchrone implémentée (injection de dépendances, tests mockés validant l'environnement et l'ordre de fermeture, construction S3 avant Prisma, gestion de SIGINT/SIGTERM avec exit). lint, typecheck, test OK.
 
 ### Fait
 - Design 6c (champs multilingues et sélecteurs de médias) : dans `apps/admin/src/catalog/LocalizedTextField.tsx`, onglets de langue passés aux couleurs du thème, remplacement du `<input>` natif par `Input` de shadcn/ui, et correction de l'input masqué (sr-only pointer-events-none). `AssetPicker` et `MultiAssetPicker` déjà conformes au thème. lint, typecheck, test OK.
