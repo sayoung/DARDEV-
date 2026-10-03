@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 API-24 (admin 5/n, actions) : dans le tableau de MediaPage, ajouter une colonne Actions avec deux boutons : « Retraiter » (`media.actions.reprocess`), qui ap… — Colonne Actions (Retraiter/Supprimer) conforme à la demande, 409 gérée, 4 tests ajoutés, lint/typecheck/test verts. (026246a)
 - 03/10/2026 — M2 F-10/API-24 (admin 4/n, envoi) : créer apps/admin/src/catalog/PanoramaUploader.tsx : un champ fichier (Label + Input type=file, accept="image/jpeg", multiple… — PanoramaUploader envoie en série avec progression et erreurs par fichier, il est intégré dans MediaPage, le test demandé est présent, les chaînes fr existent et les contrôles sont verts. (b79702a)
 - 03/10/2026 — M2 F-10/API-24 (admin 3/n, liste) : dans MediaPage.tsx, charger les panoramas avec `listAssets({ kind: 'PANORAMA', page, pageSize: 20 })` (apps/admin/src/api/ca… — Liste des panoramas implémentée conformément à la demande (tableau, badge de statut, journal ERROR, états vide/chargement/erreur, pagination), tests présents et contrôles verts. (f760293)
 - 03/10/2026 — M2 F-10/API-24 (admin 2/n, route et navigation) : dans apps/admin/src/router.ts, ajouter la route `{ name: 'media' }` pour le chemin `/media` (parsePathname et… — Route /media, lien de navigation « Médias », MediaPage avec PageHeader (titre + sous-titre), clés i18n et tests mis à jour ; lint, typecheck et test verts, charte respectée, pas de changement d'API. (6739cb3)
@@ -79,7 +80,6 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - M2 F-10 : Règles de validation des panoramas.
 - M2 API-24 : Route d'upload POST /api/v1/admin/assets/upload-url.
 - M2 F-10/API-24 : Route complete.
-- M2 F-10/API-24 (retours de revue) : Suppression stricte des dérogations TypeScript.
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
