@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 Démo (1/3, socle et logique pure) : reprendre le travail de la branche agent/20261003-141215-m2-demo-1-3-socle-et-logique-pure-1-dans (lecture seule via `git… — Socle demo:m2 (tsx, lib pure + tests, projet vitest scripts) conforme, D-94 ajoutée après la ligne CI, pas de temp_dec.md, PROGRESS.md intact, contrôles verts. (0414b5c)
 - M2 F-10/API-24 (admin, 1/n) : Ajout des fonctions client.ts (uploadPanorama, etc.) avec typage complet partagé, et tests HTTP ok.
 - M2 API-24 : exposer DELETE /api/v1/admin/assets/:id.
 - M2 API-24 : Méthode remove dans AssetsService (vérification de l'utilisation et suppression du stockage).
