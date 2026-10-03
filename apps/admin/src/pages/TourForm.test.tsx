@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
-import { Role, type MeResponse, type TourResponse, TourStatus } from '@xplor/shared';
+import { Role, type MeResponse, type TourResponse, TourStatus, TourUpdateSchema } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearCsrfToken } from '../api/client.js';
@@ -114,10 +114,12 @@ describe('TourForm Pages', () => {
     await screen.findByText(/Musée/);
     
     const frTitleInput = screen.getAllByRole('textbox', { name: resources.fr.tour.form.title }).find((el) => el.getAttribute('lang') === 'fr');
-    fireEvent.change(frTitleInput as HTMLElement, { target: { value: 'Nouveau tour' } });
+    if (!frTitleInput) throw new Error('Input frTitleInput not found');
+    fireEvent.change(frTitleInput, { target: { value: 'Nouveau tour' } });
 
     const frSummaryInput = screen.getAllByRole('textbox', { name: resources.fr.tour.form.summary }).find((el) => el.getAttribute('lang') === 'fr');
-    fireEvent.change(frSummaryInput as HTMLElement, { target: { value: 'Un résumé court' } });
+    if (!frSummaryInput) throw new Error('Input frSummaryInput not found');
+    fireEvent.change(frSummaryInput, { target: { value: 'Un résumé court' } });
 
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
     fireEvent.click(screen.getByLabelText(/Musée/));
@@ -146,10 +148,12 @@ describe('TourForm Pages', () => {
     await screen.findByText(/Rabat/);
 
     const frTitleInput = screen.getAllByRole('textbox', { name: resources.fr.tour.form.title }).find((el) => el.getAttribute('lang') === 'fr');
-    fireEvent.change(frTitleInput as HTMLElement, { target: { value: 'Nouveau tour' } });
+    if (!frTitleInput) throw new Error('Input frTitleInput not found');
+    fireEvent.change(frTitleInput, { target: { value: 'Nouveau tour' } });
 
     const frSummaryInput = screen.getAllByRole('textbox', { name: resources.fr.tour.form.summary }).find((el) => el.getAttribute('lang') === 'fr');
-    fireEvent.change(frSummaryInput as HTMLElement, { target: { value: 'Un résumé court' } });
+    if (!frSummaryInput) throw new Error('Input frSummaryInput not found');
+    fireEvent.change(frSummaryInput, { target: { value: 'Un résumé court' } });
 
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.coverAssetId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e' } });
@@ -185,7 +189,8 @@ describe('TourForm Pages', () => {
     render(<App />);
     
     const titleInputs = await screen.findAllByDisplayValue('Tour 1');
-    const titleInput = titleInputs.find((el) => !el.classList.contains('ltf-fr-guard')) as HTMLElement;
+    const titleInput = titleInputs.find((el) => !el.classList.contains('sr-only'));
+    if (!titleInput) throw new Error('Title input not found');
     expect(titleInput).toBeTruthy();
     expect(screen.getAllByDisplayValue('60')[0]).toBeTruthy(); 
     expect(screen.getAllByDisplayValue('34')[0]).toBeTruthy(); 
@@ -197,8 +202,9 @@ describe('TourForm Pages', () => {
 
     const patchCall = recordedCalls().find((c) => c.method === 'PATCH' && c.url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f'));
     expect(patchCall).toBeDefined();
-    const bodyText = patchCall?.init?.body as string;
-    const body = JSON.parse(bodyText) as { title: { fr: string }, durationMinutes: number, lat: number };
+    const bodyText = typeof patchCall?.init?.body === 'string' ? patchCall.init.body : '';
+    const bodyParsed: unknown = JSON.parse(bodyText);
+    const body = TourUpdateSchema.parse(bodyParsed);
     expect(body.title.fr).toBe('Titre Modifié');
     expect(body.durationMinutes).toBe(60);
     expect(body.lat).toBe(34);
@@ -281,12 +287,13 @@ describe('TourForm Pages', () => {
     render(<App />);
 
     const titleInputs = await screen.findAllByDisplayValue('Tour 1');
-    const titleInput = titleInputs.find((el) => !el.classList.contains('ltf-fr-guard')) as HTMLElement;
+    const titleInput = titleInputs.find((el) => !el.classList.contains('sr-only'));
+    if (!titleInput) throw new Error('Title input not found');
     fireEvent.change(titleInput, { target: { value: 'Titre Modifié' } });
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
     await screen.findByText(resources.fr.common.error.generic);
-    const kept = screen.getAllByDisplayValue('Titre Modifié').find((el) => !el.classList.contains('ltf-fr-guard'));
+    const kept = screen.getAllByDisplayValue('Titre Modifié').find((el) => !el.classList.contains('sr-only'));
     expect(kept).toBeTruthy();
     expect(screen.getByRole('button', { name: resources.fr.common.save })).toBeTruthy();
     expect(window.location.pathname).toBe('/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
