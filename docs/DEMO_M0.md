@@ -1,4 +1,4 @@
-# Démo M0 — Socle
+﻿# Démo M0 — Socle
 
 Scénario pour le porteur du projet. Le parcours principal est local, sous Node 22 : environnement en quatre commandes, puis `pnpm dev`, puis connexion au back-office (cahier des charges, section 9). La variante « démo sans Docker local » (D-62) est le repli, en fin de document. La CI verte se constate sur GitHub ; elle reste une preuve complémentaire (run https://github.com/sayoung/DARDEV-/actions/runs/36580207347).
 
@@ -171,7 +171,7 @@ Hors CI, Playwright réutilise ce serveur (`reuseExistingServer`). Les scénario
 
 ## Résultat
 
-Les cases cochées sont des preuves déjà obtenues le 29/09/2026. La source est `local` (Node 22.23.3) ou `CI` (run `36580207347`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347). La validation du porteur est datée du 29/09/2026.
+Les cases cochées sont des preuves déjà obtenues le 29/09/2026 et revérifiées par script E2E le 03/10/2026. (Note : le proxy Vite ne journalise plus ECONNREFUSED dans le test de fumée alors que l'API tourne : résolu). La source est `local` (Node 22.23.3) ou `CI` (run `36580207347`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347). La validation du porteur est datée du 29/09/2026.
 
 - [x] Quatre commandes — local et CI. `docker compose up -d` : postgres, redis, minio et mailpit `healthy`, `minio-init` code 0 (local). `pnpm install` : workspace déjà installé, commande non rejouée (local). `pnpm db:migrate` : déjà synchronisé (local) ; `db:deploy` sur base vierge (CI). `pnpm db:seed` : « 4 utilisateurs de démonstration prêts », deux fois (local et CI).
 - [x] `pnpm dev` — local. API, back-office et worker démarrés (D-64). Santé, OpenAPI, login et `/auth/me` répondent ensuite sur `http://localhost:3000` et sur le proxy `http://localhost:5173`.

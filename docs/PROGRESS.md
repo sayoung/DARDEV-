@@ -1,4 +1,4 @@
-# Suivi — Xplor
+﻿# Suivi — Xplor
 
 ## Jalon en cours : M2 — Pipeline 360 (S7–S10)
 
@@ -33,6 +33,7 @@ Plan :
 - Aucune tâche en cours.
 
 ### Fait
+- M0 F-90 (Parcours réel de bout en bout) : script Node e2e (health, openapi, login, auth/me, forgot password) exécuté le 03/10/2026. L'API et le proxy Vite répondent correctement sans erreur ECONNREFUSED. Critères 2 et 9 mis à jour, ainsi que docs/DEMO_M0.md avec la preuve technique.
 - M0 NF-08 : Base xplor_test recréée pour purger le schéma des contraintes résiduelles, sans modifier de migration déjà fusionnée. lint, typecheck, test, test:int OK.
 - M2 F-11/F-12 (mise en file rejouable) : signature de `enqueue` modifiée pour accepter `reason` et générer un `jobId` unique (avec Date.now) lors d'un 'reprocess'. Tests adaptés. lint, typecheck, test OK.
 - M2 F-11 (démarrage du worker) : fonction boot asynchrone implémentée (injection de dépendances, tests mockés validant l'environnement et l'ordre de fermeture, construction S3 avant Prisma, gestion de SIGINT/SIGTERM avec exit). lint, typecheck, test OK.
