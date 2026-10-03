@@ -215,6 +215,51 @@ export class AssetsService {
     return toAsset(updatedAsset);
   }
 
+  async remove(id: string): Promise<void> {
+    const asset = await this.prisma.asset.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            coverOf: true,
+            panoramas: true,
+            ambientOf: true,
+            hotelLogos: true,
+          },
+        },
+      },
+    });
+
+    if (asset === null) {
+      throw missingException(ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE);
+    }
+
+    const totalUses =
+      asset._count.coverOf +
+      asset._count.panoramas +
+      asset._count.ambientOf +
+      asset._count.hotelLogos;
+
+    if (totalUses > 0) {
+      throw new HttpException(
+        {
+          error: {
+            code: 'ASSET_IN_USE',
+            message: `Impossible de supprimer ce média : il est utilisé à ${totalUses.toString(10)} endroit(s).`,
+            count: totalUses,
+          },
+        },
+        409,
+      );
+    }
+
+    await this.prisma.asset.delete({ where: { id } });
+
+    if (asset.originalKey) {
+      await this.storage.deleteObject(asset.originalKey);
+    }
+  }
+
   async reprocessAllPanoramas(): Promise<number> {
     const assets = await this.prisma.asset.findMany({
       where: {
