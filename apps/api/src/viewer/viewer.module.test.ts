@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { describe, expect, it } from 'vitest';
 
 import { ENV } from '../config/config.module.js';
@@ -10,12 +11,13 @@ import { ViewerService } from './viewer.service.js';
 
 @Global()
 @Module({
+  imports: [ThrottlerModule.forRoot([{ ttl: 60, limit: 10 }])],
   providers: [
     { provide: PrismaService, useValue: {} },
     { provide: STORAGE_SERVICE, useValue: {} },
     { provide: ENV, useValue: { MEDIA_PUBLIC_URL: 'http://test' } },
   ],
-  exports: [PrismaService, STORAGE_SERVICE, ENV],
+  exports: [PrismaService, STORAGE_SERVICE, ENV, ThrottlerModule],
 })
 class MockGlobalModule {}
 
