@@ -11,6 +11,7 @@ import { Alert } from '../components/ui/Alert.js';
 import { Card, CardContent } from '../components/ui/Card.js';
 import { ProcessingStatusBadge } from '../components/ProcessingStatusBadge.js';
 import { PanoramaUploader } from '../catalog/PanoramaUploader.js';
+import { needsPolling } from '../catalog/media-polling.js';
 
 const pageSchema = z.number().int().min(1);
 
@@ -37,10 +38,10 @@ export function MediaPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
-  const fetchAssets = useCallback(async (mounted: { current: boolean }) => {
+  const fetchAssets = useCallback(async (mounted: { current: boolean }, silent = false) => {
     try {
       setFetchError(null);
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await listAssets({
         kind: AssetKind.PANORAMA,
         page,
@@ -54,7 +55,7 @@ export function MediaPage() {
         setFetchError(t('catalog.asset.error'));
       }
     } finally {
-      if (mounted.current) {
+      if (mounted.current && !silent) {
         setLoading(false);
       }
     }
@@ -62,11 +63,28 @@ export function MediaPage() {
 
   useEffect(() => {
     const mounted = { current: true };
-    void fetchAssets(mounted);
+    // Mute loading blink on refresh (e.g. for polling or after upload)
+    void fetchAssets(mounted, refreshKey > 0);
     return () => {
       mounted.current = false;
     };
   }, [fetchAssets, refreshKey]);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    
+    if (assetsData && needsPolling(assetsData.items)) {
+      timeoutId = setTimeout(() => {
+        setRefreshKey(prev => prev + 1);
+      }, 3000);
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [assetsData]);
 
   const handleUploaded = useCallback(() => {
     setRefreshKey(prev => prev + 1);
@@ -78,7 +96,7 @@ export function MediaPage() {
     try {
       const updatedAsset = await reprocessAsset(id);
       setAssetsData(prev => {
-        if (!prev) return prev;
+        if (prev === null) return null;
         return {
           ...prev,
           items: prev.items.map(a => a.id === id ? updatedAsset : a)
