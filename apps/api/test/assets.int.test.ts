@@ -315,6 +315,17 @@ describe('médias HTTP', () => {
       },
     });
     expect(notUuid.statusCode).toBe(400);
+
+    // Média introuvable donne 404
+    const notFound = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/assets/${UNKNOWN_ASSET_ID}/reprocess`,
+      headers: {
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+      },
+    });
+    expect(notFound.statusCode).toBe(404);
   });
 });
 

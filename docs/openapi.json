@@ -4135,7 +4135,7 @@
             }
           },
           "409": {
-            "description": "Le média est déjà en cours de traitement.",
+            "description": "Le média n’est pas encore téléversé (PENDING).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4147,7 +4147,7 @@
                         "code": {
                           "type": "string",
                           "enum": [
-                            "ASSET_ALREADY_PROCESSING"
+                            "ASSET_NOT_UPLOADED"
                           ]
                         },
                         "message": {
@@ -4168,7 +4168,7 @@
             }
           },
           "422": {
-            "description": "L’original est manquant sur le stockage.",
+            "description": "Le média n’est pas un panorama.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4178,7 +4178,10 @@
                       "type": "object",
                       "properties": {
                         "code": {
-                          "type": "string"
+                          "type": "string",
+                          "enum": [
+                            "ASSET_NOT_REPROCESSABLE"
+                          ]
                         },
                         "message": {
                           "type": "string"

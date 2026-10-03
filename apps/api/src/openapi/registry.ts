@@ -590,8 +590,8 @@ function registerAssetReprocess(): void {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse('CSRF invalide, ou rôle autre que ADMIN/EDITOR.', forbiddenError),
       '404': jsonResponse('Média introuvable.', assetMissingError),
-      '409': jsonResponse('Le média est déjà en cours de traitement.', z.object({ error: z.object({ code: z.literal('ASSET_ALREADY_PROCESSING'), message: z.string() }) })),
-      '422': jsonResponse('L’original est manquant sur le stockage.', z.object({ error: z.object({ code: z.string(), message: z.string() }) })),
+      '409': jsonResponse('Le média n’est pas encore téléversé (PENDING).', z.object({ error: z.object({ code: z.literal('ASSET_NOT_UPLOADED'), message: z.string() }) })),
+      '422': jsonResponse('Le média n’est pas un panorama.', z.object({ error: z.object({ code: z.literal('ASSET_NOT_REPROCESSABLE'), message: z.string() }) })),
     },
   });
 }

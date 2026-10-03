@@ -40,7 +40,7 @@ lint, typecheck, test OK
 - Aucun.
 
 ### Fait
-- M2 API-24 : Route d'upload POST /api/v1/admin/assets/:id/reprocess (contrôleur et tests d'intégration, mise à jour OpenAPI).
+- M2 API-24 : Route de retraitement POST /api/v1/admin/assets/:id/reprocess (contrôleur et tests d'intégration, mise à jour OpenAPI).
 - M1 CI : Correction de la décision D-94 (formatage) et vérification des versions Node 24 (runs.using=node24).
 - M1 CI : Mise à jour des actions GitHub vers leurs versions Node 24 (checkout@v7, pnpm/action-setup@v6, setup-node@v7, upload-artifact@v7).
 - M1 CI : Déplacement de l'arrêt de l'API et MinIO après Playwright, ajout de l'attente de l'API et du proxy 127.0.0.1.
