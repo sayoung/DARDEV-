@@ -15,7 +15,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PanoramaQueueService } from '../queue/panorama-queue.service.js';
-import { StorageService, UPLOAD_URL_TTL_SECONDS } from '../storage/storage.service.js';
+import { StorageService, STORAGE_SERVICE, UPLOAD_URL_TTL_SECONDS } from '../storage/storage.service.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE, missingException } from './catalog.errors.js';
 import { readImageDimensions } from './jpeg-dimensions.js';
 
@@ -23,7 +23,7 @@ import { readImageDimensions } from './jpeg-dimensions.js';
 export class AssetsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(StorageService) private readonly storage: StorageService,
+    @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
     @Inject(PanoramaQueueService) private readonly panoramaQueue: PanoramaQueueService,
   ) {}
 

@@ -7,25 +7,37 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
+import * as crypto from 'crypto';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 import { ENV } from '../config/config.module.js';
 import { type Env } from '../config/env.js';
 import { S3_CLIENT } from '../health/health.probes.js';
 
 export const UPLOAD_URL_TTL_SECONDS = 900;
+export const STORAGE_SERVICE = Symbol('STORAGE_SERVICE');
+
+export interface StorageService {
+  generatePresignedUploadUrl(key: string, contentType: string, sizeBytes: number): Promise<string>;
+  getSignedUrl(key: string, expiresIn: number): Promise<string>;
+  deleteObject(key: string): Promise<void>;
+  headObject(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null>;
+  // Existing methods used by assets service
+  presignPut(key: string, contentType: string, sizeBytes: number): Promise<string>;
+  head(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null>;
+  getRange(key: string, start: number, end: number): Promise<Buffer>;
+  delete(key: string): Promise<void>;
+}
 
 @Injectable()
-export class StorageService {
+export class S3StorageService implements StorageService {
   constructor(
     @Inject(S3_CLIENT) private readonly s3: S3Client,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
-  async presignPut(
-    key: string,
-    contentType: string,
-    sizeBytes: number,
-  ): Promise<string> {
+  async generatePresignedUploadUrl(key: string, contentType: string, sizeBytes: number): Promise<string> {
     const command = new PutObjectCommand({
       Bucket: this.env.S3_BUCKET,
       Key: key,
@@ -35,9 +47,19 @@ export class StorageService {
     return getSignedUrl(this.s3, command, { expiresIn: UPLOAD_URL_TTL_SECONDS });
   }
 
-  async head(
-    key: string,
-  ): Promise<{ sizeBytes: number; contentType: string | undefined } | null> {
+  async getSignedUrl(key: string, expiresIn: number): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.env.S3_BUCKET,
+      Key: key,
+    });
+    return getSignedUrl(this.s3, command, { expiresIn });
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    await this.s3.send(new DeleteObjectCommand({ Bucket: this.env.S3_BUCKET, Key: key }));
+  }
+
+  async headObject(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null> {
     try {
       const result = await this.s3.send(
         new HeadObjectCommand({ Bucket: this.env.S3_BUCKET, Key: key }),
@@ -63,6 +85,15 @@ export class StorageService {
     }
   }
 
+  // Backwards compatibility for existing code
+  async presignPut(key: string, contentType: string, sizeBytes: number): Promise<string> {
+    return this.generatePresignedUploadUrl(key, contentType, sizeBytes);
+  }
+
+  async head(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null> {
+    return this.headObject(key);
+  }
+
   async getRange(key: string, start: number, end: number): Promise<Buffer> {
     const result = await this.s3.send(
       new GetObjectCommand({
@@ -79,8 +110,93 @@ export class StorageService {
   }
 
   async delete(key: string): Promise<void> {
-    await this.s3.send(
-      new DeleteObjectCommand({ Bucket: this.env.S3_BUCKET, Key: key }),
-    );
+    return this.deleteObject(key);
+  }
+}
+
+@Injectable()
+export class LocalStorageService implements StorageService {
+  private readonly localPath: string;
+
+  constructor(@Inject(ENV) private readonly env: Env) {
+    this.localPath = this.env.STORAGE_LOCAL_PATH || path.join(process.cwd(), 'storage');
+  }
+
+  private getFilePath(key: string): string {
+    return path.join(this.localPath, key);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  generatePresignedUploadUrl(key: string, _contentType: string, _sizeBytes: number): Promise<string> {
+    const expiresAt = Date.now() + UPLOAD_URL_TTL_SECONDS * 1000;
+    const payload = `${key}:${expiresAt.toString(10)}`;
+    const signature = crypto
+      .createHmac('sha256', this.env.SESSION_SECRET)
+      .update(payload)
+      .digest('hex');
+    const token = Buffer.from(`${payload}:${signature}`).toString('base64url');
+    // Using a placeholder base URL, usually handled by Fastify or env
+    const port = this.env.PORT || 3000;
+    return Promise.resolve(`http://localhost:${port.toString(10)}/api/v1/storage/upload/${token}`);
+  }
+
+  getSignedUrl(key: string, expiresIn: number): Promise<string> {
+    const expiresAt = Date.now() + expiresIn * 1000;
+    const payload = `${key}:${expiresAt.toString(10)}`;
+    const signature = crypto
+      .createHmac('sha256', this.env.SESSION_SECRET)
+      .update(payload)
+      .digest('hex');
+    const token = Buffer.from(`${payload}:${signature}`).toString('base64url');
+    const port = this.env.PORT || 3000;
+    return Promise.resolve(`http://localhost:${port.toString(10)}/api/v1/storage/download/${token}`);
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    try {
+      await fs.unlink(this.getFilePath(key));
+    } catch (e: unknown) {
+      if (typeof e === 'object' && e !== null && 'code' in e && e.code === 'ENOENT') return;
+      throw e;
+    }
+  }
+
+  async headObject(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null> {
+    try {
+      const stats = await fs.stat(this.getFilePath(key));
+      return { sizeBytes: stats.size, contentType: undefined }; // Could infer from extension
+    } catch (e: unknown) {
+      if (typeof e === 'object' && e !== null && 'code' in e && e.code === 'ENOENT') return null;
+      throw e;
+    }
+  }
+
+  async presignPut(key: string, contentType: string, sizeBytes: number): Promise<string> {
+    return this.generatePresignedUploadUrl(key, contentType, sizeBytes);
+  }
+
+  async head(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null> {
+    return this.headObject(key);
+  }
+
+  async getRange(key: string, start: number, end: number): Promise<Buffer> {
+    const filePath = this.getFilePath(key);
+    let handle: fs.FileHandle | undefined;
+    try {
+      handle = await fs.open(filePath, 'r');
+      const length = end - start + 1;
+      const buffer = Buffer.alloc(length);
+      const { bytesRead } = await handle.read(buffer, 0, length, start);
+      return buffer.subarray(0, bytesRead);
+    } catch (e: unknown) {
+      if (typeof e === 'object' && e !== null && 'code' in e && e.code === 'ENOENT') throw new Error('Not found');
+      throw e;
+    } finally {
+      if (handle) await handle.close();
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    return this.deleteObject(key);
   }
 }
