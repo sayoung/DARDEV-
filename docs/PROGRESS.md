@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 03/10/2026 — M3 API-11 (5d/6, service de lecture publique, 1/3 : chargement de la visite) : créer apps/api/src/viewer/viewer.service.ts. Classe `ViewerService` décorée `@Inj… — ViewerService.loadPublicTour/getPublicGraph et leurs tests conformes à la demande ; contrôles verts, PROGRESS.md intact. (67ac18c)
 - 03/10/2026 — M3 API-11 (5c/6, visites liées partageables) : 1) Dans packages/shared/src/tour-graph.ts, ajouter `shareToken: z.string().nullable()` aux éléments de `linkedTou… — shareToken ajouté au schéma partagé et à toTourGraph, filtre public sur allowedTourIds pour TOUR_LINK avec tests, kiosque inchangé, contrôles verts. (47e82e4)
 - 03/10/2026 — M3 API-11 (5b/6, collecte des références) : créer apps/api/src/viewer/tour-graph-refs.ts avec deux fonctions pures. `collectAssetIds(scenes: SceneSource[]): str… — Deux fonctions pures conformes (dédoublonnage, tri, narration invalide ignorée, SCENE_LINK ignoré), tests pertinents, périmètre respecté, lint/typecheck/test verts. (07b0fc2)
 - 03/10/2026 — M3 API-11 (5a/6, URL des médias audio) : dans apps/api/src/viewer/tour-graph-scene.ts, renommer `SceneCtx.narrationById` en `assetUrlById: ReadonlyMap<string, s… — Renommage assetUrlById et ambientAsset {id} corrects, test ambiance absente ajouté, décision D-99 consignée, contrôles verts. (b9a1f01)
