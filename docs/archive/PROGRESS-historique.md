@@ -14,3 +14,4 @@
 - M2 F-11 : Dérivé tiles (panorama.tiles.ts).
 - M2 F-11 : Producteur BullMQ côté API (PanoramaQueueService).
 - M2 F-10 : Lecture des dimensions JPEG (image-size et sharp).
+- M2 F-11 : Configuration du worker (validation Zod).
