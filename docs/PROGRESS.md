@@ -22,12 +22,14 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Contrôle final de la DoD M1 et passage à M2
+**Objectif :** Corriger la CI M1 pour l'environnement de bout en bout (e2e)
 
 Plan :
-- Vérifier la DoD de M1 dans le code et PROGRESS.md.
-- S'assurer que les commandes locales (lint, typecheck, tests) passent sans erreur.
-- Mettre à jour PROGRESS.md pour préparer le jalon M2.
+- Déplacer l'arrêt de l'API et de MinIO après les tests e2e.
+- Ajouter une boucle d'attente pour la santé de l'API avec affichage du journal.
+- Remplacer le proxy '/api' localhost par 127.0.0.1 dans l'admin.
+- Vérifier que pnpm lint, typecheck et test passent.
+- Mettre à jour PROGRESS.md.
 
 État :
 lint, typecheck, test OK
@@ -38,6 +40,7 @@ lint, typecheck, test OK
 - Aucun.
 
 ### Fait
+- M1 CI : Déplacement de l'arrêt de l'API et MinIO après Playwright, ajout de l'attente de l'API et du proxy 127.0.0.1.
 - M2 API-24 : Méthode reprocess dans AssetsService avec gestion des erreurs 404, 422, 409 et appel à la file BullMQ.
 - M2 F-10/API-24 (1/5, StorageService et URL pré-signées) : Implémentation terminée avec S3StorageService et LocalStorageService.
 - Design 6/6 : Charte Xplor appliquée à tout le back-office, nettoyage des classes CSS personnalisées.
