@@ -52,7 +52,7 @@ describe('StorageController', () => {
       url: `/storage/upload/${token}`,
       payload: 'hello world',
       headers: {
-        'content-type': 'text/plain',
+        'content-type': 'application/octet-stream',
         'content-length': '11',
       },
     });
