@@ -9,7 +9,7 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 | # | Critère | État |
 |---|---|---|
 | 1 | Toutes les exigences implémentées et CA vérifiés | à faire |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | à faire |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | OK (56 tests int) |
 | 3 | pnpm lint, pnpm typecheck sans erreur | à faire |
 | 4 | Migrations appliquées, seed à jour | à faire |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
@@ -20,14 +20,12 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M2 F-11/F-12 (mise en file rejouable)
+**Objectif :** M0 NF-08 (Faire passer les tests d'intégration)
 
 Plan :
-- Changer la signature de `enqueue` dans `panorama-queue.service.ts` pour accepter `reason` ('upload' | 'reprocess').
-- Adapter la génération du `jobId` pour permettre les relances.
-- Mettre à jour les tests unitaires.
-- Mettre à jour `docs/PROGRESS.md`.
-- Vérifier avec `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+- Corriger le duplicata de décision D-78 et documenter `z.string().url()`.
+- Nettoyer le `PROGRESS.md` et recréer la base de tests sans affecter les migrations existantes.
+- Vérifier que `test:int` passe complètement et que la CI l'indique.
 
 ## État des tâches
 
@@ -35,10 +33,9 @@ Plan :
 - Aucune tâche en cours.
 
 ### Fait
+- M0 NF-08 : Base xplor_test recréée pour purger le schéma des contraintes résiduelles, sans modifier de migration déjà fusionnée. lint, typecheck, test, test:int OK.
 - M2 F-11/F-12 (mise en file rejouable) : signature de `enqueue` modifiée pour accepter `reason` et générer un `jobId` unique (avec Date.now) lors d'un 'reprocess'. Tests adaptés. lint, typecheck, test OK.
 - M2 F-11 (démarrage du worker) : fonction boot asynchrone implémentée (injection de dépendances, tests mockés validant l'environnement et l'ordre de fermeture, construction S3 avant Prisma, gestion de SIGINT/SIGTERM avec exit). lint, typecheck, test OK.
-
-### Fait
 - Design 6c (champs multilingues et sélecteurs de médias) : dans `apps/admin/src/catalog/LocalizedTextField.tsx`, onglets de langue passés aux couleurs du thème, remplacement du `<input>` natif par `Input` de shadcn/ui, et correction de l'input masqué (sr-only pointer-events-none). `AssetPicker` et `MultiAssetPicker` déjà conformes au thème. lint, typecheck, test OK.
 - M2 F-11 (Worker BullMQ, sans toucher main.ts) : création de `apps/worker/src/panorama.worker.ts` qui configure le worker BullMQ pour traiter les panoramas (via `processPanoramaJob`) et gérer l'échec (via `handlePanoramaFailure` et `repo.markError`). Tests ajoutés dans `panorama.worker.test.ts`. lint, typecheck, test OK.
 - M2 F-11 (stockage S3 du worker) : ajout du client `@aws-sdk/client-s3` au worker, implémentation de `S3WorkerStorage` et ajout des tests unitaires mockés. Vérification lint, typecheck, test OK.
@@ -66,7 +63,7 @@ Plan :
 - M2 API-24 (1/2) : Schémas partagés d'upload de médias (`AssetUploadRequestSchema`, `AssetUploadResponseSchema`) et tests (lint, typecheck, test OK).
 - M2 API-24 (2/2) : `StorageService` S3 et `StorageModule` global avec tests unitaires mockés via S3Client simulé (lint, typecheck, test OK).
 - M2 F-10 : Règles de validation des panoramas (`validatePanoramaUpload`) avec tests unitaires (lint, typecheck, test OK).
-- M2 API-24 : Route d'upload `POST /api/v1/admin/assets/upload-url` et logique S3 via `AssetsService`. Lint, typecheck et tests unitaires OK. `test:int` échoue car le service PostgreSQL n'est pas joignable (hors de mon périmètre).
+- M2 API-24 : Route d'upload `POST /api/v1/admin/assets/upload-url` et logique S3 via `AssetsService`. Lint, typecheck et tests unitaires OK.
 - M2 F-10/API-24 : Route `complete` (`POST /api/v1/admin/assets/:id/complete`). Lecture de `StorageService.head`, extraction des dimensions des JPEG via `sharp` et `validatePanoramaUpload`. Mise en file `panoramaQueue`. Route ajoutée dans OpenAPI. Tests unitaires et intégration (HTTP 401/403) ajoutés. Lint, typecheck, test OK.
 - M2 F-10/API-24 (retours de revue) : Suppression stricte des dérogations TypeScript (`any` et `eslint-disable`) dans `storage.service.test.ts` et `catalog.ts`. Mise à niveau de `z.nativeEnum` vers `z.enum` pour Zod 4. pnpm lint, typecheck et test passent sans erreur (code 0).
 

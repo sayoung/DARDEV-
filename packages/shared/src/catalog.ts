@@ -418,10 +418,12 @@ export type AssetUploadRequest = z.infer<typeof AssetUploadRequestSchema>;
 
 /**
  * Réponse d'initialisation d'un upload (API-24).
+ * `uploadUrl` utilise `z.url()` plutôt que `z.httpUrl()` (non natif / strict sur TLD)
+ * pour autoriser le port local de MinIO (`http://localhost:9000/...`).
  */
 export const AssetUploadResponseSchema = z.object({
   assetId: idSchema,
-  uploadUrl: z.httpUrl(),
+  uploadUrl: z.url(),
   uploadMethod: z.literal('PUT'),
   expiresInSeconds: z.number().int().positive(),
 });
