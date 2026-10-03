@@ -256,7 +256,12 @@
     "home": "Accueil",
     "tours": "Visites",
     "cities": "Villes",
-    "categories": "Catégories"
+    "categories": "Catégories",
+    "media": "Médias"
+  },
+  "media": {
+    "title": "Médiathèque",
+    "subtitle": "Gérez les images, panoramas et sons."
   },
   "page": {
     "home": {

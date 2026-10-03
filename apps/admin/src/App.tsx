@@ -11,6 +11,7 @@ import { TourDetailPage } from './pages/TourDetailPage.js';
 import { SceneDetailPage } from './pages/SceneDetailPage.js';
 import { TourNewPage } from './pages/TourNewPage.js';
 import { ToursPage } from './pages/ToursPage.js';
+import { MediaPage } from './pages/MediaPage.js';
 import { HotspotsPage } from './pages/HotspotsPage.js';
 import { HotspotDetailPage } from './pages/HotspotDetailPage.js';
 import { useAppLocation, type Notice } from './router.js';
@@ -65,6 +66,7 @@ function AdminShell() {
       {isAuthenticated && route.name === 'tour-new' ? <TourNewPage /> : null}
       {isAuthenticated && route.name === 'tour-detail' ? <TourDetailPage /> : null}
       {isAuthenticated && route.name === 'scene-detail' ? <SceneDetailPage /> : null}
+      {isAuthenticated && route.name === 'media' ? <MediaPage /> : null}
       {isAuthenticated && route.name === 'hotspots' ? <HotspotsPage /> : null}
       {isAuthenticated && (route.name === 'hotspot-new' || route.name === 'hotspot-detail') ? <HotspotDetailPage /> : null}
     </AppLayout>

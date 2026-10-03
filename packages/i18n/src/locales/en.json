@@ -182,9 +182,15 @@
   },
   "nav": {
     "label": "Main navigation",
+    "home": "Home",
     "tours": "Tours",
     "cities": "Cities",
-    "categories": "Categories"
+    "categories": "Categories",
+    "media": "Media"
+  },
+  "media": {
+    "title": "Media Library",
+    "subtitle": "Manage images, panoramas, and sounds."
   },
   "page": {
     "home": {
