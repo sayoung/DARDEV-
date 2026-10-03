@@ -51,6 +51,9 @@ export class StorageHealthProbe implements HealthProbe {
   ) {}
 
   async run(): Promise<void> {
+    if (this.env.STORAGE_PROVIDER === 'local') {
+      throw new Error('Incompatible: API utilise STORAGE_PROVIDER=local mais le worker exige s3.');
+    }
     await this.s3.send(new HeadBucketCommand({ Bucket: this.env.S3_BUCKET }));
   }
 }

@@ -59,6 +59,7 @@ describe('createS3Client', () => {
       S3_ACCESS_KEY: 'test-access',
       S3_SECRET_KEY: 'test-secret',
       S3_BUCKET: 'test-bucket',
+      STORAGE_PROVIDER: 's3',
     };
 
     const client = createS3Client(env);
