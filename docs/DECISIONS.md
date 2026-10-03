@@ -613,7 +613,7 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 ## D-83 — Tailwind CSS 4 et shadcn/ui pour apps/admin
 
 - **Date :** 30/09/2026
-- **Décision :** Le back-office (apps/admin) adopte Tailwind CSS 4 et shadcn/ui comme imposé par la section 4.1 du cahier des charges, avec l'utilisation de propriétés CSS logiques pour assurer la compatibilité RTL (Arabe). Aucune API n'est modifiée.
+- **Décision :** Le back-office (apps/admin) adopte Tailwind CSS 4 et shadcn/ui comme imposé par la section 4.1 du cahier des charges, avec l'utilisation de propriétés CSS logiques pour assurer la compatibilité RTL (Arabe). Le plugin `@tailwindcss/vite` est déclaré dans `apps/admin/vite.config.ts` et les composants utilisent `cn` (`src/lib/cn.ts`) et `cva`. Aucune API n'est modifiée.
 - **Alternatives :** Rester sur du CSS personnalisé brut, ce qui s'éloigne du cahier des charges.
 - **À valider :** non (consigne du porteur du 30/09/2026)
 
