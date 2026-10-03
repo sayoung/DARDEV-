@@ -20,13 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M1 D-83 (1/4, plugin Vite + cn)
+**Objectif :** M1 D-83 (2/4, composants à variantes avec cva + cn)
 
 Plan :
-- Configurer le plugin `@tailwindcss/vite` dans `apps/admin/vite.config.ts`.
-- Créer l'utilitaire `cn` (`apps/admin/src/lib/cn.ts`).
-- Créer et passer les tests unitaires associés.
-- Vérifier la compilation et la présence d'utilitaires Tailwind.
+- Réécrire `Button.tsx`, `Badge.tsx` et `Alert.tsx` pour utiliser `cva` et `cn`.
+- Conserver les props, tailles et variantes existantes.
+- Passer `asChild` via `Slot` sur `Button.tsx`.
+- Valider le build, le lint, le typecheck et les tests.
 
 ## État des tâches
 
@@ -34,6 +34,7 @@ Plan :
 - Aucune tâche en cours.
 
 ### Fait
+- M1 D-83 (2/4, composants à variantes avec cva + cn) : réécriture de Button.tsx, Badge.tsx et Alert.tsx avec class-variance-authority et cn. Les variantes, tailles, ref et asChild (Slot) sont conservés. Classes CSS logiques employées. lint, typecheck, test OK, build OK.
 - M1 D-83 (1/4, plugin Vite + cn) : ajout de `@tailwindcss/vite` dans `apps/admin/vite.config.ts`, création de `cn.ts` et `cn.test.ts` (Vitest). La compilation produit bien le CSS Tailwind. lint, typecheck, test OK.
 - M0 F-90 (Parcours réel de bout en bout) : script Node e2e exécuté le 03/10/2026. L'API et le proxy Vite répondent correctement sans erreur ECONNREFUSED.
   - Critère 2 (DoD M0) : Connexion au back-office prouvée en local avec proxy `http://localhost:5173` (`/api/health` 200, `openapi.json` 200, login 200 avec `xplor_sid`, `auth/me` 200, forgot 202).
