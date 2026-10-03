@@ -1,5 +1,6 @@
 /**
- * Route publique des visites partagées (API-11, GET /public/tours/:token).
+ * Route publique des visites partagées (API-11).
+ * GET /public/tours/:token
  * PostgreSQL : `DATABASE_URL_TEST`. Redis : `REDIS_URL`.
  */
 import 'reflect-metadata';
@@ -13,11 +14,11 @@ import { AssetKind, PrismaClient, ProcessingStatus } from '@prisma/client';
 import {
   CategoryResponseSchema,
   CityResponseSchema,
+  HotspotType,
   MeResponseSchema,
   SceneResponseSchema,
   TourResponseSchema,
   TourGraphSchema,
-  HotspotType,
   type CategoryCreate,
   type CityCreate,
   type SceneResponse,
@@ -37,10 +38,10 @@ import { buildSeedUsers } from '../src/seed/seed-users.js';
 import { readDatabaseUrlTest, resetDb } from './global-setup.js';
 
 const MISSING_SEED_PASSWORD =
-  "SEED_DEFAULT_PASSWORD est absent. Les tests d'intégration de la publication en ont besoin (voir .env.example et docs/INSTALL.md).";
+  "SEED_DEFAULT_PASSWORD est absent. Les tests d'intégration de la route publique en ont besoin (voir .env.example et docs/INSTALL.md).";
 
 const MISSING_REDIS_URL =
-  'REDIS_URL est absent. Les tests HTTP de la publication ont besoin de Redis (voir .env.example et docs/INSTALL.md).';
+  'REDIS_URL est absent. Les tests HTTP de la route publique ont besoin de Redis (voir .env.example et docs/INSTALL.md).';
 
 const EDITOR_EMAIL = 'editor@xplor.local';
 
@@ -215,7 +216,7 @@ describe('public tours API', () => {
   it('GET /public/tours/:token -> 404 if unknown token', async () => {
     const response = await application().inject({
       method: 'GET',
-      url: `/api/v1/public/tours/token-unknown?lang=fr`,
+      url: '/api/v1/public/tours/token-unknown?lang=fr',
     });
     expect(response.statusCode).toBe(404);
   });
@@ -223,7 +224,7 @@ describe('public tours API', () => {
   it('GET /public/tours/:token?lang=xx -> 400', async () => {
     const response = await application().inject({
       method: 'GET',
-      url: `/api/v1/public/tours/any-token?lang=xx`,
+      url: '/api/v1/public/tours/any-token?lang=xx',
     });
     expect(response.statusCode).toBe(400);
   });
