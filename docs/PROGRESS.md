@@ -20,12 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M0 NF-08 (Faire passer les tests d'intégration)
+**Objectif :** M0 F-90 (Parcours réel de bout en bout)
 
 Plan :
-- Corriger le duplicata de décision D-78 et documenter `z.string().url()`.
-- Nettoyer le `PROGRESS.md` et recréer la base de tests sans affecter les migrations existantes.
-- Vérifier que `test:int` passe complètement et que la CI l'indique.
+- Vérifier les points d'API locaux via curl ou un script.
+- Exécuter la séquence de connexion, profil et oubli de mot de passe via le proxy Vite.
+- Confirmer la présence de l'email avec lien de réinitialisation sur Mailpit.
+- Mettre à jour la documentation (docs/archive/PROGRESS-M0.md, docs/DEMO_M0.md, docs/PROGRESS.md).
 
 ## État des tâches
 
@@ -33,6 +34,9 @@ Plan :
 - Aucune tâche en cours.
 
 ### Fait
+- M0 F-90 (Parcours réel de bout en bout) : script Node e2e exécuté le 03/10/2026. L'API et le proxy Vite répondent correctement sans erreur ECONNREFUSED.
+  - Critère 2 (DoD M0) : Connexion au back-office prouvée en local avec proxy `http://localhost:5173` (`/api/health` 200, `openapi.json` 200, login 200 avec `xplor_sid`, `auth/me` 200, forgot 202).
+  - Critère 9 (DoD M0) : `docs/DEMO_M0.md` mis à jour avec les preuves techniques (codes HTTP, Mailpit) ; documentation à jour.
 - M0 NF-08 : Base xplor_test recréée pour purger le schéma des contraintes résiduelles, sans modifier de migration déjà fusionnée. lint, typecheck, test, test:int OK.
 - M2 F-11/F-12 (mise en file rejouable) : signature de `enqueue` modifiée pour accepter `reason` et générer un `jobId` unique (avec Date.now) lors d'un 'reprocess'. Tests adaptés. lint, typecheck, test OK.
 - M2 F-11 (démarrage du worker) : fonction boot asynchrone implémentée (injection de dépendances, tests mockés validant l'environnement et l'ordre de fermeture, construction S3 avant Prisma, gestion de SIGINT/SIGTERM avec exit). lint, typecheck, test OK.
