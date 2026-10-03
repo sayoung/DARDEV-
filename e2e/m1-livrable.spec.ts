@@ -65,12 +65,18 @@ test.describe('Livrable M1 : création de visite', () => {
       await page.getByRole('textbox', { name: 'Titre' }).fill(`Scène ${String(i)} M1 ${uniqueSuffix}`);
       
       const panoramaSelect = page.getByLabel('Panorama');
+      await expect(panoramaSelect).toBeVisible();
+
+      await expect.poll(
+        async () => {
+          const texts = await panoramaSelect.locator('option').allInnerTexts();
+          return texts.filter((text) => text.trim().endsWith('Prêt')).length;
+        },
+        { message: 'Moins de 3 panoramas prêts disponibles' }
+      ).toBeGreaterThanOrEqual(3);
+
       const allOptions = await panoramaSelect.locator('option').allInnerTexts();
-      const readyOptions = allOptions.filter(text => text.trim().endsWith('Prêt'));
-      
-      if (readyOptions.length < 3) {
-        throw new Error(`Moins de 3 panoramas prêts disponibles (trouvés : ${String(readyOptions.length)})`);
-      }
+      const readyOptions = allOptions.filter((text) => text.trim().endsWith('Prêt'));
 
       await panoramaSelect.selectOption({ label: readyOptions[i - 1] });
 
