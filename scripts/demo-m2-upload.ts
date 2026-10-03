@@ -82,6 +82,7 @@ async function processFile(
   const start = performance.now();
   let status: ProcessingStatus | 'TIMEOUT' = ProcessingStatus.ERROR;
   let dimensions = null;
+  let raison: string | undefined;
 
   try {
     const fullPath = path.join(panoramasDir, item.file);
@@ -100,7 +101,7 @@ async function processFile(
       body: JSON.stringify(AssetUploadRequestSchema.parse(reqBody)),
     });
     if (!uploadResRaw.ok) {
-      throw new Error(`upload-url échoué : ${String(uploadResRaw.status)}`);
+      throw new Error(`upload-url échoué : ${String(uploadResRaw.status)} - ${await uploadResRaw.text()}`);
     }
     const uploadRes = AssetUploadResponseSchema.parse(await uploadResRaw.json());
 
@@ -112,7 +113,7 @@ async function processFile(
       body: fileBuffer,
     });
     if (!putRes.ok) {
-      throw new Error(`PUT échoué : ${String(putRes.status)}`);
+      throw new Error(`PUT échoué : ${String(putRes.status)} - ${await putRes.text()}`);
     }
 
     // 3. Finalisation (complete)
@@ -120,24 +121,27 @@ async function processFile(
       method: 'POST',
     });
     if (!completeResRaw.ok) {
-      throw new Error(`complete échoué : ${String(completeResRaw.status)}`);
+      throw new Error(`complete échoué : ${String(completeResRaw.status)} - ${await completeResRaw.text()}`);
     }
 
     // 4. Interrogation
     const maxPolls = 150; // 5 min avec 2s d'intervalle
     let currentStatus = ProcessingStatus.PENDING;
+    let getRes;
 
     for (let i = 0; i < maxPolls; i++) {
       const getResRaw = await apiFetch(`/api/v1/admin/assets/${uploadRes.assetId}`);
       if (!getResRaw.ok) {
-        throw new Error(`GET asset échoué : ${String(getResRaw.status)}`);
+        throw new Error(`GET asset échoué : ${String(getResRaw.status)} - ${await getResRaw.text()}`);
       }
-      const getRes = AssetResponseSchema.parse(await getResRaw.json());
+      getRes = AssetResponseSchema.parse(await getResRaw.json());
       currentStatus = getRes.processingStatus;
 
       if (currentStatus === ProcessingStatus.READY || currentStatus === ProcessingStatus.ERROR) {
         if (currentStatus === ProcessingStatus.READY) {
           dimensions = { width: getRes.width ?? 0, height: getRes.height ?? 0 };
+        } else {
+          raison = getRes.processingLog || 'Pas de processingLog fourni';
         }
         break;
       }
@@ -147,13 +151,13 @@ async function processFile(
 
     if (currentStatus !== ProcessingStatus.READY && currentStatus !== ProcessingStatus.ERROR) {
       status = 'TIMEOUT';
+      raison = 'Délai d\'attente dépassé';
     } else {
       status = currentStatus;
     }
-  } catch {
+  } catch (err) {
     status = ProcessingStatus.ERROR;
-    // On n'affiche pas l'erreur pour les fichiers "invalide_" sauf si on veut déboguer.
-    // Mais pour respecter le comportement attendu, on la traite en mode silencieux si expectInvalid est vrai.
+    raison = err instanceof Error ? err.message : String(err);
   }
 
   const durationSeconds = Math.round((performance.now() - start) / 1000);
@@ -164,6 +168,7 @@ async function processFile(
     status,
     durationSeconds,
     expectInvalid: item.expectInvalid,
+    raison,
   };
 }
 
@@ -181,7 +186,10 @@ async function main() {
 
   console.table(results);
 
-  const { exitCode } = summarize(results);
+  const { exitCode, lines } = summarize(results);
+  if (lines.length > 0) {
+    console.log(lines.join('\n'));
+  }
   process.exit(exitCode);
 }
 

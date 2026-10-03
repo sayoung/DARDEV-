@@ -79,4 +79,12 @@ describe('boot', () => {
     })).rejects.toThrow('Invalid environment variables: REDIS_URL, DATABASE_URL, S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET');
     expect(messages).toEqual([]);
   });
+
+  it('refuse de démarrer si STORAGE_PROVIDER est local', async () => {
+    const messages: string[] = [];
+    await expect(boot({ ...validEnv, STORAGE_PROVIDER: 'local' }, (message) => {
+      messages.push(message);
+    })).rejects.toThrow('Le worker ne supporte pas STORAGE_PROVIDER=local. Utilisez s3 (pas de stockage disque partagé entre API et worker).');
+    expect(messages).toEqual([]);
+  });
 });

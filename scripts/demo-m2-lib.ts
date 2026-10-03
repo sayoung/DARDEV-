@@ -27,6 +27,7 @@ export interface ProcessingResult {
   status: ProcessingStatus | 'TIMEOUT';
   durationSeconds?: number;
   expectInvalid: boolean;
+  raison?: string;
 }
 
 export function summarize(results: ProcessingResult[]): { lines: string[]; exitCode: number } {
@@ -39,7 +40,8 @@ export function summarize(results: ProcessingResult[]): { lines: string[]; exitC
     }
     const dim = r.dimensions ? `${String(r.dimensions.width)}x${String(r.dimensions.height)}` : '-';
     const dur = r.durationSeconds !== undefined ? `${String(r.durationSeconds)}s` : '-';
-    lines.push(`| ${r.file} | ${dim} | ${r.status} | ${dur} |`);
+    const raisonStr = r.raison ? r.raison : '-';
+    lines.push(`| ${r.file} | ${dim} | ${r.status} | ${dur} | ${raisonStr} |`);
   }
 
   return {

@@ -56,13 +56,14 @@ describe('demo-m2-lib', () => {
           file: 'invalide_test.jpg',
           status: ProcessingStatus.ERROR,
           expectInvalid: true,
+          raison: 'Image trop petite',
         },
       ];
       const summary = summarize(results);
       expect(summary.exitCode).toBe(0);
       expect(summary.lines).toEqual([
-        '| valid.jpg | 4000x2000 | READY | 5s |',
-        '| invalide_test.jpg | - | ERROR | - |',
+        '| valid.jpg | 4000x2000 | READY | 5s | - |',
+        '| invalide_test.jpg | - | ERROR | - | Image trop petite |',
       ]);
     });
 
@@ -72,10 +73,14 @@ describe('demo-m2-lib', () => {
           file: 'valid.jpg',
           status: ProcessingStatus.ERROR,
           expectInvalid: false,
+          raison: 'Erreur inattendue',
         },
       ];
       const summary = summarize(results);
       expect(summary.exitCode).toBe(1);
+      expect(summary.lines).toEqual([
+        '| valid.jpg | - | ERROR | - | Erreur inattendue |',
+      ]);
     });
   });
 });

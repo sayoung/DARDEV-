@@ -36,6 +36,10 @@ export async function boot(
 ): Promise<() => Promise<void>> {
   const env = loadEnv(source);
 
+  if (env.STORAGE_PROVIDER === 'local') {
+    throw new Error('Le worker ne supporte pas STORAGE_PROVIDER=local. Utilisez s3 (pas de stockage disque partagé entre API et worker).');
+  }
+
   const s3Client = createS3Client(env);
   const storage = new S3WorkerStorage(s3Client, env.S3_BUCKET);
 
