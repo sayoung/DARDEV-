@@ -11,6 +11,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { UsersModule } from './users/users.module.js';
+import { ViewerModule } from './viewer/viewer.module.js';
 
 import { QueueModule } from './queue/queue.module.js';
 
@@ -29,6 +30,7 @@ export class AppModule {
         UsersModule,
         CatalogModule,
         StorageModule,
+        ViewerModule,
         HealthModule,
         OpenApiModule,
       ],
