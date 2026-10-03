@@ -30,7 +30,7 @@ describe('toGraphScene', () => {
     audience: 'public',
     mediaBase: 'https://media.local',
     media: new Map(),
-    narrationById: new Map(),
+    assetUrlById: new Map(),
   };
 
   it("gère le repli fr d'un titre sans traduction ar", () => {
@@ -57,10 +57,23 @@ describe('toGraphScene', () => {
     };
     const ctx: SceneCtx = {
       ...defaultCtx,
-      narrationById: new Map([['narr-1', 'https://media.local/audio.mp3']]),
+      assetUrlById: new Map([['narr-1', 'https://media.local/audio.mp3']]),
     };
     const result = toGraphScene(scene, ctx);
     expect(result.narrationUrl).toBe('https://media.local/audio.mp3');
+  });
+
+  it('retourne ambientUrl null si absent de assetUrlById', () => {
+    const scene: SceneSource = {
+      ...defaultSceneSource,
+      ambientAsset: { id: 'amb-1' },
+    };
+    const ctx: SceneCtx = {
+      ...defaultCtx,
+      assetUrlById: new Map(), // amb-1 n'est pas dans la map
+    };
+    const result = toGraphScene(scene, ctx);
+    expect(result.ambientUrl).toBeNull();
   });
 
   it('filtre un hotspot invalide', () => {

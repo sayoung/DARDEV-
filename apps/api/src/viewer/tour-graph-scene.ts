@@ -5,7 +5,7 @@ import {
   TourGraphSceneSchema,
 } from '@xplor/shared';
 import { HotspotRow, HotspotCtx, toGraphHotspot } from './tour-graph-hotspot.js';
-import { mediaUrl, panoramaUrls } from './media-url.js';
+import { panoramaUrls } from './media-url.js';
 
 export type SceneSource = {
   id: string;
@@ -16,14 +16,14 @@ export type SceneSource = {
   initialPitch: number;
   initialZoom: number;
   panoramaAsset: { derivatives: unknown };
-  ambientAsset: { storageKey: string } | null;
+  ambientAsset: { id: string } | null;
   narration: unknown;
   hotspots: HotspotRow[];
 };
 
 export type SceneCtx = HotspotCtx & {
   mediaBase: string;
-  narrationById: ReadonlyMap<string, string>;
+  assetUrlById: ReadonlyMap<string, string>;
 };
 
 export function toGraphScene(scene: SceneSource, ctx: SceneCtx): TourGraphScene {
@@ -46,11 +46,11 @@ export function toGraphScene(scene: SceneSource, ctx: SceneCtx): TourGraphScene 
   if (parsedNarration.success) {
     const narrationId = localize(parsedNarration.data, ctx.lang);
     if (narrationId) {
-      narrationUrl = ctx.narrationById.get(narrationId) ?? null;
+      narrationUrl = ctx.assetUrlById.get(narrationId) ?? null;
     }
   }
 
-  const ambientUrl = scene.ambientAsset ? mediaUrl(ctx.mediaBase, scene.ambientAsset.storageKey) : null;
+  const ambientUrl = scene.ambientAsset ? (ctx.assetUrlById.get(scene.ambientAsset.id) ?? null) : null;
 
   const hotspots = scene.hotspots
     .map(h => toGraphHotspot(h, ctx))
