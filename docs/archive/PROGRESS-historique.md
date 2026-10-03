@@ -11,3 +11,4 @@
 - M2 F-11 : File panorama, contrat partagé (panorama-queue.ts).
 - M2 F-11 : Grille des tuiles (tileGrid).
 - M2 F-11 : Dérivés preview, web, thumb (panorama.derivatives.ts).
+- M2 F-11 : Dérivé tiles (panorama.tiles.ts).
