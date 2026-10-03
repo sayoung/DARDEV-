@@ -739,3 +739,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Raison :** AuthService.login (apps/api/src/auth/auth.service.ts, appel à sessions.destroyAllForUser) supprime toutes les sessions de l'utilisateur à chaque connexion.
 - **Alternatives :** Modifier le comportement de sécurité (rejeté).
 - **À valider :** non
+
+## D-96 — Lecture publique des dérivés de panorama
+
+- **Date :** 03/10/2026
+- **Décision :** préfixe panoramas/ lisible sans authentification (l'URL dépend de la variable `MEDIA_PUBLIC_URL`).
+- **Raison :** clés immuables à empreinte, donc cache long et pas de fuite d'énumération utile ; originaux privés
+- **Alternatives :** URL signées/présignées par visite
+- **À valider :** oui
