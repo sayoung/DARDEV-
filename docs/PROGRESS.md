@@ -40,6 +40,7 @@ lint, typecheck, test OK
 - Aucun.
 
 ### Fait
+- M2 F-12 : Création du parseur CLI (reprocess-args.ts) et ses tests.
 - M2 API-24 : Route de retraitement POST /api/v1/admin/assets/:id/reprocess (contrôleur et tests d'intégration, mise à jour OpenAPI).
 - M1 CI : Correction de la décision D-94 (formatage) et vérification des versions Node 24 (runs.using=node24).
 - M1 CI : Mise à jour des actions GitHub vers leurs versions Node 24 (checkout@v7, pnpm/action-setup@v6, setup-node@v7, upload-artifact@v7).
