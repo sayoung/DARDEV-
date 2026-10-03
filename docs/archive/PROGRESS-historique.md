@@ -3,3 +3,4 @@
 - M2 F-10/API-24 (retours de revue) : Suppression stricte des dérogations TypeScript.
 - M2 F-10/API-24 : Route complete.
 - M2 API-24 : Route d'upload POST /api/v1/admin/assets/upload-url.
+- M2 F-10 : Règles de validation des panoramas.
