@@ -42,7 +42,7 @@ const exampleGraph = {
       ]
     }
   ],
-  linkedTours: [ { id: uuidB, title: "Jardin andalou", coverUrl: "…", availableOffline: true } ]
+  linkedTours: [ { id: uuidB, title: "Jardin andalou", coverUrl: "…", availableOffline: true, shareToken: null } ]
 };
 
 describe('TourGraphSchema', () => {

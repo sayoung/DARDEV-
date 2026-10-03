@@ -107,6 +107,7 @@ export const TourGraphSchema = z.object({
     title: z.string(),
     coverUrl: z.string().nullable(),
     availableOffline: z.boolean(),
+    shareToken: z.string().nullable(),
   })),
 });
 

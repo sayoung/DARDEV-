@@ -118,6 +118,9 @@ export function toGraphHotspot(row: HotspotRow, ctx: HotspotCtx): TourGraphHotsp
       if (ctx.audience === 'kiosk' && (!ctx.allowedTourIds || !ctx.allowedTourIds.has(row.targetTourId))) {
         return null;
       }
+      if (ctx.audience === 'public' && ctx.allowedTourIds && !ctx.allowedTourIds.has(row.targetTourId)) {
+        return null;
+      }
       return TourGraphHotspotSchema.parse({
         type: HotspotType.TOUR_LINK,
         id: row.id,

@@ -101,6 +101,26 @@ describe('toGraphHotspot', () => {
       const ctx2: HotspotCtx = { ...defaultCtx, audience: 'kiosk' };
       expect(toGraphHotspot(row, ctx2)).toBeNull();
     });
+
+    it('retourne valide si audience est public et targetTourId est dans allowedTourIds', () => {
+      const ctx: HotspotCtx = {
+        ...defaultCtx,
+        audience: 'public',
+        allowedTourIds: new Set(['t-2']),
+      };
+      const result = toGraphHotspot(row, ctx);
+      expect(result?.type).toBe(HotspotType.TOUR_LINK);
+    });
+
+    it('retourne null si audience est public, allowedTourIds est défini mais targetTourId n\'y est pas', () => {
+      const ctx: HotspotCtx = {
+        ...defaultCtx,
+        audience: 'public',
+        allowedTourIds: new Set(['t-3']),
+      };
+      const result = toGraphHotspot(row, ctx);
+      expect(result).toBeNull();
+    });
   });
 
   describe('URL', () => {
