@@ -6,3 +6,4 @@
 - M2 F-10 : Règles de validation des panoramas.
 - M2 API-24 (2/2) : StorageService S3 et StorageModule global.
 - M2 API-24 (1/2) : Schémas partagés d'upload de médias.
+- M2 F-11 (2/n) : Ajout du journal d'erreur.
