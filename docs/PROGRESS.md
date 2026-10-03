@@ -20,12 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M0 NF-08 (Faire passer les tests d'intégration)
+**Objectif :** M0 F-90 (Parcours réel de bout en bout)
 
 Plan :
-- Corriger le duplicata de décision D-78 et documenter `z.string().url()`.
-- Nettoyer le `PROGRESS.md` et recréer la base de tests sans affecter les migrations existantes.
-- Vérifier que `test:int` passe complètement et que la CI l'indique.
+- Vérifier les points d'API locaux via curl ou un script.
+- Exécuter la séquence de connexion, profil et oubli de mot de passe via le proxy Vite.
+- Confirmer la présence de l'email avec lien de réinitialisation sur Mailpit.
+- Mettre à jour la documentation (docs/archive/PROGRESS-M0.md, docs/DEMO_M0.md, docs/PROGRESS.md).
 
 ## État des tâches
 

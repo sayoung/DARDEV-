@@ -175,8 +175,8 @@ Les cases cochées sont des preuves déjà obtenues le 29/09/2026 et revérifié
 
 - [x] Quatre commandes — local et CI. `docker compose up -d` : postgres, redis, minio et mailpit `healthy`, `minio-init` code 0 (local). `pnpm install` : workspace déjà installé, commande non rejouée (local). `pnpm db:migrate` : déjà synchronisé (local) ; `db:deploy` sur base vierge (CI). `pnpm db:seed` : « 4 utilisateurs de démonstration prêts », deux fois (local et CI).
 - [x] `pnpm dev` — local. API, back-office et worker démarrés. Résolution confirmée : le proxy Vite ne journalise plus l'erreur ECONNREFUSED dans le test de fumée (l'API répond correctement).
-- [x] `GET /api/health` répond 200 avec `{"status":"ok","checks":{"db":"ok","redis":"ok","storage":"ok"}}` — local (via proxy `http://localhost:5173`) et CI.
-- [x] `GET /api/v1/openapi.json` répond 200 — local (via proxy `http://localhost:5173`) et CI.
+- [x] `GET /api/health` répond 200 avec `{"status":"ok","checks":{"db":"ok","redis":"ok","storage":"ok"}}` — local (direct sur `http://localhost:3000` et via proxy `http://localhost:5173`) et CI.
+- [x] `GET /api/v1/openapi.json` répond 200 — local (direct sur `http://localhost:3000` et via proxy `http://localhost:5173`) et CI.
 - [x] Login et `/auth/me` 200 — local et CI. Vérifié en local le 03/10/2026 via proxy : `POST /api/v1/auth/login` avec l'adresse `admin@xplor.local` répond 200, en-tête `Set-Cookie` présent avec le cookie `xplor_sid`. `GET /api/v1/auth/me` répond 200 pour ce compte.
 - [x] Mot de passe oublié (Mailpit) — local. `POST /api/v1/auth/password/forgot` pour `editor@xplor.local` via proxy : 202. Vérification Mailpit explicite (`GET http://localhost:8025/api/v1/messages`) : un courriel a été reçu, et le corps du message contient bien le lien `/reset/`.
 - [x] `pnpm test:int` : 9 verts — local et CI (`auth.int.test.ts` 7, `seed.int.test.ts` 1, `migrations.int.test.ts` 1).
