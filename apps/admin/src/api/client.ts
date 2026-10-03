@@ -10,6 +10,13 @@ import {
   type MeResponse,
   type ResetPasswordRequest,
   type ZodType,
+  AssetResponseSchema,
+  AssetUploadRequestSchema,
+  AssetUploadResponseSchema,
+  type AssetResponse,
+  type AssetUploadRequest,
+  type AssetUploadResponse,
+  AssetKind,
 } from '@xplor/shared';
 
 /** Méthodes sans effet de bord : pas d'en-tête CSRF (même règle que `CsrfGuard`). */
@@ -25,8 +32,8 @@ export class ApiError extends Error {
   readonly code: string | undefined;
   readonly issues?: unknown;
 
-  constructor(status: number, code: string | undefined, issues?: unknown) {
-    super(code ?? `HTTP ${String(status)}`);
+  constructor(status: number, code: string | undefined, issues?: unknown, message?: string) {
+    super(message ?? code ?? `HTTP ${String(status)}`);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
@@ -120,13 +127,19 @@ async function toApiError(response: Response): Promise<ApiError> {
     const body = await readJson(response);
     const code = codeFromBody(body);
     let issues: unknown;
+    let message: string | undefined;
     if (typeof body === 'object' && body !== null && 'error' in body) {
       const err = (body as Record<string, unknown>).error;
-      if (typeof err === 'object' && err !== null && 'issues' in err) {
-        issues = (err as Record<string, unknown>).issues;
+      if (typeof err === 'object' && err !== null) {
+        if ('issues' in err) {
+          issues = (err as Record<string, unknown>).issues;
+        }
+        if ('message' in err && typeof (err as Record<string, unknown>).message === 'string') {
+          message = (err as Record<string, unknown>).message as string;
+        }
       }
     }
-    return new ApiError(response.status, code, issues);
+    return new ApiError(response.status, code, issues, message);
   } catch {
     return new ApiError(response.status, undefined);
   }
@@ -196,4 +209,64 @@ export async function requestJson<T>(
     return undefined;
   }
   return schema.parse(data);
+}
+
+
+export async function requestAssetUploadUrl(body: AssetUploadRequest): Promise<AssetUploadResponse> {
+  return requestJson('/api/v1/admin/assets/upload-url', AssetUploadResponseSchema, {
+    method: 'POST',
+    body: JSON.stringify(AssetUploadRequestSchema.parse(body)),
+  });
+}
+
+export async function completeAsset(id: string): Promise<AssetResponse> {
+  return requestJson(`/api/v1/admin/assets/${id}/complete`, AssetResponseSchema, {
+    method: 'POST',
+  });
+}
+
+export async function reprocessAsset(id: string): Promise<AssetResponse> {
+  return requestJson(`/api/v1/admin/assets/${id}/reprocess`, AssetResponseSchema, {
+    method: 'POST',
+  });
+}
+
+export async function deleteAsset(id: string): Promise<void> {
+  return requestJson(`/api/v1/admin/assets/${id}`, null, {
+    method: 'DELETE',
+  });
+}
+
+export async function uploadPanorama(file: File, onProgress?: (percent: number) => void): Promise<AssetResponse> {
+  try {
+    const uploadRes = await requestAssetUploadUrl({
+      kind: AssetKind.PANORAMA,
+      mimeType: file.type,
+      sizeBytes: file.size,
+      filename: file.name,
+    });
+
+    const putRes = await fetch(uploadRes.uploadUrl, {
+      method: uploadRes.uploadMethod,
+      headers: {
+        'Content-Type': file.type,
+      },
+      body: file,
+    });
+
+    if (!putRes.ok) {
+      throw new Error(`Upload failed: ${putRes.statusText}`);
+    }
+
+    if (onProgress) {
+      onProgress(100);
+    }
+
+    return await completeAsset(uploadRes.assetId);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 422) {
+      throw new Error(error.message);
+    }
+    throw error;
+  }
 }

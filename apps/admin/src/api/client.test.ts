@@ -1,7 +1,12 @@
-import { Role, type MeResponse, z } from '@xplor/shared';
+import { Role, type MeResponse, z , AssetKind } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  requestAssetUploadUrl,
+  completeAsset,
+  reprocessAsset,
+  deleteAsset,
+  uploadPanorama,
   acceptInvite,
   apiFetch,
   clearCsrfToken,
@@ -216,5 +221,153 @@ describe('requestJson', () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, { ok: true }));
     await requestJson('/test', schema, { method: 'POST', body: '{}' });
     expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe('fake-csrf');
+  });
+});
+
+
+describe('Assets API', () => {
+  const profile = {
+    id: 'user-1',
+    email: 'ada@xplor.test',
+    name: 'Ada Lovelace',
+    role: Role.ADMIN,
+    uiLang: 'fr',
+    csrfToken: 'csrf-for-assets',
+  } satisfies MeResponse;
+
+  beforeEach(async () => {
+    clearCsrfToken();
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+
+    // Initialiser le CSRF token
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, profile));
+    const { fetchCurrentUser } = await import('./client.js');
+    await fetchCurrentUser();
+    fetchMock.mockReset(); // Nettoyer l'appel auth
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('requestAssetUploadUrl envoie un POST avec le payload validé et en-tête CSRF', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { assetId: '018f3a38-c393-79d2-97b7-5f214f4df7e3', uploadUrl: 'http://test/up', uploadMethod: 'PUT', expiresInSeconds: 60 }));
+    
+    await requestAssetUploadUrl({ kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1024, filename: 'pano.jpg' });
+    
+    const call = lastCall();
+    expect(call?.url).toBe('/api/v1/admin/assets/upload-url');
+    expect(call?.method).toBe('POST');
+    expect(headerOf(call, 'X-CSRF-Token')).toBe(profile.csrfToken);
+    expect(JSON.parse(call?.init?.body as string)).toEqual({
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+      filename: 'pano.jpg',
+    });
+  });
+
+  it('completeAsset, reprocessAsset, deleteAsset envoient les bonnes requêtes avec CSRF', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      id: '018f3a38-c393-79d2-97b7-5f214f4df7e3',
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+      width: 1024,
+      height: 512,
+      processingStatus: 'READY',
+      processingLog: null,
+      copyright: null,
+      createdAt: '2023-01-01T00:00:00.000Z',
+      issues: [],
+    }));
+    await completeAsset('018f3a38-c393-79d2-97b7-5f214f4df7e3');
+    expect(lastCall()?.url).toBe('/api/v1/admin/assets/018f3a38-c393-79d2-97b7-5f214f4df7e3/complete');
+    expect(lastCall()?.method).toBe('POST');
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe(profile.csrfToken);
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      id: '018f3a38-c393-79d2-97b7-5f214f4df7e3',
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+      width: 1024,
+      height: 512,
+      processingStatus: 'READY',
+      processingLog: null,
+      copyright: null,
+      createdAt: '2023-01-01T00:00:00.000Z',
+      issues: [],
+    }));
+    await reprocessAsset('018f3a38-c393-79d2-97b7-5f214f4df7e3');
+    expect(lastCall()?.url).toBe('/api/v1/admin/assets/018f3a38-c393-79d2-97b7-5f214f4df7e3/reprocess');
+    expect(lastCall()?.method).toBe('POST');
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe(profile.csrfToken);
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await deleteAsset('018f3a38-c393-79d2-97b7-5f214f4df7e3');
+    expect(lastCall()?.url).toBe('/api/v1/admin/assets/018f3a38-c393-79d2-97b7-5f214f4df7e3');
+    expect(lastCall()?.method).toBe('DELETE');
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe(profile.csrfToken);
+  });
+
+  it('uploadPanorama enchaîne les 3 appels dans l\'ordre', async () => {
+    const file = new File(['fake content'], 'test.jpg', { type: 'image/jpeg' });
+
+    // 1. requestAssetUploadUrl
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { assetId: '018f3a38-c393-79d2-97b7-5f214f4df7e3', uploadUrl: 'http://test/up', uploadMethod: 'PUT', expiresInSeconds: 60 }));
+    // 2. fetch PUT file
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    // 3. completeAsset
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      id: '018f3a38-c393-79d2-97b7-5f214f4df7e3',
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1024,
+      width: 1024,
+      height: 512,
+      processingStatus: 'READY',
+      processingLog: null,
+      copyright: null,
+      createdAt: '2023-01-01T00:00:00.000Z',
+      issues: [],
+    }));
+
+    const onProgress = vi.fn();
+    const result = await uploadPanorama(file, onProgress);
+
+    expect(result.id).toBe('018f3a38-c393-79d2-97b7-5f214f4df7e3');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    // Call 1
+    const call1 = fetchMock.mock.calls[0];
+    if (!call1) throw new Error('call1 is undefined');
+    expect(requestUrl(call1[0])).toBe('/api/v1/admin/assets/upload-url');
+    
+    // Call 2
+    const call2 = fetchMock.mock.calls[1];
+    if (!call2) throw new Error('call2 is undefined');
+    expect(requestUrl(call2[0])).toBe('http://test/up');
+    expect((call2[1] as RequestInit).method).toBe('PUT');
+    expect(new Headers((call2[1] as RequestInit).headers).get('Content-Type')).toBe('image/jpeg');
+    expect((call2[1] as RequestInit).body).toBe(file);
+
+    // Call 3
+    const call3 = fetchMock.mock.calls[2];
+    if (!call3) throw new Error('call3 is undefined');
+    expect(requestUrl(call3[0])).toBe('/api/v1/admin/assets/018f3a38-c393-79d2-97b7-5f214f4df7e3/complete');
+
+    expect(onProgress).toHaveBeenCalledWith(100);
+  });
+
+  it('uploadPanorama propage le message français sur erreur 422', async () => {
+    const file = new File(['fake content'], 'test.jpg', { type: 'image/jpeg' });
+    
+    // 1. requestAssetUploadUrl (échoue avec 422 et un message français)
+    fetchMock.mockResolvedValueOnce(jsonResponse(422, { error: { code: 'FILE_TOO_LARGE', message: 'Fichier trop volumineux' } }));
+
+    await expect(uploadPanorama(file)).rejects.toThrow('Fichier trop volumineux');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
