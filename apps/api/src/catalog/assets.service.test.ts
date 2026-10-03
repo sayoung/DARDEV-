@@ -35,10 +35,11 @@ interface OrderKey {
 }
 
 interface ListArgs {
-  where: { kind?: AssetKind };
-  orderBy: OrderKey[];
-  skip: number;
-  take: number;
+  where?: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } };
+  orderBy?: OrderKey[];
+  skip?: number;
+  take?: number;
+  select?: Record<string, boolean>;
 }
 
 const listAll: AssetListQuery = { page: 1, pageSize: 20 };
@@ -82,9 +83,11 @@ function harness(rows: AssetRow[]): {
         Promise.resolve(rows.filter((item) => matches(item, where)).length),
       findMany: (args: ListArgs): Promise<AssetRow[]> => {
         lists.push(args);
-        const filtered = rows.filter((item) => matches(item, args.where));
-        const sorted = [...filtered].sort((left, right) => compare(left, right, args.orderBy));
-        return Promise.resolve(sorted.slice(args.skip, args.skip + args.take));
+        const filtered = rows.filter((item) => matches(item, args.where || {}));
+        const orderBy = args.orderBy;
+        const sorted = orderBy ? [...filtered].sort((left, right) => compare(left, right, orderBy)) : filtered;
+        const result = (args.skip !== undefined && args.take !== undefined) ? sorted.slice(args.skip, args.skip + args.take) : sorted;
+        return Promise.resolve(result);
       },
       findUnique: ({ where }: { where: { id: string } }): Promise<AssetRow | null> =>
         Promise.resolve(rows.find((item) => item.id === where.id) ?? null),
@@ -115,8 +118,16 @@ function harness(rows: AssetRow[]): {
   return { service: new AssetsService(prisma, storage, panoramaQueue), lists, creates, updates, storage, panoramaQueue };
 }
 
-function matches(item: AssetRow, where: { kind?: AssetKind }): boolean {
-  return where.kind === undefined || item.kind === where.kind;
+function matches(item: AssetRow, where: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } }): boolean {
+  if (where.kind !== undefined && item.kind !== where.kind) {
+    return false;
+  }
+  if (where.processingStatus?.in !== undefined) {
+    if (!where.processingStatus.in.includes(item.processingStatus)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function compare(left: AssetRow, right: AssetRow, orderBy: readonly OrderKey[]): number {
@@ -433,6 +444,28 @@ describe('AssetsService', () => {
       expect(enqueueSpy).toHaveBeenCalledWith(ASSET_ID, 'reprocess');
       expect(result.processingStatus).toBe(ProcessingStatus.PROCESSING);
       expect(result.processingLog).toBeNull();
+    });
+  });
+
+  describe('reprocessAllPanoramas', () => {
+    it('relance uniquement les panoramas READY ou ERROR', async () => {
+      const p1 = row('01990000-0000-7000-8000-000000000101', AssetKind.PANORAMA, '2026-10-01T00:00:00.000Z', { processingStatus: ProcessingStatus.READY });
+      const p2 = row('01990000-0000-7000-8000-000000000102', AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.ERROR });
+      const p3 = row('01990000-0000-7000-8000-000000000103', AssetKind.PANORAMA, '2026-10-03T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
+      const p4 = row('01990000-0000-7000-8000-000000000104', AssetKind.PANORAMA, '2026-10-04T00:00:00.000Z', { processingStatus: ProcessingStatus.PROCESSING });
+      const i1 = row('01990000-0000-7000-8000-000000000105', AssetKind.IMAGE, '2026-10-05T00:00:00.000Z', { processingStatus: ProcessingStatus.READY });
+      
+      const { service, panoramaQueue, updates } = harness([p1, p2, p3, p4, i1]);
+      
+      const enqueueSpy = vi.spyOn(panoramaQueue, 'enqueue');
+      
+      const count = await service.reprocessAllPanoramas();
+      
+      expect(count).toBe(2);
+      expect(enqueueSpy).toHaveBeenCalledTimes(2);
+      expect(enqueueSpy).toHaveBeenCalledWith('01990000-0000-7000-8000-000000000101', 'reprocess');
+      expect(enqueueSpy).toHaveBeenCalledWith('01990000-0000-7000-8000-000000000102', 'reprocess');
+      expect(updates).toHaveLength(2);
     });
   });
 });

@@ -214,6 +214,26 @@ export class AssetsService {
     await this.panoramaQueue.enqueue(id, 'reprocess');
     return toAsset(updatedAsset);
   }
+
+  async reprocessAllPanoramas(): Promise<number> {
+    const assets = await this.prisma.asset.findMany({
+      where: {
+        kind: PrismaAssetKind.PANORAMA,
+        processingStatus: {
+          in: [ProcessingStatus.READY, ProcessingStatus.ERROR],
+        },
+      },
+      select: { id: true },
+    });
+
+    let count = 0;
+    for (const asset of assets) {
+      await this.reprocess(asset.id);
+      count++;
+    }
+
+    return count;
+  }
 }
 
 function listWhere(query: AssetListQuery): Prisma.AssetWhereInput {
