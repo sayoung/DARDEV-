@@ -25,6 +25,7 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 ## Contrôle DoD M2
 
 Terminé
+
 ## État des tâches
 
 ### En cours
