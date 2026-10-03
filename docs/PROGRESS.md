@@ -17,7 +17,7 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 | 7 | Démo avec données pertinentes | à faire |
 | 8 | Démo au porteur et retours consignés | à faire |
 
-Jalon précédent : M1, DoD remplie : oui (détail : docs/archive/PROGRESS-M1.md)
+Jalon précédent : M1, DoD remplie : non, critère 2 : local uniquement, CI non confirmée (détail : docs/archive/PROGRESS-M1.md)
 
 ## Session en cours
 
