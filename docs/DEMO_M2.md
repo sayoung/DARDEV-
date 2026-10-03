@@ -47,3 +47,22 @@ Le script va soumettre les panoramas à l'API et attendre que le Worker les trai
 - **Code de sortie :**
   - **`0`** : Si le comportement est correct (tous les panoramas valides sont en `READY`, et les invalides en `ERROR`).
   - **`1`** : Si un panorama valide n'est pas en `READY` ou si un fichier `invalide_*` passe en `READY`.
+
+## Résultat du 03/10/2026
+
+| fichier | dimensions | status | durée | raison |
+|---|---|---|---|---|
+| acoustical_shell.jpg | 8192x4096 | READY | 6s | - |
+| altanka.jpg | 8192x4096 | READY | 2s | - |
+| amphitheatre_zanzibar_fort.jpg | 8192x4096 | READY | 4s | - |
+| balcony.jpg | 8192x4096 | READY | 2s | - |
+| beach_parking.jpg | 8192x4096 | READY | 2s | - |
+| belvedere.jpg | 8192x4096 | READY | 2s | - |
+| bloem_olive_house.jpg | 8192x4096 | READY | 4s | - |
+| castel_st_angelo_roof.jpg | 8192x4096 | READY | 4s | - |
+| entrance_hall.jpg | 8192x4096 | READY | 2s | - |
+| hotel_room.jpg | 8192x4096 | READY | 2s | - |
+
+*(Le dossier de test ne contient aucun fichier invalide_*, ils ne figurent donc pas dans ce tableau avec le statut ERROR)*
+
+Code de sortie : 0
