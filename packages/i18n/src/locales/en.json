@@ -190,7 +190,20 @@
   },
   "media": {
     "title": "Media Library",
-    "subtitle": "Manage images, panoramas, and sounds."
+    "subtitle": "Manage images, panoramas, and sounds.",
+    "empty": "No media found.",
+    "columns": {
+      "date": "Creation date",
+      "dimensions": "Dimensions",
+      "size": "Size (MB)",
+      "status": "Status"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "PROCESSING": "Processing",
+      "READY": "Ready",
+      "ERROR": "Error"
+    }
   },
   "page": {
     "home": {
