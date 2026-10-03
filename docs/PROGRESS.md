@@ -20,13 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M0 F-90 (Parcours réel de bout en bout)
+**Objectif :** M1 D-83 (1/4, plugin Vite + cn)
 
 Plan :
-- Vérifier les points d'API locaux via curl ou un script.
-- Exécuter la séquence de connexion, profil et oubli de mot de passe via le proxy Vite.
-- Confirmer la présence de l'email avec lien de réinitialisation sur Mailpit.
-- Mettre à jour la documentation (docs/archive/PROGRESS-M0.md, docs/DEMO_M0.md, docs/PROGRESS.md).
+- Configurer le plugin `@tailwindcss/vite` dans `apps/admin/vite.config.ts`.
+- Créer l'utilitaire `cn` (`apps/admin/src/lib/cn.ts`).
+- Créer et passer les tests unitaires associés.
+- Vérifier la compilation et la présence d'utilitaires Tailwind.
 
 ## État des tâches
 
@@ -34,6 +34,7 @@ Plan :
 - Aucune tâche en cours.
 
 ### Fait
+- M1 D-83 (1/4, plugin Vite + cn) : ajout de `@tailwindcss/vite` dans `apps/admin/vite.config.ts`, création de `cn.ts` et `cn.test.ts` (Vitest). La compilation produit bien le CSS Tailwind. lint, typecheck, test OK.
 - M0 F-90 (Parcours réel de bout en bout) : script Node e2e exécuté le 03/10/2026. L'API et le proxy Vite répondent correctement sans erreur ECONNREFUSED.
   - Critère 2 (DoD M0) : Connexion au back-office prouvée en local avec proxy `http://localhost:5173` (`/api/health` 200, `openapi.json` 200, login 200 avec `xplor_sid`, `auth/me` 200, forgot 202).
   - Critère 9 (DoD M0) : `docs/DEMO_M0.md` mis à jour avec les preuves techniques (codes HTTP, Mailpit) ; documentation à jour.
