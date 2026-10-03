@@ -126,7 +126,7 @@ export function CategoriesPage() {
   }
 
   return (
-    <div className="page-categories space-y-8">
+    <div className="space-y-8">
       <PageHeader
         title={t('page.categories.title')}
         actions={

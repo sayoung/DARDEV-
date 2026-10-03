@@ -168,7 +168,7 @@ export function ToursPage() {
   const duplicating = duplicateInProgressId !== null;
 
   return (
-    <div className="page-tours space-y-8">
+    <div className="space-y-8">
       <PageHeader
         title={t('page.tours.title')}
         actions={
