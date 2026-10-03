@@ -39,11 +39,12 @@ describe('S3StorageService', () => {
       SESSION_SECRET: '12345678901234567890123456789012',
       ADMIN_BASE_URL: 'http://localhost:5173',
       STORAGE_PROVIDER: 's3',
+      API_PUBLIC_URL: 'http://localhost:3000',
     };
     service = new S3StorageService(s3, env);
   });
 
-  describe('generatePresignedUploadUrl (and presignPut)', () => {
+  describe('generatePresignedUploadUrl', () => {
     it('should generate a presigned URL with the correct key and expiration', async () => {
       const url = await service.generatePresignedUploadUrl('test-key.jpg', 'image/jpeg', 1024);
       expect(url).toContain('test-bucket');
@@ -61,7 +62,7 @@ describe('S3StorageService', () => {
     });
   });
 
-  describe('headObject (and head)', () => {
+  describe('headObject', () => {
     it('should return size and contentType when object exists', async () => {
       const mockResponse: HeadObjectCommandOutput = {
         $metadata: {},
@@ -83,9 +84,24 @@ describe('S3StorageService', () => {
       const result = await service.headObject('test-key.jpg');
       expect(result).toBeNull();
     });
+    it('should return null when object is not found via httpStatusCode', async () => {
+      const error = new Error('Some Error') as Error & { $metadata?: { httpStatusCode: number } };
+      error.$metadata = { httpStatusCode: 404 };
+      sendSpy.mockRejectedValueOnce(error);
+
+      const result = await service.headObject('test-key.jpg');
+      expect(result).toBeNull();
+    });
+
+    it('should rethrow unknown errors', async () => {
+      const error = new Error('Unknown error');
+      sendSpy.mockRejectedValueOnce(error);
+
+      await expect(service.headObject('test-key.jpg')).rejects.toThrow('Unknown error');
+    });
   });
 
-  describe('deleteObject (and delete)', () => {
+  describe('deleteObject', () => {
     it('should send a DeleteObjectCommand', async () => {
       const mockResponse: DeleteObjectCommandOutput = { $metadata: {} };
       sendSpy.mockResolvedValueOnce(mockResponse);
@@ -102,6 +118,12 @@ describe('S3StorageService', () => {
       const result = await service.getRange('test-key.jpg', 0, 65535);
       expect(sendSpy).toHaveBeenCalledWith(expect.any(GetObjectCommand));
       expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should throw an error if response has no body', async () => {
+      const mockResponse: GetObjectCommandOutput = { $metadata: {} };
+      sendSpy.mockResolvedValueOnce(mockResponse);
+      await expect(service.getRange('test-key.jpg', 0, 65535)).rejects.toThrow('No body in response');
     });
   });
 });
@@ -126,6 +148,7 @@ describe('LocalStorageService', () => {
       ADMIN_BASE_URL: 'http://localhost:5173',
       STORAGE_PROVIDER: 'local',
       STORAGE_LOCAL_PATH: '/tmp/storage-test',
+      API_PUBLIC_URL: 'http://localhost:3000',
     };
     service = new LocalStorageService(env);
   });

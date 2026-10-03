@@ -24,9 +24,14 @@ function loadLocalEnvFile(): void {
 async function bootstrap(): Promise<void> {
   loadLocalEnvFile();
   const env = loadEnv(process.env);
+  const fastifyAdapter = new FastifyAdapter({ maxParamLength: 1000 });
+  fastifyAdapter.getInstance().addContentTypeParser('*', (req, payload, done) => {
+    done(null, null); // We don't need body, we will read req.raw
+  });
+  
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule.forRoot(env),
-    new FastifyAdapter(),
+    fastifyAdapter,
   );
   await app.register(fastifyCookie);
   app

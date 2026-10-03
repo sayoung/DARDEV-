@@ -19,6 +19,7 @@ const envKeys = [
   'ADMIN_BASE_URL',
   'STORAGE_PROVIDER',
   'STORAGE_LOCAL_PATH',
+  'API_PUBLIC_URL',
 ] as const;
 
 export const envSchema = z.object({
@@ -36,6 +37,7 @@ export const envSchema = z.object({
   ADMIN_BASE_URL: z.url().default('http://localhost:5173'),
   STORAGE_PROVIDER: z.enum(['s3', 'local']).default('s3'),
   STORAGE_LOCAL_PATH: z.string().optional(),
+  API_PUBLIC_URL: z.url().default('http://localhost:3000'),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -90,7 +90,7 @@ export class AssetsService {
       data: { originalKey },
     });
 
-    const uploadUrl = await this.storage.presignPut(originalKey, input.mimeType, input.sizeBytes);
+    const uploadUrl = await this.storage.generatePresignedUploadUrl(originalKey, input.mimeType, input.sizeBytes);
 
     return {
       assetId: row.id,
@@ -112,7 +112,7 @@ export class AssetsService {
       );
     }
 
-    const head = await this.storage.head(asset.originalKey);
+    const head = await this.storage.headObject(asset.originalKey);
     if (head === null) {
       throw new HttpException(
         { error: { code: 'UPLOAD_MISSING', message: 'No file uploaded to storage' } },

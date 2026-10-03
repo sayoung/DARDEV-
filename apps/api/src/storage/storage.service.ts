@@ -7,13 +7,13 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
-import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 import { ENV } from '../config/config.module.js';
 import { type Env } from '../config/env.js';
 import { S3_CLIENT } from '../health/health.probes.js';
+import { signStorageToken } from './storage.utils.js';
 
 export const UPLOAD_URL_TTL_SECONDS = 900;
 export const STORAGE_SERVICE = Symbol('STORAGE_SERVICE');
@@ -23,11 +23,7 @@ export interface StorageService {
   getSignedUrl(key: string, expiresIn: number): Promise<string>;
   deleteObject(key: string): Promise<void>;
   headObject(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null>;
-  // Existing methods used by assets service
-  presignPut(key: string, contentType: string, sizeBytes: number): Promise<string>;
-  head(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null>;
   getRange(key: string, start: number, end: number): Promise<Buffer>;
-  delete(key: string): Promise<void>;
 }
 
 @Injectable()
@@ -85,15 +81,6 @@ export class S3StorageService implements StorageService {
     }
   }
 
-  // Backwards compatibility for existing code
-  async presignPut(key: string, contentType: string, sizeBytes: number): Promise<string> {
-    return this.generatePresignedUploadUrl(key, contentType, sizeBytes);
-  }
-
-  async head(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null> {
-    return this.headObject(key);
-  }
-
   async getRange(key: string, start: number, end: number): Promise<Buffer> {
     const result = await this.s3.send(
       new GetObjectCommand({
@@ -107,10 +94,6 @@ export class S3StorageService implements StorageService {
     }
     const arr = await result.Body.transformToByteArray();
     return Buffer.from(arr);
-  }
-
-  async delete(key: string): Promise<void> {
-    return this.deleteObject(key);
   }
 }
 
@@ -126,30 +109,18 @@ export class LocalStorageService implements StorageService {
     return path.join(this.localPath, key);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  generatePresignedUploadUrl(key: string, _contentType: string, _sizeBytes: number): Promise<string> {
+  generatePresignedUploadUrl(key: string, _contentType: string, sizeBytes: number): Promise<string> {
     const expiresAt = Date.now() + UPLOAD_URL_TTL_SECONDS * 1000;
-    const payload = `${key}:${expiresAt.toString(10)}`;
-    const signature = crypto
-      .createHmac('sha256', this.env.SESSION_SECRET)
-      .update(payload)
-      .digest('hex');
-    const token = Buffer.from(`${payload}:${signature}`).toString('base64url');
-    // Using a placeholder base URL, usually handled by Fastify or env
-    const port = this.env.PORT || 3000;
-    return Promise.resolve(`http://localhost:${port.toString(10)}/api/v1/storage/upload/${token}`);
+    const token = signStorageToken(key, expiresAt, sizeBytes, this.env.SESSION_SECRET);
+    const baseUrl = this.env.API_PUBLIC_URL || 'http://localhost:3000';
+    return Promise.resolve(`${baseUrl}/api/v1/storage/upload/${token}`);
   }
 
   getSignedUrl(key: string, expiresIn: number): Promise<string> {
     const expiresAt = Date.now() + expiresIn * 1000;
-    const payload = `${key}:${expiresAt.toString(10)}`;
-    const signature = crypto
-      .createHmac('sha256', this.env.SESSION_SECRET)
-      .update(payload)
-      .digest('hex');
-    const token = Buffer.from(`${payload}:${signature}`).toString('base64url');
-    const port = this.env.PORT || 3000;
-    return Promise.resolve(`http://localhost:${port.toString(10)}/api/v1/storage/download/${token}`);
+    const token = signStorageToken(key, expiresAt, 0, this.env.SESSION_SECRET);
+    const baseUrl = this.env.API_PUBLIC_URL || 'http://localhost:3000';
+    return Promise.resolve(`${baseUrl}/api/v1/storage/download/${token}`);
   }
 
   async deleteObject(key: string): Promise<void> {
@@ -171,14 +142,6 @@ export class LocalStorageService implements StorageService {
     }
   }
 
-  async presignPut(key: string, contentType: string, sizeBytes: number): Promise<string> {
-    return this.generatePresignedUploadUrl(key, contentType, sizeBytes);
-  }
-
-  async head(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null> {
-    return this.headObject(key);
-  }
-
   async getRange(key: string, start: number, end: number): Promise<Buffer> {
     const filePath = this.getFilePath(key);
     let handle: fs.FileHandle | undefined;
@@ -194,9 +157,5 @@ export class LocalStorageService implements StorageService {
     } finally {
       if (handle) await handle.close();
     }
-  }
-
-  async delete(key: string): Promise<void> {
-    return this.deleteObject(key);
   }
 }

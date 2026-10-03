@@ -22,17 +22,17 @@ Jalon précédent : M1, DoD remplie : non, critère 2 : local uniquement, CI non
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Implémentation de M2 F-10/API-24 (1/5, StorageService et URL pré-signées)
+**Objectif :** Implémentation de M2 F-10/API-24 (1/5, StorageService et URL pré-signées) - Correction suite aux retours
 
 Plan :
-- Créer l'interface StorageService
-- Implémenter S3StorageService et LocalStorageService
-- Configurer StorageModule global (STORAGE_PROVIDER)
-- Route dédiée de vérification pour LocalStorageService
-- Mettre à jour env.ts et DECISIONS.md
+- Restaurer `docs/DECISIONS.md` et y ajouter D-93 pour les paquets AWS.
+- Configurer Fastify pour laisser passer le flux brut (octet-stream/raw stream) et augmenter maxParamLength pour éviter le 414.
+- Ajouter route de téléchargement (download) et comparer les signatures en temps constant avec sizeBytes dans le payload.
+- Mettre à jour `AssetsService` pour utiliser les méthodes renommées.
+- Rétablir les tests S3 et tester le contrôleur avec Vitest.
 
 État :
-- Terminé. Tests API passés avec succès. (Noter : un test frontend TourForm.test.tsx de apps/admin échoue, probablement dû aux composants shadcn/ui appliqués précédemment, nécessitant une mise à jour des tests e2e/frontend, mais hors périmètre API).
+- Terminé. Tests API passés avec succès. (Noter : un test frontend TourForm.test.tsx de apps/admin échoue, probablement dû aux composants shadcn/ui appliqués précédemment, nécessitant une mise à jour des tests frontend ultérieure).
 
 ## État des tâches
 

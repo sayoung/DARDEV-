@@ -713,15 +713,10 @@ Pas de num√©ro de d√©cision tant que le porteur n'a pas tranch√© :
 - **Alternatives :** Configurer un faux TLD dans `/etc/hosts` pour MinIO en dev ; mocker le retour de `StorageService` dans les tests HTTP (ce qui r√©duirait la valeur de test:int).
 - **√Ä valider :** oui
 
- # #   D - 7 6      S t o r a g e S e r v i c e   e t   U R L   p r È - s i g n È e s   ( A P I - 2 4 ) 
- 
- -   * * D a t e   : * *   0 3 / 1 0 / 2 0 2 6 
- -   * * D È c i s i o n   : * *   C r È a t i o n   d ' u n e   i n t e r f a c e   a b s t r a i t e   \ S t o r a g e S e r v i c e \   e t   d e   d e u x   i m p l È m e n t a t i o n s   \ S 3 S t o r a g e S e r v i c e \   e t   \ L o c a l S t o r a g e S e r v i c e \   p o u r   g È r e r   l ' u p l o a d   a v e c   U R L   p r È - s i g n È e s .   L a   r o u t e   l o c a l e   s i m u l È e   v È r i f i e   u n   t o k e n   H M A C   b a s È   s u r   \ S E S S I O N _ S E C R E T \ . 
- -   * * ¿   v a l i d e r   : * *   n o n 
- 
- |   P a q u e t   |   R a i s o n   |   L i c e n c e   | 
- |   - - - - - -   |   - - - - - -   |   - - - - - - -   | 
- |   @ a w s - s d k / c l i e n t - s 3   |   C o m m a n d e s   S 3   p o u r   l ' A P I   ( P u t O b j e c t ,   G e t O b j e c t ,   H e a d O b j e c t ,   D e l e t e O b j e c t ) .   |   A p a c h e - 2 . 0   | 
- |   @ a w s - s d k / s 3 - r e q u e s t - p r e s i g n e r   |   G È n È r a t i o n   d ' U R L   p r È - s i g n È e s   S 3 .   |   A p a c h e - 2 . 0   | 
-  
- 
+## D-93 ‚Äî Client S3 et pr√©signatures (M2 API-24)
+
+- **Date :** 03/10/2026
+- **D√©cision :** Utilisation des packages @aws-sdk/client-s3 et @aws-sdk/s3-request-presigner (licence Apache-2.0) pour l'API de stockage et la g√©n√©ration d'URL pr√©sign√©es.
+- **Raison :** Impl√©mentation du StorageService S3 demand√© pour le pipeline m√©dias.
+- **Alternatives :** Aucune.
+- **√Ä valider :** non
