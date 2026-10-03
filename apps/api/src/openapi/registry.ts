@@ -41,6 +41,8 @@ import {
   TourUpdateSchema,
   TourValidationResponseSchema,
   ValidationIssueSchema,
+  TourGraphSchema,
+  LANGS,
 } from '@xplor/shared';
 import { z, type ZodType } from 'zod';
 
@@ -405,6 +407,7 @@ registerTourDuplicate();
 registerSceneCrud();
 registerHotspotList();
 registerHotspotItem();
+registerPublicTour();
 
 function registerCatalogCrud(resource: {
   collection: string;
@@ -1049,6 +1052,35 @@ function registerHotspotItem(): void {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse(csrfOrRole, forbiddenError),
       '404': jsonResponse('Hotspot inconnu, ou scène parente déjà supprimée.', hotspotMissingError),
+    },
+  });
+}
+
+function registerPublicTour(): void {
+  registry.registerPath({
+    method: 'get',
+    path: '/api/v1/public/tours/{shareToken}',
+    summary: 'Lire le graphe d’une visite publique',
+    tags: ['Public'],
+    request: {
+      params: z.object({ shareToken: z.string().min(1) }),
+      query: z.object({ lang: z.enum(LANGS).default('fr') }),
+    },
+    responses: {
+      '200': {
+        description: 'Graphe de la visite.',
+        headers: {
+          'Cache-Control': {
+            schema: { type: 'string' },
+            description: 'Directives de cache',
+          },
+        },
+        content: {
+          'application/json': { schema: TourGraphSchema },
+        },
+      },
+      '400': jsonResponse('Paramètre shareToken ou lang refusé.', badRequestError),
+      '404': jsonResponse('Visite introuvable, non publiée ou inactive.', notFoundError),
     },
   });
 }
