@@ -19,20 +19,23 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 
 ## Session en cours
 
-**Date :** 02/10/2026
-**Objectif :** M2 F-11 (démarrage du worker)
+**Date :** 03/10/2026
+**Objectif :** M2 F-11/F-12 (mise en file rejouable)
 
 Plan :
-- Rendre la fonction `boot` asynchrone avec injections de dépendances (factories).
-- Charger l'environnement, S3, Prisma, les dépendances des dérivés et lancer le worker.
-- Connecter le retour à `shutdown` pour les signaux SIGINT et SIGTERM.
-- Adapter `main.test.ts` pour utiliser des mocks et vérifier le boot.
+- Changer la signature de `enqueue` dans `panorama-queue.service.ts` pour accepter `reason` ('upload' | 'reprocess').
+- Adapter la génération du `jobId` pour permettre les relances.
+- Mettre à jour les tests unitaires.
 - Mettre à jour `docs/PROGRESS.md`.
 - Vérifier avec `pnpm lint`, `pnpm typecheck`, `pnpm test`.
 
 ## État des tâches
 
 ### En cours
+- Aucune tâche en cours.
+
+### Fait
+- M2 F-11/F-12 (mise en file rejouable) : signature de `enqueue` modifiée pour accepter `reason` et générer un `jobId` unique (avec Date.now) lors d'un 'reprocess'. Tests adaptés. lint, typecheck, test OK.
 - M2 F-11 (démarrage du worker) : fonction boot asynchrone implémentée (injection de dépendances, tests mockés validant l'environnement et l'ordre de fermeture, construction S3 avant Prisma, gestion de SIGINT/SIGTERM avec exit). lint, typecheck, test OK.
 
 ### Fait
