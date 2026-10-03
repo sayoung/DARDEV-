@@ -77,16 +77,16 @@ export function SceneForm({ initialData, onSubmit, onDelete, isSubmitting, weigh
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label>{t('catalog.scene.fields.initialYaw')}</Label>
-          <Input type="number" step="0.1" value={initialYaw} onChange={e => { setInitialYaw(Number(e.target.value)); }} required />
+          <Label htmlFor="initialYaw">{t('catalog.scene.fields.initialYaw')}</Label>
+          <Input id="initialYaw" type="number" step="0.1" value={initialYaw} onChange={e => { setInitialYaw(Number(e.target.value)); }} required />
         </div>
         <div className="space-y-2">
-          <Label>{t('catalog.scene.fields.initialPitch')}</Label>
-          <Input type="number" step="0.1" value={initialPitch} onChange={e => { setInitialPitch(Number(e.target.value)); }} required />
+          <Label htmlFor="initialPitch">{t('catalog.scene.fields.initialPitch')}</Label>
+          <Input id="initialPitch" type="number" step="0.1" value={initialPitch} onChange={e => { setInitialPitch(Number(e.target.value)); }} required />
         </div>
         <div className="space-y-2">
-          <Label>{t('catalog.scene.fields.initialZoom')}</Label>
-          <Input type="number" min="0" max="100" value={initialZoom} onChange={e => { setInitialZoom(Number(e.target.value)); }} required />
+          <Label htmlFor="initialZoom">{t('catalog.scene.fields.initialZoom')}</Label>
+          <Input id="initialZoom" type="number" min="0" max="100" value={initialZoom} onChange={e => { setInitialZoom(Number(e.target.value)); }} required />
         </div>
       </div>
 

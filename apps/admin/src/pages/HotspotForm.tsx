@@ -132,25 +132,25 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label>{t('catalog.hotspots.fields.yaw')}</Label>
-          <Input type="number" step="0.01" value={yaw} onChange={e => { setYaw(Number(e.target.value)); }} required />
+          <Label htmlFor="yaw">{t('catalog.hotspots.fields.yaw')}</Label>
+          <Input id="yaw" type="number" step="0.01" value={yaw} onChange={e => { setYaw(Number(e.target.value)); }} required />
         </div>
         <div className="space-y-2">
-          <Label>{t('catalog.hotspots.fields.pitch')}</Label>
-          <Input type="number" step="0.01" value={pitch} onChange={e => { setPitch(Number(e.target.value)); }} required />
+          <Label htmlFor="pitch">{t('catalog.hotspots.fields.pitch')}</Label>
+          <Input id="pitch" type="number" step="0.01" value={pitch} onChange={e => { setPitch(Number(e.target.value)); }} required />
         </div>
         <div className="space-y-2">
-          <Label>{t('catalog.hotspots.fields.arrivalYaw')} ({t('common.optional')})</Label>
-          <Input type="number" step="0.01" value={arrivalYaw} onChange={e => { setArrivalYaw(e.target.value === '' ? '' : Number(e.target.value)); }} />
+          <Label htmlFor="arrivalYaw">{t('catalog.hotspots.fields.arrivalYaw')} ({t('common.optional')})</Label>
+          <Input id="arrivalYaw" type="number" step="0.01" value={arrivalYaw} onChange={e => { setArrivalYaw(e.target.value === '' ? '' : Number(e.target.value)); }} />
         </div>
       </div>
 
       <div className="border-t pt-4 mt-4">
         {type === HotspotType.SCENE_LINK && (
           <div className="space-y-2">
-            <Label>{t('catalog.hotspots.fields.targetSceneId')}</Label>
+            <Label htmlFor="targetSceneId">{t('catalog.hotspots.fields.targetSceneId')}</Label>
             <Select
-              
+              id="targetSceneId"
               value={targetSceneId} 
               onChange={(e) => { setTargetSceneId(e.target.value); }}
               required
@@ -166,14 +166,16 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
         {type === HotspotType.TOUR_LINK && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>{t('catalog.hotspots.fields.targetTourId')}</Label>
+              <Label htmlFor="targetTourId">{t('catalog.hotspots.fields.targetTourId')}</Label>
               <Input 
+                id="tourSearch"
                 type="text" 
                 placeholder={t('common.search')} 
                 value={tourSearch} 
                 onChange={(e) => { setTourSearch(e.target.value); }} 
               />
               <Select 
+                id="targetTourId"
                 className="mt-2"
                 value={targetTourId} 
                 onChange={(e) => { setTargetTourId(e.target.value); }}
@@ -189,9 +191,9 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t('catalog.hotspots.fields.targetTourSceneId')} ({t('common.optional')})</Label>
+              <Label htmlFor="targetTourSceneId">{t('catalog.hotspots.fields.targetTourSceneId')} ({t('common.optional')})</Label>
               <Select 
-                
+                id="targetTourSceneId"
                 value={targetTourSceneId} 
                 onChange={(e) => { setTargetTourSceneId(e.target.value); }}
               >

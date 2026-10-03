@@ -36,19 +36,19 @@ test.describe('Livrable M1 : création de visite', () => {
     await expect(page.getByText('Administrateur').first()).toBeVisible();
 
     // 2. Navigation vers /tours/new
-    await page.getByRole('link', { name: 'Visites' }).click();
+    await page.getByRole('link', { name: 'Visites', exact: true }).click();
     await page.getByRole('button', { name: 'Nouvelle visite' }).click();
 
     // 3. Création d'une visite
     await page.getByRole('textbox', { name: 'Titre' }).fill('Visite de démonstration M1');
     await page.getByRole('textbox', { name: 'Résumé' }).fill('Résumé de la visite de démonstration');
-    await page.locator('select').nth(0).selectOption({ index: 1 }); // Ville
+    await page.getByLabel('Ville').selectOption({ index: 1 });
     
     // Pour les catégories (checkbox) :
     await page.locator('input[type="checkbox"]').first().check();
 
     // Vignette (AssetPicker, c'est un <select>)
-    await page.locator('select').nth(1).selectOption({ index: 1 });
+    await page.getByLabel('Vignette').selectOption({ index: 1 });
 
     await page.getByTestId('submit-tour-btn').click();
     
@@ -62,8 +62,7 @@ test.describe('Livrable M1 : création de visite', () => {
       await page.getByRole('button', { name: 'Ajouter une scène' }).click();
       await page.getByRole('textbox', { name: 'Titre' }).fill(`Scène ${String(i)} M1`);
       
-      const panoramaSelect = page.locator('select').first();
-      await panoramaSelect.selectOption({ index: i }); // On prend les 3 premiers panoramas du seed
+      await page.getByLabel('Panorama').selectOption({ index: i }); // On prend les 3 premiers panoramas du seed
 
       await readPost(
         page,
@@ -97,12 +96,12 @@ test.describe('Livrable M1 : création de visite', () => {
     
     // Hotspot 1: SCENE_LINK vers scène 2
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
-    await page.locator('select').nth(0).selectOption({ index: 0 }); // SCENE_LINK
+    await page.getByLabel('Type').selectOption({ label: 'Lien vers une scène' });
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 2');
-    await page.locator('input[type="number"]').nth(0).fill('1.2'); // yaw
-    await page.locator('input[type="number"]').nth(1).fill('0'); // pitch
+    await page.getByLabel('Lacet (yaw)').fill('1.2'); // yaw
+    await page.getByLabel('Tangage (pitch)').fill('0'); // pitch
     // Sélectionner la scène cible (index 2 = Scène 2 M1 si on compte l'option vide)
-    await page.locator('select').nth(2).selectOption({ label: 'Scène 2 M1' });
+    await page.getByLabel('Scène cible').selectOption({ label: 'Scène 2 M1' });
     
     await readPost(
       page,
@@ -115,7 +114,7 @@ test.describe('Livrable M1 : création de visite', () => {
 
     // Hotspot 2: INFO
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
-    await page.locator('select').nth(0).selectOption({ index: 2 }); // INFO
+    await page.getByLabel('Type').selectOption({ label: 'Information' });
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Info M1');
     await page.getByRole('textbox', { name: 'Texte' }).fill('Ceci est une description détaillée en français.');
     
@@ -136,9 +135,9 @@ test.describe('Livrable M1 : création de visite', () => {
     await row2.locator('button').filter({ hasText: 'Modifier' }).click();
     await page.goto(page.url() + '/hotspots');
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
-    await page.locator('select').nth(0).selectOption({ index: 0 }); // SCENE_LINK
+    await page.getByLabel('Type').selectOption({ label: 'Lien vers une scène' });
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 3');
-    await page.locator('select').nth(2).selectOption({ label: 'Scène 3 M1' });
+    await page.getByLabel('Scène cible').selectOption({ label: 'Scène 3 M1' });
     await readPost(
       page,
       /\/api\/v1\/admin\/scenes\/[a-f0-9-]+\/hotspots$/,
@@ -173,5 +172,8 @@ test.describe('Livrable M1 : création de visite', () => {
 
     // 9. Vérification que le statut est PUBLISHED
     await expect(page.getByTestId('tour-status-published')).toBeVisible();
+
+    // 10. Capture d'écran
+    await page.screenshot({ path: 'docs/screenshots/m1-tour-published.png' });
   });
 });
