@@ -20,12 +20,13 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M1 Playwright (parcours du livrable)
+**Objectif :** Mise à jour des preuves M1 DoD
 
 Plan :
-- Création et exécution du test end-to-end `e2e/m1-livrable.spec.ts`.
-- Exécution des tests lint, typecheck, unitaires et e2e.
-- Mise à jour de `docs/DEMO_M1.md` et de `docs/PROGRESS.md`.
+- Lancer `gh run list` pour vérifier la CI.
+- Lancer `pnpm test`, `pnpm lint`, `pnpm typecheck`.
+- Mettre à jour le tableau "Definition of Done" dans `docs/archive/PROGRESS-M1.md` avec les preuves exactes et sans modifier de code.
+- Vérifier les règles sur la DoD non remplie à cause de la CI.
 - Tâche terminée.
 
 ## État des tâches
