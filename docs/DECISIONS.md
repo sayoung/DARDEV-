@@ -754,3 +754,8 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** Le `bodyHtml` des hotspots de type INFO est produit par échappement strict du texte saisi (`&`, `<`, `>`, `"`, `'`). Cette méthode est plus stricte que `sanitize-html` et ne requiert l'ajout d'aucun paquet externe.
 - **Alternatives :** Utiliser la librairie `sanitize-html`.
 - **À valider :** oui
+
+## D-99 — Médias non panorama via URL S3 présignée
+
+- **Date :** 03/10/2026
+- **Décision :** les médias non panorama (audio de narration et d'ambiance, médias des hotspots MEDIA) sont servis au visiteur par des URL présignées S3 valables 1 h, produites par StorageService.getSignedUrl ; alternative : dérivés publics produits par le worker ; à valider : oui.

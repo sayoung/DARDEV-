@@ -7,7 +7,7 @@ describe('toTourGraph', () => {
     lang: 'fr',
     audience: 'public',
     mediaBase: 'https://media.test',
-    narrationById: new Map(),
+    assetUrlById: new Map(),
     media: new Map(),
   };
 
