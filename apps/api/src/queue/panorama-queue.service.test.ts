@@ -37,6 +37,31 @@ describe('PanoramaQueueService', () => {
     );
   });
 
+  it('enqueues jobs with unique jobIds for reprocess', async () => {
+    const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+    
+    vi.spyOn(Date, 'now').mockReturnValueOnce(1000).mockReturnValueOnce(2000);
+    
+    await service.enqueue(validUuid, 'reprocess');
+    await service.enqueue(validUuid, 'reprocess');
+
+    expect(addMock).toHaveBeenCalledTimes(2);
+    expect(addMock).toHaveBeenNthCalledWith(
+      1,
+      'process',
+      { assetId: validUuid },
+      expect.objectContaining({ jobId: `${validUuid}:reprocess:1000` })
+    );
+    expect(addMock).toHaveBeenNthCalledWith(
+      2,
+      'process',
+      { assetId: validUuid },
+      expect.objectContaining({ jobId: `${validUuid}:reprocess:2000` })
+    );
+    
+    vi.restoreAllMocks();
+  });
+
   it('rejects invalid uuid without calling queue', async () => {
     const invalidUuid = 'not-a-uuid';
 

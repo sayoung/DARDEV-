@@ -13,10 +13,18 @@ export const PANORAMA_QUEUE = 'PANORAMA_QUEUE';
 export class PanoramaQueueService {
   constructor(@Inject(PANORAMA_QUEUE) private readonly queue: Queue) {}
 
-  async enqueue(assetId: string): Promise<void> {
+  async enqueue(
+    assetId: string,
+    reason: 'upload' | 'reprocess' = 'upload'
+  ): Promise<void> {
     const data = PanoramaJobDataSchema.parse({ assetId });
+    const jobId =
+      reason === 'upload'
+        ? data.assetId
+        : `${data.assetId}:reprocess:${Date.now().toString()}`;
+
     await this.queue.add('process', data, {
-      jobId: data.assetId,
+      jobId,
       attempts: PANORAMA_JOB_ATTEMPTS,
       backoff: {
         type: 'exponential',
