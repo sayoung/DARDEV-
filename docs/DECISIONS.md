@@ -720,3 +720,5 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Raison :** Implémentation du StorageService S3 demandé pour le pipeline médias.
 - **Alternatives :** Aucune.
 - **À valider :** non
+
+- [03/10/2026] Mise à jour des actions CI vers Node 24 : actions/checkout@v7, pnpm/action-setup@v6, actions/setup-node@v7, actions/upload-artifact@v7. À valider : non

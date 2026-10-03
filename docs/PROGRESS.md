@@ -23,12 +23,13 @@ Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confi
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** Corriger la CI M1 pour l'environnement de bout en bout (e2e)
+**Objectif :** Corriger la CI M1 pour l'environnement de bout en bout (e2e) et mettre à jour les actions GitHub vers Node 24
 
 Plan :
 - Déplacer l'arrêt de l'API et de MinIO après les tests e2e.
 - Ajouter une boucle d'attente pour la santé de l'API avec affichage du journal.
 - Remplacer le proxy '/api' localhost par 127.0.0.1 dans l'admin.
+- Mettre à jour les actions GitHub vers Node 24 (checkout, pnpm, setup-node, upload-artifact).
 - Vérifier que pnpm lint, typecheck et test passent.
 - Mettre à jour PROGRESS.md.
 
@@ -41,6 +42,8 @@ lint, typecheck, test OK
 - Aucun.
 
 ### Fait
+- M1 CI : Correction de la décision D-94 (formatage) et vérification des versions Node 24 (runs.using=node24).
+- M1 CI : Mise à jour des actions GitHub vers leurs versions Node 24 (checkout@v7, pnpm/action-setup@v6, setup-node@v7, upload-artifact@v7).
 - M1 CI : Déplacement de l'arrêt de l'API et MinIO après Playwright, ajout de l'attente de l'API et du proxy 127.0.0.1.
 - M2 API-24 : Méthode reprocess dans AssetsService avec gestion des erreurs 404, 422, 409 et appel à la file BullMQ.
 - M2 F-10/API-24 (1/5, StorageService et URL pré-signées) : Implémentation terminée avec S3StorageService et LocalStorageService.
@@ -76,4 +79,5 @@ lint, typecheck, test OK
 - eslint 9 et test.workspace.ts dépréciés.
 - Avis audit sous le seuil CI (Vitest, fastify).
 - Tests verts en local uniquement, CI non confirmée.
+
 
