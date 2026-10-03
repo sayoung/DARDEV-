@@ -18,6 +18,7 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 | 8 | Démo au porteur et retours consignés | à faire |
 
 Jalon précédent : M1. DoD M1 remplie : non (critère 2 : CI distante non confirmée, détail dans docs/archive/PROGRESS-M1.md)
+- e2e local OK (03/10/2026)
 
 ## Session en cours
 
