@@ -327,6 +327,99 @@ describe('médias HTTP', () => {
     });
     expect(notFound.statusCode).toBe(404);
   });
+
+  it('gère la suppression DELETE (204, 403, 409 ASSET_IN_USE, CSRF)', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const manager = await login(MANAGER_EMAIL);
+
+    // Média libre
+    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+    
+    // Média utilisé (on crée une scène qui le référence)
+    const usedAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T00:00:00.000Z');
+    
+    // Créer une ville pour le tour
+    const city = await prisma.city.create({
+      data: {
+        name: { fr: 'Ville Test' },
+        region: 'Region',
+        lat: 33,
+        lng: -7
+      }
+    });
+
+    const cover = await insertAsset(AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
+
+    const adminUser = await prisma.user.findFirstOrThrow({ where: { role: 'ADMIN' } });
+
+    const tour = await prisma.tour.create({
+      data: { 
+        title: { fr: 'Tour Test' }, 
+        summary: { fr: 'Résumé' },
+        cityId: city.id,
+        coverAssetId: cover.id,
+        createdById: adminUser.id,
+      }
+    });
+    await prisma.scene.create({
+      data: {
+        tourId: tour.id,
+        title: { fr: 'Scene Test' },
+        panoramaAssetId: usedAsset.id,
+        weight: 1,
+        createdById: adminUser.id,
+      }
+    });
+
+    // 1. Sans CSRF
+    const noCsrf = await application().inject({
+      method: 'DELETE',
+      url: `/api/v1/admin/assets/${freeAsset.id}`,
+      headers: { cookie: sessionCookie(editor.sessionId) },
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    // 2. Gestionnaire d'hôtel reçoit 403
+    const forbidden = await application().inject({
+      method: 'DELETE',
+      url: `/api/v1/admin/assets/${freeAsset.id}`,
+      headers: {
+        cookie: sessionCookie(manager.sessionId),
+        'x-csrf-token': manager.csrfToken,
+      },
+    });
+    expect(forbidden.statusCode).toBe(403);
+
+    // 3. Asset utilisé donne 409 ASSET_IN_USE
+    const conflict = await application().inject({
+      method: 'DELETE',
+      url: `/api/v1/admin/assets/${usedAsset.id}`,
+      headers: {
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+      },
+    });
+    expect(conflict.statusCode).toBe(409);
+    expect(parseJson(conflict.body)).toEqual({
+      error: expect.objectContaining({ code: 'ASSET_IN_USE' }),
+    });
+
+    // 4. Succès sur un asset libre (204)
+    const success = await application().inject({
+      method: 'DELETE',
+      url: `/api/v1/admin/assets/${freeAsset.id}`,
+      headers: {
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+      },
+    });
+    expect(success.statusCode).toBe(204);
+    expect(success.body).toBe('');
+    
+    // Vérifier que le média est bien supprimé en DB
+    const checkDb = await prisma.asset.findUnique({ where: { id: freeAsset.id } });
+    expect(checkDb).toBeNull();
+  });
 });
 
 async function insertAsset(

@@ -397,6 +397,7 @@ registerAssetReads();
 registerAssetUpload();
 registerAssetComplete();
 registerAssetReprocess();
+registerAssetDelete();
 registerTourCrud();
 registerTourValidate();
 registerTourPublish();
@@ -592,6 +593,27 @@ function registerAssetReprocess(): void {
       '404': jsonResponse('Média introuvable.', assetMissingError),
       '409': jsonResponse('Le média n’est pas encore téléversé (PENDING).', z.object({ error: z.object({ code: z.literal('ASSET_NOT_UPLOADED'), message: z.string() }) })),
       '422': jsonResponse('Le média n’est pas un panorama.', z.object({ error: z.object({ code: z.literal('ASSET_NOT_REPROCESSABLE'), message: z.string() }) })),
+    },
+  });
+}
+
+function registerAssetDelete(): void {
+  const item = '/api/v1/admin/assets/{id}';
+  const idParam = z.object({ id: z.uuidv7() });
+  registry.registerPath({
+    method: 'delete',
+    path: item,
+    summary: 'Supprimer un média',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '204': { description: 'Suppression physique du média et de ses fichiers. Corps vide.' },
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('CSRF invalide, ou rôle autre que ADMIN/EDITOR.', forbiddenError),
+      '404': jsonResponse('Média introuvable.', assetMissingError),
+      '409': jsonResponse('Le média est utilisé par une entité.', z.object({ error: z.object({ code: z.literal('ASSET_IN_USE'), message: z.string() }) })),
     },
   });
 }
