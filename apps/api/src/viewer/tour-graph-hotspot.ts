@@ -111,10 +111,47 @@ export function toGraphHotspot(row: HotspotRow, ctx: HotspotCtx): TourGraphHotsp
       });
     }
 
-    case 'TOUR_LINK':
-    case 'URL':
-      // TODO: implement other hotspot types
-      return null;
+    case 'TOUR_LINK': {
+      if (!row.targetTourId) {
+        return null;
+      }
+      if (ctx.audience === 'kiosk' && (!ctx.allowedTourIds || !ctx.allowedTourIds.has(row.targetTourId))) {
+        return null;
+      }
+      return TourGraphHotspotSchema.parse({
+        type: HotspotType.TOUR_LINK,
+        id: row.id,
+        yaw: row.yaw,
+        pitch: row.pitch,
+        label: localizedLabel,
+        icon: row.icon ?? 'PORTAL',
+        targetTourId: row.targetTourId,
+        targetSceneId: row.targetTourSceneId,
+        arrivalYaw: row.arrivalYaw,
+      });
+    }
+
+    case 'URL': {
+      if (ctx.audience === 'kiosk') {
+        return null;
+      }
+      if (!row.url) {
+        return null;
+      }
+      const parsed = TourGraphHotspotSchema.safeParse({
+        type: HotspotType.URL,
+        id: row.id,
+        yaw: row.yaw,
+        pitch: row.pitch,
+        label: localizedLabel,
+        icon: row.icon ?? 'INFO',
+        url: row.url,
+      });
+      if (!parsed.success) {
+        return null;
+      }
+      return parsed.data;
+    }
       
     default:
       return null;

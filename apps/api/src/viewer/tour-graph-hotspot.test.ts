@@ -57,12 +57,83 @@ describe('toGraphHotspot', () => {
     expect(resultAr?.label).toBe('مدخل'); // localized to ar
   });
 
-  it('retourne null pour les types non implémentés (TODO)', () => {
-    const types: HotspotRow['type'][] = ['TOUR_LINK', 'URL'];
-    for (const t of types) {
-      const row = { ...defaultRow, type: t };
-      expect(toGraphHotspot(row, defaultCtx)).toBeNull();
-    }
+  describe('TOUR_LINK', () => {
+    const row: HotspotRow = {
+      ...defaultRow,
+      type: 'TOUR_LINK',
+      targetTourId: 't-2',
+      targetTourSceneId: 's-t-2',
+    };
+
+    it('retourne un TOUR_LINK valide pour audience public (targetSceneId issu de targetTourSceneId)', () => {
+      const result = toGraphHotspot(row, defaultCtx);
+      expect(result).toEqual({
+        type: HotspotType.TOUR_LINK,
+        id: 'h-1',
+        yaw: 0,
+        pitch: 0,
+        label: 'Sortie',
+        icon: HotspotIcon.ARROW,
+        targetTourId: 't-2',
+        targetSceneId: 's-t-2',
+        arrivalYaw: 1.5,
+      });
+    });
+
+    it('retourne null si targetTourId est absent', () => {
+      expect(toGraphHotspot({ ...row, targetTourId: null }, defaultCtx)).toBeNull();
+    });
+
+    it('retourne valide si audience est kiosk et que targetTourId est autorisé', () => {
+      const ctx: HotspotCtx = {
+        ...defaultCtx,
+        audience: 'kiosk',
+        allowedTourIds: new Set(['t-2']),
+      };
+      const result = toGraphHotspot(row, ctx);
+      expect(result?.type).toBe(HotspotType.TOUR_LINK);
+    });
+
+    it('retourne null si audience est kiosk et que targetTourId n\'est pas autorisé (ou allowedTourIds absent)', () => {
+      const ctx1: HotspotCtx = { ...defaultCtx, audience: 'kiosk', allowedTourIds: new Set(['t-3']) };
+      expect(toGraphHotspot(row, ctx1)).toBeNull();
+
+      const ctx2: HotspotCtx = { ...defaultCtx, audience: 'kiosk' };
+      expect(toGraphHotspot(row, ctx2)).toBeNull();
+    });
+  });
+
+  describe('URL', () => {
+    const row: HotspotRow = {
+      ...defaultRow,
+      type: 'URL',
+      url: 'https://example.com',
+    };
+
+    it('retourne un URL valide pour audience public', () => {
+      const result = toGraphHotspot(row, defaultCtx);
+      expect(result).toEqual({
+        type: HotspotType.URL,
+        id: 'h-1',
+        yaw: 0,
+        pitch: 0,
+        label: 'Sortie',
+        icon: HotspotIcon.ARROW,
+        url: 'https://example.com',
+      });
+    });
+
+    it('retourne null si url est absent', () => {
+      expect(toGraphHotspot({ ...row, url: null }, defaultCtx)).toBeNull();
+    });
+
+    it('retourne null pour audience kiosk', () => {
+      expect(toGraphHotspot(row, { ...defaultCtx, audience: 'kiosk' })).toBeNull();
+    });
+
+    it('retourne null si url est javascript: (échoue à la validation)', () => {
+      expect(toGraphHotspot({ ...row, url: 'javascript:alert(1)' }, defaultCtx)).toBeNull();
+    });
   });
 
   describe('INFO', () => {
