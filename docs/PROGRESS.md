@@ -40,6 +40,7 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - Aucun.
 
 ### Fait
+- 03/10/2026 — M2 Démo (exécution, livrable) : Docker démarré (`docker compose up -d`), `pnpm db:migrate`, `pnpm db:seed`, `.env` avec STORAGE_PROVIDER=s3, puis lancer l'API e… — Section « Résultat du 03/10/2026 » ajoutée à DEMO_M2.md avec tableau et code de sortie 0, sans toucher à PROGRESS.md; lint, typecheck et tests verts. Réserves: absence de fichiers invalide_* dans le d… (8276a11)
 - 03/10/2026 — M2 F-10 (e2e) : ajouter e2e/m2-medias.spec.ts (Playwright, même connexion admin du seed que e2e/m1-livrable.spec.ts). Il génère dans le test un petit JPEG inval… — Le test e2e M2 génère un JPEG 200×100 en mémoire et vérifie le message F-10 « attendu : >= 4096 ; reçu : 200 » (refus 422 à la complétion) ; il correspond au code réel et lint, typecheck et test sont… (8686886)
 - 03/10/2026 — M2 Stockage (bug bloquant de la démo) : la démo pnpm demo:m2 donne 10 panoramas en ERROR « The specified key does not exist ». Cause : .env.example met STORAGE_… — Le worker refuse STORAGE_PROVIDER=local, .env.example passe à s3, la colonne « raison » du script de démo est en place, avec les tests demandés ; lint, typecheck et test sont verts. (5dccb1e)
 - 03/10/2026 — M2 F-11 (admin 6/n, rafraîchissement) : dans MediaPage, tant qu'au moins un asset affiché est PENDING ou PROCESSING, recharger la page courante toutes les 3 s (… — Polling 3 s de MediaPage et fonction pure needsPolling livrés avec leurs tests, contrôles verts ; réserves mineures : spinner absent lors d'un changement de page après un rafraîchissement, polling arr… (00e214e)
@@ -79,7 +80,6 @@ Correction du problème de lint (unsafe assignment dans assets.int.test.ts). lin
 - M2 F-11 (1/n) : Initialisation du worker et module des dérivés.
 - M2 F-11 (2/n) : Ajout du journal d'erreur.
 - M2 API-24 (1/2) : Schémas partagés d'upload de médias.
-- M2 API-24 (2/2) : StorageService S3 et StorageModule global.
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
