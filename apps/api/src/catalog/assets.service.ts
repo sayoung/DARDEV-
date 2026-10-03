@@ -184,6 +184,36 @@ export class AssetsService {
       return toAsset(updatedAsset);
     }
   }
+
+  async reprocess(id: string): Promise<AssetResponse> {
+    const asset = await this.prisma.asset.findUnique({ where: { id } });
+    if (asset === null) {
+      throw missingException(ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE);
+    }
+    if (asset.kind !== PrismaAssetKind.PANORAMA) {
+      throw new HttpException(
+        { error: { code: 'ASSET_NOT_REPROCESSABLE', message: "L'asset n'est pas un panorama" } },
+        422,
+      );
+    }
+    if (asset.processingStatus === ProcessingStatus.PENDING) {
+      throw new HttpException(
+        { error: { code: 'ASSET_NOT_UPLOADED', message: "L'asset n'a pas encore été téléversé" } },
+        409,
+      );
+    }
+
+    const updatedAsset = await this.prisma.asset.update({
+      where: { id },
+      data: {
+        processingStatus: ProcessingStatus.PROCESSING,
+        processingLog: null,
+      },
+    });
+
+    await this.panoramaQueue.enqueue(id, 'reprocess');
+    return toAsset(updatedAsset);
+  }
 }
 
 function listWhere(query: AssetListQuery): Prisma.AssetWhereInput {

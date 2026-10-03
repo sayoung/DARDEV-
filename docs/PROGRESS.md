@@ -38,6 +38,7 @@ lint, typecheck, test OK
 - Aucun.
 
 ### Fait
+- M2 API-24 : Méthode reprocess dans AssetsService avec gestion des erreurs 404, 422, 409 et appel à la file BullMQ.
 - M2 F-10/API-24 (1/5, StorageService et URL pré-signées) : Implémentation terminée avec S3StorageService et LocalStorageService.
 - Design 6/6 : Charte Xplor appliquée à tout le back-office, nettoyage des classes CSS personnalisées.
 - M2 F-11/F-12 : Mise en file rejouable (signature de enqueue modifiée).

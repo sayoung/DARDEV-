@@ -380,4 +380,59 @@ describe('AssetsService', () => {
       });
     });
   });
+
+  describe('reprocess', () => {
+    const ASSET_ID = '01990000-0000-7000-8000-000000000005';
+
+    it('répond 404 si l\'asset est introuvable', async () => {
+      const { service } = harness([]);
+      const error = await service.reprocess(ASSET_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(404);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: ASSET_NOT_FOUND },
+      });
+    });
+
+    it('répond 422 si l\'asset n\'est pas un panorama', async () => {
+      const asset = row(ASSET_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.READY });
+      const { service } = harness([asset]);
+      const error = await service.reprocess(ASSET_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(422);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: 'ASSET_NOT_REPROCESSABLE', message: 'L\'asset n\'est pas un panorama' },
+      });
+    });
+
+    it('répond 409 si l\'asset est en statut PENDING', async () => {
+      const asset = row(ASSET_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
+      const { service } = harness([asset]);
+      const error = await service.reprocess(ASSET_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(409);
+      expect(error.getResponse()).toMatchObject({
+        error: { code: 'ASSET_NOT_UPLOADED' },
+      });
+    });
+
+    it('passe en PROCESSING et enqueue si le statut est READY ou ERROR', async () => {
+      const asset = row(ASSET_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.ERROR, processingLog: 'erreur' });
+      const { service, panoramaQueue, updates } = harness([asset]);
+      const enqueueSpy = vi.spyOn(panoramaQueue, 'enqueue');
+
+      const result = await service.reprocess(ASSET_ID);
+      expect(updates).toHaveLength(1);
+      expect(updates[0]?.data).toMatchObject({
+        processingStatus: ProcessingStatus.PROCESSING,
+        processingLog: null,
+      });
+      expect(enqueueSpy).toHaveBeenCalledWith(ASSET_ID, 'reprocess');
+      expect(result.processingStatus).toBe(ProcessingStatus.PROCESSING);
+      expect(result.processingLog).toBeNull();
+    });
+  });
 });
