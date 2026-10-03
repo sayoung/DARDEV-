@@ -198,6 +198,11 @@ async function fulfill(
     return;
   }
 
+  if (method === 'GET' && pathname === '/api/v1/admin/tours') {
+    await fulfillJson(route, 200, { items: [], total: 0, page: 1, pageSize: 1 });
+    return;
+  }
+
   throw new Error(`requête API non prévue : ${method} ${pathname}`);
 }
 
