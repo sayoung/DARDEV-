@@ -15,16 +15,17 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) |
 | 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | à faire |
 | 7 | Démo avec données pertinentes | à faire |
-| 8 | Démo au porteur et retours consignés | à faire |
+| 8 | Démo au porteur et retours consignés | Fait, e2e/m1-livrable.spec.ts |
 
 ## Session en cours
 
 **Date :** 03/10/2026
-**Objectif :** M1 D-83 (4/5, écrans de liste, finition)
+**Objectif :** M1 Playwright (parcours du livrable)
 
 Plan :
-- Remplacement du Badge par StatusBadge dans ToursPage.tsx.
-- Vérification que la logique, les libellés traduits et les classes restent identiques.
+- Création et exécution du test end-to-end `e2e/m1-livrable.spec.ts`.
+- Exécution des tests lint, typecheck, unitaires et e2e.
+- Mise à jour de `docs/DEMO_M1.md` et de `docs/PROGRESS.md`.
 - Tâche terminée.
 
 ## État des tâches
@@ -33,6 +34,7 @@ Plan :
 - Aucun.
 
 ### Fait
+- M1 Playwright (parcours du livrable) : création et validation du test end-to-end `e2e/m1-livrable.spec.ts` pour la création d'une visite avec scènes et hotspots. Mise à jour de `docs/DEMO_M1.md` et `docs/PROGRESS.md` (critère 8). lint, typecheck, test, test:e2e OK.
 - M1 D-83 (4/5, écrans de liste, finition) : dans `apps/admin/src/pages/ToursPage.tsx`, remplacement du composant `Badge` en dur pour le statut par le composant `StatusBadge` existant. Le `Badge` de l'indicateur de traduction manquante est conservé. Tests non modifiés car ils n'utilisent pas le sélecteur `data-testid`. lint, typecheck, test OK.
 - M1 D-83 (3b/5, tests du tableau de bord d'accueil) : création de `apps/admin/src/auth/HomePage.test.tsx` (Vitest, jsdom) pour tester les compteurs, l'alerte 500 et l'accès au bouton "Nouvelle visite" selon le rôle. Adaptation des tests selon les retours de revue (valeurs non ambiguës, association avec les libellés via within, tests séparés par rôle, mock de la pagination corrigé). lint, typecheck, test OK.
 - M1 D-83 (3a/5, compléter le tableau de bord d'accueil) : ajout d'une 4e Card « Scènes » via `listTours({ page: 1, pageSize: 100 })` qui fournit aussi le total, passage de la grille en `md:grid-cols-2 lg:grid-cols-4`, ajout de `Promise.all` avec états de chargement (`role="status"`) et d'erreur (`Alert`), et ajout du raccourci "Nouvelle visite" conditionné par rôle (`Role.ADMIN` ou `Role.EDITOR`). Ajout des traductions FR pour ces états. pnpm lint, typecheck, test OK.
