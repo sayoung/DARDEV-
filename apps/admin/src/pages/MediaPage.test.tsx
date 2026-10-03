@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { AssetKind, ProcessingStatus, Role, type AssetResponse, type MeResponse, type PaginatedAssetResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -220,6 +220,63 @@ describe('MediaPage', () => {
     // Le fetch ne doit pas être appelé pour le DELETE
     // On peut vérifier en comptant le nombre d'appels à fetchMock (1 pour /me, 1 pour /assets)
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('rafraîchit toutes les 3s tant qu’un asset est en cours de traitement', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    
+    const mockProcessingAsset = { ...mockReadyAsset, id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d99', processingStatus: ProcessingStatus.PROCESSING };
+    let listAssetsCount = 0;
+    
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+      
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/assets') && method === 'GET') {
+        listAssetsCount++;
+        if (listAssetsCount === 1) {
+          return Promise.resolve(jsonResponse(200, {
+            items: [mockProcessingAsset],
+            total: 1,
+            page: 1,
+            pageSize: 20
+          }));
+        }
+        return Promise.resolve(jsonResponse(200, {
+          items: [{ ...mockReadyAsset, id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d99' }],
+          total: 1,
+          page: 1,
+          pageSize: 20
+        }));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    
+    // Premier rendu: PROCESSING
+    expect(await screen.findByText(resources.fr.media.status.PROCESSING)).toBeTruthy();
+    expect(listAssetsCount).toBe(1);
+
+    // Avance de 3s
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    // Deuxième rendu: READY
+    expect(await screen.findByText(resources.fr.media.status.READY)).toBeTruthy();
+    expect(listAssetsCount).toBe(2);
+
+    // Avance de 10s
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+
+    // Aucun nouvel appel
+    expect(listAssetsCount).toBe(2);
+    
+    vi.useRealTimers();
   });
 });
 
