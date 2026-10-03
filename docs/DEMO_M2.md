@@ -66,3 +66,41 @@ Le script va soumettre les panoramas à l'API et attendre que le Worker les trai
 *(Le dossier de test ne contient aucun fichier invalide_*, ils ne figurent donc pas dans ce tableau avec le statut ERROR)*
 
 Code de sortie : 0
+
+## Retraitement (F-12)
+
+Pour tester la fonctionnalité de retraitement des panoramas en erreur ou déjà traités (sans avoir à les re-téléverser) :
+
+1. Relancer un panorama spécifique (valide et en statut READY ou ERROR) :
+   ```powershell
+   pnpm --filter api cli reprocess --asset=01a102a9-bdd0-7e43-bccc-03c00d495cc4
+   ```
+   **Résultat attendu :**
+   ```text
+   [Nest] LOG [CLI] Relance du panorama 01a102a9-bdd0-7e43-bccc-03c00d495cc4...
+   [Nest] LOG [CLI] Panorama 01a102a9-bdd0-7e43-bccc-03c00d495cc4 mis en file d'attente avec succès.
+   ```
+   Le panorama repasse temporairement à PROCESSING puis revient à READY.
+
+2. Relancer tous les panoramas READY ou ERROR (utile après une mise à jour de l'algorithme) :
+   ```powershell
+   pnpm --filter api cli reprocess --all
+   ```
+   **Résultat attendu :**
+   ```text
+   [Nest] LOG [CLI] Relance de tous les panoramas READY ou ERROR...
+   [Nest] LOG [CLI] 10 panorama(s) mis en file d'attente avec succès.
+   ```
+
+3. Gérer les erreurs (UUID inexistant ou arguments manquants) :
+   - UUID inexistant :
+     ```powershell
+     pnpm --filter api cli reprocess --asset=01a102a9-0000-0000-0000-000000000000
+     ```
+     **Résultat attendu (code 1) :** `[Nest] ERROR [CLI] Erreur: Ce média est inconnu.`
+     
+   - Aucun argument fourni :
+     ```powershell
+     pnpm --filter api cli reprocess
+     ```
+     **Résultat attendu (code 1) :** `[Nest] ERROR [CLI] Une option est requise : fournissez --all ou --asset=<uuid>.`
