@@ -1,6 +1,6 @@
 # Services locaux Xplor (NF-09). Identifiants : .env (voir .env.example).
 # Les quatre services persistants ont un healthcheck et un volume nommé.
-# minio-init crée le bucket puis s'arrête (pas de données propres).
+# minio-init crée le bucket, configure la lecture publique du préfixe panoramas/ puis s'arrête (pas de données propres).
 
 services:
   postgres:
@@ -72,6 +72,7 @@ services:
         set -eu
         mc alias set local http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY"
         mc mb --ignore-existing "local/$$S3_BUCKET"
+        mc anonymous set download "local/$$S3_BUCKET/panoramas"
     restart: "no"
 
   mailpit:
