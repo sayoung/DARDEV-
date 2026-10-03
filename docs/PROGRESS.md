@@ -23,9 +23,9 @@ Livrable : Upload de 10 panoramas Insta360 → tous READY.
 **Objectif :** M1 D-83 (3b/5, tests du tableau de bord d'accueil)
 
 Plan :
-- Création de HomePage.test.tsx.
-- Mock de fetch.
-- Adapter e2e/back-office.spec.ts.
+- Création/mise à jour de HomePage.test.tsx.
+- Séparation des tests par rôle (ADMIN, EDITOR, PARTNER).
+- Utilisation de within pour relier valeurs et libellés.
 - Tâche terminée.
 
 ## État des tâches
@@ -34,7 +34,7 @@ Plan :
 - Aucun.
 
 ### Fait
-- M1 D-83 (3b/5, tests du tableau de bord d'accueil) : création de `apps/admin/src/auth/HomePage.test.tsx` (Vitest, jsdom) pour tester les compteurs, l'alerte 500 et l'accès au bouton "Nouvelle visite" selon le rôle. Adaptation de `e2e/back-office.spec.ts` pour mocker l'API `listTours`. lint, typecheck, test OK.
+- M1 D-83 (3b/5, tests du tableau de bord d'accueil) : création de `apps/admin/src/auth/HomePage.test.tsx` (Vitest, jsdom) pour tester les compteurs, l'alerte 500 et l'accès au bouton "Nouvelle visite" selon le rôle. Adaptation des tests selon les retours de revue (valeurs non ambiguës, association avec les libellés via within, tests séparés par rôle, mock de la pagination corrigé). lint, typecheck, test OK.
 - M1 D-83 (3a/5, compléter le tableau de bord d'accueil) : ajout d'une 4e Card « Scènes » via `listTours({ page: 1, pageSize: 100 })` qui fournit aussi le total, passage de la grille en `md:grid-cols-2 lg:grid-cols-4`, ajout de `Promise.all` avec états de chargement (`role="status"`) et d'erreur (`Alert`), et ajout du raccourci "Nouvelle visite" conditionné par rôle (`Role.ADMIN` ou `Role.EDITOR`). Ajout des traductions FR pour ces états. pnpm lint, typecheck, test OK.
 - M1 D-83 (2b/5, test de la mise en page) : Création de `apps/admin/src/components/AppLayout.test.tsx` pour tester `AppLayout`, avec assertions sur le nom, le rôle, la navigation et le bouton de déconnexion. lint, typecheck, test OK.
 - M1 D-83 (2a/5, compléter la mise en page commune) : ajout du lien Accueil, badge de rôle dans l'en-tête, nettoyage de HomePage, CSS responsive. lint, typecheck, test OK.

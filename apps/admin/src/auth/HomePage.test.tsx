@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { Role, type MeResponse, type PaginatedTourResponse, TourStatus, type TourResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,6 +14,15 @@ const profileAdmin: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-admin',
+};
+
+const profileEditor: MeResponse = {
+  id: 'user-editor',
+  email: 'editor@xplor.test',
+  name: 'Editor User',
+  role: Role.EDITOR,
+  uiLang: 'fr',
+  csrfToken: 'csrf-editor',
 };
 
 const profilePartner: MeResponse = {
@@ -61,7 +70,7 @@ const tour2: TourResponse = {
 
 const mockToursAll: PaginatedTourResponse = {
   items: [tour1, tour2],
-  total: 5,
+  total: 7,
   page: 1,
   pageSize: 100
 };
@@ -122,15 +131,20 @@ describe('HomePage', () => {
   it('les 4 compteurs affichent les valeurs attendues', async () => {
     render(<App />);
     
-    await screen.findAllByText('5');
-    
-    const countNodes = await screen.findAllByText(/^[235]$/);
-    const textValues = countNodes.map(node => node.textContent);
-    
-    // total = 5, scenes = 5, drafts = 2, published = 3
-    expect(textValues.filter(v => v === '5')).toHaveLength(2);
-    expect(textValues).toContain('2');
-    expect(textValues).toContain('3');
+    // total = 7, scenes = 5 (2 + 3 from items), drafts = 2, published = 3
+    const checkCard = async (label: string, expectedValue: string) => {
+      const titleNode = await screen.findByText(label);
+      const cardNode = titleNode.closest('.rounded-xl');
+      expect(cardNode).not.toBeNull();
+      if (cardNode) {
+        expect(within(cardNode as HTMLElement).getByText(expectedValue)).toBeTruthy();
+      }
+    };
+
+    await checkCard(resources.fr.page.home.stats.total, '7');
+    await checkCard(resources.fr.page.home.stats.scenes, '5');
+    await checkCard(resources.fr.page.home.stats.drafts, '2');
+    await checkCard(resources.fr.page.home.stats.published, '3');
   });
 
   it('affiche une alerte en cas d\'erreur 500', async () => {
@@ -151,11 +165,28 @@ describe('HomePage', () => {
     expect(alert.textContent).toContain(resources.fr.page.home.error);
   });
 
-  it('affiche le lien Nouvelle visite pour ADMIN mais pas pour PARTNER', async () => {
+  it('affiche le lien Nouvelle visite pour ADMIN', async () => {
     render(<App />);
     expect(await screen.findByText(resources.fr.page.home.shortcuts.newTour)).toBeTruthy();
-    cleanup();
-    
+  });
+
+  it('affiche le lien Nouvelle visite pour EDITOR', async () => {
+    fetchMock.mockImplementation((input: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/auth/me')) {
+        return Promise.resolve(jsonResponse(200, profileEditor));
+      }
+      if (url.includes('/admin/tours')) {
+        return Promise.resolve(jsonResponse(200, mockToursAll));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    expect(await screen.findByText(resources.fr.page.home.shortcuts.newTour)).toBeTruthy();
+  });
+
+  it('n\'affiche pas le lien Nouvelle visite pour PARTNER', async () => {
     fetchMock.mockImplementation((input: unknown) => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) {

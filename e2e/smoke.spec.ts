@@ -12,7 +12,7 @@ test("la page / s'affiche et html lang est fr", async ({ page }) => {
   );
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
-  await expect(page.getByRole('heading', { name: fr.common.appName, exact: true })).toBeVisible();
+  await expect(page.getByRole('img', { name: fr.common.appName, exact: true })).toBeVisible();
 });
 
 async function fulfillUnauthenticated(route: Route): Promise<void> {
