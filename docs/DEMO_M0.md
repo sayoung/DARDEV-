@@ -1,4 +1,4 @@
-﻿# Démo M0 — Socle
+# Démo M0 — Socle
 
 Scénario pour le porteur du projet. Le parcours principal est local, sous Node 22 : environnement en quatre commandes, puis `pnpm dev`, puis connexion au back-office (cahier des charges, section 9). La variante « démo sans Docker local » (D-62) est le repli, en fin de document. La CI verte se constate sur GitHub ; elle reste une preuve complémentaire (run https://github.com/sayoung/DARDEV-/actions/runs/36580207347).
 
@@ -171,14 +171,14 @@ Hors CI, Playwright réutilise ce serveur (`reuseExistingServer`). Les scénario
 
 ## Résultat
 
-Les cases cochées sont des preuves déjà obtenues le 29/09/2026 et revérifiées par script E2E le 03/10/2026. (Note : le proxy Vite ne journalise plus ECONNREFUSED dans le test de fumée alors que l'API tourne : résolu). La source est `local` (Node 22.23.3) ou `CI` (run `36580207347`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347). La validation du porteur est datée du 29/09/2026.
+Les cases cochées sont des preuves déjà obtenues le 29/09/2026 et revérifiées en local par script E2E le 03/10/2026. La source est `local` (Node 22.23.3) ou `CI` (run `36580207347`, https://github.com/sayoung/DARDEV-/actions/runs/36580207347). La validation du porteur est datée du 29/09/2026.
 
 - [x] Quatre commandes — local et CI. `docker compose up -d` : postgres, redis, minio et mailpit `healthy`, `minio-init` code 0 (local). `pnpm install` : workspace déjà installé, commande non rejouée (local). `pnpm db:migrate` : déjà synchronisé (local) ; `db:deploy` sur base vierge (CI). `pnpm db:seed` : « 4 utilisateurs de démonstration prêts », deux fois (local et CI).
-- [x] `pnpm dev` — local. API, back-office et worker démarrés (D-64). Santé, OpenAPI, login et `/auth/me` répondent ensuite sur `http://localhost:3000` et sur le proxy `http://localhost:5173`.
-- [x] `GET /api/health` répond 200, `db`, `redis` et `storage` à `ok` — local (`http://localhost:3000` et `http://localhost:5173`) et CI.
-- [x] `GET /api/v1/openapi.json` répond 200 — local (les deux adresses) et CI.
-- [x] Login et `/auth/me` 200 — local et CI. `scripts/ci-api-smoke.mjs` sort en 0 : `POST /api/v1/auth/login` 200 avec le cookie `xplor_sid`, `GET /api/v1/auth/me` 200, compte `admin@xplor.local`.
-- [x] Courriel de réinitialisation dans Mailpit — local. `POST /api/v1/auth/password/forgot` via `http://localhost:5173` : 202. `GET http://localhost:8025/api/v1/messages` : 200, message pour `editor@xplor.local`, corps contenant `/reset/`.
+- [x] `pnpm dev` — local. API, back-office et worker démarrés. Résolution confirmée : le proxy Vite ne journalise plus l'erreur ECONNREFUSED dans le test de fumée (l'API répond correctement).
+- [x] `GET /api/health` répond 200 avec `{"status":"ok","checks":{"db":"ok","redis":"ok","storage":"ok"}}` — local (via proxy `http://localhost:5173`) et CI.
+- [x] `GET /api/v1/openapi.json` répond 200 — local (via proxy `http://localhost:5173`) et CI.
+- [x] Login et `/auth/me` 200 — local et CI. Vérifié en local le 03/10/2026 via proxy : `POST /api/v1/auth/login` avec l'adresse `admin@xplor.local` répond 200, en-tête `Set-Cookie` présent avec le cookie `xplor_sid`. `GET /api/v1/auth/me` répond 200 pour ce compte.
+- [x] Mot de passe oublié (Mailpit) — local. `POST /api/v1/auth/password/forgot` pour `editor@xplor.local` via proxy : 202. Vérification Mailpit explicite (`GET http://localhost:8025/api/v1/messages`) : un courriel a été reçu, et le corps du message contient bien le lien `/reset/`.
 - [x] `pnpm test:int` : 9 verts — local et CI (`auth.int.test.ts` 7, `seed.int.test.ts` 1, `migrations.int.test.ts` 1).
 - [x] CI verte — CI, run `36580207347` (commit `1eaf986`, job `ci` `109446061994`).
 

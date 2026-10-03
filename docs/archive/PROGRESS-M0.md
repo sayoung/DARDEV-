@@ -1,4 +1,4 @@
-﻿<summary>Jalons terminés — M0</summary>
+<summary>Jalons terminés — M0</summary>
 
 **M0 — Socle** (S1–S2). Exigences du jalon : NF-06, NF-08, NF-09, F-90 (sans 2FA). Definition of Done du jalon : **remplie**.
 
