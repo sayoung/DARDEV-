@@ -58,6 +58,17 @@ const workspace: TestProjectConfiguration[] = [
       exclude: [...exclude],
     },
   },
+  {
+    test: {
+      name: 'scripts',
+      root: './scripts',
+      environment: 'node',
+      include: ['**/*.spec.ts'],
+      alias: {
+        '@xplor/shared': '../packages/shared/src/index.ts',
+      },
+    },
+  },
 ];
 
 export default workspace;
