@@ -1,6 +1,4 @@
 import { expect, type Page } from '@playwright/test';
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports
-const sharp = require('sharp');
 
 /**
  * Assure qu'un certain nombre de panoramas prêts sont présents dans la médiathèque.
@@ -26,19 +24,22 @@ export async function ensureReadyPanoramas(page: Page, count: number): Promise<v
 
   const needed = count - currentReady;
 
-  // 3. Génération d'un JPEG 4096x2048 en mémoire
-  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-  const buffer = await sharp({
-    create: {
-      width: 4096,
-      height: 2048,
-      channels: 3,
-      background: { r: 200, g: 200, b: 200 },
-    },
-  })
-    .jpeg()
-    .toBuffer();
-  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  // 3. Génération d'un JPEG 4096x2048 en mémoire via le navigateur
+  const base64Data = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 4096;
+    canvas.height = 2048;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#C8C8C8';
+      ctx.fillRect(0, 0, 4096, 2048);
+    }
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    return dataUrl.split(',')[1] || '';
+  });
+
+  
+  const buffer = Buffer.from(base64Data, 'base64');
 
   // 4. Téléversement des images manquantes
   for (let i = 0; i < needed; i++) {
@@ -47,7 +48,6 @@ export async function ensureReadyPanoramas(page: Page, count: number): Promise<v
     await page.locator('input[type="file"]').setInputFiles({
       name: `test-pano-${String(Date.now())}-${String(i)}.jpg`,
       mimeType: 'image/jpeg',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       buffer: finalBuffer,
     });
     
