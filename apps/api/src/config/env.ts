@@ -4,6 +4,11 @@ const nodeEnvSchema = z.enum(['development', 'test', 'production']);
 
 const portSchema = z.coerce.number().int().min(1).max(65_535);
 
+const corsOriginsSchema = z
+  .string()
+  .transform((val) => val.split(',').map((s) => s.trim()))
+  .pipe(z.array(z.url()));
+
 const envKeys = [
   'NODE_ENV',
   'PORT',
@@ -22,6 +27,7 @@ const envKeys = [
   'API_PUBLIC_URL',
   'MEDIA_PUBLIC_URL',
   'PUBLIC_WEB_URL',
+  'API_CORS_ORIGINS',
 ] as const;
 
 export const envSchema = z.object({
@@ -48,6 +54,37 @@ export const envSchema = z.object({
     .url()
     .refine((val) => !val.endsWith('/'), { message: "L'URL ne doit pas se terminer par un '/'" })
     .default('http://localhost:5174'),
+  API_CORS_ORIGINS: z.string().optional(),
+})
+.superRefine((env, ctx) => {
+  if (env.NODE_ENV === 'production' && !env.API_CORS_ORIGINS) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['API_CORS_ORIGINS'],
+      message: 'Obligatoire en production',
+    });
+  }
+})
+.transform((env, ctx) => {
+  const rawOrigins =
+    env.API_CORS_ORIGINS ||
+    'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174';
+
+  const parsedOrigins = corsOriginsSchema.safeParse(rawOrigins);
+  if (!parsedOrigins.success) {
+    for (const issue of parsedOrigins.error.issues) {
+      ctx.addIssue({
+        ...issue,
+        path: ['API_CORS_ORIGINS', ...issue.path],
+      });
+    }
+    return z.NEVER;
+  }
+
+  return {
+    ...env,
+    API_CORS_ORIGINS: parsedOrigins.data,
+  };
 });
 
 export type Env = z.infer<typeof envSchema>;

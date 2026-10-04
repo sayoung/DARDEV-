@@ -79,4 +79,45 @@ describe('loadEnv', () => {
       /MEDIA_PUBLIC_URL/,
     );
   });
+
+  it('validates API_CORS_ORIGINS default, splitting, invalid URL, and missing in production', () => {
+    // Default value
+    const defaultEnv = loadEnv(exampleEnv());
+    expect(defaultEnv.API_CORS_ORIGINS).toEqual([
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+    ]);
+
+    // Splitting
+    const customEnv = loadEnv({
+      ...exampleEnv(),
+      API_CORS_ORIGINS: 'https://example.com, https://example2.com ',
+    });
+    expect(customEnv.API_CORS_ORIGINS).toEqual(['https://example.com', 'https://example2.com']);
+
+    // Invalid URL rejected
+    expect(() =>
+      loadEnv({ ...exampleEnv(), API_CORS_ORIGINS: 'https://example.com,not-a-url' }),
+    ).toThrow(/API_CORS_ORIGINS/);
+
+    // Missing in production rejected
+    expect(() =>
+      loadEnv({
+        ...exampleEnv(),
+        NODE_ENV: 'production',
+        API_CORS_ORIGINS: undefined,
+      }),
+    ).toThrow(/API_CORS_ORIGINS/);
+    
+    // Explicitly empty in production rejected
+    expect(() =>
+      loadEnv({
+        ...exampleEnv(),
+        NODE_ENV: 'production',
+        API_CORS_ORIGINS: '',
+      }),
+    ).toThrow(/API_CORS_ORIGINS/);
+  });
 });
