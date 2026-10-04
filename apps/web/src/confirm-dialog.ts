@@ -13,7 +13,7 @@ export function confirmGoTo(
     dialog.setAttribute('aria-modal', 'true');
 
     const message = doc.createElement('p');
-    message.textContent = labels.goTo.replace('{{title}}', targetTitle);
+    message.textContent = labels.goTo.split('{{title}}').join(targetTitle);
 
     const actions = doc.createElement('div');
     actions.className = 'confirm-dialog-actions';
