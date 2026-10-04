@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-40 (apps/web, extraction du jeton de partage, logique pure) : dans apps/web, créer src/route.ts qui exporte `parseShareToken(pathname: string): string | nu… — parseShareToken respecte la règle de jeton de l'API (1 à 22 caractères [A-Za-z0-9_-]), les tests couvrent tous les cas demandés, apps/web est collecté par vitest, et le périmètre de la tâche est respe… (d28a9fe)
 - 04/10/2026 — M3 F-34 (i18n de la visionneuse, français seulement, D-82) : dans packages/i18n/src/locales/fr.json, ajouter un espace de noms `viewer` avec les clés : goTo («… — Espace de noms viewer ajouté en fr avec les 15 clés demandées, interpolation conforme, aucun changement hors périmètre, lint/typecheck/test verts et complétude ar/en non bloquante. (c74dac1)
 - 04/10/2026 — M3 F-30 (viewer-core, options du plugin de visite, logique pure) : dans packages/viewer-core, créer src/tour-config.ts qui exporte `TRANSITION_MS = 800` et `tou… — tour-config.ts et ses tests respectent la tâche : types v5.15.1 corrects, repli sur startSceneId, fondu 800 ms, export ajouté, contrôles verts. (eda4808)
 - 04/10/2026 — M3 F-30 (correctif, fichiers manquants dans develop) : le commit de la tâche « client de chargement » est vide. packages/viewer-core/src/tour-client.ts et packa… — tour-client.ts et son test recréés conformément à la spec, seuls changements du diff, lint/typecheck/test verts. (6573b79)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 03/10/2026 — M3 API-10/API-11 (2b/5, URL publique des médias) : créer apps/api/src/viewer/media-url.ts avec deux fonctions pures. `mediaUrl(base, key)` joint la base et la c… — mediaUrl et panoramaUrls conformes à la demande (jointure, encodage par segment, « / » final des tuiles conservé, validation Zod alignée sur le worker), tests pertinents, contrôles verts. (528c8cc)
 - 03/10/2026 — M3 API-10/API-11 (2a/5, URL publique des médias) : ajouter la variable MEDIA_PUBLIC_URL dans le schéma Zod d'apps/api/src/config/env.ts (URL http(s), sans « / »… — MEDIA_PUBLIC_URL ajoutée au schéma Zod et à .env.example avec défaut, refus du '/' final et tests couvrant les cas demandés ; contrôles verts. (21a06a7)
 - 03/10/2026 — M3 API-10/API-11 (2/2, type partagé TourGraph) : écrire packages/shared/src/tour-graph.test.ts (Vitest, même style que catalog.test.ts) pour les schémas de pack… — Le test tour-graph.test.ts couvre les 4 cas demandés et la correction ciblée de tour-graph.ts (arrivalYaw/targetSceneId optionnels) est justifiée par l'exemple du cahier ; lint, typecheck et test sont… (22947f6)
-- 03/10/2026 — M3 API-10/API-11 (1/2, type partagé TourGraph) : créer packages/shared/src/tour-graph.ts avec des schémas Zod suivant la section 7.4 du cahier (.orchestrator/do… — Les schémas Zod TourGraph, TourGraphScene et TourGraphHotspot sont conformes à la tâche et à la section 7.4 du cahier, exportés depuis index.ts, avec lint, typecheck et test verts. (9fa8c1e)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
