@@ -8,8 +8,8 @@ test.describe('M3 F-40/F-30 : page publique (Viewer)', () => {
   test.use({ baseURL: 'http://127.0.0.1:5174' });
 
   test('Affiche correctement une visite partagée et configure la langue', async ({ page }) => {
-    test.skip(!DEMO_TOUR, 'Aucune visite de démonstration publiée dans le seed');
-    if (!DEMO_TOUR) return;
+    expect(DEMO_TOUR).toBeDefined();
+    if (!DEMO_TOUR) throw new Error('Aucune visite de démonstration publiée dans le seed');
     
     const token = DEMO_TOUR.shareToken;
 
