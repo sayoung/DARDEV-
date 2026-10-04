@@ -260,6 +260,9 @@ importers:
       '@photo-sphere-viewer/gallery-plugin':
         specifier: 5.15.1
         version: 5.15.1(@photo-sphere-viewer/core@5.15.1)
+      '@photo-sphere-viewer/gyroscope-plugin':
+        specifier: 5.15.1
+        version: 5.15.1(@photo-sphere-viewer/core@5.15.1)
       '@photo-sphere-viewer/markers-plugin':
         specifier: 5.15.1
         version: 5.15.1(@photo-sphere-viewer/core@5.15.1)
@@ -358,6 +361,9 @@ importers:
         specifier: 5.15.1
         version: 5.15.1(@photo-sphere-viewer/core@5.15.1)
       '@photo-sphere-viewer/gallery-plugin':
+        specifier: 5.15.1
+        version: 5.15.1(@photo-sphere-viewer/core@5.15.1)
+      '@photo-sphere-viewer/gyroscope-plugin':
         specifier: 5.15.1
         version: 5.15.1(@photo-sphere-viewer/core@5.15.1)
       '@photo-sphere-viewer/markers-plugin':
@@ -1382,6 +1388,11 @@ packages:
 
   '@photo-sphere-viewer/gallery-plugin@5.15.1':
     resolution: {integrity: sha512-cdSI96X+fa8aLXXjjdGvgIuubDonGyOw1aw2hmZerLVu+66tA5y3IGia0IgbNoE2YygkJWggJVDyJblGHqCNwA==}
+    peerDependencies:
+      '@photo-sphere-viewer/core': 5.15.1
+
+  '@photo-sphere-viewer/gyroscope-plugin@5.15.1':
+    resolution: {integrity: sha512-iE+pXa+18cFO8pT4puI+fAH06FF7woEh50+56PiOKJ0pKLvnAOHD27fPpiIBlZ1CNq9otCOd/T2GhATE2QdMkA==}
     peerDependencies:
       '@photo-sphere-viewer/core': 5.15.1
 
@@ -5141,6 +5152,10 @@ snapshots:
       '@photo-sphere-viewer/core': 5.15.1
 
   '@photo-sphere-viewer/gallery-plugin@5.15.1(@photo-sphere-viewer/core@5.15.1)':
+    dependencies:
+      '@photo-sphere-viewer/core': 5.15.1
+
+  '@photo-sphere-viewer/gyroscope-plugin@5.15.1(@photo-sphere-viewer/core@5.15.1)':
     dependencies:
       '@photo-sphere-viewer/core': 5.15.1
 
