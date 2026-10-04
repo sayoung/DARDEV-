@@ -19,7 +19,7 @@ export async function startViewer(
         onSceneChange?: (sceneId: string) => void;
         onHotspotClick?: (hotspotId: string) => void;
       }
-    ) => { goToScene(id: string): Promise<void>; destroy(): void };
+    ) => { goToScene(id: string): Promise<void>; destroy(): void; gyroscopeSupported(): Promise<boolean>; toggleGyroscope(): void };
     navigate: (url: string) => void;
   }
 ): Promise<void> {
