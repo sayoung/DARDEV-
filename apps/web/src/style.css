@@ -58,3 +58,50 @@ body {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+#media-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#media-overlay img,
+#media-overlay video,
+#media-overlay audio {
+  max-inline-size: 100%;
+  max-block-size: 80vh;
+}
+
+#media-overlay button {
+  position: absolute;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+#media-overlay button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+#media-overlay button:nth-last-of-type(3) {
+  inset-block-start: 50%;
+  inset-inline-start: 1rem;
+}
+
+#media-overlay button:nth-last-of-type(2) {
+  inset-block-start: 50%;
+  inset-inline-end: 1rem;
+}
+
+#media-overlay button:last-of-type {
+  inset-block-start: 1rem;
+  inset-inline-end: 1rem;
+}
