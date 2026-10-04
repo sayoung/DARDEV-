@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-35 (viewer-core, branchement de l'adaptateur de tuiles) : dans packages/viewer-core/src/mount-viewer.ts, passer au Viewer `adapter: EquirectangularTilesAda… — L'adaptateur EquirectangularTilesAdapter est branché correctement et sans cast dans mount-viewer.ts, avec showErrorTile, et les contrôles sont verts. (50e8ed3)
 - 04/10/2026 — M3 F-35 (viewer-core, panorama en tuiles, logique pure) : ajouter `@photo-sphere-viewer/equirectangular-tiles-adapter` en version exacte 5.15.1 (même version qu… — Dépendance 5.15.1 ajoutée, D-102 consigné, TourNode.panorama converti en objet tuilé avec tests mis à jour, lint/typecheck/test verts, PROGRESS.md intact. (af4d738)
 - 04/10/2026 — M3 F-35 (viewer-core, préchargement) : dans packages/viewer-core/src/tour-config.ts, ajouter à l'objet renvoyé par tourPluginOptions l'option `preload: true` du… — `preload: true` ajouté à tourPluginOptions (option valide du VirtualTourPlugin 5.15.1, type boolean | fonction) avec assertion de test ; seuls les deux fichiers demandés sont modifiés et les contrôles… (90ea9fb)
 - 04/10/2026 — M3 F-41 (admin, QR code, interface) : dans apps/admin/src/pages/TourPublicationPanel.tsx, quand la visite est PUBLISHED avec publicShare true et un shareToken,… — Lien public et QR SVG affichés pour une visite publiée et partagée, avec téléchargement du fichier xplor-<token>.svg, chaînes fr dans i18n, tests ajoutés, lint/typecheck/test verts. (8dbd9e8)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-30 (viewer-core, options du plugin de visite, logique pure) : dans packages/viewer-core, créer src/tour-config.ts qui exporte `TRANSITION_MS = 800` et `tou… — tour-config.ts et ses tests respectent la tâche : types v5.15.1 corrects, repli sur startSceneId, fondu 800 ms, export ajouté, contrôles verts. (eda4808)
 - 04/10/2026 — M3 F-30 (correctif, fichiers manquants dans develop) : le commit de la tâche « client de chargement » est vide. packages/viewer-core/src/tour-client.ts et packa… — tour-client.ts et son test recréés conformément à la spec, seuls changements du diff, lint/typecheck/test verts. (6573b79)
 - 04/10/2026 — M3 F-33 (viewer-core, pistes audio de la scène, logique pure) : dans packages/viewer-core, créer src/scene-audio.ts avec `audioPlan(prev: TourGraphScene | null,… — audioPlan et AMBIENT_VOLUME conformes à la spécification, 6 tests couvrant les cas demandés, export depuis index.ts, contrôles verts, PROGRESS.md intact. (e635485)
-- 04/10/2026 — M3 F-33 (viewer-core, conversion hotspots → marqueurs) : dans packages/viewer-core, créer src/scene-markers.ts avec `toMarkers(scene: TourGraphScene): SceneMark… — toMarkers et le type SceneMarker sont conformes à la spécification (exclusion de SCENE_LINK, mapping des 4 types, ordre conservé), avec des tests fondés sur TourGraphSchema, l'export depuis index.ts e… (462c1e2)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
