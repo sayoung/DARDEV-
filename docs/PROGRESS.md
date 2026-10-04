@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-34 (apps/web, sélecteur de langue) : créer apps/web/src/lang-switcher.ts, sans framework, exportant `createLangSwitcher(doc: Document, current: Lang, label… — Sélecteur de langue conforme à la demande (composant, branchement navigate injectable, clé fr seule, CSS logique, tests happy-dom) et contrôles verts. (540c92e)
 - 04/10/2026 — M3 F-30/F-31 (apps/web, branchement du contrôleur dans main.ts) : réécrire apps/web/src/app.ts pour que `startViewer` utilise `createViewerController` : conserv… — startViewer utilise createViewerController avec langue, jeton, erreurs et labels conservés, mount/destroy corrects, erreur de montage affichée en loadError, tests adaptés et contrôles verts. (ab5a574)
 - 04/10/2026 — M3 F-33 (apps/web, contrôleur : narration et ambiance) : dans apps/web/src/viewer-controller.ts, intégrer `createSceneAudioPlayer` (apps/web/src/scene-audio-pla… — Le lecteur audio est bien intégré au contrôleur (apply à chaque scène, destroy à chaque remplacement de visite et sur le contrôleur) et le test demandé est présent ; lint, typecheck et test sont verts… (1887020)
 - 04/10/2026 — M3 F-34 (apps/web, contrôleur : Infos pratiques) : dans apps/web/src/viewer-controller.ts, implémenter `handlePracticalInfo` : si `navigator.current()?.graph.pr… — handlePracticalInfo ouvre le panneau avec le texte échappé et découpé en paragraphes via textToHtml, avec tests (dont <script>) et contrôles verts. (8babe8a)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-32 (viewer-core, navigateur inter-visites, 1/2 ouverture) : dans packages/viewer-core, créer src/tour-navigator.ts exportant `createTourNavigator(deps: { l… — createTourNavigator conforme à la spécification, tests couvrant les cinq cas demandés, export ajouté, lint/typecheck/tests OK, PROGRESS.md non modifié. (294b266)
 - 04/10/2026 — M3 F-32 (viewer-core, résolution d'un hotspot TOUR_LINK) : dans packages/viewer-core, créer src/tour-link.ts avec `resolveTourLink(graph: TourGraph, hotspotId:… — resolveTourLink est correct, conforme à la spec, testé sur les 5 cas demandés et exporté ; lint, typecheck et tests passent. (af35a38)
 - 04/10/2026 — M3 F-30 (viewer-core, client de chargement) : dans packages/viewer-core, créer src/tour-client.ts avec `fetchTourGraph(baseUrl: string, shareToken: string, lang… — fetchTourGraph, TourNotFoundError et TourLoadError sont conformes à la demande, couverts par des tests et exportés ; lint, typecheck et test passent. (a7683b7)
-- 04/10/2026 — Récupération du travail non commité — tour-client.ts (fetchTourGraph validé par TourGraphSchema, erreurs typées) et ses tests sont cohérents avec API-11 et les conventions, contrôles verts, export ajouté. (89cc603)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
