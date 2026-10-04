@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-40 (e2e, démarrage de apps/web par Playwright) : dans playwright.config.ts, ajouter au tableau webServer une entrée pour la visionneuse publique, sur le mo… — Entrée webServer pour apps/web ajoutée correctement (url 127.0.0.1:5174, timeout 120000, reuseExistingServer), proxy déjà correct, host 127.0.0.1 ajouté en complément cohérent; lint/typecheck/test ver… (6f23cd5)
 - 04/10/2026 — M3 F-33 (apps/web, sous-titre de la scène) : dans apps/web/src/scene-audio-player.ts, créer à côté du bouton un élément <p id="scene-caption" class="scene-capti… — Sous-titre de scène ajouté en textContent, masqué si vide, retiré par destroy, avec un CSS en propriétés logiques et des tests complets ; lint, typecheck et test verts. (9f94df5)
 - 04/10/2026 — M3 API-10 / F-41 (décision de report, documentation seule) : dans docs/DECISIONS.md, ajouter une entrée D-xx datée du 04/10/2026. Elle indique que (1) API-10 `G… — Entrée D-104 conforme (date, décision en deux points, alternative, à valider), seul DECISIONS.md modifié, contrôles verts. (1328618)
 - 04/10/2026 — M3 F-34 (apps/web, position dans Infos pratiques) : dans apps/web/src/viewer-controller.ts, handlePracticalInfo doit aussi gérer la position : si graph.location… — Lien carte OSM dans Infos pratiques via mapLinkHtml pur et testé, bouton activé si location présente, clé fr.json ajoutée, contrôles verts. (8cf8bc2)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-40 (apps/web, dépendances et proxy) : dans apps/web/package.json, ajouter aux dependencies `@xplor/viewer-core` (workspace:*) ainsi que @photo-sphere-viewe… — Dépendances PSV et viewer-core ajoutées à apps/web, proxy /api configuré, D-100 complétée, sans autre changement ; lint, typecheck et test OK. (c6e3231)
 - 04/10/2026 — M3 F-33 (viewer-core, action d'un hotspot, logique pure) : créer packages/viewer-core/src/hotspot-action.ts, qui exporte le type `HotspotAction` = { kind: 'info… — hotspotAction et son test sont conformes à la tâche (un cas par type + id inconnu, export ajouté, aucun paquet ni PROGRESS.md touchés), contrôles verts. (036d1d0)
 - 04/10/2026 — M3 F-33 (viewer-core, clic sur un marqueur) : dans packages/viewer-core/src/mount-viewer.ts, ajouter à `opts` une option `onHotspotClick?: (hotspotId: string) =… — onHotspotClick est branché sur l'événement typé 'select-marker' du MarkersPlugin, avec marker.id (id du hotspot), sans any ni cast, et uniquement dans mount-viewer.ts ; lint, typecheck et test passent… (e1f9ed5)
-- 04/10/2026 — M3 F-30 (viewer-core, montage de Photo Sphere Viewer, adaptateur DOM) : dans packages/viewer-core, créer src/mount-viewer.ts qui exporte `mountViewer(container:… — mountViewer monte Photo Sphere Viewer avec les trois plugins, pose les marqueurs et notifie le changement de scène avec des API typées, et lint/typecheck/test passent. (33f92c0)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
