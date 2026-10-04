@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-33 (apps/web, contrôleur : hotspots INFO/MEDIA/URL) : dans apps/web/src/viewer-controller.ts, étendre `onHotspotClick` pour les hotspots qui ne sont pas de… — Hotspots INFO/MEDIA/URL délégués à handleHotspotClick avec openUrl injectable et close ajouté aux libellés, TOUR_LINK inchangé, trois tests ajoutés, lint/typecheck/test verts. (021511d)
 - 04/10/2026 — M3 API-12 (2/2, route HTML) : ajouter dans apps/api/src/viewer/viewer.service.ts `getShareMeta(shareToken, lang)` réutilisant getPublicGraph (même 404) et renvo… — Route HTML de partage /public/share/:shareToken, getShareMeta, PUBLIC_WEB_URL, OpenAPI et tests unitaires conformes à la demande ; lint, typecheck et tests verts. (3c6da94)
 - 04/10/2026 — M3 API-12 (1/2, rendu HTML Open Graph, logique pure) : créer apps/api/src/viewer/share-html.ts avec `renderShareHtml(meta: { title: string; summary: string; cov… — renderShareHtml est conforme : balises Open Graph, échappement HTML correct, dir via @xplor/i18n, tests pertinents et contrôles verts, sans fichier superflu. (bc02142)
 - 04/10/2026 — M3 F-33 (apps/web, narration et ambiance) : créer apps/web/src/scene-audio-player.ts, sans framework, exportant `createSceneAudioPlayer(doc: Document, labels: {… — Lecteur audio de scène conforme à la demande : ambiance en boucle à volume réduit, narration à la demande, arrêt au changement de scène, styles logiques, tests et contrôles verts. (12b7c50)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-30 (viewer-core 4/4, dépendances Photo Sphere Viewer) : ajouter aux dependencies de packages/viewer-core les paquets @photo-sphere-viewer/core, @photo-sphe… — Les quatre paquets Photo Sphere Viewer sont ajoutés en 5.15.1, tour-nodes.ts utilise VirtualTourNode, D-100 est consignée et lint, typecheck et test sont verts. (f03c9db)
 - 04/10/2026 — M3 F-31 (viewer-core 3/4, scènes précédente et suivante, logique pure) : dans packages/viewer-core, créer src/scene-order.ts qui exporte `adjacentScenes(graph:… — adjacentScenes conforme à la spécification, tests demandés présents et validés par TourGraphSchema, lint/typecheck/test verts, PROGRESS.md intact. (a1fd504)
 - 04/10/2026 — M3 F-32 (viewer-core 2/4, pile d'historique inter-visites, logique pure, tests d'abord) : dans packages/viewer-core, créer src/tour-history.ts qui exporte le ty… — createTourHistory et HistoryEntry conformes à la spec (LIFO, limite, anti-doublon, copies défensives), tests complets, export ajouté, contrôles verts, PROGRESS.md intact. (3a1b385)
-- 04/10/2026 — M3 F-30 (viewer-core 3/3, tests de l'adaptateur) : créer packages/viewer-core/src/tour-nodes.test.ts (Vitest). S'inspirer de l'exemple de graphe de packages/sha… — tour-nodes.test.ts couvre les 5 cas demandés avec un graphe validé par TourGraphSchema.parse, les tests triviaux et le doublon .spec sont supprimés, lint/typecheck/test verts, aucun paquet ajouté, PRO… (71c4d0c)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
