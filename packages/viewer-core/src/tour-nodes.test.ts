@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TourGraphSchema } from '@xplor/shared';
 import { toTourNodes } from './tour-nodes.js';
+import { z } from 'zod';
 
 const uuidA = '01990000-0000-7000-8000-00000000000a';
 const scene1Id = '01990000-0000-7000-8000-000000000001';
@@ -121,8 +122,16 @@ describe('toTourNodes', () => {
     expect(node1.id).toBe(scene2Id);
 
     expect(node0.name).toBe('Scène 1');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const panoramaObj = node0.panorama;
+    const TilePanoramaSchema = z.object({
+      width: z.number(),
+      cols: z.number(),
+      rows: z.number(),
+      baseUrl: z.string(),
+      tileUrl: z.custom<(col: number, row: number) => string>((val: unknown) => typeof val === 'function'),
+    });
+
+    const panoramaObj = TilePanoramaSchema.parse(node0.panorama);
+
     expect(panoramaObj).toMatchObject({
       width: 4096,
       cols: 8,
@@ -130,8 +139,7 @@ describe('toTourNodes', () => {
       baseUrl: 'http://example.com/preview1.jpg',
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    expect(node0.panorama.tileUrl(3, 1)).toBe('http://example.com/tiles1/3_1.jpg');
+    expect(panoramaObj.tileUrl(3, 1)).toBe('http://example.com/tiles1/3_1.jpg');
 
     expect(node0.thumbnail).toBe('http://example.com/thumb1.jpg');
 

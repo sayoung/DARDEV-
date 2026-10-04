@@ -788,3 +788,16 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | --- | --- | --- |
 | qrcode | F-41 du cahier, génération SVG de QR code. | MIT |
 
+
+## D-102 — Adaptateur de tuiles Photo Sphere Viewer (F-35)
+
+- **Date :** 04/10/2026
+- **Décision :** Ajout de la dépendance @photo-sphere-viewer/equirectangular-tiles-adapter en version 5.15.1 aux paquets packages/viewer-core et apps/web.
+- **Raison :** F-35 affichage du preview flou puis montée en définition progressive.
+- **Alternatives :** Aucune
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| @photo-sphere-viewer/equirectangular-tiles-adapter | F-35 affichage du preview flou puis montée en définition progressive. | MIT |
+
