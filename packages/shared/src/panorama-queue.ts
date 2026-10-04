@@ -24,3 +24,4 @@ export function panoramaDerivativeKeys(assetId: string, contentHash: string) {
 export function panoramaTileKey(tilesPrefix: string, col: number, row: number) {
   return `${tilesPrefix}${col.toString()}_${row.toString()}.jpg`;
 }
+export const PANORAMA_GRID = { cols: 16, rows: 8, size: 512 };

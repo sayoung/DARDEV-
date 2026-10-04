@@ -12,6 +12,8 @@ import {
   HotspotType,
   ProcessingStatus,
   TourStatus,
+  panoramaDerivativeKeys,
+  PANORAMA_GRID,
   type LocalizedText,
 } from '@xplor/shared';
 
@@ -295,7 +297,7 @@ export const SEED_TOURS: readonly SeedTour[] = [
     categoryFr: 'Nature',
     categoryLinkId: seedId('512'),
     cover: cover(seedId('202'), 'jardin-de-sale/cover.jpg'),
-    shareToken: 'seedjardindesale00001',
+    shareToken: 'seedjardindesale000001',
     publicShare: false,
     lat: 34.0405,
     lng: -6.812,
@@ -515,16 +517,22 @@ export async function seedTours(prisma: PrismaClient): Promise<void> {
   }
 }
 
+export function computeSeedDerivatives(row: SeedAsset) {
+  if (row.kind !== AssetKind.PANORAMA) {
+    return {};
+  }
+  const keys = panoramaDerivativeKeys(row.id, row.contentHash);
+  return {
+    preview: keys.preview,
+    web: keys.web,
+    thumb: keys.thumb,
+    tilesPrefix: keys.tilesPrefix,
+    tileGrid: PANORAMA_GRID,
+  };
+}
+
 async function upsertAsset(prisma: PrismaClient, row: SeedAsset): Promise<void> {
-  const derivatives = row.kind === AssetKind.PANORAMA
-    ? {
-        preview: `${row.id}/preview.jpg`,
-        web: `${row.id}/web.jpg`,
-        thumb: `${row.id}/thumb.jpg`,
-        tilesPrefix: `${row.id}/tiles/`,
-        tileGrid: { cols: 8, rows: 4, size: 512 },
-      }
-    : {};
+  const derivatives = computeSeedDerivatives(row);
 
   const data = {
     kind: toPrismaKind(row.kind),
