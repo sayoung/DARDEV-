@@ -774,3 +774,14 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | @photo-sphere-viewer/virtual-tour-plugin     | Imposé pour la gestion des nœuds de la visite         | MIT     |
 | @photo-sphere-viewer/markers-plugin          | Imposé pour l'ajout de points d'intérêt (hotspots)    | MIT     |
 | @photo-sphere-viewer/gallery-plugin          | Imposé pour l'affichage de la galerie de la visite    | MIT     |
+## D-101 — Dépendance qrcode pour le partage (F-41)
+
+- **Date :** 04/10/2026
+- **Décision :** Ajout de la dépendance qrcode (+ @types/qrcode en dev) à apps/admin.
+- **Raison :** F-41 du cahier des charges, génération du QR code de partage.
+- **Alternatives :** Aucune
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| qrcode | F-41 du cahier, génération SVG de QR code. | MIT |
