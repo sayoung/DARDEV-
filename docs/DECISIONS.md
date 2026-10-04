@@ -827,3 +827,15 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** F-35 est couvert par la configuration suivante : panorama tuilé avec `preview` en image d'attente (packages/viewer-core/src/tour-nodes.ts, test tour-nodes.test.ts), montée en définition par EquirectangularTilesAdapter (D-102), et `preload: true` du VirtualTourPlugin pour les scènes liées (tour-config.ts, test tour-config.test.ts). La mesure « preview < 1 s » n'est pas automatisée (un test de performance serait instable sur la CI) et elle est vérifiée manuellement pendant la démo sur un mobile en 4G.
 - **Alternatives :** test Playwright chronométré
 - **À valider :** oui
+
+## D-106 — CORS et en-têtes de sécurité (NF-01)
+
+- **Date :** 04/10/2026
+- **Décision :** paquets @fastify/cors et @fastify/helmet
+- **Alternatives :** 
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| @fastify/cors | CORS limité aux domaines Xplor via API_CORS_ORIGINS | MIT |
+| @fastify/helmet | CSP stricte et HSTS exigés par NF-01 | MIT |
