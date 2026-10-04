@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 API-11 (6c/6, test d'intégration), étape 1 : diagnostic de `pnpm test`. Commandes non interactives, au premier plan, avec un timeout explicite, sans tâche d'… — Diagnostic sans échec unitaire : pnpm test, lint et typecheck sont verts (code 0) et le diff est vide, donc rien à corriger ni aucune règle violée. (ec74092)
 - 03/10/2026 — M3 API-11 (6b/6, test d'intégration) : dans apps/api/test/public-tours.int.test.ts, ajouter les assertions manquantes demandées par le relecteur. (1) Dans le ca… — Les assertions SCENE_LINK (cas 200) et l'absence de TOUR_LINK avec SCENE_LINK conservé (cas non partagé) sont ajoutées dans le seul fichier de test ; lint et typecheck verts. (17bad51)
 - 03/10/2026 — M3 API-11 (6a/6, test d'intégration) : reprendre dans develop le fichier apps/api/test/public-tours.int.test.ts depuis la branche partielle (lecture seule : `gi… — Le test d'intégration de la route publique API-11 est repris avec un en-tête correct, une mise en forme propre et les sept cas demandés ; lint et typecheck sont verts. (ee1fb01)
 - 03/10/2026 — M3 API-11 (5e/6, route publique) : documenter la route dans OpenAPI selon le mécanisme existant utilisé pour /admin/assets (apps/api/src/openapi/registry.ts, pu… — La route publique GET /public/tours/{shareToken} est documentée dans registry.ts (lang enum LANGS défaut fr, 200 TourGraph avec Cache-Control, 400, 404) et docs/openapi.json ne gagne que cette route. (8c45d5d)
