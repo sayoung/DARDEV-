@@ -290,6 +290,83 @@ describe('publication et dépublication', () => {
   });
 });
 
+describe('régénération du jeton de partage', () => {
+  it('répond 401 sans session', async () => {
+    const response = await application().inject({
+      method: 'POST',
+      url: `/api/v1/admin/tours/${UNKNOWN_ID}/share-token`,
+    });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('répond 404 pour un id inconnu', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const response = await send('POST', `/api/v1/admin/tours/${UNKNOWN_ID}/share-token`, editor);
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('régénère le jeton public et invalide le précédent', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const porte = await createScene(editor, ready.tour.id, 'Porte', ready.panoramaAssetId, 0);
+    const jardin = await createScene(editor, ready.tour.id, 'Jardin', ready.panoramaAssetId, 1);
+    const remparts = await createScene(editor, ready.tour.id, 'Remparts', ready.panoramaAssetId, 2);
+    await send('POST', `/api/v1/admin/scenes/${porte.id}/hotspots`, editor, {
+      type: 'SCENE_LINK',
+      yaw: 0.2,
+      pitch: 0,
+      label: { fr: 'Vers le jardin' },
+      targetSceneId: jardin.id,
+    });
+    await send('POST', `/api/v1/admin/scenes/${jardin.id}/hotspots`, editor, {
+      type: 'SCENE_LINK',
+      yaw: 1,
+      pitch: 0,
+      label: { fr: 'Vers les remparts' },
+      targetSceneId: remparts.id,
+    });
+
+    await prisma.tour.update({
+      where: { id: ready.tour.id },
+      data: { publicShare: true },
+    });
+
+    const publishedResponse = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/publish`,
+      editor,
+    );
+    expect(publishedResponse.statusCode).toBe(200);
+    const published = TourResponseSchema.parse(parseJson(publishedResponse.body));
+    expect(published.publicShare).toBe(true);
+    const oldToken = published.shareToken;
+    expect(oldToken).not.toBeNull();
+
+    const regenResponse = await send(
+      'POST',
+      `/api/v1/admin/tours/${ready.tour.id}/share-token`,
+      editor,
+    );
+    expect(regenResponse.statusCode).toBe(200);
+    const regenerated = TourResponseSchema.parse(parseJson(regenResponse.body));
+    const newToken = regenerated.shareToken;
+    expect(newToken).not.toBeNull();
+    expect(newToken).not.toBe(oldToken);
+
+    const publicOldAfter = await application().inject({
+      method: 'GET',
+      url: `/api/v1/public/tours/${oldToken}`,
+    });
+    expect(publicOldAfter.statusCode).toBe(404);
+
+    const publicNew = await application().inject({
+      method: 'GET',
+      url: `/api/v1/public/tours/${newToken}`,
+    });
+    expect(publicNew.statusCode).toBe(200);
+  });
+});
+
 interface Session {
   sessionId: string;
   csrfToken: string;
@@ -315,6 +392,13 @@ async function prepare(editor: Session): Promise<Ready> {
       mimeType: 'image/jpeg',
       sizeBytes: 128,
       contentHash: `publication-cover-${city.id}`,
+      derivatives: {
+        preview: 'derived/preview.jpg',
+        web: 'derived/web.jpg',
+        thumb: 'derived/thumb.jpg',
+        tilesPrefix: 'derived/tiles/',
+        tileGrid: { cols: 8, rows: 4, size: 512 },
+      },
     },
   });
   const panorama = await prisma.asset.create({
@@ -325,6 +409,13 @@ async function prepare(editor: Session): Promise<Ready> {
       sizeBytes: 256,
       contentHash: `publication-pano-${city.id}`,
       processingStatus: ProcessingStatus.READY,
+      derivatives: {
+        preview: 'derived/preview.jpg',
+        web: 'derived/web.jpg',
+        thumb: 'derived/thumb.jpg',
+        tilesPrefix: 'derived/tiles/',
+        tileGrid: { cols: 8, rows: 4, size: 512 },
+      },
     },
   });
   const tour = await createTour(editor, {
