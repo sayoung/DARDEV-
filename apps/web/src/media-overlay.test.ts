@@ -4,9 +4,22 @@ import { openMediaOverlay } from './media-overlay';
 describe('openMediaOverlay', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
-    // Mock HTMLMediaElement pause method since happy-dom might not fully implement it
-    HTMLVideoElement.prototype.pause = vi.fn();
-    HTMLAudioElement.prototype.pause = vi.fn();
+    
+    if (!('HTMLMediaElement' in window)) {
+      Object.assign(window, { HTMLMediaElement: class HTMLMediaElement extends HTMLElement { pause() {} } });
+    }
+    
+    if (!('pause' in HTMLMediaElement.prototype)) {
+      Object.assign(HTMLMediaElement.prototype, { pause: () => {} });
+    }
+    
+    if (!('pause' in HTMLVideoElement.prototype)) {
+      Object.assign(HTMLVideoElement.prototype, { pause: () => {} });
+    }
+    
+    if (!('pause' in HTMLAudioElement.prototype)) {
+      Object.assign(HTMLAudioElement.prototype, { pause: () => {} });
+    }
   });
 
   afterEach(() => {
@@ -168,4 +181,79 @@ describe('openMediaOverlay', () => {
     const img = overlays[0]?.querySelector('img');
     expect(img?.src).toContain('2.jpg');
   });
+
+  it('n\'affiche pas de boutons précédent/suivant s\'il n\'y a qu\'un seul média', () => {
+    openMediaOverlay(
+      document,
+      { title: 'Test 1', media: [{ url: '1.jpg', mimeType: 'image/jpeg' }] },
+      labels
+    );
+    const overlay = document.getElementById('media-overlay');
+    
+    // Un seul bouton présent (Fermer)
+    const buttons = overlay?.querySelectorAll('button');
+    expect(buttons?.length).toBe(1);
+    expect(buttons?.[0]?.textContent).toBe('Fermer');
+  });
+
+  it('affiche et gère la navigation précédent/suivant pour plusieurs médias', () => {
+    const pauseSpy = vi.spyOn(HTMLVideoElement.prototype, 'pause');
+    
+    openMediaOverlay(
+      document,
+      {
+        title: 'Multi',
+        media: [
+          { url: '1.jpg', mimeType: 'image/jpeg' },
+          { url: '2.mp4', mimeType: 'video/mp4' },
+          { url: '3.jpg', mimeType: 'image/jpeg' }
+        ]
+      },
+      labels
+    );
+    
+    const overlay = document.getElementById('media-overlay');
+    expect(overlay).not.toBeNull();
+    
+    const buttons = Array.from(overlay?.querySelectorAll('button') || []);
+    const prevButton = buttons.find(b => b.textContent === labels.previous) ;
+    const nextButton = buttons.find(b => b.textContent === labels.next) ;
+    
+    expect(prevButton).toBeDefined();
+    expect(nextButton).toBeDefined();
+    
+    // Début: index 0 (1.jpg)
+    expect(overlay?.querySelector('img')?.src).toContain('1.jpg');
+    expect(prevButton?.disabled).toBe(true);
+    expect(nextButton?.disabled).toBe(false);
+    
+    // Clic Suivant -> index 1 (2.mp4)
+    nextButton?.click();
+    expect(overlay?.querySelector('img')).toBeNull();
+    expect(overlay?.querySelector('video')?.src).toContain('2.mp4');
+    expect(prevButton?.disabled).toBe(false);
+    expect(nextButton?.disabled).toBe(false);
+    
+    // Clic Suivant -> index 2 (3.jpg)
+    nextButton?.click();
+    // Verify that pause was called when switching away from video
+    expect(pauseSpy).toHaveBeenCalled();
+    
+    expect(overlay?.querySelector('video')).toBeNull();
+    expect(overlay?.querySelector('img')?.src).toContain('3.jpg');
+    expect(prevButton?.disabled).toBe(false);
+    expect(nextButton?.disabled).toBe(true);
+    
+    // Clic Précédent -> index 1 (2.mp4)
+    prevButton?.click();
+    expect(overlay?.querySelector('img')).toBeNull();
+    expect(overlay?.querySelector('video')?.src).toContain('2.mp4');
+    expect(prevButton?.disabled).toBe(false);
+    expect(nextButton?.disabled).toBe(false);
+    
+    pauseSpy.mockRestore();
+  });
+
 });
+
+

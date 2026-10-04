@@ -31,26 +31,78 @@ export function openMediaOverlay(
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', content.title);
 
-  const firstMedia = validMedia[0];
+  let currentIndex = 0;
+  let currentMediaElement: HTMLElement | null = null;
+  let prevButton: HTMLButtonElement | null = null;
+  let nextButton: HTMLButtonElement | null = null;
 
-  if (firstMedia !== undefined) {
-    if (firstMedia.mimeType.startsWith('image/')) {
-      const img = doc.createElement('img');
-      img.alt = content.title;
-      img.src = firstMedia.url;
-      overlay.appendChild(img);
-    } else if (firstMedia.mimeType.startsWith('video/')) {
-      const video = doc.createElement('video');
-      video.controls = true;
-      video.playsInline = true;
-      video.src = firstMedia.url;
-      overlay.appendChild(video);
-    } else if (firstMedia.mimeType.startsWith('audio/')) {
-      const audio = doc.createElement('audio');
-      audio.controls = true;
-      audio.src = firstMedia.url;
-      overlay.appendChild(audio);
+  const renderMedia = () => {
+    if (currentMediaElement) {
+      if (currentMediaElement instanceof HTMLVideoElement || currentMediaElement instanceof HTMLAudioElement) {
+        currentMediaElement.pause();
+      }
+      currentMediaElement.remove();
+      currentMediaElement = null;
     }
+
+    const mediaItem = validMedia[currentIndex];
+    if (mediaItem) {
+      if (mediaItem.mimeType.startsWith('image/')) {
+        const img = doc.createElement('img');
+        img.alt = content.title;
+        img.src = mediaItem.url;
+        currentMediaElement = img;
+      } else if (mediaItem.mimeType.startsWith('video/')) {
+        const video = doc.createElement('video');
+        video.controls = true;
+        video.playsInline = true;
+        video.src = mediaItem.url;
+        currentMediaElement = video;
+      } else if (mediaItem.mimeType.startsWith('audio/')) {
+        const audio = doc.createElement('audio');
+        audio.controls = true;
+        audio.src = mediaItem.url;
+        currentMediaElement = audio;
+      }
+
+      if (currentMediaElement) {
+        overlay.insertBefore(currentMediaElement, overlay.firstChild);
+      }
+    }
+
+    if (prevButton) {
+      prevButton.disabled = currentIndex === 0;
+    }
+    if (nextButton) {
+      nextButton.disabled = currentIndex === validMedia.length - 1;
+    }
+  };
+
+  if (validMedia.length > 1) {
+    prevButton = doc.createElement('button');
+    prevButton.type = 'button';
+    prevButton.textContent = labels.previous;
+    prevButton.setAttribute('aria-label', labels.previous);
+    prevButton.addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderMedia();
+      }
+    });
+
+    nextButton = doc.createElement('button');
+    nextButton.type = 'button';
+    nextButton.textContent = labels.next;
+    nextButton.setAttribute('aria-label', labels.next);
+    nextButton.addEventListener('click', () => {
+      if (currentIndex < validMedia.length - 1) {
+        currentIndex++;
+        renderMedia();
+      }
+    });
+
+    overlay.appendChild(prevButton);
+    overlay.appendChild(nextButton);
   }
 
   const closeButton = doc.createElement('button');
@@ -58,6 +110,8 @@ export function openMediaOverlay(
   closeButton.textContent = labels.close;
   closeButton.setAttribute('aria-label', labels.close);
   overlay.appendChild(closeButton);
+
+  renderMedia();
 
   doc.body.appendChild(overlay);
   closeButton.focus();
@@ -71,13 +125,10 @@ export function openMediaOverlay(
     isClosed = true;
     doc.removeEventListener('keydown', handleKeydown);
 
-    const video = overlay.querySelector('video');
-    if (video) {
-      video.pause();
-    }
-    const audio = overlay.querySelector('audio');
-    if (audio) {
-      audio.pause();
+    if (currentMediaElement) {
+      if (currentMediaElement instanceof HTMLVideoElement || currentMediaElement instanceof HTMLAudioElement) {
+        currentMediaElement.pause();
+      }
     }
 
     const currentOverlay = doc.getElementById('media-overlay');
