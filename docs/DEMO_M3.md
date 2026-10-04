@@ -130,3 +130,4 @@ pnpm --filter web dev --host 0.0.0.0
 - Le changement interactif de langue dans l'application web.
 - La bonne structuration HTML des balises `og:*` par l'API pour les réseaux sociaux.
 - L'invalidation réussie des anciens liens et QR codes (retour HTTP 404 / "Cette visite n'existe pas ou n'est plus partagée.") lors de la régénération du jeton.
+- L'affichage du flou en moins d'une seconde puis la netteté progressive.
