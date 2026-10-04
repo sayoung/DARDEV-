@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3b NF-10 (diagnostic du build API, aucune modification de fichier suivi). Sans docker ni modification de code : lance `pnpm --filter @xplor/api build` sur deve… — Diagnostic sans modification de fichier : diff vide, contrôles verts, aucune règle violée ; le constat (3 à 6 lignes) est dans la réponse de l'agent, non vérifiable ici. (3ad7874)
 - 04/10/2026 — M3b (bilan/archivage, documentation seule, aucun code) : déplace dans docs/archive/PROGRESS-M3.md (nouveau fichier) tout le bloc « Jalon en cours : M3 » (tablea… — Archivage M3 et nouvel en-tête M3b conformes à la demande ; PROGRESS.md fait 1,5 Ko, seuls les deux fichiers de docs sont modifiés, lint/typecheck/test OK. (67d4529)
 
 ### Bloqué
