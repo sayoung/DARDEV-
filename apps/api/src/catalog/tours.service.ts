@@ -1,5 +1,3 @@
-import { randomBytes } from 'node:crypto';
-
 import { Inject, Injectable, NotFoundException, type HttpException } from '@nestjs/common';
 import {
   HotspotType as PrismaHotspotType,
@@ -34,10 +32,8 @@ import {
   referenceException,
 } from './catalog.errors.js';
 import { localizedToJson } from './localized-json.js';
+import { createShareToken } from './share-token.js';
 import { duplicateFrenchTitle, remapDuplicateLinks } from './tour-duplicate.js';
-
-/** 16 octets en base64url, sans padding : 22 caractères (colonne `VarChar(22)`). */
-const SHARE_TOKEN_BYTES = 16;
 
 const tourInclude = {
   categories: {
@@ -312,10 +308,6 @@ export class ToursService {
 }
 
 type TourClient = PrismaService | Prisma.TransactionClient;
-
-function createShareToken(): string {
-  return randomBytes(SHARE_TOKEN_BYTES).toString('base64url');
-}
 
 /** Valeur JSON lue par Prisma, recopiée telle quelle. `null` reste SQL NULL. */
 function copyJson(value: Prisma.JsonValue): Prisma.InputJsonValue | typeof Prisma.DbNull {
