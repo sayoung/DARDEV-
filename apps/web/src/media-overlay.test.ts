@@ -4,24 +4,21 @@ import { openMediaOverlay } from './media-overlay';
 describe('openMediaOverlay', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!window.HTMLMediaElement) {
-      // @ts-expect-error polyfill for happy-dom
-      window.HTMLMediaElement = class HTMLMediaElement extends HTMLElement {
-        pause() {}
-      };
+    
+    if (!('HTMLMediaElement' in window)) {
+      Object.assign(window, { HTMLMediaElement: class HTMLMediaElement extends HTMLElement { pause() {} } });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!HTMLMediaElement.prototype.pause) {
-      HTMLMediaElement.prototype.pause = () => {};
+    
+    if (!('pause' in HTMLMediaElement.prototype)) {
+      Object.assign(HTMLMediaElement.prototype, { pause: () => {} });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!HTMLVideoElement.prototype.pause) {
-      HTMLVideoElement.prototype.pause = () => {};
+    
+    if (!('pause' in HTMLVideoElement.prototype)) {
+      Object.assign(HTMLVideoElement.prototype, { pause: () => {} });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!HTMLAudioElement.prototype.pause) {
-      HTMLAudioElement.prototype.pause = () => {};
+    
+    if (!('pause' in HTMLAudioElement.prototype)) {
+      Object.assign(HTMLAudioElement.prototype, { pause: () => {} });
     }
   });
 
