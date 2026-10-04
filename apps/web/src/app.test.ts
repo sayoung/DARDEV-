@@ -15,7 +15,7 @@ describe('startViewer', () => {
       onSceneChange?: (sceneId: string) => void;
       onHotspotClick?: (hotspotId: string) => void;
     }
-  ) => { goToScene(id: string): Promise<void>; destroy(): void }>;
+  ) => { goToScene(id: string): Promise<void>; destroy(): void; gyroscopeSupported(): Promise<boolean>; toggleGyroscope(): void }>;
   let mockNavigate: Mock<(url: string) => void>;
   let doc: Document;
 
@@ -55,7 +55,9 @@ describe('startViewer', () => {
     mockLoad = vi.fn();
     mockMount = vi.fn().mockReturnValue({
       goToScene: vi.fn().mockResolvedValue(undefined),
-      destroy: vi.fn()
+      destroy: vi.fn(),
+      gyroscopeSupported: vi.fn().mockResolvedValue(false),
+      toggleGyroscope: vi.fn()
     });
     mockNavigate = vi.fn();
     doc = document.implementation.createHTMLDocument();

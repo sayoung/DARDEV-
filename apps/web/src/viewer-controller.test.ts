@@ -95,7 +95,9 @@ describe('createViewerController', () => {
   const setupDeps = () => {
     const goToScene = vi.fn().mockResolvedValue(undefined);
     const destroy = vi.fn();
-    const mountScene = vi.fn().mockReturnValue({ goToScene, destroy });
+    const gyroscopeSupported = vi.fn().mockResolvedValue(false);
+    const toggleGyroscope = vi.fn();
+    const mountScene = vi.fn().mockReturnValue({ goToScene, destroy, gyroscopeSupported, toggleGyroscope });
     const openUrl = vi.fn();
     
     const load = vi.fn().mockImplementation((token: string) => {
@@ -303,5 +305,54 @@ describe('createViewerController', () => {
     // Destroy
     controller.destroy();
     expect(doc.getElementById('scene-audio-btn')).toBeNull();
+  });
+
+  it('affiche le bouton gyroscope si gyroscopeSupported() est vrai, et appelle toggleGyroscope au clic', async () => {
+    const { load, mountScene } = setupDeps();
+    const gyroSupportedFn = vi.fn().mockResolvedValue(true);
+    const toggleGyroscopeFn = vi.fn();
+    mountScene.mockReturnValue({
+      goToScene: vi.fn().mockResolvedValue(undefined),
+      destroy: vi.fn(),
+      gyroscopeSupported: gyroSupportedFn,
+      toggleGyroscope: toggleGyroscopeFn
+    });
+
+    const customLabels = { ...labels, gyroscope: 'Gyro' };
+    const controller = createViewerController(doc, { load, mountScene, labels: customLabels });
+    
+    await controller.start('token1');
+    
+    // Wait for promise resolution
+    await new Promise(r => setTimeout(r, 0));
+
+    const gyroBtn = getButton('Gyro');
+    expect(gyroBtn).toBeDefined();
+    expect(gyroBtn.hidden).toBe(false);
+
+    gyroBtn.click();
+    expect(toggleGyroscopeFn).toHaveBeenCalledOnce();
+  });
+
+  it('masque le bouton gyroscope si gyroscopeSupported() est faux', async () => {
+    const { load, mountScene } = setupDeps();
+    const gyroSupportedFn = vi.fn().mockResolvedValue(false);
+    mountScene.mockReturnValue({
+      goToScene: vi.fn().mockResolvedValue(undefined),
+      destroy: vi.fn(),
+      gyroscopeSupported: gyroSupportedFn,
+      toggleGyroscope: vi.fn()
+    });
+
+    const customLabels = { ...labels, gyroscope: 'Gyro' };
+    const controller = createViewerController(doc, { load, mountScene, labels: customLabels });
+    
+    await controller.start('token1');
+    
+    // Wait for promise resolution
+    await new Promise(r => setTimeout(r, 0));
+
+    const gyroBtn = getButton('Gyro');
+    expect(gyroBtn.hidden).toBe(true);
   });
 });

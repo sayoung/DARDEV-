@@ -27,6 +27,7 @@ export interface ViewerLabels {
   close: string;
   play: string;
   pause: string;
+  gyroscope?: string;
 }
 
 export interface ViewerDeps {
@@ -34,7 +35,7 @@ export interface ViewerDeps {
   mountScene: (
     graph: TourGraph,
     sceneId: string
-  ) => { goToScene(id: string): Promise<void>; destroy(): void };
+  ) => { goToScene(id: string): Promise<void>; destroy(): void; gyroscopeSupported(): Promise<boolean>; toggleGyroscope(): void };
   labels: ViewerLabels;
   onSceneChange?: (sceneId: string) => void;
   openUrl?: (url: string) => void;
@@ -44,7 +45,7 @@ export interface ViewerDeps {
 export function createViewerController(doc: Document, deps: ViewerDeps) {
   const navigator = createTourNavigator({ load: deps.load });
 
-  let currentMount: { goToScene(id: string): Promise<void>; destroy(): void } | null = null;
+  let currentMount: { goToScene(id: string): Promise<void>; destroy(): void; gyroscopeSupported(): Promise<boolean>; toggleGyroscope(): void } | null = null;
   let isTransitioning = false;
   let controls: ReturnType<typeof createControls> | null = null;
 
@@ -167,6 +168,11 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
         if (state) {
           if (currentMount) currentMount.destroy();
           currentMount = deps.mountScene(state.graph, state.sceneId);
+          currentMount.gyroscopeSupported().then(supported => {
+             if (controls) controls.showGyroscope(supported);
+          }).catch(() => {
+             if (controls) controls.showGyroscope(false);
+          });
           applyAudio(true, state.sceneId);
           updateControls();
         }
@@ -209,6 +215,9 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
     onBack: () => { handleBack().catch(() => {}); },
     onFullscreen: handleFullscreen,
     onPracticalInfo: handlePracticalInfo,
+    onGyroscope: () => {
+      if (currentMount) currentMount.toggleGyroscope();
+    }
   });
 
   return {
@@ -222,6 +231,11 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
         if (state) {
           if (currentMount) currentMount.destroy();
           currentMount = deps.mountScene(state.graph, state.sceneId);
+          currentMount.gyroscopeSupported().then(supported => {
+             controls.showGyroscope(supported);
+          }).catch(() => {
+             controls.showGyroscope(false);
+          });
           applyAudio(true, state.sceneId);
           updateControls();
         }
@@ -253,6 +267,11 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
             if (newState) {
               if (currentMount) currentMount.destroy();
               currentMount = deps.mountScene(newState.graph, newState.sceneId);
+              currentMount.gyroscopeSupported().then(supported => {
+                 controls.showGyroscope(supported);
+              }).catch(() => {
+                 controls.showGyroscope(false);
+              });
               applyAudio(true, newState.sceneId);
               updateControls();
             }

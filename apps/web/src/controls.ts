@@ -7,6 +7,7 @@ export function createControls(
     back: string;
     fullscreen: string;
     practicalInfo: string;
+    gyroscope?: string;
   },
   handlers: {
     onPrevious(): void;
@@ -14,6 +15,7 @@ export function createControls(
     onBack(): void;
     onFullscreen(): void;
     onPracticalInfo(): void;
+    onGyroscope?(): void;
   }
 ): {
   update(state: {
@@ -22,16 +24,17 @@ export function createControls(
     canGoBack: boolean;
     hasPracticalInfo: boolean;
   }): void;
+  showGyroscope(visible: boolean): void;
   destroy(): void;
 } {
   const nav = doc.createElement('nav');
   nav.id = 'controls';
   nav.setAttribute('aria-label', labels.nav ?? 'Controls');
 
-  const createButton = (label: string, text: string, handler: () => void) => {
+  const createButton = (label: string | undefined, text: string, handler: () => void) => {
     const btn = doc.createElement('button');
     btn.type = 'button';
-    btn.setAttribute('aria-label', label);
+    if (label) btn.setAttribute('aria-label', label);
     btn.textContent = text;
     btn.addEventListener('click', handler);
     return btn;
@@ -43,11 +46,20 @@ export function createControls(
   const infoBtn = createButton(labels.practicalInfo, 'ℹ', () => { handlers.onPracticalInfo(); });
   const fsBtn = createButton(labels.fullscreen, '⛶', () => { handlers.onFullscreen(); });
 
+  let gyroBtn: HTMLButtonElement | null = null;
+  if (handlers.onGyroscope && labels.gyroscope) {
+    gyroBtn = createButton(labels.gyroscope, '🧭', () => { handlers.onGyroscope?.(); });
+    gyroBtn.hidden = true;
+  }
+
   nav.appendChild(backBtn);
   nav.appendChild(prevBtn);
   nav.appendChild(nextBtn);
   nav.appendChild(infoBtn);
   nav.appendChild(fsBtn);
+  if (gyroBtn) {
+    nav.appendChild(gyroBtn);
+  }
 
   doc.body.appendChild(nav);
 
@@ -62,6 +74,11 @@ export function createControls(
       nextBtn.disabled = state.next === null;
       backBtn.hidden = !state.canGoBack;
       infoBtn.hidden = !state.hasPracticalInfo;
+    },
+    showGyroscope(visible: boolean) {
+      if (gyroBtn) {
+        gyroBtn.hidden = !visible;
+      }
     },
     destroy() {
       nav.remove();
