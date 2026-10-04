@@ -70,6 +70,7 @@ describe('tourPluginOptions', () => {
     expect(options.nodes).toHaveLength(2);
     expect(options.positionMode).toBe('manual');
     expect(options.renderMode).toBe('3d');
+    expect(options.preload).toBe(true);
   });
 
   it('configures transition options correctly', () => {

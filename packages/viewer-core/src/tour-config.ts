@@ -17,6 +17,7 @@ export function tourPluginOptions(graph: TourGraph, sceneId?: string | null): Vi
     positionMode: 'manual',
     renderMode: '3d',
     startNodeId,
+    preload: true,
     transitionOptions: {
       effect: 'fade',
       speed: TRANSITION_MS,
