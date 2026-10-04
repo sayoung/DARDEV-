@@ -12,7 +12,10 @@ import {
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LANGS, type Lang, type TourGraph } from '@xplor/shared';
 import { z } from 'zod';
+import { ENV } from '../config/config.module.js';
+import type { Env } from '../config/env.js';
 
+import { renderShareHtml } from './share-html.js';
 import { ViewerService } from './viewer.service.js';
 
 const shareTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{1,22}$/);
@@ -48,5 +51,39 @@ export class PublicToursController {
     const shareToken = parseShareToken(shareTokenParam);
     const lang = parseLangQuery(rawLang);
     return this.viewer.getPublicGraph(shareToken, lang);
+  }
+}
+
+@Controller('public/share')
+export class PublicShareController {
+  constructor(
+    @Inject(ViewerService) private readonly viewer: ViewerService,
+    @Inject(ENV) private readonly env: Pick<Env, 'PUBLIC_WEB_URL'>,
+  ) {}
+
+  @Get(':shareToken')
+  @Header('Cache-Control', 'public, max-age=60')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  @UseGuards(ThrottlerGuard)
+  async get(
+    @Param('shareToken') shareTokenParam: string,
+    @Query('lang') rawLang: unknown,
+  ): Promise<string> {
+    const shareToken = parseShareToken(shareTokenParam);
+    const lang = parseLangQuery(rawLang);
+
+    const meta = await this.viewer.getShareMeta(shareToken, lang);
+
+    const pageUrl = `${this.env.PUBLIC_WEB_URL}/share/${shareToken}?lang=${lang}`;
+    const webAppUrl = `${this.env.PUBLIC_WEB_URL}/v/${shareToken}?lang=${lang}`;
+
+    return renderShareHtml({
+      title: meta.title,
+      summary: meta.summary,
+      coverUrl: meta.coverUrl,
+      lang,
+      pageUrl,
+      webAppUrl,
+    });
   }
 }

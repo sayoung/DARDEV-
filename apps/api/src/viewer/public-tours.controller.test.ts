@@ -66,3 +66,42 @@ describe('PublicToursController', () => {
     expect(getPublicGraphMock).toHaveBeenCalledWith('validToken123', 'ar');
   });
 });
+
+describe('PublicShareController', () => {
+  const getShareMetaMock = vi.fn();
+  let controller: import('./public-tours.controller.js').PublicShareController;
+
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    const viewerServiceMock = {
+      getShareMeta: getShareMetaMock,
+    } as unknown as ViewerService;
+    const { PublicShareController } = await import('./public-tours.controller.js');
+    controller = new PublicShareController(viewerServiceMock, { PUBLIC_WEB_URL: 'http://example.com' });
+  });
+
+  it('devrait retourner du HTML 200 contenant og:title', async () => {
+    getShareMetaMock.mockResolvedValue({
+      title: 'Titre de la visite',
+      summary: 'Résumé',
+      coverUrl: null,
+    });
+
+    const result = await controller.get('validToken123', 'fr');
+
+    expect(getShareMetaMock).toHaveBeenCalledWith('validToken123', 'fr');
+    expect(result).toContain('<meta property="og:title" content="Titre de la visite">');
+    expect(result).toContain('<html lang="fr" dir="ltr">');
+    expect(result).toContain('http://example.com/share/validToken123?lang=fr');
+    expect(result).toContain('http://example.com/v/validToken123?lang=fr');
+  });
+
+  it('devrait rejeter un shareToken invalide avec une 404', async () => {
+    await expect(controller.get('invalid@token', 'fr')).rejects.toThrow(NotFoundException);
+    await expect(controller.get('', 'fr')).rejects.toThrow(NotFoundException);
+  });
+
+  it('devrait rejeter une langue invalide avec une 400', async () => {
+    await expect(controller.get('validToken123', 'es')).rejects.toThrow(BadRequestException);
+  });
+});
