@@ -9,6 +9,9 @@ describe('http-security', () => {
     app = Fastify();
     await registerHttpSecurity(app, ['https://allowed.com']);
     app.get('/ping', () => ({ status: 'ok' }));
+    app.get('/html', (_, reply) => {
+      return reply.type('text/html').send('<html><body><h1>Test</h1></body></html>');
+    });
     await app.ready();
   });
 
@@ -50,5 +53,18 @@ describe('http-security', () => {
     
     expect(response.headers['content-security-policy']).toContain("default-src 'none'");
     expect(response.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+  });
+
+  it('une route /html renvoyant text/html conserve default-src \'none\' et frame-ancestors \'none\' dans content-security-policy, et ne contient pas unsafe-inline', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/html',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const csp = response.headers['content-security-policy'] as string;
+    expect(csp).toContain("default-src 'none'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).not.toContain("'unsafe-inline'");
   });
 });
