@@ -18,7 +18,7 @@ export function mountViewer(
   container: HTMLElement,
   graph: TourGraph,
   opts?: { sceneId?: string | null; onSceneChange?: (sceneId: string) => void; onHotspotClick?: (hotspotId: string) => void }
-): { destroy(): void; currentSceneId(): string } {
+): { destroy(): void; currentSceneId(): string; goToScene(sceneId: string): Promise<void> } {
   const viewer = new Viewer({
     container,
     plugins: [
@@ -63,6 +63,9 @@ export function mountViewer(
     currentSceneId: () => {
       const node = tourPlugin.getCurrentNode();
       return node.id;
+    },
+    goToScene: async (sceneId: string) => {
+      await tourPlugin.setCurrentNode(sceneId);
     },
   };
 }
