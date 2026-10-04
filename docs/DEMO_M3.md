@@ -45,3 +45,28 @@ Cette étape permet de vérifier la génération du QR code de partage pour une 
 4. Défilez vers le panneau de publication. La visite est publiée et son partage est actif. Le slug du jeton de partage est `demo-rabat`.
 5. Vérifiez qu'un encadré intitulé **QR code de la visite** s'affiche.
 6. Cliquez sur le bouton **Télécharger le QR code** pour enregistrer le fichier au format SVG.
+
+### 2. Consultation publique (Web)
+
+Cette étape permet de consulter la visite de démonstration (Kasbah des Oudayas) en utilisant la route publique du lecteur (apps/web).
+
+1. Le jeton de partage de la visite de Rabat est `demo-rabat` (défini dans le script de seed).
+2. Le QR code généré à l'étape précédente correspond au lien : `<PUBLIC_WEB_URL>/v/demo-rabat`.
+3. Le scan du QR code avec un mobile tente d'ouvrir cette URL.
+
+> **Point d'attention** : Dans la branche courante, le fichier `apps/web/vite.config.ts` force la configuration `host: '127.0.0.1'` sur le port 5174. Le serveur de développement web n'est donc pas joignable depuis un appareil externe par défaut.
+
+**Alternatives pour la démo :**
+
+- **Démo sur le poste (recommandée)** : Ouvrez le lien http://localhost:5174/v/demo-rabat dans votre navigateur de bureau.
+- **Démo sur un vrai mobile** : Lancez le front web séparément en forçant l'hôte via la ligne de commande (cette option prime sur le fichier de configuration) :
+
+```powershell
+# Obtenir l'IP de votre poste
+ipconfig
+
+# Lancer l'application web pour qu'elle écoute sur toutes les interfaces
+pnpm --filter web dev --host 0.0.0.0
+```
+
+> **Risque MinIO / tunnel SSH** : Même si l'application web s'ouvre sur le mobile, les médias (panoramas) peuvent ne pas se charger. En effet, MinIO répondant sur `localhost:9000` via le tunnel SSH du poste développeur, le mobile ne pourra pas résoudre cette adresse sans une redirection de port additionnelle.
