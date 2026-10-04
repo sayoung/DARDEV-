@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-30 (viewer-core, client de chargement) : dans packages/viewer-core, créer src/tour-client.ts avec `fetchTourGraph(baseUrl: string, shareToken: string, lang… — fetchTourGraph, TourNotFoundError et TourLoadError sont conformes à la demande, couverts par des tests et exportés ; lint, typecheck et test passent. (a7683b7)
 - 04/10/2026 — Récupération du travail non commité — tour-client.ts (fetchTourGraph validé par TourGraphSchema, erreurs typées) et ses tests sont cohérents avec API-11 et les conventions, contrôles verts, export ajouté. (89cc603)
 - 04/10/2026 — M3 F-30 (viewer-core 4/4, dépendances Photo Sphere Viewer) : ajouter aux dependencies de packages/viewer-core les paquets @photo-sphere-viewer/core, @photo-sphe… — Les quatre paquets Photo Sphere Viewer sont ajoutés en 5.15.1, tour-nodes.ts utilise VirtualTourNode, D-100 est consignée et lint, typecheck et test sont verts. (f03c9db)
 - 04/10/2026 — M3 F-31 (viewer-core 3/4, scènes précédente et suivante, logique pure) : dans packages/viewer-core, créer src/scene-order.ts qui exporte `adjacentScenes(graph:… — adjacentScenes conforme à la spécification, tests demandés présents et validés par TourGraphSchema, lint/typecheck/test verts, PROGRESS.md intact. (a1fd504)
