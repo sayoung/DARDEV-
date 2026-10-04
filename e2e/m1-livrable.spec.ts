@@ -1,4 +1,5 @@
 import { expect, test, Page } from '@playwright/test';
+import { ensureReadyPanoramas } from './helpers/panoramas';
 
 async function readPost<T>(
   page: Page,
@@ -34,6 +35,8 @@ test.describe('Livrable M1 : création de visite', () => {
 
     // Vérification de la connexion
     await expect(page.getByText('Administrateur').first()).toBeVisible();
+
+    await ensureReadyPanoramas(page, 3);
 
     // 2. Navigation vers /tours/new
     await page.getByRole('link', { name: 'Visites', exact: true }).click();
