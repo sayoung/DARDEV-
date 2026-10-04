@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-35 (documentation seule, aucun code) : dans docs/DECISIONS.md, ajoute une entrée D-105 datée du 04/10/2026. Elle doit dire que F-35 est couvert par la conf… — D-105 et la ligne de démo M3 sont ajoutées conformément à la demande, sur les deux seuls fichiers autorisés, avec lint et typecheck verts. (6799465)
 - 04/10/2026 — M3 critère 2 (test:e2e) : sans lancer docker, lance `pnpm exec playwright test e2e/m1-livrable.spec.ts`. Le test « Livrable M1 : création de visite › Créer une… — Le sélecteur périmé du test e2e M1 est remplacé par une navigation directe via l'id de la ligne de scène, sans toucher au code applicatif ni à PROGRESS.md. (276bcf8)
 - 04/10/2026 — M3 critère 2 (test:int publication) : sans lancer docker, lance `pnpm --filter @xplor/api exec vitest run --config vitest.int.config.ts test/tours-publication.i… — Aucun changement nécessaire : lint, typecheck et test sont verts. Le test:int complet n'est pas visible dans la sortie tronquée, donc à confirmer. (e3b20ff)
 - 04/10/2026 — M3 critère 2 (vérification globale) : sans docker ni tâche de fond, en avant-plan avec timeout outil, lance `CI=1 pnpm lint`, `CI=1 pnpm typecheck`, `CI=1 pnpm… — Vérification globale sans changement de code : lint, typecheck et test passent (code 0), l'arbre est propre et aucun log temporaire ne traîne ; la sortie de test:int hotspots est tronquée et n'a pas p… (e4655db)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-33 (apps/web, narration et ambiance) : créer apps/web/src/scene-audio-player.ts, sans framework, exportant `createSceneAudioPlayer(doc: Document, labels: {… — Lecteur audio de scène conforme à la demande : ambiance en boucle à volume réduit, narration à la demande, arrêt au changement de scène, styles logiques, tests et contrôles verts. (12b7c50)
 - 04/10/2026 — M3 F-31/F-32 (apps/web, contrôleur de la visionneuse) : créer apps/web/src/viewer-controller.ts exportant `createViewerController(doc, deps)` qui assemble les b… — Le contrôleur assemble correctement navigator, controls et confirm-dialog, les 4 scénarios demandés sont testés et lint, typecheck et test sont verts. (313eae3)
 - 04/10/2026 — M3 F-31 (viewer-core, navigation programmatique) : dans packages/viewer-core/src/mount-viewer.ts, ajouter à l'objet renvoyé par mountViewer une méthode `goToSce… — goToScene ajouté à mountViewer via tourPlugin.setCurrentNode, typé, changement minimal, lint/typecheck/test verts. (eab1ae5)
-- 04/10/2026 — M3 F-33 (apps/web, branchement des hotspots) : créer apps/web/src/hotspot-ui.ts exportant `handleHotspotClick(doc: Document, graph: TourGraph, sceneId: string,… — handleHotspotClick conforme à la demande (dispatch info/media/url/tour, cas inconnus sans effet), tests présents pour chaque type, contrôles verts, périmètre respecté. (a0865b5)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
