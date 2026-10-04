@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 critère 2 (preuve test:e2e, aucune modification de fichier) : ne lance jamais docker (services sur le VPS via le tunnel SSH, port 5432 à vérifier d'abord). E… — Tâche de preuve sans modification : diff vide, aucun fichier touché, PROGRESS.md intact, contrôles lint/typecheck/test verts. (f0e07cb)
 - 04/10/2026 — M3 critère 2 (preuve test:int, aucune modification de fichier) : ne lance jamais docker. Les services sont sur le VPS via le tunnel SSH : vérifie d'abord que le… — Tâche de preuve sans modification : le diff est vide comme demandé et lint, typecheck et test passent ; les résultats de test:int n'ont pas pu être vérifiés ici. (832d049)
 - 04/10/2026 — M3 F-35 (documentation seule, aucun code) : dans docs/DECISIONS.md, ajoute une entrée D-105 datée du 04/10/2026. Elle doit dire que F-35 est couvert par la conf… — D-105 et la ligne de démo M3 sont ajoutées conformément à la demande, sur les deux seuls fichiers autorisés, avec lint et typecheck verts. (6799465)
 - 04/10/2026 — M3 critère 2 (test:e2e) : sans lancer docker, lance `pnpm exec playwright test e2e/m1-livrable.spec.ts`. Le test « Livrable M1 : création de visite › Créer une… — Le sélecteur périmé du test e2e M1 est remplacé par une navigation directe via l'id de la ligne de scène, sans toucher au code applicatif ni à PROGRESS.md. (276bcf8)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 API-12 (2/2, route HTML) : ajouter dans apps/api/src/viewer/viewer.service.ts `getShareMeta(shareToken, lang)` réutilisant getPublicGraph (même 404) et renvo… — Route HTML de partage /public/share/:shareToken, getShareMeta, PUBLIC_WEB_URL, OpenAPI et tests unitaires conformes à la demande ; lint, typecheck et tests verts. (3c6da94)
 - 04/10/2026 — M3 API-12 (1/2, rendu HTML Open Graph, logique pure) : créer apps/api/src/viewer/share-html.ts avec `renderShareHtml(meta: { title: string; summary: string; cov… — renderShareHtml est conforme : balises Open Graph, échappement HTML correct, dir via @xplor/i18n, tests pertinents et contrôles verts, sans fichier superflu. (bc02142)
 - 04/10/2026 — M3 F-33 (apps/web, narration et ambiance) : créer apps/web/src/scene-audio-player.ts, sans framework, exportant `createSceneAudioPlayer(doc: Document, labels: {… — Lecteur audio de scène conforme à la demande : ambiance en boucle à volume réduit, narration à la demande, arrêt au changement de scène, styles logiques, tests et contrôles verts. (12b7c50)
-- 04/10/2026 — M3 F-31/F-32 (apps/web, contrôleur de la visionneuse) : créer apps/web/src/viewer-controller.ts exportant `createViewerController(doc, deps)` qui assemble les b… — Le contrôleur assemble correctement navigator, controls et confirm-dialog, les 4 scénarios demandés sont testés et lint, typecheck et test sont verts. (313eae3)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
