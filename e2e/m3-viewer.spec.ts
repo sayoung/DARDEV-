@@ -122,7 +122,9 @@ test.describe('M3 F-40/F-30 : page publique (Viewer)', () => {
   });
 
   test('Affiche un message d\'erreur pour un jeton inconnu', async ({ page }) => {
+    const responsePromise = page.waitForResponse(r => r.url().includes('/api/v1/public/tours/jetoninconnu123'));
     await page.goto('http://localhost:5174/v/jetoninconnu123?lang=fr');
+    await responsePromise;
     const notFoundText = resources.fr.viewer.notFound;
     const statusDiv = page.locator('#status');
     await expect(statusDiv).toBeVisible();
