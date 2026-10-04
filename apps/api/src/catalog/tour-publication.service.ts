@@ -23,6 +23,7 @@ import {
   notPublishableException,
 } from './catalog.errors.js';
 import { ToursService } from './tours.service.js';
+import { createShareToken } from './share-token.js';
 import {
   validateTour,
   type FindTargetTour,
@@ -145,6 +146,26 @@ export class TourPublicationService {
         where: { id },
         data: {
           status: PrismaTourStatus.DRAFT,
+          contentVersion: { increment: 1 },
+        },
+      });
+    });
+    return this.tours.get(id);
+  }
+
+  async regenerateShareToken(id: string): Promise<TourResponse> {
+    await this.prisma.$transaction(async (tx) => {
+      const row = await tx.tour.findFirst({
+        where: { id, deletedAt: null },
+        select: { id: true },
+      });
+      if (row === null) {
+        throw missingException(TOUR_NOT_FOUND, TOUR_NOT_FOUND_MESSAGE);
+      }
+      await tx.tour.update({
+        where: { id },
+        data: {
+          shareToken: createShareToken(),
           contentVersion: { increment: 1 },
         },
       });

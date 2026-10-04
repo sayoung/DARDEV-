@@ -68,6 +68,7 @@ interface TourWrite {
     status?: PrismaTourStatus;
     publishedAt?: Date;
     contentVersion?: { increment: number };
+    shareToken?: string;
   };
 }
 
@@ -78,6 +79,7 @@ interface StoredTour {
   deletedAt: Date | null;
   publishedAt: Date | null;
   contentVersion: number;
+  shareToken: string;
 }
 
 const CITY = '01990000-0000-7000-8000-000000000061';
@@ -180,6 +182,9 @@ function harness(): {
         }
         if (args.data.contentVersion !== undefined) {
           tour.contentVersion += args.data.contentVersion.increment;
+        }
+        if (args.data.shareToken !== undefined) {
+          tour.shareToken = args.data.shareToken;
         }
         return Promise.resolve(tour);
       },
@@ -309,7 +314,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function storedTour(
   id: string,
   startSceneId: string | null,
-  extras: Partial<Pick<StoredTour, 'status' | 'deletedAt' | 'publishedAt' | 'contentVersion'>> = {},
+  extras: Partial<Pick<StoredTour, 'status' | 'deletedAt' | 'publishedAt' | 'contentVersion' | 'shareToken'>> = {},
 ): StoredTour {
   return {
     id,
@@ -318,6 +323,7 @@ function storedTour(
     deletedAt: extras.deletedAt ?? null,
     publishedAt: extras.publishedAt ?? null,
     contentVersion: extras.contentVersion ?? 1,
+    shareToken: extras.shareToken ?? 'abcdefghijklmnopqrstuv',
   };
 }
 
@@ -331,7 +337,7 @@ function tourResponse(tour: StoredTour): TourResponse {
     coverAssetId: COVER,
     status: tour.status === PrismaTourStatus.PUBLISHED ? TourStatus.PUBLISHED : TourStatus.DRAFT,
     publicShare: false,
-    shareToken: 'abcdefghijklmnopqrstuv',
+    shareToken: tour.shareToken,
     sceneCount: 3,
     createdById: AUTHOR,
     contentVersion: tour.contentVersion,
@@ -621,6 +627,39 @@ describe('TourPublicationService', () => {
     await expectNotFound(() => service.unpublish(UNKNOWN));
     addTour(storedTour(VISITE, null, { deletedAt: new Date(), publishedAt: new Date() }));
     await expectNotFound(() => service.unpublish(VISITE));
+    expect(writes).toEqual([]);
+  });
+
+  it('régénère le shareToken sans modifier le statut, et incrémente contentVersion', async () => {
+    const { service, addTour, writes, reads } = harness();
+    addTour(
+      storedTour(VISITE, PORTE, {
+        status: PrismaTourStatus.PUBLISHED,
+        shareToken: 'old-token',
+      }),
+    );
+
+    const generated = await service.regenerateShareToken(VISITE);
+    expect(writes).toHaveLength(1);
+    const write = writes[0];
+    expect(write?.where).toEqual({ id: VISITE });
+    expect(write?.data.shareToken).toMatch(/^[A-Za-z0-9_-]{1,22}$/);
+    expect(write?.data.shareToken).not.toBe('old-token');
+    expect(write?.data.contentVersion).toEqual({ increment: 1 });
+    expect(Object.keys(write?.data ?? {})).toEqual(['shareToken', 'contentVersion']);
+    expect(reads).toEqual([VISITE]);
+
+    expect(generated.status).toBe(TourStatus.PUBLISHED);
+    expect(generated.publicShare).toBe(false);
+    expect(generated.shareToken).toMatch(/^[A-Za-z0-9_-]{1,22}$/);
+    expect(generated.shareToken).not.toBe('old-token');
+  });
+
+  it('répond 404 à la régénération si la visite est absente ou supprimée', async () => {
+    const { service, addTour, writes } = harness();
+    await expectNotFound(() => service.regenerateShareToken(UNKNOWN));
+    addTour(storedTour(VISITE, null, { deletedAt: new Date() }));
+    await expectNotFound(() => service.regenerateShareToken(VISITE));
     expect(writes).toEqual([]);
   });
 });
