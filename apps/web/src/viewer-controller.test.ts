@@ -61,12 +61,31 @@ describe('createViewerController', () => {
     linkedTours: []
   };
 
+  const mockGraph3: TourGraph = {
+    id: 't3',
+    contentVersion: 1,
+    lang: 'fr',
+    title: 'Tour 3',
+    summary: 'Sum',
+    city: 'City',
+    categories: [],
+    coverUrl: null,
+    practicalInfo: null,
+    location: null,
+    startSceneId: 's4',
+    scenes: [
+      { id: 's4', title: 'S4', hotspots: [], ...baseScene, narrationUrl: 'audio1.mp3' },
+      { id: 's5', title: 'S5', hotspots: [], ...baseScene }
+    ],
+    linkedTours: []
+  };
+
   const labels = {
     nav: 'Nav', previous: 'Prev', next: 'Next', back: 'Back',
     fullscreen: 'FS', practicalInfo: 'Info',
     goTo: 'Go to {{title}}', confirm: 'Yes', cancel: 'No',
     loading: 'Loading', notFound: 'Not found', loadError: 'Error',
-    close: 'Close'
+    close: 'Close', play: 'Play', pause: 'Pause'
   };
 
   beforeEach(() => {
@@ -82,6 +101,7 @@ describe('createViewerController', () => {
     const load = vi.fn().mockImplementation((token: string) => {
       if (token === 'token1') return Promise.resolve(mockGraph1);
       if (token === 'token2') return Promise.resolve(mockGraph2);
+      if (token === 'token3') return Promise.resolve(mockGraph3);
       return Promise.reject(new Error('Not found'));
     });
 
@@ -243,5 +263,45 @@ describe('createViewerController', () => {
     expect(infoPanel).not.toBeNull();
     const div = infoPanel?.querySelector('div');
     expect(div?.innerHTML).toBe('<p>Horaires</p><p>Tarifs</p>');
+  });
+
+  it('scène avec narration affiche le bouton lecture, un changement de scène arrête la piste', async () => {
+    const { load, mountScene } = setupDeps();
+    
+    let audioPlayed = false;
+    let audioPaused = false;
+
+    const mockAudio = doc.createElement('audio');
+    vi.spyOn(mockAudio, 'play').mockImplementation(() => { audioPlayed = true; return Promise.resolve(); });
+    vi.spyOn(mockAudio, 'pause').mockImplementation(() => { audioPaused = true; });
+
+    const audioFactory = vi.fn().mockReturnValue(mockAudio);
+
+    const controller = createViewerController(doc, { load, mountScene, labels, audioFactory });
+    
+    await controller.start('token3');
+    
+    // Scene s4 has narration, button should be visible and say Play
+    const audioBtn = doc.getElementById('scene-audio-btn');
+    if (!audioBtn) throw new Error('No audio btn');
+    expect(audioBtn).not.toBeNull();
+    expect(audioBtn.hidden).toBe(false);
+    expect(audioBtn.getAttribute('aria-label')).toBe('Play');
+
+    // Click play
+    audioBtn.click();
+    expect(audioPlayed).toBe(true);
+    expect(audioBtn.getAttribute('aria-label')).toBe('Pause');
+
+    // Change scene to s5 (no narration)
+    controller.onSceneChange('s5');
+    
+    // Narration should stop
+    expect(audioPaused).toBe(true);
+    expect(audioBtn.hidden).toBe(true);
+
+    // Destroy
+    controller.destroy();
+    expect(doc.getElementById('scene-audio-btn')).toBeNull();
   });
 });

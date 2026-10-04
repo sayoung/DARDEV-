@@ -1,4 +1,4 @@
-import { TourGraph } from '@xplor/shared';
+import { TourGraph, TourGraphScene } from '@xplor/shared';
 import {
   createTourNavigator,
   adjacentScenes,
@@ -9,6 +9,7 @@ import { createControls } from './controls.js';
 import { confirmGoTo } from './confirm-dialog.js';
 import { openInfoPanel } from './info-panel.js';
 import { textToHtml } from './text-html.js';
+import { createSceneAudioPlayer } from './scene-audio-player.js';
 
 export interface ViewerLabels {
   nav?: string;
@@ -24,6 +25,8 @@ export interface ViewerLabels {
   notFound: string;
   loadError: string;
   close: string;
+  play: string;
+  pause: string;
 }
 
 export interface ViewerDeps {
@@ -35,6 +38,7 @@ export interface ViewerDeps {
   labels: ViewerLabels;
   onSceneChange?: (sceneId: string) => void;
   openUrl?: (url: string) => void;
+  audioFactory?: (url: string) => HTMLAudioElement;
 }
 
 export function createViewerController(doc: Document, deps: ViewerDeps) {
@@ -42,6 +46,31 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
 
   let currentMount: { goToScene(id: string): Promise<void>; destroy(): void } | null = null;
   let isTransitioning = false;
+  let controls: ReturnType<typeof createControls> | null = null;
+
+  let prevScene: TourGraphScene | null = null;
+  let player: ReturnType<typeof createSceneAudioPlayer> | null = null;
+
+  const applyAudio = (isNewTour: boolean, sceneId: string) => {
+    const state = navigator.current();
+    if (!state) return;
+
+    if (isNewTour || !player) {
+      if (player) player.destroy();
+      player = createSceneAudioPlayer(
+        doc,
+        { play: deps.labels.play, pause: deps.labels.pause },
+        deps.audioFactory
+      );
+      prevScene = null;
+    }
+
+    const nextScene = state.graph.scenes.find((s) => s.id === sceneId) || null;
+    if (nextScene) {
+      player.apply(prevScene, nextScene);
+      prevScene = nextScene;
+    }
+  };
 
   const getStatusElement = () => {
     let el = doc.getElementById('status');
@@ -65,8 +94,6 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
     el.textContent = '';
     el.hidden = true;
   };
-
-  let controls: ReturnType<typeof createControls> | null = null;
 
   const updateControls = () => {
     if (!controls) return;
@@ -140,6 +167,7 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
         if (state) {
           if (currentMount) currentMount.destroy();
           currentMount = deps.mountScene(state.graph, state.sceneId);
+          applyAudio(true, state.sceneId);
           updateControls();
         }
       }
@@ -194,6 +222,7 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
         if (state) {
           if (currentMount) currentMount.destroy();
           currentMount = deps.mountScene(state.graph, state.sceneId);
+          applyAudio(true, state.sceneId);
           updateControls();
         }
         hideStatus();
@@ -224,6 +253,7 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
             if (newState) {
               if (currentMount) currentMount.destroy();
               currentMount = deps.mountScene(newState.graph, newState.sceneId);
+              applyAudio(true, newState.sceneId);
               updateControls();
             }
             hideStatus();
@@ -253,11 +283,18 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
       const state = navigator.current();
       if (state) {
         state.sceneId = sceneId;
+        applyAudio(false, sceneId);
         updateControls();
         if (deps.onSceneChange) {
           deps.onSceneChange(sceneId);
         }
       }
+    },
+
+    destroy() {
+      if (currentMount) currentMount.destroy();
+      controls.destroy();
+      if (player) player.destroy();
     }
   };
 }
