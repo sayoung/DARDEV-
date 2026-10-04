@@ -1,7 +1,21 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { createRequire } from 'module';
 import * as path from 'path';
 import * as fs from 'fs';
+
+interface PrismaClientInstance {
+  tour: {
+    updateMany: (args: { where: { shareToken: string }, data: { publicShare: boolean } }) => Promise<unknown>;
+  };
+  $disconnect: () => Promise<void>;
+}
+
+interface PrismaModule {
+  PrismaClient: new (args: { datasources: { db: { url: string } } }) => PrismaClientInstance;
+}
+
+function isPrismaModule(obj: unknown): obj is PrismaModule {
+  return typeof obj === 'object' && obj !== null && 'PrismaClient' in obj;
+}
 
 export async function enablePublicShare(shareToken: string) {
   const rootDir = process.cwd();
@@ -12,7 +26,7 @@ export async function enablePublicShare(shareToken: string) {
   if (fs.existsSync(apiEnvPath)) {
     const envContent = fs.readFileSync(apiEnvPath, 'utf8');
     for (const line of envContent.split('\n')) {
-      const match = line.match(/^\s*DATABASE_URL\s*=\s*(.*)/);
+      const match = /^\s*DATABASE_URL\s*=\s*(.*)/.exec(line);
       if (match && match[1]) {
         if (!dbUrl) {
           dbUrl = match[1].trim();
@@ -28,8 +42,12 @@ export async function enablePublicShare(shareToken: string) {
   const apiPackagePath = path.join(rootDir, 'apps/api/package.json');
   const requireApi = createRequire(apiPackagePath);
   
-  const { PrismaClient } = requireApi('@prisma/client');
-  const prisma = new PrismaClient({
+  const prismaModule: unknown = requireApi('@prisma/client');
+  if (!isPrismaModule(prismaModule)) {
+    throw new Error('Could not load PrismaClient from @prisma/client');
+  }
+
+  const prisma = new prismaModule.PrismaClient({
     datasources: {
       db: {
         url: dbUrl,
