@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx --conditions=development watch src/main.ts",
     "build": "nest build",
     "prebuild": "prisma generate",
     "postinstall": "prisma generate",
@@ -15,11 +15,11 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
-    "openapi": "tsx src/openapi/write-openapi.ts",
-    "cli": "tsx src/cli/main.ts"
+    "openapi": "tsx --conditions=development src/openapi/write-openapi.ts",
+    "cli": "tsx --conditions=development src/cli/main.ts"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx --conditions=development prisma/seed.ts"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
