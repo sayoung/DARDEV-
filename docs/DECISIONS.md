@@ -814,3 +814,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | --- | --- | --- |
 | @photo-sphere-viewer/gyroscope-plugin | F-34 mode gyroscope sur mobile. | MIT |
 
+## D-104 — Report de l'API-10 / F-41 pour les kiosques et aperçus
+
+- **Date :** 04/10/2026
+- **Décision :** (1) API-10 `GET /tours/:id` exige un Bearer kiosque (enrôlement F-52, jalon kiosque) ou un jeton d'aperçu (F-24, M4) ; le graphe est déjà produit par `toTourGraph` (`apps/api/src/viewer/tour-graph.ts`), qui prend en charge l'audience 'kiosk', mais la route sera ajoutée au jalon qui introduit chacun de ces jetons ; (2) la partie kiosque de F-41 (QR en fin de visite avec `?src=kiosk&h=...`) sera faite avec `apps/kiosk`, `shareUrl` acceptant déjà ces paramètres (`apps/admin/src/lib/tour-qr.ts`).
+- **Alternatives :** implémenter maintenant un faux jeton (rejeté).
+- **À valider :** oui
+
