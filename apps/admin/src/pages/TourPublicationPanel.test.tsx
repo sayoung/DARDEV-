@@ -280,4 +280,72 @@ describe('TourPublicationPanel', () => {
     expect(confirmSpy).toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
+
+  it('le QR et le lien sont visibles pour une visite partagée et absents pour un brouillon', async () => {
+    const { unmount } = render(<TourPublicationPanel tour={mockTour} onTourUpdated={vi.fn()} />);
+    expect(screen.queryByTestId('qr-code-section')).toBeNull();
+    unmount();
+
+    const sharedTour = {
+      ...mockTour,
+      status: TourStatus.PUBLISHED,
+      publicShare: true,
+      shareToken: 'token123'
+    };
+    render(<TourPublicationPanel tour={sharedTour} onTourUpdated={vi.fn()} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('qr-code-section')).toBeDefined();
+    });
+    
+    expect(screen.getByRole('link', { name: /token123/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'catalog.publication.downloadQrCode' })).toBeDefined();
+    expect(screen.getByRole('img', { name: 'catalog.publication.qrCodeTitle' })).toBeDefined();
+  });
+
+  it('téléchargement du QR code', async () => {
+    const sharedTour = {
+      ...mockTour,
+      status: TourStatus.PUBLISHED,
+      publicShare: true,
+      shareToken: 'token123'
+    };
+    
+    // Mock URL.createObjectURL et URL.revokeObjectURL
+    const createObjectURLMock = vi.fn().mockReturnValue('blob:test-url');
+    const revokeObjectURLMock = vi.fn();
+    window.URL.createObjectURL = createObjectURLMock;
+    window.URL.revokeObjectURL = revokeObjectURLMock;
+
+    // Intercepter la création d'éléments <a>
+    const createElementSpy = vi.spyOn(document, 'createElement');
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+    const removeChildSpy = vi.spyOn(document.body, 'removeChild');
+    
+    render(<TourPublicationPanel tour={sharedTour} onTourUpdated={vi.fn()} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('qr-code-section')).toBeDefined();
+    });
+    
+    createElementSpy.mockClear();
+    
+    const downloadBtn = screen.getByRole('button', { name: 'catalog.publication.downloadQrCode' });
+    fireEvent.click(downloadBtn);
+    
+    expect(createObjectURLMock).toHaveBeenCalled();
+    expect(createElementSpy).toHaveBeenCalledWith('a');
+    
+    // Vérifier les propriétés du lien généré
+    const result = createElementSpy.mock.results[0];
+    const linkElement = result?.value as HTMLAnchorElement | undefined;
+    
+    expect(linkElement).toBeDefined();
+    expect(linkElement?.href).toContain('blob:test-url');
+    expect(linkElement?.download).toBe('xplor-token123.svg');
+    
+    expect(appendChildSpy).toHaveBeenCalledWith(linkElement);
+    expect(removeChildSpy).toHaveBeenCalledWith(linkElement);
+    expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:test-url');
+  });
 });

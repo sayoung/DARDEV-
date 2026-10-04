@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type TourResponse,
@@ -12,6 +12,7 @@ import {
 import { validateTour, publishTour, unpublishTour, listScenes, regenerateShareToken } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
 import { useAuth } from '../auth/AuthProvider.js';
+import { shareUrl, tourQrSvg } from '../lib/tour-qr.js';
 
 import { StatusBadge } from '../components/StatusBadge.js';
 import { Button } from '../components/ui/Button.js';
@@ -30,9 +31,50 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
   const [sceneTitles, setSceneTitles] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
 
   const userRole = state.status === 'authenticated' ? state.profile.role : null;
   const canPublish = userRole === Role.ADMIN || userRole === Role.EDITOR;
+
+  const webBase = typeof import.meta.env.VITE_PUBLIC_WEB_URL === 'string' 
+    ? import.meta.env.VITE_PUBLIC_WEB_URL 
+    : window.location.origin;
+
+  const webUrl = tour.status === TourStatus.PUBLISHED && tour.publicShare && tour.shareToken
+    ? shareUrl(webBase, tour.shareToken)
+    : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    setQrSvg(null);
+
+    if (webUrl) {
+      tourQrSvg(webUrl)
+        .then((svg) => {
+          if (!cancelled) setQrSvg(svg);
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) console.error(err);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [webUrl]);
+
+  const handleDownloadQr = () => {
+    if (!qrSvg || !tour.shareToken) return;
+    const blob = new Blob([qrSvg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `xplor-${tour.shareToken}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const fetchSceneTitles = async (issuesList: ValidationIssue[]) => {
     const sceneIds = issuesList.map(i => i.sceneId).filter((id): id is string => !!id);
@@ -164,6 +206,33 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
           </div>
         )}
       </div>
+
+      {webUrl && qrSvg && (
+        <div className="mt-4 p-4 border rounded-lg bg-muted/30 flex flex-col items-start gap-4" data-testid="qr-code-section">
+          <h4 className="font-semibold">{t('catalog.publication.publicLink')}</h4>
+          <div className="flex items-center gap-2 w-full">
+            <a href={webUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+              {webUrl}
+            </a>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-2">
+            <div 
+              className="w-48 h-48 bg-white p-2 rounded shadow-sm"
+              role="img"
+              aria-label={t('catalog.publication.qrCodeTitle')}
+              title={t('catalog.publication.qrCodeTitle')}
+              dangerouslySetInnerHTML={{ __html: qrSvg }}
+              data-testid="qr-code-svg"
+            />
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" type="button" onClick={handleDownloadQr}>
+                {t('catalog.publication.downloadQrCode')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {errorMsg && <Alert variant="destructive">{errorMsg}</Alert>}
       {successMsg && <Alert variant="default" role="status" data-testid="validation-success">{successMsg}</Alert>}

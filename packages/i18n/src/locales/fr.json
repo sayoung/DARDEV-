@@ -238,7 +238,10 @@
         "shareToken": "Jeton de partage",
         "regenerateShareLink": "Régénérer le lien de partage",
         "regenerateConfirm": "Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?",
-        "regenerateSuccess": "Lien de partage régénéré avec succès."
+        "regenerateSuccess": "Lien de partage régénéré avec succès.",
+        "publicLink": "Lien public",
+        "qrCodeTitle": "QR code de la visite",
+        "downloadQrCode": "Télécharger le QR code"
     },
     "issue": {
       "START_SCENE_MISSING": "Scène de départ manquante",
