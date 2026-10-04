@@ -21,7 +21,7 @@
     "db:deploy": "pnpm -r db:deploy",
     "db:generate": "pnpm -r db:generate",
     "db:seed": "pnpm -r db:seed",
-    "demo:m2": "tsx scripts/demo-m2-upload.ts"
+    "demo:m2": "tsx --conditions=development scripts/demo-m2-upload.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
