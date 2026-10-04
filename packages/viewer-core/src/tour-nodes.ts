@@ -1,21 +1,7 @@
 import { TourGraph, HotspotType } from '@xplor/shared';
+import type { VirtualTourNode } from '@photo-sphere-viewer/virtual-tour-plugin';
 
-export type TourNode = {
-  id: string;
-  panorama: string;
-  thumbnail: string;
-  name: string;
-  caption?: string;
-  links: {
-    nodeId: string;
-    position: {
-      yaw: number;
-      pitch: number;
-    };
-  }[];
-};
-
-export function toTourNodes(graph: TourGraph): TourNode[] {
+export function toTourNodes(graph: TourGraph): VirtualTourNode[] {
   const sceneIds = new Set(graph.scenes.map((s) => s.id));
 
   return graph.scenes.map((scene) => {
@@ -34,7 +20,7 @@ export function toTourNodes(graph: TourGraph): TourNode[] {
       return [];
     });
 
-    const node: TourNode = {
+    const node: VirtualTourNode = {
       id: scene.id,
       panorama: scene.panorama.web,
       thumbnail: scene.thumb,

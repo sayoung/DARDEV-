@@ -759,3 +759,18 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 
 - **Date :** 03/10/2026
 - **Décision :** les médias non panorama (audio de narration et d'ambiance, médias des hotspots MEDIA) sont servis au visiteur par des URL présignées S3 valables 1 h, produites par StorageService.getSignedUrl ; alternative : dérivés publics produits par le worker ; à valider : oui.
+
+## D-100 — Photo Sphere Viewer v5 dans viewer-core
+
+- **Date :** 04/10/2026
+- **Décision :** Ajout des paquets `@photo-sphere-viewer/core`, `@photo-sphere-viewer/virtual-tour-plugin`, `@photo-sphere-viewer/markers-plugin` et `@photo-sphere-viewer/gallery-plugin` dans `packages/viewer-core`. Version retenue : 5.15.1 pour les quatre paquets.
+- **Raison :** Imposé par le cahier des charges, section 4 et F-30/F-31.
+- **Alternatives :** Aucune.
+- **À valider :** non
+
+| Paquet                                       | Raison                                                | Licence |
+| -------------------------------------------- | ----------------------------------------------------- | ------- |
+| @photo-sphere-viewer/core                    | Imposé par F-30/F-31 pour l'affichage de panoramas 360| MIT     |
+| @photo-sphere-viewer/virtual-tour-plugin     | Imposé pour la gestion des nœuds de la visite         | MIT     |
+| @photo-sphere-viewer/markers-plugin          | Imposé pour l'ajout de points d'intérêt (hotspots)    | MIT     |
+| @photo-sphere-viewer/gallery-plugin          | Imposé pour l'affichage de la galerie de la visite    | MIT     |
