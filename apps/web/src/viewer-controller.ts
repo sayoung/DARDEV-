@@ -7,6 +7,8 @@ import {
 import { handleHotspotClick } from './hotspot-ui.js';
 import { createControls } from './controls.js';
 import { confirmGoTo } from './confirm-dialog.js';
+import { openInfoPanel } from './info-panel.js';
+import { textToHtml } from './text-html.js';
 
 export interface ViewerLabels {
   nav?: string;
@@ -158,7 +160,19 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
   };
 
   const handlePracticalInfo = () => {
-    // Info panel logic can be added later or as requested
+    if (isTransitioning) return;
+    const state = navigator.current();
+    if (!state || !state.graph.practicalInfo) return;
+
+    openInfoPanel(
+      doc,
+      {
+        title: deps.labels.practicalInfo,
+        bodyHtml: textToHtml(state.graph.practicalInfo),
+        images: [],
+      },
+      { close: deps.labels.close }
+    );
   };
 
   controls = createControls(doc, deps.labels, {
