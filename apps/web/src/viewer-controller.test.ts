@@ -33,7 +33,9 @@ describe('createViewerController', () => {
     scenes: [
       { id: 's1', title: 'S1', hotspots: [], ...baseScene },
       { id: 's2', title: 'S2', hotspots: [
-        { id: 'hs1', type: HotspotType.TOUR_LINK, targetTourId: 't2', targetSceneId: null, arrivalYaw: null, yaw: 0, pitch: 0, label: 'Link', icon: HotspotIcon.PORTAL }
+        { id: 'hs1', type: HotspotType.TOUR_LINK, targetTourId: 't2', targetSceneId: null, arrivalYaw: null, yaw: 0, pitch: 0, label: 'Link', icon: HotspotIcon.PORTAL },
+        { id: 'hs_info', type: HotspotType.INFO, bodyHtml: 'InfoBody', yaw: 0, pitch: 0, label: 'Info Label', icon: HotspotIcon.INFO, images: [] },
+        { id: 'hs_url', type: HotspotType.URL, url: 'https://example.com', label: 'URLTitle', yaw: 0, pitch: 0, icon: HotspotIcon.INFO }
       ], ...baseScene }
     ],
     linkedTours: [
@@ -63,7 +65,8 @@ describe('createViewerController', () => {
     nav: 'Nav', previous: 'Prev', next: 'Next', back: 'Back',
     fullscreen: 'FS', practicalInfo: 'Info',
     goTo: 'Go to {{title}}', confirm: 'Yes', cancel: 'No',
-    loading: 'Loading', notFound: 'Not found', loadError: 'Error'
+    loading: 'Loading', notFound: 'Not found', loadError: 'Error',
+    close: 'Close'
   };
 
   beforeEach(() => {
@@ -74,6 +77,7 @@ describe('createViewerController', () => {
     const goToScene = vi.fn().mockResolvedValue(undefined);
     const destroy = vi.fn();
     const mountScene = vi.fn().mockReturnValue({ goToScene, destroy });
+    const openUrl = vi.fn();
     
     const load = vi.fn().mockImplementation((token: string) => {
       if (token === 'token1') return Promise.resolve(mockGraph1);
@@ -81,7 +85,7 @@ describe('createViewerController', () => {
       return Promise.reject(new Error('Not found'));
     });
 
-    return { load, mountScene, goToScene, destroy };
+    return { load, mountScene, goToScene, destroy, openUrl };
   };
 
   const getButton = (label: string) => {
@@ -176,5 +180,47 @@ describe('createViewerController', () => {
     await new Promise(r => setTimeout(r, 0));
 
     expect(mountScene).toHaveBeenCalledWith(mockGraph1, 's2');
+  });
+
+  it('clic sur un hotspot INFO → #info-panel présent', async () => {
+    const { load, mountScene } = setupDeps();
+    const controller = createViewerController(doc, { load, mountScene, labels });
+    
+    await controller.start('token1');
+    controller.onSceneChange('s2');
+
+    await controller.onHotspotClick('hs_info');
+    
+    const infoPanel = doc.getElementById('info-panel');
+    expect(infoPanel).not.toBeNull();
+  });
+
+  it('clic sur un hotspot URL → openUrl appelé', async () => {
+    const { load, mountScene, openUrl } = setupDeps();
+    const controller = createViewerController(doc, { load, mountScene, labels, openUrl });
+    
+    await controller.start('token1');
+    controller.onSceneChange('s2');
+
+    await controller.onHotspotClick('hs_url');
+    
+    expect(openUrl).toHaveBeenCalledWith('https://example.com');
+  });
+
+  it('id inconnu → aucun effet', async () => {
+    const { load, mountScene, openUrl } = setupDeps();
+    const controller = createViewerController(doc, { load, mountScene, labels, openUrl });
+    
+    await controller.start('token1');
+    controller.onSceneChange('s2');
+
+    await controller.onHotspotClick('hs_unknown');
+    
+    expect(openUrl).not.toHaveBeenCalled();
+    const infoPanel = doc.getElementById('info-panel');
+    expect(infoPanel).toBeNull();
+    // No dialog shown either
+    const confirmBtn = doc.querySelector('.confirm-dialog-btn-confirm');
+    expect(confirmBtn).toBeNull();
   });
 });

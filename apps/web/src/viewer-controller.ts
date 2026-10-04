@@ -4,6 +4,7 @@ import {
   adjacentScenes,
   resolveTourLink,
 } from '@xplor/viewer-core';
+import { handleHotspotClick } from './hotspot-ui.js';
 import { createControls } from './controls.js';
 import { confirmGoTo } from './confirm-dialog.js';
 
@@ -20,6 +21,7 @@ export interface ViewerLabels {
   loading: string;
   notFound: string;
   loadError: string;
+  close: string;
 }
 
 export interface ViewerDeps {
@@ -30,6 +32,7 @@ export interface ViewerDeps {
   ) => { goToScene(id: string): Promise<void>; destroy(): void };
   labels: ViewerLabels;
   onSceneChange?: (sceneId: string) => void;
+  openUrl?: (url: string) => void;
 }
 
 export function createViewerController(doc: Document, deps: ViewerDeps) {
@@ -216,6 +219,19 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
             setTransitioning(false);
           }
         }
+      } else {
+        const openUrl = deps.openUrl ?? ((url: string) => window.open(url, '_blank', 'noopener,noreferrer'));
+        handleHotspotClick(
+          doc,
+          state.graph,
+          state.sceneId,
+          hotspotId,
+          deps.labels,
+          {
+            openUrl,
+            onTourLink: () => {}
+          }
+        );
       }
     },
     
