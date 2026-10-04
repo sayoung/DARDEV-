@@ -9,7 +9,7 @@ import {
   z,
   Role
 } from '@xplor/shared';
-import { validateTour, publishTour, unpublishTour, listScenes } from '../api/catalog.js';
+import { validateTour, publishTour, unpublishTour, listScenes, regenerateShareToken } from '../api/catalog.js';
 import { ApiError } from '../api/client.js';
 import { useAuth } from '../auth/AuthProvider.js';
 
@@ -112,13 +112,39 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
     }
   };
 
+  const handleRegenerateShareLink = async () => {
+    if (!window.confirm(t('catalog.publication.regenerateConfirm'))) return;
+
+    setSubmitting(true);
+    setIssues(null);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+    try {
+      const updatedTour = await regenerateShareToken(tour.id);
+      onTourUpdated(updatedTour);
+      setSuccessMsg(t('catalog.publication.regenerateSuccess'));
+    } catch {
+      setErrorMsg(t('common.error.generic'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <section className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
-      <div className="flex items-center gap-4">
-        <span className="text-sm font-medium">{t('catalog.publication.status')}:</span>
-        <StatusBadge status={tour.status} />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">{t('catalog.publication.status')}:</span>
+          <StatusBadge status={tour.status} />
+          {tour.shareToken && (
+            <>
+              <span className="text-sm font-medium ms-4">{t('catalog.publication.shareToken')}:</span>
+              <code className="text-sm bg-muted px-2 py-1 rounded" data-testid="share-token-display">{tour.shareToken}</code>
+            </>
+          )}
+        </div>
         {canPublish && (
-          <div className="flex gap-2 ms-auto">
+          <div className="flex gap-2">
             <Button variant="outline" type="button" data-testid="validate-tour-btn" onClick={() => { void handleValidate(); }} disabled={submitting}>
               {t('catalog.publication.validate')}
             </Button>
@@ -132,6 +158,9 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
                 {t('catalog.publication.unpublish')}
               </Button>
             )}
+            <Button variant="outline" type="button" data-testid="regenerate-share-link-btn" onClick={() => { void handleRegenerateShareLink(); }} disabled={submitting}>
+              {t('catalog.publication.regenerateShareLink')}
+            </Button>
           </div>
         )}
       </div>
@@ -166,3 +195,4 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
     </section>
   );
 }
+
