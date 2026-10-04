@@ -9,7 +9,7 @@ Livrable : Démo 1 : visite réelle de Rabat consultable sur mobile via QR
 | # | Critère | État | Preuve |
 |---|---|---|---|
 | 1 | Toutes les exigences implémentées et CA vérifiés | Fait | F-30 à F-35, F-40 à F-42, API-11, API-12 ; API-10/F-41 kiosque reportés (D-104) ; F-35 mesure manuelle en démo (D-105) |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | partiel : 4 échecs | test:int OK, 4 échecs test:e2e (Créer une visite complète, Doit rejeter un panorama, Affiche correctement une visite partagée, Affiche un message d'erreur pour un jeton inconnu à l'étape toHaveText) |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | Fait | test:e2e 11 passés / 0 échecs (04/10/2026) |
 | 3 | pnpm lint, pnpm typecheck sans erreur | Fait | lint, typecheck OK |
 | 4 | Migrations appliquées, seed à jour | Fait | Migrations appliquées, visite Rabat publiée (demo-rabat) |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) | - |
@@ -71,7 +71,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
-- M3 critère 2 : 1 échec test:e2e (Livrable M1 : création de visite complète)
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
