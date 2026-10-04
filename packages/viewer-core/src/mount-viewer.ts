@@ -2,6 +2,7 @@ import { Viewer } from '@photo-sphere-viewer/core';
 import { VirtualTourPlugin } from '@photo-sphere-viewer/virtual-tour-plugin';
 import { MarkersPlugin, type MarkerConfig } from '@photo-sphere-viewer/markers-plugin';
 import { GalleryPlugin } from '@photo-sphere-viewer/gallery-plugin';
+import { GyroscopePlugin } from '@photo-sphere-viewer/gyroscope-plugin';
 import {
   EquirectangularTilesAdapter,
   type EquirectangularTilesAdapterConfig,
@@ -22,7 +23,7 @@ export function mountViewer(
   container: HTMLElement,
   graph: TourGraph,
   opts?: { sceneId?: string | null; onSceneChange?: (sceneId: string) => void; onHotspotClick?: (hotspotId: string) => void }
-): { destroy(): void; currentSceneId(): string; goToScene(sceneId: string): Promise<void> } {
+): { destroy(): void; currentSceneId(): string; goToScene(sceneId: string): Promise<void>; gyroscopeSupported(): Promise<boolean>; toggleGyroscope(): void } {
   const adapterConfig: EquirectangularTilesAdapterConfig = {
     showErrorTile: true,
   };
@@ -34,11 +35,13 @@ export function mountViewer(
       [VirtualTourPlugin, tourPluginOptions(graph, opts?.sceneId)],
       [MarkersPlugin, {}],
       [GalleryPlugin, {}],
+      [GyroscopePlugin, {}],
     ],
   });
 
   const tourPlugin = viewer.getPlugin<VirtualTourPlugin>(VirtualTourPlugin);
   const markersPlugin = viewer.getPlugin<MarkersPlugin>(MarkersPlugin);
+  const gyroscopePlugin = viewer.getPlugin<GyroscopePlugin>(GyroscopePlugin);
 
   markersPlugin.addEventListener('select-marker', ({ marker }) => {
     if (opts?.onHotspotClick) {
@@ -75,6 +78,12 @@ export function mountViewer(
     },
     goToScene: async (sceneId: string) => {
       await tourPlugin.setCurrentNode(sceneId);
+    },
+    gyroscopeSupported: async () => {
+      return gyroscopePlugin.isSupported();
+    },
+    toggleGyroscope: () => {
+      gyroscopePlugin.toggle();
     },
   };
 }
