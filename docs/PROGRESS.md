@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-40 (apps/web, dépendances et proxy) : dans apps/web/package.json, ajouter aux dependencies `@xplor/viewer-core` (workspace:*) ainsi que @photo-sphere-viewe… — Dépendances PSV et viewer-core ajoutées à apps/web, proxy /api configuré, D-100 complétée, sans autre changement ; lint, typecheck et test OK. (c6e3231)
 - 04/10/2026 — M3 F-33 (viewer-core, action d'un hotspot, logique pure) : créer packages/viewer-core/src/hotspot-action.ts, qui exporte le type `HotspotAction` = { kind: 'info… — hotspotAction et son test sont conformes à la tâche (un cas par type + id inconnu, export ajouté, aucun paquet ni PROGRESS.md touchés), contrôles verts. (036d1d0)
 - 04/10/2026 — M3 F-33 (viewer-core, clic sur un marqueur) : dans packages/viewer-core/src/mount-viewer.ts, ajouter à `opts` une option `onHotspotClick?: (hotspotId: string) =… — onHotspotClick est branché sur l'événement typé 'select-marker' du MarkersPlugin, avec marker.id (id du hotspot), sans any ni cast, et uniquement dans mount-viewer.ts ; lint, typecheck et test passent… (e1f9ed5)
 - 04/10/2026 — M3 F-30 (viewer-core, montage de Photo Sphere Viewer, adaptateur DOM) : dans packages/viewer-core, créer src/mount-viewer.ts qui exporte `mountViewer(container:… — mountViewer monte Photo Sphere Viewer avec les trois plugins, pose les marqueurs et notifie le changement de scène avec des API typées, et lint/typecheck/test passent. (33f92c0)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 03/10/2026 — M3 API-11 (3c/5, mappeur de hotspots, TOUR_LINK, URL et décision) : dans apps/api/src/viewer/tour-graph-hotspot.ts, ajouter TOUR_LINK : retourne null si targetT… — TOUR_LINK et URL sont implémentés avec les garde-fous kiosk et httpUrl, les tests demandés sont ajoutés et D-97 est consigné ; lint, typecheck et test sont verts. (14a1ab6)
 - 03/10/2026 — M3 API-11 (3b/5, mappeur de hotspots, INFO et MEDIA) : dans apps/api/src/viewer/tour-graph-hotspot.ts, ajouter les cas INFO et MEDIA à `toGraphHotspot`. INFO :… — Les cas INFO et MEDIA de toGraphHotspot sont conformes à la spec (échappement, paragraphes, repli fr, ordre des médias, null si vide), testés, et lint/typecheck/test passent. (8b452cc)
 - 03/10/2026 — M3 API-11 (3a/5, mappeur de hotspots, socle + SCENE_LINK) : créer apps/api/src/viewer/tour-graph-hotspot.ts. Y déclarer en local, sans @prisma/client, le type `… — Mappeur SCENE_LINK conforme (label localisé avec repli fr, validation Zod, null pour cible absente et pour les types non implémentés), tests pertinents, contrôles verts, PROGRESS.md intact. (23f56b5)
-- 03/10/2026 — M3 API-10/API-11 (2c/5, URL publique des médias) : dans docker-compose.yml, le service minio-init existe déjà (utilise `mc alias set local …`) : y ajouter, aprè… — minio-init rend le préfixe panoramas/ public (bucket via S3_BUCKET) et D-96 est consignée correctement; PROGRESS.md intact, contrôles verts. (3f52b02)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
