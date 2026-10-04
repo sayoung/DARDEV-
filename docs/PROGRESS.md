@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-32 (viewer-core, navigateur inter-visites, 2/2 followLink et back) : dans packages/viewer-core/src/tour-navigator.ts (créé par la sous-tâche précédente), a… — followLink et back sont implémentés avec rollback et testés, les contrôles passent ; seul le cas d'une pile pleine (max 20) n'est pas couvert par le rollback. (30e4ae9)
 - 04/10/2026 — M3 F-32 (viewer-core, navigateur inter-visites, 1/2 ouverture) : dans packages/viewer-core, créer src/tour-navigator.ts exportant `createTourNavigator(deps: { l… — createTourNavigator conforme à la spécification, tests couvrant les cinq cas demandés, export ajouté, lint/typecheck/tests OK, PROGRESS.md non modifié. (294b266)
 - 04/10/2026 — M3 F-32 (viewer-core, résolution d'un hotspot TOUR_LINK) : dans packages/viewer-core, créer src/tour-link.ts avec `resolveTourLink(graph: TourGraph, hotspotId:… — resolveTourLink est correct, conforme à la spec, testé sur les 5 cas demandés et exporté ; lint, typecheck et tests passent. (af35a38)
 - 04/10/2026 — M3 F-30 (viewer-core, client de chargement) : dans packages/viewer-core, créer src/tour-client.ts avec `fetchTourGraph(baseUrl: string, shareToken: string, lang… — fetchTourGraph, TourNotFoundError et TourLoadError sont conformes à la demande, couverts par des tests et exportés ; lint, typecheck et test passent. (a7683b7)
