@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-31 (viewer-core 3/4, scènes précédente et suivante, logique pure) : dans packages/viewer-core, créer src/scene-order.ts qui exporte `adjacentScenes(graph:… — adjacentScenes conforme à la spécification, tests demandés présents et validés par TourGraphSchema, lint/typecheck/test verts, PROGRESS.md intact. (a1fd504)
 - 04/10/2026 — M3 F-32 (viewer-core 2/4, pile d'historique inter-visites, logique pure, tests d'abord) : dans packages/viewer-core, créer src/tour-history.ts qui exporte le ty… — createTourHistory et HistoryEntry conformes à la spec (LIFO, limite, anti-doublon, copies défensives), tests complets, export ajouté, contrôles verts, PROGRESS.md intact. (3a1b385)
 - 04/10/2026 — M3 F-30 (viewer-core 3/3, tests de l'adaptateur) : créer packages/viewer-core/src/tour-nodes.test.ts (Vitest). S'inspirer de l'exemple de graphe de packages/sha… — tour-nodes.test.ts couvre les 5 cas demandés avec un graphe validé par TourGraphSchema.parse, les tests triviaux et le doublon .spec sont supprimés, lint/typecheck/test verts, aucun paquet ajouté, PRO… (71c4d0c)
 - 04/10/2026 — M3 F-30 (viewer-core 2/3, adaptateur pur) : dans packages/viewer-core (créé à l'étape précédente), créer src/tour-nodes.ts sans framework ni dépendance graphiqu… — tour-nodes.ts respecte toutes les règles de la tâche, exports en place, test pertinent, lint/typecheck/test verts, aucun paquet ni PROGRESS.md modifié. (3e5f11f)
