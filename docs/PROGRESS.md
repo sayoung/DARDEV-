@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3b NF-01 (configuration CORS, test d'abord) : dans apps/api/src/config/env.ts, ajoute la variable `API_CORS_ORIGINS` (chaîne d'origines séparées par des virgul… — API_CORS_ORIGINS est ajoutée avec défaut en développement, découpage, validation d'URL et exigence en production, avec les tests et .env.example ; lint, typecheck et test passent. (08cb121)
 - 04/10/2026 — M3b NF-10 (build de production du worker) : sans docker, lance `pnpm --filter @xplor/worker build` et vérifie le fichier d'entrée produit dans apps/worker/dist.… — Le script start (node dist/main.js) correspond à l'entrée réellement produite par la build, dist est ignoré par git, PROGRESS.md n'est pas modifié et les contrôles passent. (e5a0bea)
 - 04/10/2026 — M3b NF-10 (preuve de démarrage de la build de production). Sans docker : lance `pnpm --filter @xplor/api build`, puis `node apps/api/dist/main.js` en arrière-pl… — Aucun changement nécessaire (DEPLOY.md absent, diff vide, lint/typecheck/test OK) ; la preuve du 200 sur /api/health est à fournir dans le rapport de l'agent, je ne l'ai pas vérifiée. (84a56fa)
 - 04/10/2026 — M3b NF-10 (scripts de démarrage et build ordonné). Dans apps/api/package.json, ajoute `"start": "node dist/main.js"` et `"start:prod": "node dist/main.js"` seul… — Scripts start/start:prod vers dist/main.js (chemin confirmé par la configuration) et prebuild qui construit @xplor/shared avant prisma generate, sans autre modification ; lint et typecheck OK. (75e5b93)
