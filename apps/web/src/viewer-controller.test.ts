@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createViewerController } from './viewer-controller.js';
 import { TourGraph, HotspotType, HotspotIcon } from '@xplor/shared';
+import { TourNotFoundError } from '@xplor/viewer-core';
 
 describe('createViewerController', () => {
   let doc: Document;
@@ -375,5 +376,18 @@ describe('createViewerController', () => {
 
     const gyroBtn = getButton('Gyro');
     expect(gyroBtn.hidden).toBe(true);
+  });
+
+  it('affiche le statut notFound si TourNotFoundError est levée', async () => {
+    const { load, mountScene } = setupDeps();
+    load.mockRejectedValue(new TourNotFoundError());
+    const controller = createViewerController(doc, { load, mountScene, labels });
+    
+    await controller.start('token_invalid');
+    
+    const status = doc.getElementById('status');
+    expect(status).not.toBeNull();
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toBe(labels.notFound);
   });
 });
