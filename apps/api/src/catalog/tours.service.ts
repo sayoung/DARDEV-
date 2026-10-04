@@ -1,4 +1,3 @@
-
 import { Inject, Injectable, NotFoundException, type HttpException } from '@nestjs/common';
 import {
   HotspotType as PrismaHotspotType,

@@ -166,7 +166,6 @@ export class TourPublicationService {
         where: { id },
         data: {
           shareToken: createShareToken(),
-          contentVersion: { increment: 1 },
         },
       });
     });

@@ -630,7 +630,7 @@ describe('TourPublicationService', () => {
     expect(writes).toEqual([]);
   });
 
-  it('régénère le shareToken sans modifier le statut, et incrémente contentVersion', async () => {
+  it('régénère le shareToken sans modifier le statut', async () => {
     const { service, addTour, writes, reads } = harness();
     addTour(
       storedTour(VISITE, PORTE, {
@@ -645,8 +645,7 @@ describe('TourPublicationService', () => {
     expect(write?.where).toEqual({ id: VISITE });
     expect(write?.data.shareToken).toMatch(/^[A-Za-z0-9_-]{1,22}$/);
     expect(write?.data.shareToken).not.toBe('old-token');
-    expect(write?.data.contentVersion).toEqual({ increment: 1 });
-    expect(Object.keys(write?.data ?? {})).toEqual(['shareToken', 'contentVersion']);
+    expect(Object.keys(write?.data ?? {})).toEqual(['shareToken']);
     expect(reads).toEqual([VISITE]);
 
     expect(generated.status).toBe(TourStatus.PUBLISHED);
