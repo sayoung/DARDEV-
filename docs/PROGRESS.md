@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 API-12 (1/2, rendu HTML Open Graph, logique pure) : créer apps/api/src/viewer/share-html.ts avec `renderShareHtml(meta: { title: string; summary: string; cov… — renderShareHtml est conforme : balises Open Graph, échappement HTML correct, dir via @xplor/i18n, tests pertinents et contrôles verts, sans fichier superflu. (bc02142)
 - 04/10/2026 — M3 F-33 (apps/web, narration et ambiance) : créer apps/web/src/scene-audio-player.ts, sans framework, exportant `createSceneAudioPlayer(doc: Document, labels: {… — Lecteur audio de scène conforme à la demande : ambiance en boucle à volume réduit, narration à la demande, arrêt au changement de scène, styles logiques, tests et contrôles verts. (12b7c50)
 - 04/10/2026 — M3 F-31/F-32 (apps/web, contrôleur de la visionneuse) : créer apps/web/src/viewer-controller.ts exportant `createViewerController(doc, deps)` qui assemble les b… — Le contrôleur assemble correctement navigator, controls et confirm-dialog, les 4 scénarios demandés sont testés et lint, typecheck et test sont verts. (313eae3)
 - 04/10/2026 — M3 F-31 (viewer-core, navigation programmatique) : dans packages/viewer-core/src/mount-viewer.ts, ajouter à l'objet renvoyé par mountViewer une méthode `goToSce… — goToScene ajouté à mountViewer via tourPlugin.setCurrentNode, typé, changement minimal, lint/typecheck/test verts. (eab1ae5)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-32 (viewer-core 2/4, pile d'historique inter-visites, logique pure, tests d'abord) : dans packages/viewer-core, créer src/tour-history.ts qui exporte le ty… — createTourHistory et HistoryEntry conformes à la spec (LIFO, limite, anti-doublon, copies défensives), tests complets, export ajouté, contrôles verts, PROGRESS.md intact. (3a1b385)
 - 04/10/2026 — M3 F-30 (viewer-core 3/3, tests de l'adaptateur) : créer packages/viewer-core/src/tour-nodes.test.ts (Vitest). S'inspirer de l'exemple de graphe de packages/sha… — tour-nodes.test.ts couvre les 5 cas demandés avec un graphe validé par TourGraphSchema.parse, les tests triviaux et le doublon .spec sont supprimés, lint/typecheck/test verts, aucun paquet ajouté, PRO… (71c4d0c)
 - 04/10/2026 — M3 F-30 (viewer-core 2/3, adaptateur pur) : dans packages/viewer-core (créé à l'étape précédente), créer src/tour-nodes.ts sans framework ni dépendance graphiqu… — tour-nodes.ts respecte toutes les règles de la tâche, exports en place, test pertinent, lint/typecheck/test verts, aucun paquet ni PROGRESS.md modifié. (3e5f11f)
-- 04/10/2026 — M3 F-30 (viewer-core 1/3, socle du paquet) : créer packages/viewer-core sur le modèle exact de packages/i18n. package.json : name @xplor/viewer-core, version 0.… — Le socle packages/viewer-core est créé conformément à @xplor/i18n, avec le projet Vitest ajouté, un test trivial temporaire, le lockfile mis à jour, et lint, typecheck et test verts. (f52f1c4)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
