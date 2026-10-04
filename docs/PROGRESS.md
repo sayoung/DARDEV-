@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 DoD (critère 2, preuve e2e consignée dans le dépôt) : ne lance JAMAIS docker (services sur le VPS via tunnel SSH). Vérifie d'abord que localhost:5432 répond… — Seul docs/PROGRESS.md est modifié, aux deux endroits demandés : critère 2 de la DoD M3 à « Fait » avec la preuve 11 passés / 0 échecs, et ligne M3 retirée de « Bloqué ». (4ed9b45)
 - 04/10/2026 — M3 critère 2 (e2e, m3-viewer, jeton inconnu) — validation finale. Vérifier que localhost:5432 répond, puis lancer `$env:CI='1'; pnpm exec playwright test e2e/m3… — Aucun changement de code (validation seule) ; lint, typecheck et test passent, docs/PROGRESS.md est intact ; le résultat de l'e2e « jeton inconnu » n'a pas pu être vérifié. (2ab346b)
 - 04/10/2026 — M3 critère 2 (e2e, m3-viewer) — Relancer tout e2e/m3-viewer.spec.ts (`$env:CI='1'; pnpm exec playwright test e2e/m3-viewer.spec.ts`, tunnel SSH, jamais docker)… — Aucune modification, conforme à la consigne si l'e2e m3-viewer passe; lint, typecheck et test sont verts (résultat e2e non vérifié par moi). (ea52996)
 - 04/10/2026 — M3 critère 2 (e2e, m3-viewer, jeton inconnu) — Diagnostic seul puis correction minimale. Lancer `$env:CI='1'; pnpm exec playwright test e2e/m3-viewer.spec.ts -g… — Correction minimale et cohérente de playwright.config.ts (webServer API toujours lancé, reuseExistingServer: !CI), lint/typecheck/tests OK ; le résultat e2e et les mesures de diagnostic ne sont pas vi… (c538544)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-33 (apps/web, sous-titre de la scène) : dans apps/web/src/scene-audio-player.ts, créer à côté du bouton un élément <p id="scene-caption" class="scene-capti… — Sous-titre de scène ajouté en textContent, masqué si vide, retiré par destroy, avec un CSS en propriétés logiques et des tests complets ; lint, typecheck et test verts. (9f94df5)
 - 04/10/2026 — M3 API-10 / F-41 (décision de report, documentation seule) : dans docs/DECISIONS.md, ajouter une entrée D-xx datée du 04/10/2026. Elle indique que (1) API-10 `G… — Entrée D-104 conforme (date, décision en deux points, alternative, à valider), seul DECISIONS.md modifié, contrôles verts. (1328618)
 - 04/10/2026 — M3 F-34 (apps/web, position dans Infos pratiques) : dans apps/web/src/viewer-controller.ts, handlePracticalInfo doit aussi gérer la position : si graph.location… — Lien carte OSM dans Infos pratiques via mapLinkHtml pur et testé, bouton activé si location présente, clé fr.json ajoutée, contrôles verts. (8cf8bc2)
-- 04/10/2026 — M3 F-34 (apps/web, bouton gyroscope) : ajouter la clé `viewer.gyroscope` (« Gyroscope ») dans packages/i18n fr.json seulement (D-82). Dans apps/web/src/controls… — Bouton gyroscope facultatif et masqué par défaut, affiché selon gyroscopeSupported() après chaque montage, clic relié à toggleGyroscope(), avec tests ; la clé viewer.gyroscope existait déjà dans fr.js… (f50a0ac)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
