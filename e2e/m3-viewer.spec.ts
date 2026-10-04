@@ -1,6 +1,7 @@
 import { expect, test, Page } from '@playwright/test';
 import { resources } from '@xplor/i18n';
 import { ensureReadyPanoramas } from './helpers/panoramas.js';
+import { enablePublicShare } from './helpers/public-share.js';
 
 async function readPost<T>(
   page: Page,
@@ -93,6 +94,7 @@ test.describe('M3 F-40/F-30 : page publique (Viewer)', () => {
     await expect(page.getByTestId('tour-status-published')).toBeVisible();
 
     const token = publishRes.shareToken;
+    await enablePublicShare(token);
 
     // Test Viewer
     const responsePromise = page.waitForResponse(
