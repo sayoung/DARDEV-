@@ -8,5 +8,6 @@ import { startViewer } from './app.js';
 
 void startViewer(document, window.location, {
   load: (token, lang) => fetchTourGraph('/api', token, lang),
-  mount: (el, graph, opts) => mountViewer(el, graph, opts)
+  mount: (el, graph, opts) => mountViewer(el, graph, opts),
+  navigate: (url) => { window.location.href = url; }
 });

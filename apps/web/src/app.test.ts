@@ -16,6 +16,7 @@ describe('startViewer', () => {
       onHotspotClick?: (hotspotId: string) => void;
     }
   ) => { goToScene(id: string): Promise<void>; destroy(): void }>;
+  let mockNavigate: Mock<(url: string) => void>;
   let doc: Document;
 
   const mockGraph: TourGraph = {
@@ -56,6 +57,7 @@ describe('startViewer', () => {
       goToScene: vi.fn().mockResolvedValue(undefined),
       destroy: vi.fn()
     });
+    mockNavigate = vi.fn();
     doc = document.implementation.createHTMLDocument();
   });
 
@@ -63,7 +65,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/invalid', search: '' },
-      { load: mockLoad, mount: mockMount }
+      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
     );
 
     expect(mockLoad).not.toHaveBeenCalled();
@@ -77,7 +79,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/12345', search: '' },
-      { load: mockLoad, mount: mockMount }
+      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
     );
 
     const status = doc.getElementById('status');
@@ -91,7 +93,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/12345', search: '?lang=en' },
-      { load: mockLoad, mount: mockMount }
+      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
     );
 
     const status = doc.getElementById('status');
@@ -105,7 +107,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/validToken', search: '' },
-      { load: mockLoad, mount: mockMount }
+      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
     );
 
     expect(doc.title).toBe('Test Tour');
@@ -134,7 +136,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/validToken', search: '' },
-      { load: mockLoad, mount: mockMount }
+      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
     );
 
     const status = doc.getElementById('status');
