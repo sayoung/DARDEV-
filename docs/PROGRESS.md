@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 critère 2 (hotspots, diagnostic seul, aucune modification de fichier, pas de docker, ne pas modifier docs/PROGRESS.md) : 1) vérifier qu'aucun vitest/node de… — Tâche de diagnostic seul : diff vide, aucun fichier modifié, contrôles lint, typecheck et test verts ; le compte rendu du diagnostic n'était pas visible pour la relecture. (bd1f399)
 - 04/10/2026 — M3 critère 2 (diagnostic hotspots, processus orphelins) : sans modifier de fichier, vérifier s'il reste des processus node/vitest orphelins qui utilisent la bas… — Tâche de diagnostic sans modification de code : diff vide, arbre propre, pas de log résiduel, PROGRESS.md intact, contrôles au vert. (03dc3db)
 - 04/10/2026 — M3 critère 2 (diagnostic test:int hotspots) : AUCUN fichier à modifier, ne touche pas docs/PROGRESS.md, pas de docker (services sur le VPS via tunnel SSH). Ne l… — Tâche de diagnostic sans modification : arbre git propre, PROGRESS.md intact, log temporaire supprimé, contrôles lint/typecheck/test OK. (f8bed8d)
 - 04/10/2026 — M3 DoD (contrôle final) – mise à jour du suivi : modifie UNIQUEMENT docs/PROGRESS.md, sans toucher au code, et n'édite que trois zones. Ne touche JAMAIS aux lig… — Seuls le tableau DoD M3 et la section Bloqué ont été modifiés, avec les valeurs exactes demandées et un écart F-35 fidèle au fichier de contrôle. (80f8e4e)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-33 (apps/web, lecteur MEDIA, navigation) : dans apps/web/src/media-overlay.ts (déjà créé), ajouter les boutons Précédent et Suivant (type=button, textConte… — Navigation précédent/suivant correcte et testée (boutons conditionnels, disabled aux extrémités, un seul média dans le DOM, pause au changement et à la fermeture) ; seuls écarts mineurs dans les tests… (1966408)
 - 04/10/2026 — M3 F-33 (apps/web, lecteur MEDIA, module) : créer apps/web/src/media-overlay.ts, sans framework, sur le modèle de apps/web/src/info-panel.ts (même style de ferm… — openMediaOverlay respecte la spécification (filtrage, premier média, fermeture idempotente par bouton et Échap, pause avant retrait, fermeture de la précédente), tests présents et contrôles verts, san… (9ca6505)
 - 04/10/2026 — M3 F-33 (apps/web, panneau INFO, styles) : dans apps/web/src/style.css, ajouter les styles de `#info-panel` (panneau latéral créé par apps/web/src/info-panel.ts… — Styles de #info-panel ajoutés dans apps/web/src/style.css avec uniquement des propriétés logiques, conformes à la demande ; lint, typecheck et test verts. (426f0ad)
-- 04/10/2026 — M3 F-33 (apps/web, panneau INFO, tests) : créer apps/web/src/info-panel.test.ts (Vitest, environnement happy-dom déjà configuré) pour `openInfoPanel` de apps/we… — Les neuf cas demandés sont couverts, le texte du bouton passe par labels.close (vrai défaut corrigé), et lint, typecheck et test sont verts ; la preuve du retrait de l'écouteur Échap reste faible. (d3fb357)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
