@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/.env*
+!**/.env.example
+!.env.production.example
+**/test-results
+**/*.log
+.git
+e2e
+**/.turbo
+.orchestrator
