@@ -41,6 +41,7 @@ describe('S3StorageService', () => {
       STORAGE_PROVIDER: 's3',
       API_PUBLIC_URL: 'http://localhost:3000',
       MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor',
+      PUBLIC_WEB_URL: 'http://localhost:5174',
     };
     service = new S3StorageService(s3, env);
   });
@@ -151,6 +152,7 @@ describe('LocalStorageService', () => {
       STORAGE_LOCAL_PATH: '/tmp/storage-test',
       API_PUBLIC_URL: 'http://localhost:3000',
       MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor',
+      PUBLIC_WEB_URL: 'http://localhost:5174',
     };
     service = new LocalStorageService(env);
   });

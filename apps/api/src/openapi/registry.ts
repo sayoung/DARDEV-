@@ -1098,6 +1098,35 @@ function registerPublicTour(): void {
       '404': jsonResponse('Visite introuvable, non publiée ou inactive.', notFoundError),
     },
   });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/v1/public/share/{shareToken}',
+    summary: 'Page HTML de partage d’une visite publique',
+    tags: ['Public'],
+    request: {
+      params: z.object({ shareToken: z.string().min(1) }),
+      query: z.object({ lang: z.enum(LANGS).default('fr') }),
+    },
+    responses: {
+      '200': {
+        description: 'Page HTML avec balises meta et redirection.',
+        headers: {
+          'Cache-Control': {
+            schema: { type: 'string' },
+            description: 'Directives de cache',
+          },
+        },
+        content: {
+          'text/html': {
+            schema: { type: 'string' },
+          },
+        },
+      },
+      '400': jsonResponse('Paramètre shareToken ou lang refusé.', badRequestError),
+      '404': jsonResponse('Visite introuvable, non publiée ou inactive.', notFoundError),
+    },
+  });
 }
 
 /** Document OpenAPI 3.1 produit à partir du registre. */

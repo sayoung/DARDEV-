@@ -154,4 +154,16 @@ export class ViewerService {
       },
     );
   }
+
+  public async getShareMeta(
+    shareToken: string,
+    lang: Lang,
+  ): Promise<{ title: string; summary: string; coverUrl: string | null }> {
+    const graph = await this.getPublicGraph(shareToken, lang);
+    return {
+      title: graph.title,
+      summary: graph.summary,
+      coverUrl: graph.coverUrl,
+    };
+  }
 }
