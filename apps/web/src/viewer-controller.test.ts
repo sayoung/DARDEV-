@@ -223,4 +223,25 @@ describe('createViewerController', () => {
     const confirmBtn = doc.querySelector('.confirm-dialog-btn-confirm');
     expect(confirmBtn).toBeNull();
   });
+
+  it('clic sur Infos pratiques → #info-panel présent avec texte', async () => {
+    const { load, mountScene } = setupDeps();
+    const mockGraphInfo = { ...mockGraph1, practicalInfo: 'Horaires\n\nTarifs' };
+    load.mockImplementation((token: string) => {
+      if (token === 'token1') return Promise.resolve(mockGraphInfo);
+      return Promise.reject(new Error('Not found'));
+    });
+
+    const controller = createViewerController(doc, { load, mountScene, labels });
+    
+    await controller.start('token1');
+
+    const infoBtn = getButton('Info');
+    infoBtn.click();
+
+    const infoPanel = doc.getElementById('info-panel');
+    expect(infoPanel).not.toBeNull();
+    const div = infoPanel?.querySelector('div');
+    expect(div?.innerHTML).toBe('<p>Horaires</p><p>Tarifs</p>');
+  });
 });
