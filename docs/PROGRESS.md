@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-30/F-31 (apps/web, branchement du contrôleur dans main.ts) : réécrire apps/web/src/app.ts pour que `startViewer` utilise `createViewerController` : conserv… — startViewer utilise createViewerController avec langue, jeton, erreurs et labels conservés, mount/destroy corrects, erreur de montage affichée en loadError, tests adaptés et contrôles verts. (ab5a574)
 - 04/10/2026 — M3 F-33 (apps/web, contrôleur : narration et ambiance) : dans apps/web/src/viewer-controller.ts, intégrer `createSceneAudioPlayer` (apps/web/src/scene-audio-pla… — Le lecteur audio est bien intégré au contrôleur (apply à chaque scène, destroy à chaque remplacement de visite et sur le contrôleur) et le test demandé est présent ; lint, typecheck et test sont verts… (1887020)
 - 04/10/2026 — M3 F-34 (apps/web, contrôleur : Infos pratiques) : dans apps/web/src/viewer-controller.ts, implémenter `handlePracticalInfo` : si `navigator.current()?.graph.pr… — handlePracticalInfo ouvre le panneau avec le texte échappé et découpé en paragraphes via textToHtml, avec tests (dont <script>) et contrôles verts. (8babe8a)
 - 04/10/2026 — M3 F-33 (apps/web, contrôleur : hotspots INFO/MEDIA/URL) : dans apps/web/src/viewer-controller.ts, étendre `onHotspotClick` pour les hotspots qui ne sont pas de… — Hotspots INFO/MEDIA/URL délégués à handleHotspotClick avec openUrl injectable et close ajouté aux libellés, TOUR_LINK inchangé, trois tests ajoutés, lint/typecheck/test verts. (021511d)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-32 (viewer-core, résolution d'un hotspot TOUR_LINK) : dans packages/viewer-core, créer src/tour-link.ts avec `resolveTourLink(graph: TourGraph, hotspotId:… — resolveTourLink est correct, conforme à la spec, testé sur les 5 cas demandés et exporté ; lint, typecheck et tests passent. (af35a38)
 - 04/10/2026 — M3 F-30 (viewer-core, client de chargement) : dans packages/viewer-core, créer src/tour-client.ts avec `fetchTourGraph(baseUrl: string, shareToken: string, lang… — fetchTourGraph, TourNotFoundError et TourLoadError sont conformes à la demande, couverts par des tests et exportés ; lint, typecheck et test passent. (a7683b7)
 - 04/10/2026 — Récupération du travail non commité — tour-client.ts (fetchTourGraph validé par TourGraphSchema, erreurs typées) et ses tests sont cohérents avec API-11 et les conventions, contrôles verts, export ajouté. (89cc603)
-- 04/10/2026 — M3 F-30 (viewer-core 4/4, dépendances Photo Sphere Viewer) : ajouter aux dependencies de packages/viewer-core les paquets @photo-sphere-viewer/core, @photo-sphe… — Les quatre paquets Photo Sphere Viewer sont ajoutés en 5.15.1, tour-nodes.ts utilise VirtualTourNode, D-100 est consignée et lint, typecheck et test sont verts. (f03c9db)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
