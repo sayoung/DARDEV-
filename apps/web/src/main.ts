@@ -8,7 +8,5 @@ import { startViewer } from './app.js';
 
 void startViewer(document, window.location, {
   load: (token, lang) => fetchTourGraph('/api', token, lang),
-  mount: (el, graph) => {
-    mountViewer(el, graph);
-  }
+  mount: (el, graph, opts) => mountViewer(el, graph, opts)
 });

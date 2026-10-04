@@ -10,9 +10,44 @@ describe('startViewer', () => {
   let mockMount: ReturnType<typeof vi.fn>;
   let doc: Document;
 
+  const mockGraph: TourGraph = {
+    id: 'tour-1',
+    contentVersion: 1,
+    lang: 'fr',
+    title: 'Test Tour',
+    summary: '',
+    city: '',
+    categories: [],
+    coverUrl: null,
+    practicalInfo: null,
+    location: null,
+    startSceneId: 'scene-1',
+    scenes: [
+      {
+        id: 'scene-1',
+        title: 'Scene 1',
+        caption: null,
+        panorama: {
+          preview: '',
+          web: '',
+          tiles: { width: 0, cols: 0, rows: 0, baseUrl: '' }
+        },
+        initialView: { yaw: 0, pitch: 0, zoom: 0 },
+        narrationUrl: null,
+        ambientUrl: null,
+        thumb: '',
+        hotspots: []
+      }
+    ],
+    linkedTours: []
+  };
+
   beforeEach(() => {
     mockLoad = vi.fn();
-    mockMount = vi.fn();
+    mockMount = vi.fn().mockReturnValue({
+      goToScene: vi.fn().mockResolvedValue(undefined),
+      destroy: vi.fn()
+    });
     doc = document.implementation.createHTMLDocument();
   });
 
@@ -57,37 +92,6 @@ describe('startViewer', () => {
   });
 
   it('succès: met à jour le titre, cache le statut et monte la visite', async () => {
-    const mockGraph: TourGraph = {
-      id: 'tour-1',
-      contentVersion: 1,
-      lang: 'fr',
-      title: 'Test Tour',
-      summary: '',
-      city: '',
-      categories: [],
-      coverUrl: null,
-      practicalInfo: null,
-      location: null,
-      startSceneId: 'scene-1',
-      scenes: [
-        {
-          id: 'scene-1',
-          title: 'Scene 1',
-          caption: null,
-          panorama: {
-            preview: '',
-            web: '',
-            tiles: { width: 0, cols: 0, rows: 0, baseUrl: '' }
-          },
-          initialView: { yaw: 0, pitch: 0, zoom: 0 },
-          narrationUrl: null,
-          ambientUrl: null,
-          thumb: '',
-          hotspots: []
-        }
-      ],
-      linkedTours: []
-    };
     mockLoad.mockResolvedValue(mockGraph);
 
     await startViewer(
@@ -102,6 +106,34 @@ describe('startViewer', () => {
     expect(status?.hidden).toBe(true);
 
     const viewer = doc.getElementById('viewer');
-    expect(mockMount).toHaveBeenCalledWith(viewer, mockGraph);
+    expect(mockMount).toHaveBeenCalledWith(
+      viewer,
+      mockGraph,
+      expect.objectContaining({
+        sceneId: 'scene-1',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        onSceneChange: expect.any(Function),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        onHotspotClick: expect.any(Function)
+      })
+    );
+  });
+
+  it('erreur de montage: affiche loadError et ne reste pas masquée', async () => {
+    mockLoad.mockResolvedValue(mockGraph);
+
+    mockMount.mockImplementation(() => {
+      throw new Error('Mount error');
+    });
+
+    await startViewer(
+      doc,
+      { pathname: '/v/validToken', search: '' },
+      { load: mockLoad, mount: mockMount }
+    );
+
+    const status = doc.getElementById('status');
+    expect(status?.textContent).toBe(resources.fr.viewer.loadError);
+    expect(status?.hidden).toBe(false);
   });
 });
