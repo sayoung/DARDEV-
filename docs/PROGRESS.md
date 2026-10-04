@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-31 (viewer-core, navigation programmatique) : dans packages/viewer-core/src/mount-viewer.ts, ajouter à l'objet renvoyé par mountViewer une méthode `goToSce… — goToScene ajouté à mountViewer via tourPlugin.setCurrentNode, typé, changement minimal, lint/typecheck/test verts. (eab1ae5)
 - 04/10/2026 — M3 F-33 (apps/web, branchement des hotspots) : créer apps/web/src/hotspot-ui.ts exportant `handleHotspotClick(doc: Document, graph: TourGraph, sceneId: string,… — handleHotspotClick conforme à la demande (dispatch info/media/url/tour, cas inconnus sans effet), tests présents pour chaque type, contrôles verts, périmètre respecté. (a0865b5)
 - 04/10/2026 — M3 F-31 (apps/web, barre de contrôles, DOM) : créer apps/web/src/controls.ts, qui exporte `createControls(doc: Document, labels: { previous: string; next: strin… — createControls, styles en propriétés logiques et tests conformes à la tâche, contrôles verts, main.ts et PROGRESS.md non touchés ; réserves mineures (repli anglais 'Controls', glyphes non inversés en… (65d3657)
 - 04/10/2026 — M3 F-32 (apps/web, confirmation avant TOUR_LINK, DOM) : créer apps/web/src/confirm-dialog.ts, qui exporte `confirmGoTo(doc: Document, targetTitle: string, label… — confirm-dialog.ts, ses styles à propriétés logiques et ses tests sont conformes à la demande ; lint, typecheck et test sont verts. (09b0215)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-30 (viewer-core 1/3, socle du paquet) : créer packages/viewer-core sur le modèle exact de packages/i18n. package.json : name @xplor/viewer-core, version 0.… — Le socle packages/viewer-core est créé conformément à @xplor/i18n, avec le projet Vitest ajouté, un test trivial temporaire, le lockfile mis à jour, et lint, typecheck et test verts. (f52f1c4)
 - 04/10/2026 — M3 API-11 (6c/6, test d'intégration), étape 3 : lancer `pnpm test:int` à la racine (timeout 10 min, au premier plan) en redirigeant la sortie vers un fichier te… — Aucun changement de code, ce qui est acceptable pour une étape de lancement de test:int sans échec M3 à corriger ; lint, typecheck et test sont verts, mais la sortie de test:int n'a pas pu être vérifi… (47d8639)
 - 04/10/2026 — M3 API-11 (6c/6, test d'intégration), étape 2 : préparer la base de test. Les services (Postgres, Redis, MinIO) tournent sur le VPS via le tunnel SSH et réponde… — Aucune modification de fichier, comme attendu pour cette étape d'environnement ; lint, typecheck et test sont verts, mais l'exécution de `prisma migrate deploy` n'a pas pu être vérifiée. (99f36fd)
-- 04/10/2026 — M3 API-11 (6c/6, test d'intégration), étape 1 : diagnostic de `pnpm test`. Commandes non interactives, au premier plan, avec un timeout explicite, sans tâche d'… — Diagnostic sans échec unitaire : pnpm test, lint et typecheck sont verts (code 0) et le diff est vide, donc rien à corriger ni aucune règle violée. (ec74092)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
