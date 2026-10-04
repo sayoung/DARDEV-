@@ -8,13 +8,13 @@ Livrable : Démo 1 : visite réelle de Rabat consultable sur mobile via QR
 
 | # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | Toutes les exigences implémentées et CA vérifiés | à faire | - |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | à faire | - |
-| 3 | pnpm lint, pnpm typecheck sans erreur | à faire | - |
-| 4 | Migrations appliquées, seed à jour | à faire | - |
+| 1 | Toutes les exigences implémentées et CA vérifiés | partiel : écart F-35 | Fichiers et tests présents ; API-10/F-41 kiosque reportés (D-104) |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | non | 788 tests unitaires OK, 6 échecs test:int, 1 échec test:e2e |
+| 3 | pnpm lint, pnpm typecheck sans erreur | Fait | lint, typecheck OK |
+| 4 | Migrations appliquées, seed à jour | Fait | Migrations appliquées, visite Rabat publiée (demo-rabat) |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) | - |
-| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | à faire | - |
-| 7 | Démo avec données pertinentes | à faire | - |
+| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | Fait | Routes publiques dans openapi.json, D-100 à D-104 dans DECISIONS.md |
+| 7 | Démo avec données pertinentes | Fait | docs/DEMO_M3.md existe |
 | 8 | Démo au porteur et retours consignés | à faire | - |
 
 DoD M3 remplie : non
@@ -71,6 +71,9 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
+- M3 critère 2 : 6 échecs test:int (hotspots HTTP SCENE_LINK ×3, validation de publication Remparts ×1, publication/dépublication Remparts ×1, régénération du jeton de partage ×1), à corriger
+- M3 critère 2 : 1 échec test:e2e (Livrable M1 : création de visite complète)
+- M3 critère 1 : écart F-35 signalé par le contrôle (configuration présente (tour-config.ts, tour-nodes.ts) mais absence de test de performance pour "preview flou < 1 s" et préchargement ciblé)
 
 ### Risques
 - Problème de virtualisation pour Docker sous WSL2 (moteur instable).
