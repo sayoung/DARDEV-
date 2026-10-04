@@ -85,7 +85,7 @@ describe('createViewerController', () => {
     fullscreen: 'FS', practicalInfo: 'Info',
     goTo: 'Go to {{title}}', confirm: 'Yes', cancel: 'No',
     loading: 'Loading', notFound: 'Not found', loadError: 'Error',
-    close: 'Close', play: 'Play', pause: 'Pause'
+    close: 'Close', play: 'Play', pause: 'Pause', openMap: 'Voir sur la carte'
   };
 
   beforeEach(() => {
@@ -265,6 +265,27 @@ describe('createViewerController', () => {
     expect(infoPanel).not.toBeNull();
     const div = infoPanel?.querySelector('div');
     expect(div?.innerHTML).toBe('<p>Horaires</p><p>Tarifs</p>');
+  });
+
+  it('clic sur Infos pratiques → affiche lien map si location est présente', async () => {
+    const { load, mountScene } = setupDeps();
+    const mockGraphLoc = { ...mockGraph1, location: { lat: 48.85, lng: 2.35 }, practicalInfo: null };
+    load.mockImplementation((token: string) => {
+      if (token === 'token1') return Promise.resolve(mockGraphLoc);
+      return Promise.reject(new Error('Not found'));
+    });
+
+    const controller = createViewerController(doc, { load, mountScene, labels });
+    
+    await controller.start('token1');
+
+    const infoBtn = getButton('Info');
+    infoBtn.click();
+
+    const infoPanel = doc.getElementById('info-panel');
+    expect(infoPanel).not.toBeNull();
+    const div = infoPanel?.querySelector('div');
+    expect(div?.innerHTML).toContain('<a href="https://www.openstreetmap.org/?mlat=48.85&amp;mlon=2.35#map=17/48.85/2.35" target="_blank" rel="noopener noreferrer">Voir sur la carte</a>');
   });
 
   it('scène avec narration affiche le bouton lecture, un changement de scène arrête la piste', async () => {

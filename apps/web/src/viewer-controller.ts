@@ -8,7 +8,7 @@ import { handleHotspotClick } from './hotspot-ui.js';
 import { createControls } from './controls.js';
 import { confirmGoTo } from './confirm-dialog.js';
 import { openInfoPanel } from './info-panel.js';
-import { textToHtml } from './text-html.js';
+import { textToHtml, mapLinkHtml } from './text-html.js';
 import { createSceneAudioPlayer } from './scene-audio-player.js';
 
 export interface ViewerLabels {
@@ -28,6 +28,7 @@ export interface ViewerLabels {
   play: string;
   pause: string;
   gyroscope?: string;
+  openMap?: string;
 }
 
 export interface ViewerDeps {
@@ -116,7 +117,7 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
       previous,
       next,
       canGoBack: navigator.canGoBack(),
-      hasPracticalInfo: state.graph.practicalInfo !== null,
+      hasPracticalInfo: state.graph.practicalInfo !== null || state.graph.location !== null,
     });
   };
 
@@ -196,13 +197,19 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
   const handlePracticalInfo = () => {
     if (isTransitioning) return;
     const state = navigator.current();
-    if (!state || !state.graph.practicalInfo) return;
+    if (!state) return;
+    if (!state.graph.practicalInfo && !state.graph.location) return;
+
+    let bodyHtml = textToHtml(state.graph.practicalInfo || '');
+    if (state.graph.location) {
+      bodyHtml += mapLinkHtml(state.graph.location, deps.labels.openMap ?? 'Voir sur la carte');
+    }
 
     openInfoPanel(
       doc,
       {
         title: deps.labels.practicalInfo,
-        bodyHtml: textToHtml(state.graph.practicalInfo),
+        bodyHtml,
         images: [],
       },
       { close: deps.labels.close }

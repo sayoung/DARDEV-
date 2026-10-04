@@ -368,6 +368,7 @@
     "loading": "Chargement de la visite…",
     "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
     "loadError": "Impossible de charger la visite. Réessayez plus tard.",
-    "language": "Langue"
+    "language": "Langue",
+    "openMap": "Voir sur la carte"
   }
 }
