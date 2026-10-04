@@ -1,13 +1,21 @@
 import { resources } from '@xplor/i18n';
-import type { TourGraph } from '@xplor/shared';
+import type { Lang, TourGraph } from '@xplor/shared';
 import { TourNotFoundError } from '@xplor/viewer-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import { startViewer } from './app.js';
 
 describe('startViewer', () => {
-  let mockLoad: ReturnType<typeof vi.fn>;
-  let mockMount: ReturnType<typeof vi.fn>;
+  let mockLoad: Mock<(shareToken: string, lang: Lang) => Promise<TourGraph>>;
+  let mockMount: Mock<(
+    container: HTMLElement,
+    graph: TourGraph,
+    opts: {
+      sceneId?: string | null;
+      onSceneChange?: (sceneId: string) => void;
+      onHotspotClick?: (hotspotId: string) => void;
+    }
+  ) => { goToScene(id: string): Promise<void>; destroy(): void }>;
   let doc: Document;
 
   const mockGraph: TourGraph = {
@@ -106,17 +114,14 @@ describe('startViewer', () => {
     expect(status?.hidden).toBe(true);
 
     const viewer = doc.getElementById('viewer');
-    expect(mockMount).toHaveBeenCalledWith(
-      viewer,
-      mockGraph,
-      expect.objectContaining({
-        sceneId: 'scene-1',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        onSceneChange: expect.any(Function),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        onHotspotClick: expect.any(Function)
-      })
-    );
+    expect(mockMount).toHaveBeenCalledTimes(1);
+    const args = mockMount.mock.calls[0];
+    if (!args) throw new Error('mockMount not called');
+    expect(args[0]).toBe(viewer);
+    expect(args[1]).toBe(mockGraph);
+    expect(args[2].sceneId).toBe('scene-1');
+    expect(typeof args[2].onSceneChange).toBe('function');
+    expect(typeof args[2].onHotspotClick).toBe('function');
   });
 
   it('erreur de montage: affiche loadError et ne reste pas masquée', async () => {
