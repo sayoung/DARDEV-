@@ -22,7 +22,17 @@ export function toTourNodes(graph: TourGraph): VirtualTourNode[] {
 
     const node: VirtualTourNode = {
       id: scene.id,
-      panorama: scene.panorama.web,
+      panorama: {
+        width: scene.panorama.tiles.width,
+        cols: scene.panorama.tiles.cols,
+        rows: scene.panorama.tiles.rows,
+        baseUrl: scene.panorama.preview,
+        tileUrl: (col: number, row: number) => {
+          return scene.panorama.tiles.baseUrl
+            .replace('{col}', col.toString())
+            .replace('{row}', row.toString());
+        },
+      },
       thumbnail: scene.thumb,
       name: scene.title,
       links,

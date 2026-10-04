@@ -121,7 +121,18 @@ describe('toTourNodes', () => {
     expect(node1.id).toBe(scene2Id);
 
     expect(node0.name).toBe('Scène 1');
-    expect(node0.panorama).toBe('http://example.com/web1.jpg');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const panoramaObj = node0.panorama;
+    expect(panoramaObj).toMatchObject({
+      width: 4096,
+      cols: 8,
+      rows: 4,
+      baseUrl: 'http://example.com/preview1.jpg',
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    expect(node0.panorama.tileUrl(3, 1)).toBe('http://example.com/tiles1/3_1.jpg');
+
     expect(node0.thumbnail).toBe('http://example.com/thumb1.jpg');
 
     // (2) hotspot SCENE_LINK vers une scène présente (conservé avec sa position)
