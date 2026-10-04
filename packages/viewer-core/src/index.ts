@@ -9,3 +9,4 @@ export * from './tour-navigator.js';
 export * from './scene-markers.js';
 export * from './scene-audio.js';
 export * from './mount-viewer.js';
+export * from './hotspot-action.js';
