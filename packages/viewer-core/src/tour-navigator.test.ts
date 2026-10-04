@@ -123,4 +123,100 @@ describe('createTourNavigator', () => {
     // State should remain unchanged
     expect(navigator.current()).toEqual(firstState);
   });
+
+  it('supports followLink and back successfully', async () => {
+    const graph = createMockGraph();
+    const load = vi.fn().mockResolvedValue(graph);
+    const { createTourHistory } = await import('./tour-history.js');
+    const history = createTourHistory();
+    const navigator = createTourNavigator({ load, history });
+
+    await navigator.open('token1', 'scene-1');
+    expect(navigator.current()?.shareToken).toBe('token1');
+    expect(navigator.current()?.sceneId).toBe('scene-1');
+
+    await navigator.followLink(
+      { sceneId: 'scene-1', yaw: 10, pitch: 20 },
+      { shareToken: 'token2', sceneId: 'scene-2' }
+    );
+
+    expect(navigator.current()?.shareToken).toBe('token2');
+    expect(navigator.current()?.sceneId).toBe('scene-2');
+    expect(navigator.canGoBack()).toBe(true);
+    expect(history.size()).toBe(1);
+
+    const backResult = await navigator.back();
+    expect(backResult).toBe(true);
+    expect(navigator.current()?.shareToken).toBe('token1');
+    expect(navigator.current()?.sceneId).toBe('scene-1');
+    expect(navigator.canGoBack()).toBe(false);
+    expect(history.size()).toBe(0);
+
+    const backResultEmpty = await navigator.back();
+    expect(backResultEmpty).toBe(false);
+  });
+
+  it('preserves history state if followLink fails', async () => {
+    const graph = createMockGraph();
+    let shouldFail = false;
+    const load = vi.fn().mockImplementation(() => {
+      if (shouldFail) {
+        return Promise.reject(new Error('Load failed'));
+      }
+      return Promise.resolve(graph);
+    });
+
+    const { createTourHistory } = await import('./tour-history.js');
+    const history = createTourHistory();
+    const navigator = createTourNavigator({ load, history });
+
+    await navigator.open('token1', 'scene-1');
+    
+    // Simulate failing followLink
+    shouldFail = true;
+    await expect(
+      navigator.followLink(
+        { sceneId: 'scene-1', yaw: 10, pitch: 20 },
+        { shareToken: 'token2', sceneId: 'scene-2' }
+      )
+    ).rejects.toThrow('Load failed');
+
+    expect(navigator.current()?.shareToken).toBe('token1');
+    expect(navigator.current()?.sceneId).toBe('scene-1');
+    expect(navigator.canGoBack()).toBe(false);
+    expect(history.size()).toBe(0);
+  });
+
+  it('restores history state if back fails', async () => {
+    const graph = createMockGraph();
+    let shouldFail = false;
+    const load = vi.fn().mockImplementation(() => {
+      if (shouldFail) {
+        return Promise.reject(new Error('Load failed'));
+      }
+      return Promise.resolve(graph);
+    });
+
+    const { createTourHistory } = await import('./tour-history.js');
+    const history = createTourHistory();
+    const navigator = createTourNavigator({ load, history });
+
+    // Open and follow to push to history
+    await navigator.open('token1', 'scene-1');
+    await navigator.followLink(
+      { sceneId: 'scene-1', yaw: 10, pitch: 20 },
+      { shareToken: 'token2', sceneId: 'scene-2' }
+    );
+
+    expect(history.size()).toBe(1);
+
+    // Simulate failing back
+    shouldFail = true;
+    await expect(navigator.back()).rejects.toThrow('Load failed');
+
+    // The history should have the entry restored
+    expect(history.size()).toBe(1);
+    expect(navigator.canGoBack()).toBe(true);
+    expect(navigator.current()?.shareToken).toBe('token2'); // Stayed on token2
+  });
 });
