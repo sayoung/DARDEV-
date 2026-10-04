@@ -10,12 +10,12 @@ export default defineConfig({
     browserName: 'chromium',
   },
   webServer: [
-    ...(process.env.CI ? [] : [{
+    {
       command: 'pnpm --filter @xplor/api dev',
       url: 'http://127.0.0.1:3000/api/health',
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
       timeout: 120000,
-    }]),
+    },
     {
       command: 'pnpm --filter @xplor/admin dev',
       port: 5173,
