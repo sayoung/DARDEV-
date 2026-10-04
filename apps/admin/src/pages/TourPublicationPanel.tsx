@@ -45,11 +45,22 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
     : null;
 
   useEffect(() => {
+    let cancelled = false;
+    setQrSvg(null);
+
     if (webUrl) {
-      tourQrSvg(webUrl).then(setQrSvg).catch(console.error);
-    } else {
-      setQrSvg(null);
+      tourQrSvg(webUrl)
+        .then((svg) => {
+          if (!cancelled) setQrSvg(svg);
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) console.error(err);
+        });
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [webUrl]);
 
   const handleDownloadQr = () => {
@@ -208,6 +219,8 @@ export function TourPublicationPanel({ tour, onTourUpdated }: Props) {
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mt-2">
             <div 
               className="w-48 h-48 bg-white p-2 rounded shadow-sm"
+              role="img"
+              aria-label={t('catalog.publication.qrCodeTitle')}
               title={t('catalog.publication.qrCodeTitle')}
               dangerouslySetInnerHTML={{ __html: qrSvg }}
               data-testid="qr-code-svg"
