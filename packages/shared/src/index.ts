@@ -110,6 +110,7 @@ export {
   PANORAMA_JOB_BACKOFF_MS,
   PANORAMA_QUEUE_NAME,
   PANORAMA_WORKER_CONCURRENCY,
+  PANORAMA_GRID,
   PanoramaJobDataSchema,
   panoramaDerivativeKeys,
   panoramaTileKey,

@@ -4589,8 +4589,9 @@
                           },
                           "shareToken": {
                             "type": "string",
-                            "minLength": 22,
-                            "maxLength": 22
+                            "minLength": 1,
+                            "maxLength": 22,
+                            "pattern": "^[A-Za-z0-9_-]+$"
                           },
                           "sceneCount": {
                             "type": "integer",
@@ -5013,8 +5014,9 @@
                     },
                     "shareToken": {
                       "type": "string",
-                      "minLength": 22,
-                      "maxLength": 22
+                      "minLength": 1,
+                      "maxLength": 22,
+                      "pattern": "^[A-Za-z0-9_-]+$"
                     },
                     "sceneCount": {
                       "type": "integer",
@@ -5338,8 +5340,9 @@
                     },
                     "shareToken": {
                       "type": "string",
-                      "minLength": 22,
-                      "maxLength": 22
+                      "minLength": 1,
+                      "maxLength": 22,
+                      "pattern": "^[A-Za-z0-9_-]+$"
                     },
                     "sceneCount": {
                       "type": "integer",
@@ -5780,8 +5783,9 @@
                     },
                     "shareToken": {
                       "type": "string",
-                      "minLength": 22,
-                      "maxLength": 22
+                      "minLength": 1,
+                      "maxLength": 22,
+                      "pattern": "^[A-Za-z0-9_-]+$"
                     },
                     "sceneCount": {
                       "type": "integer",
@@ -6481,8 +6485,9 @@
                     },
                     "shareToken": {
                       "type": "string",
-                      "minLength": 22,
-                      "maxLength": 22
+                      "minLength": 1,
+                      "maxLength": 22,
+                      "pattern": "^[A-Za-z0-9_-]+$"
                     },
                     "sceneCount": {
                       "type": "integer",
@@ -6879,8 +6884,9 @@
                     },
                     "shareToken": {
                       "type": "string",
-                      "minLength": 22,
-                      "maxLength": 22
+                      "minLength": 1,
+                      "maxLength": 22,
+                      "pattern": "^[A-Za-z0-9_-]+$"
                     },
                     "sceneCount": {
                       "type": "integer",
@@ -7203,8 +7209,9 @@
                     },
                     "shareToken": {
                       "type": "string",
-                      "minLength": 22,
-                      "maxLength": 22
+                      "minLength": 1,
+                      "maxLength": 22,
+                      "pattern": "^[A-Za-z0-9_-]+$"
                     },
                     "sceneCount": {
                       "type": "integer",
@@ -8533,8 +8540,9 @@
                     },
                     "shareToken": {
                       "type": "string",
-                      "minLength": 22,
-                      "maxLength": 22
+                      "minLength": 1,
+                      "maxLength": 22,
+                      "pattern": "^[A-Za-z0-9_-]+$"
                     },
                     "sceneCount": {
                       "type": "integer",

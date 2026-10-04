@@ -131,8 +131,8 @@ export const TourResponseSchema = z.object({
   ...tourShape,
   status: z.enum(TourStatus),
   publicShare: z.boolean(),
-  /** 22 caractères, émis par le service (`crypto.randomBytes`). */
-  shareToken: z.string().length(22),
+  /** 1 à 22 caractères, émis par le service ou fixé au seed. */
+  shareToken: z.string().min(1).max(22).regex(/^[A-Za-z0-9_-]+$/),
   /** Scènes dont `deletedAt` est vide. */
   sceneCount: z.number().int().min(0),
   createdById: idSchema,

@@ -17,6 +17,7 @@ import {
   listSeedAssets,
   SEED_TOURS,
   seedTourSnapshot,
+  computeSeedDerivatives,
 } from './seed-tours.js';
 
 describe('seed des visites', () => {
@@ -106,6 +107,32 @@ describe('seed des visites', () => {
   it('ne produit aucun problème de publication', () => {
     for (const tour of SEED_TOURS) {
       expect(validateTour(seedTourSnapshot(tour), findSeedTargetTour)).toEqual([]);
+    }
+  });
+
+  it('fournit une visite de démonstration (demo-rabat) avec SCENE_LINK et des dérivés corrects', () => {
+    const demoTour = SEED_TOURS.find((t) => t.shareToken === 'demo-rabat');
+    expect(demoTour).toBeDefined();
+    expect(demoTour?.publicShare).toBe(true);
+
+    const sceneLinks = demoTour?.scenes.flatMap((scene) =>
+      scene.hotspots.filter((h) => h.type === HotspotType.SCENE_LINK)
+    );
+    expect(sceneLinks?.length).toBeGreaterThanOrEqual(1);
+
+    const assets = listSeedAssets();
+    const panoramas = assets.filter((a) => a.kind === AssetKind.PANORAMA);
+    expect(panoramas.length).toBeGreaterThan(0);
+    for (const panorama of panoramas) {
+      const derivatives = computeSeedDerivatives(panorama);
+      const expectedBase = `panoramas/${panorama.id}/${panorama.contentHash}`;
+      expect(derivatives).toEqual({
+        preview: `${expectedBase}/preview.jpg`,
+        web: `${expectedBase}/web.jpg`,
+        thumb: `${expectedBase}/thumb.jpg`,
+        tilesPrefix: `${expectedBase}/tiles/`,
+        tileGrid: { cols: 16, rows: 8, size: 512 },
+      });
     }
   });
 });
