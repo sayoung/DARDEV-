@@ -136,6 +136,27 @@ describe('createSceneAudioPlayer', () => {
     destroy();
   });
 
+  it('replaces a caption with another when changing scenes', () => {
+    const { apply, destroy } = createSceneAudioPlayer(doc, labels, createMockAudio);
+    const captionEl = doc.getElementById('scene-caption') as HTMLParagraphElement;
+
+    const sceneA = createScene('1');
+    sceneA.caption = 'A';
+    apply(null, sceneA);
+
+    expect(captionEl.textContent).toBe('A');
+    expect(captionEl.hidden).toBe(false);
+
+    const sceneB = createScene('2');
+    sceneB.caption = 'B';
+    apply(sceneA, sceneB);
+
+    expect(captionEl.textContent).toBe('B');
+    expect(captionEl.hidden).toBe(false);
+
+    destroy();
+  });
+
   it('does not inject HTML when caption contains a script tag', () => {
     const { apply, destroy } = createSceneAudioPlayer(doc, labels, createMockAudio);
     const captionEl = doc.getElementById('scene-caption') as HTMLParagraphElement;

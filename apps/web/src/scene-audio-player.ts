@@ -45,7 +45,7 @@ export function createSceneAudioPlayer(
   });
 
   function apply(prev: TourGraphScene | null, next: TourGraphScene): void {
-    if (next.caption && typeof next.caption === 'string' && next.caption.trim().length > 0) {
+    if (next.caption && next.caption.trim().length > 0) {
       captionEl.textContent = next.caption;
       captionEl.hidden = false;
     } else {
