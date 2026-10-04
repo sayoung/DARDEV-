@@ -23,6 +23,15 @@ const workspace: TestProjectConfiguration[] = [
   },
   {
     test: {
+      name: '@xplor/viewer-core',
+      root: './packages/viewer-core',
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+      exclude: [...exclude],
+    },
+  },
+  {
+    test: {
       name: '@xplor/api',
       root: './apps/api',
       environment: 'node',
