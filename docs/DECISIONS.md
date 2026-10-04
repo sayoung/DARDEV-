@@ -774,7 +774,7 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | @photo-sphere-viewer/virtual-tour-plugin     | Imposé pour la gestion des nœuds de la visite         | MIT     |
 | @photo-sphere-viewer/markers-plugin          | Imposé pour l'ajout de points d'intérêt (hotspots)    | MIT     |
 | @photo-sphere-viewer/gallery-plugin          | Imposé pour l'affichage de la galerie de la visite    | MIT     |
-| @photo-sphere-viewer/equirectangular-tiles-adapter | F-35 affichage du preview flou puis montée en définition progressive | MIT     |
+
 
 ## D-101 — Dépendance qrcode pour le partage (F-41)
 
