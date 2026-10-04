@@ -2,7 +2,10 @@ import { Viewer } from '@photo-sphere-viewer/core';
 import { VirtualTourPlugin } from '@photo-sphere-viewer/virtual-tour-plugin';
 import { MarkersPlugin, type MarkerConfig } from '@photo-sphere-viewer/markers-plugin';
 import { GalleryPlugin } from '@photo-sphere-viewer/gallery-plugin';
-import { EquirectangularTilesAdapter, type EquirectangularTilesAdapterConfig, type EquirectangularTilesPanorama } from '@photo-sphere-viewer/equirectangular-tiles-adapter';
+import {
+  EquirectangularTilesAdapter,
+  type EquirectangularTilesAdapterConfig,
+} from '@photo-sphere-viewer/equirectangular-tiles-adapter';
 import type { TourGraph } from '@xplor/shared';
 import { tourPluginOptions } from './tour-config.js';
 import { toMarkers } from './scene-markers.js';
@@ -20,27 +23,6 @@ export function mountViewer(
   graph: TourGraph,
   opts?: { sceneId?: string | null; onSceneChange?: (sceneId: string) => void; onHotspotClick?: (hotspotId: string) => void }
 ): { destroy(): void; currentSceneId(): string; goToScene(sceneId: string): Promise<void> } {
-  let startSceneId = graph.startSceneId;
-  if (opts?.sceneId && graph.scenes.some((s) => s.id === opts.sceneId)) {
-    startSceneId = opts.sceneId;
-  }
-  const startScene = graph.scenes.find((s) => s.id === startSceneId) || graph.scenes[0];
-
-  let initialPanorama: EquirectangularTilesPanorama | undefined;
-  if (startScene) {
-    initialPanorama = {
-      width: startScene.panorama.tiles.width,
-      cols: startScene.panorama.tiles.cols,
-      rows: startScene.panorama.tiles.rows,
-      baseUrl: startScene.panorama.preview,
-      tileUrl: (col: number, row: number) => {
-        return startScene.panorama.tiles.baseUrl
-          .replace('{col}', col.toString())
-          .replace('{row}', row.toString());
-      },
-    };
-  }
-
   const adapterConfig: EquirectangularTilesAdapterConfig = {
     showErrorTile: true,
   };
@@ -48,7 +30,6 @@ export function mountViewer(
   const viewer = new Viewer({
     container,
     adapter: [EquirectangularTilesAdapter, adapterConfig],
-    panorama: initialPanorama,
     plugins: [
       [VirtualTourPlugin, tourPluginOptions(graph, opts?.sceneId)],
       [MarkersPlugin, {}],
