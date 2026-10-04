@@ -7,7 +7,7 @@ import { fetchTourGraph, mountViewer } from '@xplor/viewer-core';
 import { startViewer } from './app.js';
 
 void startViewer(document, window.location, {
-  load: (token, lang) => fetchTourGraph('/api', token, lang),
+  load: (token, lang) => fetchTourGraph('/api/v1', token, lang),
   mount: (el, graph, opts) => mountViewer(el, graph, opts),
   navigate: (url) => { window.location.href = url; }
 });
