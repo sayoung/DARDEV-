@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-42 (back-office, bouton de régénération) : dans apps/admin/src/pages/TourPublicationPanel.tsx, ajouter un bouton shadcn variant outline « Régénérer le lien… — Bouton de régénération du lien de partage conforme (window.confirm comme les suppressions existantes, POST via requestJson, i18n fr, 2 tests) ; contrôles verts, défauts de forme mineurs seulement. (2e7e24c)
 - 04/10/2026 — M3 F-42 (API, tests d'intégration de la régénération) : la route `POST /api/v1/admin/tours/:id/share-token` existe dans develop. Dans apps/api/test/tours-public… — Trois tests d'intégration (401, 404, régénération avec invalidation de l'ancien jeton) ajoutés au bon endroit, dans le style du fichier ; lint, typecheck et test sont verts d'après l'orchestrateur. (a20f790)
 - 04/10/2026 — M3 F-42 (API, route de régénération, code et OpenAPI) : reprendre depuis la branche agent/20261004-025655-m3-f-42-api-route-de-regeneration-dans-a (lecture seul… — Route POST /admin/tours/{id}/share-token ajoutée au contrôleur et à l'OpenAPI, conforme à la demande, openapi.json régénéré avec uniquement cette route, contrôles verts. (2f2a9f7)
 - 04/10/2026 — M3 F-42 (API, service de régénération du jeton) : 1) Extraire la fonction locale createShareToken et la constante SHARE_TOKEN_BYTES d'apps/api/src/catalog/tours… — Extraction de createShareToken et ajout de regenerateShareToken conformes à la demande, avec tests unitaires pertinents et contrôles verts. (a1febb2)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 03/10/2026 — M3 API-11 (5d/6, service de lecture publique, 2/3 : médias, visites liées, graphe) : dans apps/api/src/viewer/viewer.service.ts, implémenter `getPublicGraph`. 1… — getPublicGraph implémenté conformément à la demande (adaptation Prisma, médias READY signés, visites liées filtrées, pas d'appel Prisma si listes vides) avec tests complets ; lint, typecheck et test v… (ddc7479)
 - 03/10/2026 — M3 API-11 (5d/6, service de lecture publique, 1/3 : chargement de la visite) : créer apps/api/src/viewer/viewer.service.ts. Classe `ViewerService` décorée `@Inj… — ViewerService.loadPublicTour/getPublicGraph et leurs tests conformes à la demande ; contrôles verts, PROGRESS.md intact. (67ac18c)
 - 03/10/2026 — M3 API-11 (5c/6, visites liées partageables) : 1) Dans packages/shared/src/tour-graph.ts, ajouter `shareToken: z.string().nullable()` aux éléments de `linkedTou… — shareToken ajouté au schéma partagé et à toTourGraph, filtre public sur allowedTourIds pour TOUR_LINK avec tests, kiosque inchangé, contrôles verts. (47e82e4)
-- 03/10/2026 — M3 API-11 (5b/6, collecte des références) : créer apps/api/src/viewer/tour-graph-refs.ts avec deux fonctions pures. `collectAssetIds(scenes: SceneSource[]): str… — Deux fonctions pures conformes (dédoublonnage, tri, narration invalide ignorée, SCENE_LINK ignoré), tests pertinents, périmètre respecté, lint/typecheck/test verts. (07b0fc2)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
