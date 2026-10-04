@@ -1,6 +1,7 @@
 export function createControls(
   doc: Document,
   labels: {
+    nav?: string;
     previous: string;
     next: string;
     back: string;
@@ -25,7 +26,7 @@ export function createControls(
 } {
   const nav = doc.createElement('nav');
   nav.id = 'controls';
-  nav.setAttribute('aria-label', 'Controls');
+  nav.setAttribute('aria-label', labels.nav ?? 'Controls');
 
   const createButton = (label: string, text: string, handler: () => void) => {
     const btn = doc.createElement('button');

@@ -9,6 +9,7 @@ describe('createControls', () => {
   });
 
   const defaultLabels = {
+    nav: 'Custom Controls',
     previous: 'Previous',
     next: 'Next',
     back: 'Back',
@@ -29,10 +30,24 @@ describe('createControls', () => {
 
     const nav = doc.getElementById('controls');
     expect(nav).not.toBeNull();
-    expect(nav?.getAttribute('aria-label')).toBe('Controls');
+    expect(nav?.getAttribute('aria-label')).toBe('Custom Controls');
     
     const buttons = nav?.querySelectorAll('button');
     expect(buttons?.length).toBe(5);
+    
+    if (!buttons) throw new Error('Missing buttons');
+    const backBtn = buttons[0];
+    const prevBtn = buttons[1];
+    const nextBtn = buttons[2];
+    const infoBtn = buttons[3];
+    const fsBtn = buttons[4];
+    if (!backBtn || !prevBtn || !nextBtn || !infoBtn || !fsBtn) throw new Error('Missing button');
+    
+    expect(backBtn.getAttribute('aria-label')).toBe('Back');
+    expect(prevBtn.getAttribute('aria-label')).toBe('Previous');
+    expect(nextBtn.getAttribute('aria-label')).toBe('Next');
+    expect(infoBtn.getAttribute('aria-label')).toBe('Practical Info');
+    expect(fsBtn.getAttribute('aria-label')).toBe('Fullscreen');
 
     // Initial state is enabled/visible without update
     controls.destroy();
