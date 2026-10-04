@@ -763,7 +763,7 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 ## D-100 — Photo Sphere Viewer v5 dans viewer-core
 
 - **Date :** 04/10/2026
-- **Décision :** Ajout des paquets `@photo-sphere-viewer/core`, `@photo-sphere-viewer/virtual-tour-plugin`, `@photo-sphere-viewer/markers-plugin` et `@photo-sphere-viewer/gallery-plugin` dans `packages/viewer-core`. Version retenue : 5.15.1 pour les quatre paquets.
+- **Décision :** Ajout des paquets `@photo-sphere-viewer/core`, `@photo-sphere-viewer/virtual-tour-plugin`, `@photo-sphere-viewer/markers-plugin` et `@photo-sphere-viewer/gallery-plugin` dans `packages/viewer-core`. Version retenue : 5.15.1 pour les quatre paquets. L'application `apps/web` dépend aussi de ces paquets pour importer leurs feuilles CSS.
 - **Raison :** Imposé par le cahier des charges, section 4 et F-30/F-31.
 - **Alternatives :** Aucune.
 - **À valider :** non
