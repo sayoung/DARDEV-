@@ -84,7 +84,7 @@ describe('toTourNodes', () => {
 
     expect(nodes).toHaveLength(2);
 
-    expect(nodes[0]!).toEqual({
+    expect(nodes[0]).toEqual({
       id: 'scene-1',
       name: 'Scene 1',
       caption: 'Caption 1',
@@ -98,13 +98,13 @@ describe('toTourNodes', () => {
       ],
     });
 
-    expect(nodes[1]!).toEqual({
+    expect(nodes[1]).toEqual({
       id: 'scene-2',
       name: 'Scene 2',
       panorama: 'web-2.jpg',
       thumbnail: 'thumb-2.jpg',
       links: [],
     });
-    expect('caption' in nodes[1]!).toBe(false);
+    expect(nodes[1]).not.toHaveProperty('caption');
   });
 });
