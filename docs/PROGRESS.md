@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3b NF-10 (.dockerignore) : crée `.dockerignore` à la racine du dépôt avec des motifs récursifs : `**/node_modules`, `**/dist`, `**/.env*` (en gardant `!**/.env… — .dockerignore créé avec tous les motifs récursifs demandés et les exceptions .env.example / .env.production.example dans le bon ordre, sans exclure les fichiers essentiels ni modifier d'autres fichier… (6a8ed3c)
 - 04/10/2026 — M3b NF-10 (i18n compilable pour la prod) : `@xplor/i18n` (packages/i18n/package.json) exporte aujourd'hui `./src/index.ts` et n'a aucun script `build`, donc `no… — i18n compilable via tsconfig.build.json, script build, exports default vers dist avec condition development, prebuild API mis à jour, calqué sur @xplor/shared ; contrôles OK. (3115bfb)
 - 04/10/2026 — M3b NF-01 (branchement dans main.ts) : dans apps/api/src/main.ts, importe `registerHttpSecurity` depuis './http-security.js' et, juste après `await app.register… — registerHttpSecurity est branché dans main.ts après fastifyCookie, la CSP n'est pas modifiée, le test /html est ajouté et les contrôles sont verts. (fa32c88)
 - 04/10/2026 — M3b NF-01 (module http-security, test d'abord) : crée apps/api/src/http-security.ts qui exporte `async function registerHttpSecurity(app: FastifyInstance, corsO… — Module http-security conforme à la spec (CORS credentials, HSTS, CSP stricte) avec tests Vitest couvrant les trois cas demandés, contrôles verts, périmètre respecté. (887c780)
