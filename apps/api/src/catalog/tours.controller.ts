@@ -80,6 +80,13 @@ export class ToursController {
     return this.publication.unpublish(parseResourceId(id));
   }
 
+  @Post(':id/share-token')
+  @HttpCode(HttpStatus.OK)
+  regenerateShareToken(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
+    requireContentManager(request);
+    return this.publication.regenerateShareToken(parseResourceId(id));
+  }
+
   @Post(':id/duplicate')
   @HttpCode(HttpStatus.CREATED)
   duplicate(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {

@@ -781,6 +781,21 @@ function registerTourPublish(): void {
       '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
     },
   });
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/tours/{id}/share-token',
+    summary: 'Régénérer le jeton de partage public d\'une visite',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Jeton de partage régénéré.', TourResponseSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(denied, forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+    },
+  });
 }
 
 function registerTourDuplicate(): void {
