@@ -237,4 +237,47 @@ describe('TourPublicationPanel', () => {
     expect(screen.queryByRole('button', { name: 'Vérifier' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Publier' })).toBeNull();
   });
+
+  it('regenerate share link confirmation -> appel POST et nouveau jeton affiché', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    
+    mockFetch.mockImplementation((url: string | URL | Request) => {
+      const urlStr = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
+      if (urlStr.endsWith('/share-token')) {
+        return Promise.resolve(new Response(JSON.stringify({
+          ...mockTour,
+          shareToken: 'new_token_123'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    });
+
+    const Wrapper = () => {
+      const [tour, setTour] = useState(mockTour);
+      return <TourPublicationPanel tour={tour} onTourUpdated={setTour} />;
+    };
+
+    render(<Wrapper />);
+    
+    const regenBtn = screen.getByTestId('regenerate-share-link-btn');
+    fireEvent.click(regenBtn);
+
+    expect(confirmSpy).toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('share-token-display').textContent).toBe('new_token_123');
+    });
+  });
+
+  it('regenerate share link annulation -> aucun appel', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(<TourPublicationPanel tour={mockTour} onTourUpdated={vi.fn()} />);
+    
+    const regenBtn = screen.getByTestId('regenerate-share-link-btn');
+    fireEvent.click(regenBtn);
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
 });

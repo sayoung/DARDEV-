@@ -235,3 +235,9 @@ export async function deleteHotspot(id: string): Promise<void> {
     method: 'DELETE',
   });
 }
+
+export async function regenerateShareToken(id: string): Promise<TourResponse> {
+  return requestJson(`/api/v1/admin/tours/${id}/share-token`, TourResponseSchema, {
+    method: 'POST',
+  });
+}
