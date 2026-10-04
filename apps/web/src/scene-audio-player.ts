@@ -22,6 +22,13 @@ export function createSceneAudioPlayer(
   btn.textContent = '▶';
   doc.body.appendChild(btn);
 
+  const captionEl = doc.createElement('p');
+  captionEl.id = 'scene-caption';
+  captionEl.className = 'scene-caption';
+  captionEl.setAttribute('aria-live', 'polite');
+  captionEl.hidden = true;
+  doc.body.appendChild(captionEl);
+
   btn.addEventListener('click', () => {
     if (!narrationAudio) return;
     if (isPlayingNarration) {
@@ -38,6 +45,14 @@ export function createSceneAudioPlayer(
   });
 
   function apply(prev: TourGraphScene | null, next: TourGraphScene): void {
+    if (next.caption && next.caption.trim().length > 0) {
+      captionEl.textContent = next.caption;
+      captionEl.hidden = false;
+    } else {
+      captionEl.textContent = '';
+      captionEl.hidden = true;
+    }
+
     const plan = audioPlan(prev, next);
 
     // Ambient
@@ -97,6 +112,9 @@ export function createSceneAudioPlayer(
     }
     if (btn.parentNode) {
       btn.parentNode.removeChild(btn);
+    }
+    if (captionEl.parentNode) {
+      captionEl.parentNode.removeChild(captionEl);
     }
   }
 

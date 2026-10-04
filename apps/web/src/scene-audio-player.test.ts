@@ -96,12 +96,79 @@ describe('createSceneAudioPlayer', () => {
     destroy();
   });
 
-  it('removes the button on destroy', () => {
+  it('removes the button and caption on destroy', () => {
     const { destroy } = createSceneAudioPlayer(doc, labels, createMockAudio);
     expect(doc.getElementById('scene-audio-btn')).not.toBeNull();
+    expect(doc.getElementById('scene-caption')).not.toBeNull();
     
     destroy();
     
     expect(doc.getElementById('scene-audio-btn')).toBeNull();
+    expect(doc.getElementById('scene-caption')).toBeNull();
+  });
+
+  it('shows caption if provided and hides if null or empty', () => {
+    const { apply, destroy } = createSceneAudioPlayer(doc, labels, createMockAudio);
+    const captionEl = doc.getElementById('scene-caption') as HTMLParagraphElement;
+    
+    expect(captionEl).not.toBeNull();
+    expect(captionEl.hidden).toBe(true);
+
+    const sceneWithCaption = createScene('1');
+    sceneWithCaption.caption = 'Hello world';
+    apply(null, sceneWithCaption);
+
+    expect(captionEl.hidden).toBe(false);
+    expect(captionEl.textContent).toBe('Hello world');
+
+    const sceneWithoutCaption = createScene('2');
+    sceneWithoutCaption.caption = null;
+    apply(sceneWithCaption, sceneWithoutCaption);
+
+    expect(captionEl.hidden).toBe(true);
+    expect(captionEl.textContent).toBe('');
+    
+    const sceneEmptyCaption = createScene('3');
+    sceneEmptyCaption.caption = '   ';
+    apply(sceneWithoutCaption, sceneEmptyCaption);
+    expect(captionEl.hidden).toBe(true);
+
+    destroy();
+  });
+
+  it('replaces a caption with another when changing scenes', () => {
+    const { apply, destroy } = createSceneAudioPlayer(doc, labels, createMockAudio);
+    const captionEl = doc.getElementById('scene-caption') as HTMLParagraphElement;
+
+    const sceneA = createScene('1');
+    sceneA.caption = 'A';
+    apply(null, sceneA);
+
+    expect(captionEl.textContent).toBe('A');
+    expect(captionEl.hidden).toBe(false);
+
+    const sceneB = createScene('2');
+    sceneB.caption = 'B';
+    apply(sceneA, sceneB);
+
+    expect(captionEl.textContent).toBe('B');
+    expect(captionEl.hidden).toBe(false);
+
+    destroy();
+  });
+
+  it('does not inject HTML when caption contains a script tag', () => {
+    const { apply, destroy } = createSceneAudioPlayer(doc, labels, createMockAudio);
+    const captionEl = doc.getElementById('scene-caption') as HTMLParagraphElement;
+
+    const maliciousScene = createScene('1');
+    maliciousScene.caption = '<script>alert("xss")</script>Test';
+    apply(null, maliciousScene);
+
+    // textContent escapes HTML automatically, so innerHTML will contain escaped entities
+    expect(captionEl.innerHTML).toContain('&lt;script&gt;');
+    expect(captionEl.querySelector('script')).toBeNull();
+    
+    destroy();
   });
 });

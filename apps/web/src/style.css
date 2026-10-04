@@ -257,6 +257,27 @@ body {
   display: none;
 }
 
+/* scene-caption */
+.scene-caption {
+  position: fixed;
+  inset-block-end: 2rem;
+  inset-inline: 0;
+  margin-inline: auto;
+  max-inline-size: 80%;
+  inline-size: fit-content;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  padding-block: 0.75rem;
+  padding-inline: 1.5rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  z-index: 50;
+}
+
+.scene-caption[hidden] {
+  display: none;
+}
+
 /* lang-switcher */
 #lang-switcher {
   position: fixed;
