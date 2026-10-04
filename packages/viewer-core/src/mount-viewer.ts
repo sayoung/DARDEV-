@@ -2,6 +2,10 @@ import { Viewer } from '@photo-sphere-viewer/core';
 import { VirtualTourPlugin } from '@photo-sphere-viewer/virtual-tour-plugin';
 import { MarkersPlugin, type MarkerConfig } from '@photo-sphere-viewer/markers-plugin';
 import { GalleryPlugin } from '@photo-sphere-viewer/gallery-plugin';
+import {
+  EquirectangularTilesAdapter,
+  type EquirectangularTilesAdapterConfig,
+} from '@photo-sphere-viewer/equirectangular-tiles-adapter';
 import type { TourGraph } from '@xplor/shared';
 import { tourPluginOptions } from './tour-config.js';
 import { toMarkers } from './scene-markers.js';
@@ -19,8 +23,13 @@ export function mountViewer(
   graph: TourGraph,
   opts?: { sceneId?: string | null; onSceneChange?: (sceneId: string) => void; onHotspotClick?: (hotspotId: string) => void }
 ): { destroy(): void; currentSceneId(): string; goToScene(sceneId: string): Promise<void> } {
+  const adapterConfig: EquirectangularTilesAdapterConfig = {
+    showErrorTile: true,
+  };
+
   const viewer = new Viewer({
     container,
+    adapter: [EquirectangularTilesAdapter, adapterConfig],
     plugins: [
       [VirtualTourPlugin, tourPluginOptions(graph, opts?.sceneId)],
       [MarkersPlugin, {}],
