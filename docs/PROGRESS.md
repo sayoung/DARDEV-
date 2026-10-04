@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-42 (API, route de régénération, code et OpenAPI) : reprendre depuis la branche agent/20261004-025655-m3-f-42-api-route-de-regeneration-dans-a (lecture seul… — Route POST /admin/tours/{id}/share-token ajoutée au contrôleur et à l'OpenAPI, conforme à la demande, openapi.json régénéré avec uniquement cette route, contrôles verts. (2f2a9f7)
 - 04/10/2026 — M3 F-42 (API, service de régénération du jeton) : 1) Extraire la fonction locale createShareToken et la constante SHARE_TOKEN_BYTES d'apps/api/src/catalog/tours… — Extraction de createShareToken et ajout de regenerateShareToken conformes à la demande, avec tests unitaires pertinents et contrôles verts. (a1febb2)
 - 04/10/2026 — M3 F-40 (seed, visite partageable de démonstration) : vérifier dans apps/api/src/seed/seed-tours.ts qu'au moins une visite du seed est PUBLISHED avec publicShar… — La visite demo-rabat est publiée et partageable avec scènes, SCENE_LINK et dérivés alignés sur le worker. Le seed reste idempotent, le schéma shareToken est assoupli de façon cohérente et lint, typech… (062440b)
 - 04/10/2026 — M3 F-40 (apps/web, branchement réel) : dans apps/web/src/main.ts, importer les quatre feuilles CSS de Photo Sphere Viewer (liste dans le commentaire de packages… — Branchement réel de apps/web (CSS PSV, startViewer avec fetchTourGraph/mountViewer, style plein écran), code mort mount.ts supprimé et resolveLang déplacé dans route.ts avec son test ; contrôles verts… (ce81bde)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 03/10/2026 — M3 API-11 (5c/6, visites liées partageables) : 1) Dans packages/shared/src/tour-graph.ts, ajouter `shareToken: z.string().nullable()` aux éléments de `linkedTou… — shareToken ajouté au schéma partagé et à toTourGraph, filtre public sur allowedTourIds pour TOUR_LINK avec tests, kiosque inchangé, contrôles verts. (47e82e4)
 - 03/10/2026 — M3 API-11 (5b/6, collecte des références) : créer apps/api/src/viewer/tour-graph-refs.ts avec deux fonctions pures. `collectAssetIds(scenes: SceneSource[]): str… — Deux fonctions pures conformes (dédoublonnage, tri, narration invalide ignorée, SCENE_LINK ignoré), tests pertinents, périmètre respecté, lint/typecheck/test verts. (07b0fc2)
 - 03/10/2026 — M3 API-11 (5a/6, URL des médias audio) : dans apps/api/src/viewer/tour-graph-scene.ts, renommer `SceneCtx.narrationById` en `assetUrlById: ReadonlyMap<string, s… — Renommage assetUrlById et ambientAsset {id} corrects, test ambiance absente ajouté, décision D-99 consignée, contrôles verts. (b9a1f01)
-- 03/10/2026 — M3 API-11 (4b/5, mappeur de visite, logique pure) : créer apps/api/src/viewer/tour-graph.ts avec `toTourGraph(source: TourSource, ctx: SceneCtx): TourGraph`, en… — toTourGraph conforme à la spécification (repli fr, location null, erreur startSceneId, availableOffline selon l'audience), tests pertinents et contrôles verts. (30cbfec)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
