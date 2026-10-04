@@ -280,4 +280,26 @@ describe('TourPublicationPanel', () => {
     expect(confirmSpy).toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
+
+  it('le QR et le lien sont visibles pour une visite partagée et absents pour un brouillon', async () => {
+    const { unmount } = render(<TourPublicationPanel tour={mockTour} onTourUpdated={vi.fn()} />);
+    expect(screen.queryByTestId('qr-code-section')).toBeNull();
+    unmount();
+
+    const sharedTour = {
+      ...mockTour,
+      status: TourStatus.PUBLISHED,
+      publicShare: true,
+      shareToken: 'token123'
+    };
+    render(<TourPublicationPanel tour={sharedTour} onTourUpdated={vi.fn()} />);
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('qr-code-section')).toBeDefined();
+    });
+    
+    expect(screen.getByRole('link', { name: /token123/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'catalog.publication.downloadQrCode' })).toBeDefined();
+    expect(screen.getByTestId('qr-code-svg')).toBeDefined();
+  });
 });
