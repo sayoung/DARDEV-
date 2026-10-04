@@ -21,5 +21,11 @@ export default defineConfig({
       port: 5173,
       reuseExistingServer: !process.env.CI,
     },
+    {
+      command: 'pnpm --filter @xplor/web dev',
+      url: 'http://127.0.0.1:5174',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
   ],
 });

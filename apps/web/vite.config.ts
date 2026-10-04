@@ -4,6 +4,7 @@ const port = 5174;
 
 export default defineConfig({
   server: {
+    host: '127.0.0.1',
     port,
     strictPort: true,
     proxy: {
