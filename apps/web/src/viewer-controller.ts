@@ -3,6 +3,7 @@ import {
   createTourNavigator,
   adjacentScenes,
   resolveTourLink,
+  TourNotFoundError,
 } from '@xplor/viewer-core';
 import { handleHotspotClick } from './hotspot-ui.js';
 import { createControls } from './controls.js';
@@ -97,6 +98,14 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
     el.hidden = true;
   };
 
+  const showLoadFailure = (err: unknown) => {
+    if (err instanceof TourNotFoundError) {
+      showStatus(deps.labels.notFound);
+    } else {
+      showStatus(deps.labels.loadError);
+    }
+  };
+
   const updateControls = () => {
     if (!controls) return;
     if (isTransitioning) {
@@ -179,8 +188,8 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
         }
       }
       hideStatus();
-    } catch {
-      showStatus(deps.labels.loadError);
+    } catch (err) {
+      showLoadFailure(err);
     } finally {
       setTransitioning(false);
     }
@@ -247,8 +256,8 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
           updateControls();
         }
         hideStatus();
-      } catch {
-        showStatus(deps.labels.loadError);
+      } catch (err) {
+        showLoadFailure(err);
       } finally {
         setTransitioning(false);
       }
@@ -283,8 +292,8 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
               updateControls();
             }
             hideStatus();
-          } catch {
-            showStatus(deps.labels.loadError);
+          } catch (err) {
+            showLoadFailure(err);
           } finally {
             setTransitioning(false);
           }
