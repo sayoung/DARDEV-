@@ -9,8 +9,13 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@photo-sphere-viewer/core": "5.15.1",
+    "@photo-sphere-viewer/gallery-plugin": "5.15.1",
+    "@photo-sphere-viewer/markers-plugin": "5.15.1",
+    "@photo-sphere-viewer/virtual-tour-plugin": "5.15.1",
     "@xplor/i18n": "workspace:*",
-    "@xplor/shared": "workspace:*"
+    "@xplor/shared": "workspace:*",
+    "@xplor/viewer-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
