@@ -1,0 +1,57 @@
+import { dir, resources } from '@xplor/i18n';
+import type { Lang, TourGraph } from '@xplor/shared';
+import { TourNotFoundError } from '@xplor/viewer-core';
+
+import { resolveLang } from './mount.js';
+import { parseShareToken } from './route.js';
+
+export async function startViewer(
+  doc: Document,
+  location: { pathname: string; search: string },
+  deps: {
+    load: (shareToken: string, lang: Lang) => Promise<TourGraph>;
+    mount: (container: HTMLElement, graph: TourGraph) => void;
+  }
+): Promise<void> {
+  const lang = resolveLang(location.search);
+  doc.documentElement.setAttribute('lang', lang);
+  doc.documentElement.setAttribute('dir', dir(lang));
+
+  let viewer = doc.getElementById('viewer');
+  if (!viewer) {
+    viewer = doc.createElement('div');
+    viewer.id = 'viewer';
+    doc.body.append(viewer);
+  }
+
+  let status = doc.getElementById('status');
+  if (!status) {
+    status = doc.createElement('div');
+    status.id = 'status';
+    status.setAttribute('role', 'status');
+    doc.body.append(status);
+  }
+
+  status.textContent = resources[lang].viewer.loading;
+  status.hidden = false;
+
+  const token = parseShareToken(location.pathname);
+  if (!token) {
+    status.textContent = resources[lang].viewer.notFound;
+    return;
+  }
+
+  try {
+    const graph = await deps.load(token, lang);
+    doc.title = graph.title;
+    status.textContent = '';
+    status.hidden = true;
+    deps.mount(viewer, graph);
+  } catch (error) {
+    if (error instanceof TourNotFoundError) {
+      status.textContent = resources[lang].viewer.notFound;
+    } else {
+      status.textContent = resources[lang].viewer.loadError;
+    }
+  }
+}

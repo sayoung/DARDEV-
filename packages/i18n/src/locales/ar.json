@@ -258,5 +258,22 @@
     "notFound": "لم يتم العثور على الجولة.",
     "backToList": "العودة إلى الجولات",
     "saveSuccess": "تم حفظ الجولة."
+  },
+  "viewer": {
+    "goTo": "Aller vers : {{title}}",
+    "confirm": "Y aller",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "previous": "Scène précédente",
+    "next": "Scène suivante",
+    "fullscreen": "Plein écran",
+    "gyroscope": "Gyroscope",
+    "practicalInfo": "Infos pratiques",
+    "play": "Lecture",
+    "pause": "Pause",
+    "close": "Fermer",
+    "loading": "Chargement de la visite…",
+    "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
+    "loadError": "Impossible de charger la visite. Réessayez plus tard."
   }
 }
