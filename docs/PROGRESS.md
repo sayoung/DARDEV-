@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 F-41 (admin, QR code, interface) : dans apps/admin/src/pages/TourPublicationPanel.tsx, quand la visite est PUBLISHED avec publicShare true et un shareToken,… — Lien public et QR SVG affichés pour une visite publiée et partagée, avec téléchargement du fichier xplor-<token>.svg, chaînes fr dans i18n, tests ajoutés, lint/typecheck/test verts. (8dbd9e8)
 - 04/10/2026 — M3 F-41 (admin, QR code, logique pure) : ajouter la dépendance `qrcode` (+ `@types/qrcode` en devDependencies) à apps/admin et l'inscrire dans docs/DECISIONS.md… — qrcode ajouté, shareUrl/tourQrSvg corrects et testés, D-101 inscrit, contrôles verts ; défauts de forme mineurs seulement. (d13b9a4)
 - 04/10/2026 — M3 F-34 (apps/web, sélecteur de langue) : créer apps/web/src/lang-switcher.ts, sans framework, exportant `createLangSwitcher(doc: Document, current: Lang, label… — Sélecteur de langue conforme à la demande (composant, branchement navigate injectable, clé fr seule, CSS logique, tests happy-dom) et contrôles verts. (540c92e)
 - 04/10/2026 — M3 F-30/F-31 (apps/web, branchement du contrôleur dans main.ts) : réécrire apps/web/src/app.ts pour que `startViewer` utilise `createViewerController` : conserv… — startViewer utilise createViewerController avec langue, jeton, erreurs et labels conservés, mount/destroy corrects, erreur de montage affichée en loadError, tests adaptés et contrôles verts. (ab5a574)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 F-33 (viewer-core, conversion hotspots → marqueurs) : dans packages/viewer-core, créer src/scene-markers.ts avec `toMarkers(scene: TourGraphScene): SceneMark… — toMarkers et le type SceneMarker sont conformes à la spécification (exclusion de SCENE_LINK, mapping des 4 types, ordre conservé), avec des tests fondés sur TourGraphSchema, l'export depuis index.ts e… (462c1e2)
 - 04/10/2026 — M3 F-32 (viewer-core, navigateur inter-visites, 2/2 followLink et back) : dans packages/viewer-core/src/tour-navigator.ts (créé par la sous-tâche précédente), a… — followLink et back sont implémentés avec rollback et testés, les contrôles passent ; seul le cas d'une pile pleine (max 20) n'est pas couvert par le rollback. (30e4ae9)
 - 04/10/2026 — M3 F-32 (viewer-core, navigateur inter-visites, 1/2 ouverture) : dans packages/viewer-core, créer src/tour-navigator.ts exportant `createTourNavigator(deps: { l… — createTourNavigator conforme à la spécification, tests couvrant les cinq cas demandés, export ajouté, lint/typecheck/tests OK, PROGRESS.md non modifié. (294b266)
-- 04/10/2026 — M3 F-32 (viewer-core, résolution d'un hotspot TOUR_LINK) : dans packages/viewer-core, créer src/tour-link.ts avec `resolveTourLink(graph: TourGraph, hotspotId:… — resolveTourLink est correct, conforme à la spec, testé sur les 5 cas demandés et exporté ; lint, typecheck et tests passent. (af35a38)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
