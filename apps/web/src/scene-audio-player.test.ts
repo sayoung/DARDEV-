@@ -34,7 +34,7 @@ describe('createSceneAudioPlayer', () => {
     narrationUrl,
     ambientUrl,
     hotspots: []
-  } as unknown as TourGraphScene);
+  });
 
   it('hides the button if there is no narration', () => {
     const { apply, destroy } = createSceneAudioPlayer(doc, labels, createMockAudio);
@@ -72,9 +72,11 @@ describe('createSceneAudioPlayer', () => {
   });
 
   it('stops the old track when scene changes', () => {
-    let lastAudio = doc.createElement('audio'); // dummy initial value
+    const mockPause = vi.fn();
+    let lastAudio = doc.createElement('audio');
     const { apply, destroy } = createSceneAudioPlayer(doc, labels, (url) => {
       lastAudio = createMockAudio(url);
+      lastAudio.pause = mockPause;
       return lastAudio;
     });
     
@@ -88,7 +90,7 @@ describe('createSceneAudioPlayer', () => {
     apply(scene1, scene2);
     
     // Changing scene stops the old narration
-    expect(vi.mocked(audio1.pause)).toHaveBeenCalled();
+    expect(mockPause).toHaveBeenCalled();
     expect(audio1.src).toBe(doc.location.href); // or '' depending on DOM implementation of src=''
     
     destroy();
