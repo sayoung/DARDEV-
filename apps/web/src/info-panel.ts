@@ -39,7 +39,7 @@ export function openInfoPanel(
 
   const button = doc.createElement('button');
   button.type = 'button';
-  button.textContent = 'Fermer';
+  button.textContent = labels.close;
   button.setAttribute('aria-label', labels.close);
   aside.appendChild(button);
 
