@@ -74,16 +74,16 @@ pnpm --filter web dev --host 0.0.0.0
 ### 3. Navigation et interaction (Web)
 
 1. Parcourez la scène principale avec la souris ou l'écran tactile (glisser pour tourner).
-2. Utilisez les **flèches** dans le panorama ou la galerie en bas (boutons **Scène précédente** / **Scène suivante** ou miniatures) pour changer de scène.
+2. Utilisez les boutons **Scène précédente** / **Scène suivante** (icônes ❮ ❯ de la barre de contrôles) ou les miniatures de la galerie pour changer de scène.
 3. Ouvrez un hotspot de type **INFO** pour lire son contenu.
 4. Ouvrez un hotspot de type **MÉDIA** pour visionner son image ou vidéo associée.
 5. Cliquez sur un hotspot **Portail** (lien vers une autre visite, type TOUR_LINK).
 6. Le lecteur affiche une boîte de dialogue **"Aller vers : [Titre]"** avec les boutons **Y aller** et **Annuler**.
 7. Cliquez sur **Y aller**. La nouvelle visite se charge.
-8. Cliquez sur le bouton **Retour** (en haut à gauche) pour revenir à la visite précédente.
-9. Lancez la narration audio via le bouton **Lecture** dans l'interface du lecteur. Vérifiez que le sous-titre correspondant s'affiche à l'écran.
-10. Activez le bouton **Gyroscope** (sur mobile ou appareil compatible) pour regarder autour de vous en bougeant l'appareil.
-11. Cliquez sur le bouton **Infos pratiques** pour afficher le panneau latéral contenant le résumé, la description et les informations pratiques.
+8. Cliquez sur le bouton **Retour** (icône ↩, dans la barre de contrôles en bas au centre ; visible seulement après avoir suivi un portail) pour revenir à la visite précédente.
+9. Lancez la narration audio via le bouton **Lecture** (icône ▶, indépendant de la barre de contrôles) dans l'interface du lecteur. Vérifiez que le sous-titre correspondant s'affiche à l'écran.
+10. Activez le bouton **Gyroscope** (icône 🧭, dans la barre de contrôles, visible seulement si supporté) pour regarder autour de vous en bougeant l'appareil.
+11. Cliquez sur le bouton **Infos pratiques** (icône ℹ, dans la barre de contrôles) pour afficher le panneau latéral contenant le résumé, la description et les informations pratiques.
 12. Dans ce même panneau, cliquez sur le lien **Voir sur la carte**.
 13. Changez la langue de l'interface en utilisant le sélecteur **Langue** (les traductions incomplètes font partie des limites admises).
 
