@@ -2,8 +2,7 @@ import { dir, resources } from '@xplor/i18n';
 import type { Lang, TourGraph } from '@xplor/shared';
 import { TourNotFoundError } from '@xplor/viewer-core';
 
-import { resolveLang } from './mount.js';
-import { parseShareToken } from './route.js';
+import { parseShareToken, resolveLang } from './route.js';
 
 export async function startViewer(
   doc: Document,

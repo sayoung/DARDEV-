@@ -1,3 +1,14 @@
-import { mount } from './mount.js';
+import '@photo-sphere-viewer/core/index.css';
+import '@photo-sphere-viewer/markers-plugin/index.css';
+import '@photo-sphere-viewer/virtual-tour-plugin/index.css';
+import '@photo-sphere-viewer/gallery-plugin/index.css';
 
-mount(window.location.search, document);
+import { fetchTourGraph, mountViewer } from '@xplor/viewer-core';
+import { startViewer } from './app.js';
+
+void startViewer(document, window.location, {
+  load: (token, lang) => fetchTourGraph('/api', token, lang),
+  mount: (el, graph) => {
+    mountViewer(el, graph);
+  }
+});
