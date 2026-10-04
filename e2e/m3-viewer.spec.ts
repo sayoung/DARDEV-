@@ -1,59 +1,130 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, Page } from '@playwright/test';
 import { resources } from '@xplor/i18n';
-import { SEED_TOURS } from '../apps/api/src/seed/seed-tours.js';
+import { ensureReadyPanoramas } from './helpers/panoramas.js';
 
-const DEMO_TOUR = SEED_TOURS.find((t) => t.publicShare);
+async function readPost<T>(
+  page: Page,
+  pattern: RegExp,
+  postAfter: () => Promise<void>
+): Promise<T> {
+  const responsePromise = page.waitForResponse(
+    (candidate) =>
+      candidate.url().match(pattern) !== null &&
+      candidate.request().method() === 'POST' &&
+      candidate.status() >= 200 &&
+      candidate.status() < 300
+  );
+  await postAfter();
+  const response = await responsePromise;
+  return response.json() as Promise<T>;
+}
 
 test.describe('M3 F-40/F-30 : page publique (Viewer)', () => {
-  test.use({ baseURL: 'http://127.0.0.1:5174' });
-
   test('Affiche correctement une visite partagée et configure la langue', async ({ page }) => {
-    expect(DEMO_TOUR).toBeDefined();
-    if (!DEMO_TOUR) throw new Error('Aucune visite de démonstration publiée dans le seed');
+    test.setTimeout(120000);
+    // Use admin page to create data
+    await page.goto('http://localhost:5173/');
     
-    const token = DEMO_TOUR.shareToken;
+    const email = 'admin@xplor.local';
+    const password = process.env.SEED_DEFAULT_PASSWORD || 'xplor-seed-dev-2026';
 
-    // (2) l'appel réseau GET /api/v1/public/tours/<jeton> répond 200
+    await page.getByLabel('Adresse e-mail').fill(email);
+    await page.getByLabel('Mot de passe').fill(password);
+    await page.getByRole('button', { name: 'Se connecter' }).click();
+    await expect(page.getByText('Administrateur').first()).toBeVisible();
+
+    await ensureReadyPanoramas(page, 1);
+
+    await page.getByRole('link', { name: 'Visites', exact: true }).click();
+    await page.getByRole('button', { name: 'Nouvelle visite' }).click();
+
+    const uniqueSuffix = Date.now().toString();
+    await page.getByRole('textbox', { name: 'Titre' }).fill(`Visite M3 ${uniqueSuffix}`);
+    await page.getByRole('textbox', { name: 'Résumé' }).fill('Résumé M3');
+    await page.getByLabel('Ville').selectOption({ index: 1 });
+    await page.locator('input[type="checkbox"]').first().check();
+    await page.getByLabel('Vignette').selectOption({ index: 1 });
+    await page.getByTestId('submit-tour-btn').click();
+    await expect(page.getByRole('heading', { name: 'Détails de la visite' })).toBeVisible();
+    
+    const tourUrl = page.url(); 
+
+    // Add 1 scene
+    await page.getByRole('button', { name: 'Ajouter une scène' }).click();
+    await page.getByRole('textbox', { name: 'Titre' }).fill(`Scène M3`);
+    const panoramaSelect = page.getByLabel('Panorama');
+    await expect(panoramaSelect).toBeVisible();
+    await expect.poll(async () => {
+      const texts = await panoramaSelect.locator('option').allInnerTexts();
+      return texts.filter((text) => text.trim().endsWith('Prêt')).length;
+    }, { timeout: 10000 }).toBeGreaterThanOrEqual(1);
+
+    const allTexts = await panoramaSelect.locator('option').allInnerTexts();
+    const readyIndices = allTexts
+      .map((text, index) => ({ text, index }))
+      .filter(({ text }) => text.trim().endsWith('Prêt'))
+      .map(({ index }) => index);
+
+    await panoramaSelect.selectOption({ index: readyIndices[0] });
+
+    await readPost(page, /\/api\/v1\/admin\/tours\/[a-f0-9-]+\/scenes$/, async () => {
+      await page.getByTestId('submit-scene-btn').click();
+    });
+    
+    await expect(page.getByRole('heading', { name: 'Modifier' })).toBeVisible();
+    await page.goto(tourUrl);
+    await expect(page.getByRole('heading', { name: 'Détails de la visite' })).toBeVisible();
+
+    // Set start scene
+    const row1 = page.locator('tr').filter({ hasText: `Scène M3` });
+    await row1.locator('button').filter({ hasText: 'départ' }).click();
+    await expect(row1.getByText('Scène de départ')).toBeVisible();
+
+    // Validate
+    await readPost(page, /\/api\/v1\/admin\/tours\/[a-f0-9-]+\/validate$/, async () => {
+      await page.getByTestId('validate-tour-btn').click();
+    });
+    await expect(page.getByTestId('validation-success')).toBeVisible();
+
+    // Publish
+    const publishRes = await readPost<{ shareToken: string }>(page, /\/api\/v1\/admin\/tours\/[a-f0-9-]+\/publish$/, async () => {
+      await page.getByTestId('publish-tour-btn').click();
+    });
+    await expect(page.getByTestId('tour-status-published')).toBeVisible();
+
+    const token = publishRes.shareToken;
+
+    // Test Viewer
     const responsePromise = page.waitForResponse(
-      (response) =>
-        response.url().includes(`/api/v1/public/tours/${token}`) &&
-        response.request().method() === 'GET'
+      (candidate) =>
+        candidate.url().includes(`/api/v1/public/tours/${token}`) &&
+        candidate.request().method() === 'GET'
     );
-
-    // On charge la visite en français
-    await page.goto(`/v/${token}?lang=fr`);
+    await page.goto(`http://localhost:5174/v/${token}?lang=fr`);
     const response = await responsePromise;
     expect(response.status()).toBe(200);
 
-    // (4) <html> a dir="ltr" et lang="fr"
     const html = page.locator('html');
     await expect(html).toHaveAttribute('lang', 'fr');
     await expect(html).toHaveAttribute('dir', 'ltr');
 
-    // (1) le conteneur de Photo Sphere Viewer (.psv-container) devient visible
     const psvContainer = page.locator('.psv-container');
     await expect(psvContainer).toBeVisible();
 
-    // aucun message d'erreur de chargement
     const statusDiv = page.locator('#status');
     await expect(statusDiv).toBeHidden();
 
-    // la barre de contrôles est présente
     const controls = page.locator('#controls');
     await expect(controls).toBeVisible();
 
-    // le bouton Retour est masqué
     const backBtn = page.getByRole('button', { name: resources.fr.viewer.back });
     await expect(backBtn).toBeHidden();
   });
 
   test('Affiche un message d\'erreur pour un jeton inconnu', async ({ page }) => {
-    // (3) /v/jetoninconnu123 affiche le message d'erreur de chargement traduit en français
-    await page.goto('/v/jetoninconnu123?lang=fr');
-
+    await page.goto('http://localhost:5174/v/jetoninconnu123?lang=fr');
     const notFoundText = resources.fr.viewer.notFound;
     const statusDiv = page.locator('#status');
-    
     await expect(statusDiv).toBeVisible();
     await expect(statusDiv).toHaveText(notFoundText);
   });
