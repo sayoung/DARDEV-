@@ -242,10 +242,10 @@ describe('TourResponseSchema', () => {
     );
   });
 
-  it('refuse un jeton de partage qui n’a pas 22 caractères', () => {
-    expect(TourResponseSchema.safeParse({ ...tourResponse, shareToken: 'court' }).success).toBe(
-      false,
-    );
+  it('refuse un jeton de partage vide ou trop long ou invalide', () => {
+    expect(TourResponseSchema.safeParse({ ...tourResponse, shareToken: '' }).success).toBe(false);
+    expect(TourResponseSchema.safeParse({ ...tourResponse, shareToken: 'x'.repeat(23) }).success).toBe(false);
+    expect(TourResponseSchema.safeParse({ ...tourResponse, shareToken: 'avec espace' }).success).toBe(false);
   });
 
   it('refuse un nombre de scènes négatif', () => {

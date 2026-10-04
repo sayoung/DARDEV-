@@ -81,6 +81,7 @@ export interface SeedTour {
   categoryLinkId: string;
   cover: SeedAsset;
   shareToken: string;
+  publicShare: boolean;
   lat: number;
   lng: number;
   durationMinutes: number;
@@ -199,7 +200,8 @@ export const SEED_TOURS: readonly SeedTour[] = [
     categoryFr: 'Monuments',
     categoryLinkId: seedId('511'),
     cover: cover(seedId('201'), 'kasbah-des-oudayas/cover.jpg'),
-    shareToken: 'seedkasbahoudayas00001',
+    shareToken: 'demo-rabat',
+    publicShare: true,
     lat: 34.0325,
     lng: -6.8364,
     durationMinutes: 15,
@@ -293,7 +295,8 @@ export const SEED_TOURS: readonly SeedTour[] = [
     categoryFr: 'Nature',
     categoryLinkId: seedId('512'),
     cover: cover(seedId('202'), 'jardin-de-sale/cover.jpg'),
-    shareToken: 'seedjardindesale000001',
+    shareToken: 'seedjardindesale00001',
+    publicShare: false,
     lat: 34.0405,
     lng: -6.812,
     durationMinutes: 12,
@@ -376,6 +379,7 @@ export const SEED_TOURS: readonly SeedTour[] = [
     categoryLinkId: seedId('513'),
     cover: cover(seedId('203'), 'plage-de-mehdia/cover.jpg'),
     shareToken: 'seedplagedemehdia00001',
+    publicShare: false,
     lat: 34.2597,
     lng: -6.6754,
     durationMinutes: 10,
@@ -504,9 +508,24 @@ export async function seedTours(prisma: PrismaClient): Promise<void> {
       data: { startSceneId: tour.startSceneId },
     });
   }
+
+  const demoTour = SEED_TOURS.find((t) => t.publicShare);
+  if (demoTour) {
+    console.log(`\n▶ Visite de démonstration prête : /t/${demoTour.shareToken}`);
+  }
 }
 
 async function upsertAsset(prisma: PrismaClient, row: SeedAsset): Promise<void> {
+  const derivatives = row.kind === AssetKind.PANORAMA
+    ? {
+        preview: `${row.id}/preview.jpg`,
+        web: `${row.id}/web.jpg`,
+        thumb: `${row.id}/thumb.jpg`,
+        tilesPrefix: `${row.id}/tiles/`,
+        tileGrid: { cols: 8, rows: 4, size: 512 },
+      }
+    : {};
+
   const data = {
     kind: toPrismaKind(row.kind),
     originalKey: row.originalKey,
@@ -516,7 +535,7 @@ async function upsertAsset(prisma: PrismaClient, row: SeedAsset): Promise<void> 
     height: row.height,
     contentHash: row.contentHash,
     processingStatus: toPrismaStatus(row.processingStatus),
-    derivatives: {},
+    derivatives,
     copyright: row.copyright,
   };
   await prisma.asset.upsert({
@@ -538,7 +557,7 @@ async function upsertTour(prisma: PrismaClient, tour: SeedTour, createdById: str
     lng: tour.lng,
     practicalInfo: localizedToJson(tour.practicalInfo),
     shareToken: tour.shareToken,
-    publicShare: false,
+    publicShare: tour.publicShare,
     contentVersion: 1,
     status: toPrismaTourStatus(tour.status),
     publishedAt: new Date(SEED_TOUR_PUBLISHED_AT),
