@@ -256,3 +256,25 @@ body {
 .scene-audio-btn[hidden] {
   display: none;
 }
+
+/* lang-switcher */
+#lang-switcher {
+  position: fixed;
+  inset-block-start: 1rem;
+  inset-inline-end: 1rem;
+  padding-block: 0.5rem;
+  padding-inline: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #cccccc;
+  border-radius: 0.375rem;
+  font-family: inherit;
+  font-size: 1rem;
+  color: #333333;
+  z-index: 50;
+  cursor: pointer;
+}
+
+#lang-switcher:focus-visible {
+  outline: 2px solid #6958a5;
+  outline-offset: 2px;
+}

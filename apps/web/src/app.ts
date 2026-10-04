@@ -3,6 +3,7 @@ import type { Lang, TourGraph } from '@xplor/shared';
 import { TourNotFoundError } from '@xplor/viewer-core';
 
 import { parseShareToken, resolveLang } from './route.js';
+import { createLangSwitcher } from './lang-switcher.js';
 import { createViewerController } from './viewer-controller.js';
 
 export async function startViewer(
@@ -19,11 +20,18 @@ export async function startViewer(
         onHotspotClick?: (hotspotId: string) => void;
       }
     ) => { goToScene(id: string): Promise<void>; destroy(): void };
+    navigate: (url: string) => void;
   }
 ): Promise<void> {
   const lang = resolveLang(location.search);
   doc.documentElement.setAttribute('lang', lang);
   doc.documentElement.setAttribute('dir', dir(lang));
+
+  const labels = resources[lang].viewer;
+
+  createLangSwitcher(doc, lang, resources.fr.viewer.language, (newLang) => {
+    deps.navigate(`?lang=${newLang}`);
+  });
 
   let viewer = doc.getElementById('viewer');
   if (!viewer) {
@@ -40,7 +48,6 @@ export async function startViewer(
     doc.body.append(status);
   }
 
-  const labels = resources[lang].viewer;
   status.textContent = labels.loading;
   status.hidden = false;
 
