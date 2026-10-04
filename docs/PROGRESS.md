@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3b NF-10 (apps/api/Dockerfile) : crée `apps/api/Dockerfile` multi-étapes, contexte de build = racine du dépôt. Étape build (`node:22-bookworm-slim`) : `corepac… — Dockerfile multi-étapes conforme (build, deploy --prod, contrôles de fichiers, prisma generate épinglé 6.19.3, utilisateur node), contrôles verts, lockfile et PROGRESS intacts. (aa518a9)
 - 04/10/2026 — M3b NF-10 (.dockerignore) : crée `.dockerignore` à la racine du dépôt avec des motifs récursifs : `**/node_modules`, `**/dist`, `**/.env*` (en gardant `!**/.env… — .dockerignore créé avec tous les motifs récursifs demandés et les exceptions .env.example / .env.production.example dans le bon ordre, sans exclure les fichiers essentiels ni modifier d'autres fichier… (6a8ed3c)
 - 04/10/2026 — M3b NF-10 (i18n compilable pour la prod) : `@xplor/i18n` (packages/i18n/package.json) exporte aujourd'hui `./src/index.ts` et n'a aucun script `build`, donc `no… — i18n compilable via tsconfig.build.json, script build, exports default vers dist avec condition development, prebuild API mis à jour, calqué sur @xplor/shared ; contrôles OK. (3115bfb)
 - 04/10/2026 — M3b NF-01 (branchement dans main.ts) : dans apps/api/src/main.ts, importe `registerHttpSecurity` depuis './http-security.js' et, juste après `await app.register… — registerHttpSecurity est branché dans main.ts après fastifyCookie, la CSP n'est pas modifiée, le test /html est ajouté et les contrôles sont verts. (fa32c88)
