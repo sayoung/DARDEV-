@@ -10,12 +10,14 @@ RUN pnpm install --frozen-lockfile --filter @xplor/api...
 RUN pnpm --filter @xplor/api build
 RUN pnpm --filter @xplor/api deploy --prod /out
 
-RUN if [ ! -d "/out/prisma" ]; then cp -r apps/api/prisma /out/prisma && cd /out && npx prisma generate; fi
+RUN if [ ! -d "/out/prisma" ]; then cp -r apps/api/prisma /out/prisma; fi
+RUN cd /out && npx --yes prisma@6.19.3 generate
 
 RUN test -f /out/dist/main.js && \
     test -f /out/node_modules/@xplor/i18n/dist/index.js && \
     test -f /out/prisma/schema.prisma && \
-    test -d /out/prisma/migrations
+    test -d /out/prisma/migrations && \
+    find /out/node_modules -path '*/.prisma/client/index.js' | grep -q .
 
 # Étape 2 : Production
 FROM node:22-bookworm-slim
