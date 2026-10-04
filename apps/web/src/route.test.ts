@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseShareToken } from './route.js';
+import { parseShareToken, resolveLang } from './route.js';
 
 describe('parseShareToken', () => {
   it('accepte /v/{token}', () => {
@@ -38,5 +38,20 @@ describe('parseShareToken', () => {
     
     const token23 = 'a'.repeat(23);
     expect(parseShareToken(`/v/${token23}`)).toBeNull();
+  });
+});
+
+describe('resolveLang', () => {
+  it('retourne la langue demandée si supportée', () => {
+    expect(resolveLang('?lang=ar')).toBe('ar');
+    expect(resolveLang('?lang=en')).toBe('en');
+    expect(resolveLang('?lang=fr')).toBe('fr');
+  });
+
+  it('retourne fr par défaut si non supportée ou absente', () => {
+    expect(resolveLang('')).toBe('fr');
+    expect(resolveLang('?lang=')).toBe('fr');
+    expect(resolveLang('?lang=es')).toBe('fr');
+    expect(resolveLang('?other=ar')).toBe('fr');
   });
 });
