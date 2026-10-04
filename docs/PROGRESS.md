@@ -28,6 +28,7 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 04/10/2026 — M3 critère 2 (e2e, m3-viewer, jeton inconnu) — validation finale. Vérifier que localhost:5432 répond, puis lancer `$env:CI='1'; pnpm exec playwright test e2e/m3… — Aucun changement de code (validation seule) ; lint, typecheck et test passent, docs/PROGRESS.md est intact ; le résultat de l'e2e « jeton inconnu » n'a pas pu être vérifié. (2ab346b)
 - 04/10/2026 — M3 critère 2 (e2e, m3-viewer) — Relancer tout e2e/m3-viewer.spec.ts (`$env:CI='1'; pnpm exec playwright test e2e/m3-viewer.spec.ts`, tunnel SSH, jamais docker)… — Aucune modification, conforme à la consigne si l'e2e m3-viewer passe; lint, typecheck et test sont verts (résultat e2e non vérifié par moi). (ea52996)
 - 04/10/2026 — M3 critère 2 (e2e, m3-viewer, jeton inconnu) — Diagnostic seul puis correction minimale. Lancer `$env:CI='1'; pnpm exec playwright test e2e/m3-viewer.spec.ts -g… — Correction minimale et cohérente de playwright.config.ts (webServer API toujours lancé, reuseExistingServer: !CI), lint/typecheck/tests OK ; le résultat e2e et les mesures de diagnostic ne sont pas vi… (c538544)
 - 04/10/2026 — M3 critère 2 (e2e, m3-viewer, jeton inconnu) — Dans apps/web/src/viewer-controller.ts de develop, le `catch {}` des 3 blocs try/catch/finally (≈ lignes 183, 255… — showLoadFailure distingue TourNotFoundError de loadError dans les 3 catch, test ajouté, aucun BOM, périmètre respecté, lint/typecheck/tests verts. (ccf5977)
@@ -67,7 +68,6 @@ Jalon précédent : M2 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3 API-10 / F-41 (décision de report, documentation seule) : dans docs/DECISIONS.md, ajouter une entrée D-xx datée du 04/10/2026. Elle indique que (1) API-10 `G… — Entrée D-104 conforme (date, décision en deux points, alternative, à valider), seul DECISIONS.md modifié, contrôles verts. (1328618)
 - 04/10/2026 — M3 F-34 (apps/web, position dans Infos pratiques) : dans apps/web/src/viewer-controller.ts, handlePracticalInfo doit aussi gérer la position : si graph.location… — Lien carte OSM dans Infos pratiques via mapLinkHtml pur et testé, bouton activé si location présente, clé fr.json ajoutée, contrôles verts. (8cf8bc2)
 - 04/10/2026 — M3 F-34 (apps/web, bouton gyroscope) : ajouter la clé `viewer.gyroscope` (« Gyroscope ») dans packages/i18n fr.json seulement (D-82). Dans apps/web/src/controls… — Bouton gyroscope facultatif et masqué par défaut, affiché selon gyroscopeSupported() après chaque montage, clic relié à toggleGyroscope(), avec tests ; la clé viewer.gyroscope existait déjà dans fr.js… (f50a0ac)
-- 04/10/2026 — M3 F-34 (viewer-core, gyroscope) : ajouter `@photo-sphere-viewer/gyroscope-plugin` en version exacte 5.15.1 aux dependencies de packages/viewer-core (et d'apps/… — Plugin gyroscope 5.15.1 ajouté (viewer-core et apps/web), enregistré dans mount-viewer avec gyroscopeSupported/toggleGyroscope typés conformément aux définitions, D-103 consignée, lint/typecheck/test… (a00623d)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
