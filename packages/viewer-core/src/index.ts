@@ -4,3 +4,4 @@ export * from './scene-order.js';
 export * from './tour-client.js';
 export * from './tour-link.js';
 
+export * from './tour-navigator.js';
