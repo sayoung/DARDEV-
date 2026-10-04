@@ -70,3 +70,63 @@ pnpm --filter web dev --host 0.0.0.0
 ```
 
 > **Risque MinIO / tunnel SSH** : Même si l'application web s'ouvre sur le mobile, les médias (panoramas) peuvent ne pas se charger. En effet, MinIO répondant sur `localhost:9000` via le tunnel SSH du poste développeur, le mobile ne pourra pas résoudre cette adresse sans une redirection de port additionnelle.
+
+### 3. Navigation et interaction (Web)
+
+1. Parcourez la scène principale avec la souris ou l'écran tactile (glisser pour tourner).
+2. Utilisez les boutons **Scène précédente** / **Scène suivante** (icônes ❮ ❯ de la barre de contrôles) ou les miniatures de la galerie pour changer de scène.
+3. Ouvrez un hotspot de type **INFO** pour lire son contenu.
+4. Ouvrez un hotspot de type **MÉDIA** pour visionner son image ou vidéo associée.
+5. Cliquez sur un hotspot **Portail** (lien vers une autre visite, type TOUR_LINK).
+6. Le lecteur affiche une boîte de dialogue **"Aller vers : [Titre]"** avec les boutons **Y aller** et **Annuler**.
+7. Cliquez sur **Y aller**. La nouvelle visite se charge.
+8. Cliquez sur le bouton **Retour** (icône ↩, dans la barre de contrôles en bas au centre ; visible seulement après avoir suivi un portail) pour revenir à la visite précédente.
+9. Lancez la narration audio via le bouton **Lecture** (icône ▶, indépendant de la barre de contrôles) dans l'interface du lecteur. Vérifiez que le sous-titre correspondant s'affiche à l'écran.
+10. Activez le bouton **Gyroscope** (icône 🧭, dans la barre de contrôles, visible seulement si supporté) pour regarder autour de vous en bougeant l'appareil.
+11. Cliquez sur le bouton **Infos pratiques** (icône ℹ, dans la barre de contrôles) pour afficher le panneau latéral contenant le résumé, la description et les informations pratiques.
+12. Dans ce même panneau, cliquez sur le lien **Voir sur la carte**.
+13. Changez la langue de l'interface en utilisant le sélecteur **Langue** (les traductions incomplètes font partie des limites admises).
+
+### 4. Aperçu Open Graph (Partage social)
+
+1. Pour vérifier comment les réseaux sociaux voient le lien partagé, vous pouvez interroger la route publique correspondante.
+2. Ouvrez une invite PowerShell et exécutez l'une des commandes suivantes :
+   ```powershell
+   Invoke-WebRequest -Uri http://localhost:3000/api/v1/public/share/demo-rabat
+   ```
+   *ou*
+   ```powershell
+   curl.exe http://localhost:3000/api/v1/public/share/demo-rabat
+   ```
+3. Dans la réponse, vérifiez la présence des balises `<meta>` Open Graph dans le `<head>` :
+   - `<meta property="og:title" content="...">`
+   - `<meta property="og:description" content="...">`
+   - `<meta property="og:image" content="...">`
+   - `<meta property="og:url" content="...">`
+   - `<meta property="og:type" content="website">`
+
+### 5. Régénération du lien de partage (Back-office)
+
+1. Retournez dans le back-office sur la fiche de la visite de Rabat.
+2. Dans le panneau de publication, cliquez sur le bouton **Régénérer le lien de partage**.
+3. Confirmez l'action dans la boîte de dialogue (**"Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?"**).
+4. Le jeton de partage change dans l'interface et un nouveau QR code est généré.
+5. Rechargez l'ancienne URL (`http://localhost:5174/v/demo-rabat`) dans le navigateur, ou essayez d'y accéder via l'API.
+6. L'API renvoie un code d'erreur HTTP **404 Not Found**.
+7. L'application web intercepte cette erreur et affiche le message : **"Cette visite n'existe pas ou n'est plus partagée."**
+
+## Limites
+
+- L'API kiosque (API-10) et le QR code de fin de visite sur borne sont reportés à une étape ultérieure (décision **D-104**).
+- Les traductions complètes en arabe et anglais, ainsi que la vérification détaillée de l'affichage de droite à gauche (RTL), sont suspendues temporairement (décision **D-82**).
+
+## Résultat attendu
+
+À la fin de la démonstration, le présentateur aura pu constater :
+- L'accès à la visite publique web via son jeton de partage, et le fonctionnement des contrôles de base (galerie, changement de scène, panorama).
+- Le comportement correct des hotspots (Info, Média) et des portails inter-visites avec boîte de dialogue ("Aller vers : ...", "Y aller") et option de Retour.
+- Le fonctionnement de la narration audio avec sous-titres, et du gyroscope.
+- L'affichage opérationnel du panneau "Infos pratiques" et de son lien externe vers la carte.
+- Le changement interactif de langue dans l'application web.
+- La bonne structuration HTML des balises `og:*` par l'API pour les réseaux sociaux.
+- L'invalidation réussie des anciens liens et QR codes (retour HTTP 404 / "Cette visite n'existe pas ou n'est plus partagée.") lors de la régénération du jeton.
