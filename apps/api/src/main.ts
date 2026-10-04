@@ -12,6 +12,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { AppModule } from './app.module.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from './auth/session-cookie.js';
 import { loadEnv } from './config/env.js';
+import { registerHttpSecurity } from './http-security.js';
 
 function loadLocalEnvFile(): void {
   const path = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
@@ -34,6 +35,7 @@ async function bootstrap(): Promise<void> {
     fastifyAdapter,
   );
   await app.register(fastifyCookie);
+  await registerHttpSecurity(app.getHttpAdapter().getInstance(), env.API_CORS_ORIGINS);
   app
     .getHttpAdapter()
     .getInstance()
