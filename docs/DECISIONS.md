@@ -774,6 +774,8 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | @photo-sphere-viewer/virtual-tour-plugin     | Imposé pour la gestion des nœuds de la visite         | MIT     |
 | @photo-sphere-viewer/markers-plugin          | Imposé pour l'ajout de points d'intérêt (hotspots)    | MIT     |
 | @photo-sphere-viewer/gallery-plugin          | Imposé pour l'affichage de la galerie de la visite    | MIT     |
+
+
 ## D-101 — Dépendance qrcode pour le partage (F-41)
 
 - **Date :** 04/10/2026
@@ -785,3 +787,17 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | Paquet | Raison | Licence |
 | --- | --- | --- |
 | qrcode | F-41 du cahier, génération SVG de QR code. | MIT |
+
+
+## D-102 — Adaptateur de tuiles Photo Sphere Viewer (F-35)
+
+- **Date :** 04/10/2026
+- **Décision :** Ajout de la dépendance @photo-sphere-viewer/equirectangular-tiles-adapter en version 5.15.1 aux paquets packages/viewer-core et apps/web.
+- **Raison :** F-35 affichage du preview flou puis montée en définition progressive.
+- **Alternatives :** Aucune
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| @photo-sphere-viewer/equirectangular-tiles-adapter | F-35 affichage du preview flou puis montée en définition progressive. | MIT |
+

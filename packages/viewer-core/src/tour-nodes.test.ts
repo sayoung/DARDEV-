@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TourGraphSchema } from '@xplor/shared';
 import { toTourNodes } from './tour-nodes.js';
 
+
 const uuidA = '01990000-0000-7000-8000-00000000000a';
 const scene1Id = '01990000-0000-7000-8000-000000000001';
 const scene2Id = '01990000-0000-7000-8000-000000000002';
@@ -121,7 +122,17 @@ describe('toTourNodes', () => {
     expect(node1.id).toBe(scene2Id);
 
     expect(node0.name).toBe('Scène 1');
-    expect(node0.panorama).toBe('http://example.com/web1.jpg');
+
+    expect(node0.panorama).toMatchObject({
+      width: 4096,
+      cols: 8,
+      rows: 4,
+      baseUrl: 'http://example.com/preview1.jpg',
+    });
+
+    const panoramaObj = node0.panorama as { width: number; cols: number; rows: number; baseUrl: string; tileUrl: (col: number, row: number) => string };
+    expect(panoramaObj.tileUrl(3, 1)).toBe('http://example.com/tiles1/3_1.jpg');
+
     expect(node0.thumbnail).toBe('http://example.com/thumb1.jpg');
 
     // (2) hotspot SCENE_LINK vers une scène présente (conservé avec sa position)
