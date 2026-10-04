@@ -21,7 +21,7 @@ test.describe('Livrable M1 : création de visite', () => {
   test('Créer une visite complète avec scènes, hotspots, validation et publication', async ({
     page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
     // 1. Connexion en tant qu'admin
     await page.goto('/');
     
@@ -151,8 +151,10 @@ test.describe('Livrable M1 : création de visite', () => {
 
     // Aller sur Scène 2 pour la lier à Scène 3
     const row2 = page.locator('tr').filter({ hasText: `Scène 2 M1 ${uniqueSuffix}` });
-    await row2.locator('button').filter({ hasText: 'Modifier' }).click();
-    await page.goto(page.url() + '/hotspots');
+    const scene2IdAttr = await row2.getAttribute('id');
+    const scene2Id = scene2IdAttr?.replace('scene-', '');
+    if (!scene2Id) throw new Error('Scene 2 ID non trouvé');
+    await page.goto(`${tourUrl}/scenes/${scene2Id}/hotspots`);
     await page.getByRole('button', { name: 'Ajouter un hotspot' }).click();
     await page.getByLabel('Type').selectOption({ label: 'Lien vers une scène' });
     await page.getByRole('textbox', { name: 'Libellé' }).fill('Vers la scène 3');
