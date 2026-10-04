@@ -17,7 +17,7 @@ import { toMarkers } from './scene-markers.js';
 export function mountViewer(
   container: HTMLElement,
   graph: TourGraph,
-  opts?: { sceneId?: string | null; onSceneChange?: (sceneId: string) => void }
+  opts?: { sceneId?: string | null; onSceneChange?: (sceneId: string) => void; onHotspotClick?: (hotspotId: string) => void }
 ): { destroy(): void; currentSceneId(): string } {
   const viewer = new Viewer({
     container,
@@ -30,6 +30,12 @@ export function mountViewer(
 
   const tourPlugin = viewer.getPlugin<VirtualTourPlugin>(VirtualTourPlugin);
   const markersPlugin = viewer.getPlugin<MarkersPlugin>(MarkersPlugin);
+
+  markersPlugin.addEventListener('select-marker', ({ marker }) => {
+    if (opts?.onHotspotClick) {
+      opts.onHotspotClick(marker.id);
+    }
+  });
 
   tourPlugin.addEventListener('node-changed', ({ node }) => {
     const scene = graph.scenes.find((s) => s.id === node.id);
