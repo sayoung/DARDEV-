@@ -832,7 +832,7 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 
 - **Date :** 04/10/2026
 - **Décision :** paquets @fastify/cors et @fastify/helmet
-- **Alternatives :** 
+- **Alternatives :** en-têtes de sécurité et CORS écrits à la main dans un hook Fastify (plus de code à maintenir et à tester) ; middleware NestJS `enableCors()` seul (ne couvre pas CSP ni HSTS) ; helmet Express (incompatible avec Fastify)
 - **À valider :** non
 
 | Paquet | Raison | Licence |
