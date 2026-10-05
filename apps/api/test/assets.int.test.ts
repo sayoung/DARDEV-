@@ -12,6 +12,7 @@ import { Test } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AssetKind, PrismaClient, ProcessingStatus } from '@prisma/client';
 import {
+  AssetCleanupDryRunResponseSchema,
   AssetCleanupResultSchema,
   AssetResponseSchema,
   AssetUploadResponseSchema,
@@ -558,6 +559,112 @@ describe('médias HTTP', () => {
     expect(listFree.KeyCount).toBe(0);
     const listRef = await s3Client.send(new ListObjectsV2Command({ Bucket: env.S3_BUCKET, Prefix: `uploads/${refAsset.id}/` }));
     expect(listRef.KeyCount).toBe(0);
+  });
+
+  it('un asset référencé uniquement par Hotspot.mediaAssetIds n\'est pas nettoyé', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const adminUser = await prisma.user.findFirstOrThrow({ where: { role: 'ADMIN' } });
+
+    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T10:00:00Z', { processingStatus: ProcessingStatus.READY });
+    const usedAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T10:00:01Z', { processingStatus: ProcessingStatus.READY });
+    const coverAsset = await insertAsset(AssetKind.PANORAMA, '2026-10-02T10:00:02Z', { processingStatus: ProcessingStatus.READY });
+
+    let city = await prisma.city.findFirst();
+    let cityCreated = false;
+    if (!city) {
+      city = await prisma.city.create({
+        data: { name: { fr: 'Ville' }, region: 'Region', lat: 33, lng: -7 },
+      });
+      cityCreated = true;
+    }
+
+    const tour = await prisma.tour.create({
+      data: {
+        title: { fr: 'Tour Hotspot' },
+        summary: { fr: 'Résumé' },
+        cityId: city.id,
+        createdById: adminUser.id,
+        coverAssetId: coverAsset.id,
+      },
+    });
+
+    const scene = await prisma.scene.create({
+      data: {
+        tourId: tour.id,
+        title: { fr: 'Scene' },
+        panoramaAssetId: coverAsset.id,
+        weight: 1,
+        createdById: adminUser.id,
+      },
+    });
+
+    const hotspot = await prisma.hotspot.create({
+      data: {
+        sceneId: scene.id,
+        type: 'INFO',
+        yaw: 0,
+        pitch: 0,
+        label: { fr: 'Hotspot' },
+        icon: 'INFO',
+        mediaAssetIds: [usedAsset.id],
+        createdById: adminUser.id,
+      },
+    });
+
+    try {
+      const payloadDryRun = JSON.stringify({ dryRun: true });
+      const dryRunRes = await application().inject({
+        method: 'POST',
+        url: '/api/v1/admin/assets/cleanup',
+        headers: {
+          cookie: sessionCookie(editor.sessionId),
+          'x-csrf-token': editor.csrfToken,
+          'content-type': 'application/json',
+        },
+        payload: payloadDryRun,
+      });
+
+      expect(dryRunRes.statusCode).toBe(200);
+      const parsedDryRun = AssetCleanupDryRunResponseSchema.parse(dryRunRes.json());
+      
+      const freeInDryRun = parsedDryRun.items.find((i) => i.id === freeAsset.id);
+      expect(freeInDryRun).toBeDefined();
+      
+      const usedInDryRun = parsedDryRun.items.find((i) => i.id === usedAsset.id);
+      expect(usedInDryRun).toBeUndefined();
+
+      const payloadReal = JSON.stringify({ dryRun: false });
+      const realRes = await application().inject({
+        method: 'POST',
+        url: '/api/v1/admin/assets/cleanup',
+        headers: {
+          cookie: sessionCookie(editor.sessionId),
+          'x-csrf-token': editor.csrfToken,
+          'content-type': 'application/json',
+        },
+        payload: payloadReal,
+      });
+
+      expect(realRes.statusCode).toBe(200);
+      const parsedReal = AssetCleanupResultSchema.parse(realRes.json());
+      expect(parsedReal.deleted).toBeGreaterThanOrEqual(1);
+
+      const freeDb = await prisma.asset.findUnique({ where: { id: freeAsset.id } });
+      expect(freeDb).toBeNull();
+
+      const usedDb = await prisma.asset.findUnique({ where: { id: usedAsset.id } });
+      expect(usedDb).not.toBeNull();
+    } finally {
+      await prisma.hotspot.delete({ where: { id: hotspot.id } }).catch(() => {});
+      await prisma.scene.delete({ where: { id: scene.id } }).catch(() => {});
+      await prisma.tour.delete({ where: { id: tour.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: freeAsset.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: usedAsset.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: coverAsset.id } }).catch(() => {});
+      if (cityCreated) {
+        await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
+      }
+    }
   });
 });
 
