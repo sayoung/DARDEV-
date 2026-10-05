@@ -171,7 +171,8 @@ describe('médias HTTP', () => {
       'width',
     ]);
     const parsed = AssetResponseSchema.parse(body);
-    expect(parsed).toEqual({
+    expect(typeof parsed.thumbnailUrl).toBe('string');
+    expect(parsed).toMatchObject({
       id: image.id,
       kind: AssetKind.IMAGE,
       mimeType: 'image/jpeg',
@@ -180,7 +181,6 @@ describe('médias HTTP', () => {
       height: 600,
       processingStatus: ProcessingStatus.READY,
       processingLog: null,
-      thumbnailUrl: expect.any(String),
       copyright: 'Libre',
       createdAt: '2026-09-01T00:00:00.000Z',
     });
