@@ -1,4 +1,5 @@
 import { configDefaults, type TestProjectConfiguration } from 'vitest/config';
+import { resolve } from 'node:path';
 
 const exclude = [...configDefaults.exclude, 'e2e/**'];
 
@@ -74,7 +75,7 @@ const workspace: TestProjectConfiguration[] = [
       environment: 'node',
       include: ['**/*.spec.ts'],
       alias: {
-        '@xplor/shared': '../packages/shared/src/index.ts',
+        '@xplor/shared': resolve(__dirname, './packages/shared/src/index.ts'),
       },
     },
   },
