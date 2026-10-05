@@ -13,6 +13,10 @@ import {
   type AssetUploadRequest,
   type AssetUploadResponse,
   type Paginated,
+  type AssetCleanupDryRunResponse,
+  type AssetCleanupResult,
+  type AssetCleanupResponse,
+  AssetCleanupDryRunResponseSchema,
 } from '@xplor/shared';
 
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -221,6 +225,52 @@ export class AssetsService {
 
     await this.panoramaQueue.enqueue(id, 'reprocess');
     return toAsset(updatedAsset, this.env.MEDIA_PUBLIC_URL);
+  }
+
+  async cleanup(dryRun: true): Promise<AssetCleanupDryRunResponse>;
+  async cleanup(dryRun: false): Promise<AssetCleanupResult>;
+  async cleanup(dryRun: boolean): Promise<AssetCleanupResponse> {
+    const orphanAssets = await this.prisma.asset.findMany({
+      where: {
+        coverOf: { none: {} },
+        panoramas: { none: {} },
+        ambientOf: { none: {} },
+        hotelLogos: { none: {} },
+      },
+    });
+
+    const usedInHotspots = await this.getHotspotMediaAssetIds();
+
+    const actualOrphans = orphanAssets.filter((asset) => !usedInHotspots.has(asset.id));
+
+    if (dryRun) {
+      let count = 0;
+      let totalBytes = 0;
+      const items = actualOrphans.map((asset) => {
+        count++;
+        totalBytes += asset.sizeBytes;
+        return {
+          id: asset.id,
+          filename: asset.originalKey ? asset.originalKey.split('/').pop() ?? '' : '',
+          kind: asset.kind,
+          status: asset.processingStatus,
+        };
+      });
+      return AssetCleanupDryRunResponseSchema.parse({ count, totalBytes, items });
+    } else {
+      let deleted = 0;
+      let failed = 0;
+      for (const asset of actualOrphans) {
+        try {
+          await this.remove(asset.id);
+          deleted++;
+        } catch (error: unknown) {
+          this.logger.error(`Erreur lors de la suppression de l'asset orphelin ${asset.id}`, error);
+          failed++;
+        }
+      }
+      return { deleted, failed };
+    }
   }
 
   private async getHotspotMediaAssetIds(): Promise<Set<string>> {
