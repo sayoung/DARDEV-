@@ -120,4 +120,25 @@ describe('loadEnv', () => {
       }),
     ).toThrow(/API_CORS_ORIGINS/);
   });
+
+  it('validates API_CORS_ORIGINS and API_TRUST_PROXY defaults and values', () => {
+    // API_TRUST_PROXY default
+    const defaultEnv = loadEnv(exampleEnv());
+    expect(defaultEnv.API_TRUST_PROXY).toBe(false);
+
+    // API_TRUST_PROXY true
+    expect(
+      loadEnv({ ...exampleEnv(), API_TRUST_PROXY: 'true' }).API_TRUST_PROXY,
+    ).toBe(true);
+
+    // API_TRUST_PROXY false
+    expect(
+      loadEnv({ ...exampleEnv(), API_TRUST_PROXY: 'false' }).API_TRUST_PROXY,
+    ).toBe(false);
+
+    // API_TRUST_PROXY invalid rejected
+    expect(() => loadEnv({ ...exampleEnv(), API_TRUST_PROXY: 'invalid' })).toThrow(
+      /API_TRUST_PROXY/,
+    );
+  });
 });
