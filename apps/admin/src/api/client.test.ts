@@ -10,6 +10,7 @@ import {
   acceptInvite,
   apiFetch,
   clearCsrfToken,
+  resetIsRedirectingForTests,
   fetchCurrentUser,
   forgotPassword,
   login,
@@ -380,6 +381,7 @@ describe('session expiration', () => {
 
   beforeEach(() => {
     clearCsrfToken();
+    resetIsRedirectingForTests();
     fetchMock.mockReset();
     vi.stubGlobal('fetch', fetchMock);
     pushStateSpy = vi.spyOn(window.history, 'pushState');
@@ -404,12 +406,17 @@ describe('session expiration', () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
     await apiFetch('/api/v1/auth/login', { method: 'POST' });
     expect(pushStateSpy).toHaveBeenCalledTimes(0);
+
+    await apiFetch('/api/v1/admin/tours');
+    expect(pushStateSpy).toHaveBeenCalledTimes(1);
   });
 
   it('401 on GET /auth/me causes no redirection', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
     await apiFetch('/api/v1/auth/me', { method: 'GET' });
     expect(pushStateSpy).toHaveBeenCalledTimes(0);
+
+    await apiFetch('/api/v1/admin/tours');
+    expect(pushStateSpy).toHaveBeenCalledTimes(1);
   });
 });
-

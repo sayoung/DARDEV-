@@ -53,9 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return requestLogin(input).then((profile) => {
         setState({ status: 'authenticated', profile });
         const url = new URL(window.location.href);
-        if (url.searchParams.has('notice') && url.searchParams.get('notice') === 'expired') {
+        if (url.searchParams.get('notice') === 'expired') {
           url.searchParams.delete('notice');
-          window.history.replaceState(null, '', url.toString().replace(url.origin, ''));
+          window.history.replaceState(null, '', url.pathname + url.search + url.hash);
         }
       });
     },
