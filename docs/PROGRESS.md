@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b NF-01 (trustProxy en prod) : dans `.env.production.example`, ajoute `API_TRUST_PROXY=true` avec un commentaire en français (Caddy est le seul proxy devant l… — API_TRUST_PROXY=true ajouté à .env.production.example (le service api le reçoit déjà via env_file), D-109 consignée, ligne de dépannage ajoutée dans DEPLOY.md ; contrôles OK. (6c952dd)
 - 05/10/2026 — M3b NF-01 (trustProxy, test d'abord) : dans apps/api/src/config/env.ts, ajoute la variable `API_TRUST_PROXY` (booléen lu depuis la chaîne 'true'/'false', défaut… — API_TRUST_PROXY ajouté au schéma d'env (booléen, défaut false) avec test, transmis à FastifyAdapter et documenté dans apps/api/.env.example ; lint, typecheck et tests passent. (a5dbe8d)
 - 05/10/2026 — M3b NF-10 (docs/DEPLOY.md, partie 2) : complète `docs/DEPLOY.md` : mises à jour (`git pull` puis `deploy/deploy.sh`), sauvegarde quotidienne (ligne crontab d'ex… — docs/DEPLOY.md complété (mises à jour, backup/cron, restauration, rollback, dépannage, démo QR, note agents/VPS) conformément aux scripts et au compose existants. (ccc9f90)
 - 05/10/2026 — M3b NF-10 (docs/DEPLOY.md, partie 1) : crée `docs/DEPLOY.md` en français : prérequis du VPS (Docker, utilisateur xplor, DNS A déjà en place pour api, admin, v,… — docs/DEPLOY.md couvre tous les points demandés, est cohérent avec deploy.sh, .env.production.example, le Caddyfile et le seed, sans secret réel. (6c41365)
