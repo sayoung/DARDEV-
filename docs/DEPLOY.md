@@ -105,22 +105,40 @@ Ce script validera l'environnement, construira ou téléchargera les nouvelles i
 
 ## 8. Sauvegarde (Backup) quotidienne
 
-Pour garantir la pérennité des données (base PostgreSQL et fichiers médias dans MinIO), une sauvegarde régulière est indispensable. Le script `deploy/backup.sh` génère une archive horodatée des données.
+Pour garantir la pérennité des données (base PostgreSQL et fichiers médias dans MinIO), une sauvegarde régulière est indispensable. Le script `deploy/backup.sh` génère un dossier horodaté de sauvegarde.
 
-Pour automatiser une sauvegarde quotidienne à 3h30 du matin (avec une rotation conservant les 7 dernières archives), ajoutez la ligne suivante à votre table de planification (via `crontab -e`) :
+Ce dossier est créé par défaut dans `/var/backups/xplor/<horodatage>/` (modifiable via la variable `BACKUP_DIR` dans `.env.production`). Il contient deux fichiers :
+- `db.dump` : la base de données PostgreSQL.
+- `media.tar.gz` : l'archive des fichiers stockés dans MinIO.
+
+Le script effectue automatiquement une rotation et supprime les dossiers de sauvegarde vieux de plus de 7 jours (`-mtime +7`).
+
+Pour automatiser une sauvegarde quotidienne à 3h30 du matin, ajoutez la ligne suivante à la table de planification de l'utilisateur `xplor` (via `crontab -e`) :
 
 ```cron
 30 3 * * * cd /home/xplor/xplor_smit && deploy/backup.sh >> /var/log/xplor-backup.log 2>&1
 ```
 
+*Note :* Assurez-vous que le dossier de sauvegarde (`/var/backups/xplor` par défaut) et le fichier de log (`/var/log/xplor-backup.log`) sont accessibles en écriture par l'utilisateur `xplor`.
+
 ## 9. Restauration de la sauvegarde
 
-En cas d'incident, utilisez le script `deploy/restore.sh` en lui passant le chemin de l'archive de sauvegarde à restaurer :
+En cas d'incident, utilisez le script `deploy/restore.sh` en lui passant le chemin du dossier de sauvegarde à restaurer :
 
 ```bash
-./deploy/restore.sh path/to/backup.tar.gz
+./deploy/restore.sh /var/backups/xplor/<horodatage>
 ```
-Le script s'assurera de stopper les services, purger l'état actuel et restaurer la base de données et les volumes MinIO à partir de l'archive, avant de redémarrer les services.
+
+Le script demandera de confirmer l'opération en tapant `OUI`. Vous pouvez contourner cette confirmation en ajoutant l'option `--yes` (utile pour l'automatisation) :
+```bash
+./deploy/restore.sh /var/backups/xplor/<horodatage> --yes
+```
+
+Le script effectue les opérations suivantes :
+1. Arrête les services `api` et `worker`.
+2. Restaure la base de données via `pg_restore --clean --if-exists`.
+3. Extrait l'archive `media.tar.gz` (si présente) directement dans le dossier `/data` de MinIO, sans purger les fichiers existants.
+4. Redémarre les services `api` et `worker`.
 
 **Recommandation de test :** Il est fortement recommandé d'exécuter un **test de restauration** régulièrement sur un environnement bac à sable distinct pour s'assurer que l'archive est intègre et que la procédure fonctionne.
 
@@ -134,7 +152,7 @@ En cas de mise en production instable, vous pouvez restaurer une version précé
    ./deploy/deploy.sh
    ```
 
-*Attention :* Si le code instable contenait des migrations de base de données modifiant le schéma, un simple retour arrière de code peut causer des incohérences. Vous devrez alors potentiellement restaurer la dernière sauvegarde fonctionnelle de la base de données via `deploy/restore.sh` pour garantir la synchronisation entre le code et les données.
+*Attention :* Le script `deploy.sh` applique automatiquement les migrations de base de données (`prisma migrate deploy`). Un simple retour arrière du code ne défait **pas** les migrations. Si le code instable contenait des migrations modifiant le schéma, vous devrez potentiellement restaurer la dernière sauvegarde fonctionnelle de la base de données via `deploy/restore.sh /var/backups/xplor/<horodatage>` pour garantir la synchronisation entre le code et les données.
 
 ## 11. Dépannage
 
