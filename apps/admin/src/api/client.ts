@@ -56,6 +56,10 @@ export function clearCsrfToken(): void {
 
 let isRedirecting = false;
 
+export function resetIsRedirectingForTests(): void {
+  isRedirecting = false;
+}
+
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const method = (init.method ?? 'GET').toUpperCase();
   const headers = new Headers(init.headers);
