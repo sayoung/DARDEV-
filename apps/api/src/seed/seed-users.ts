@@ -13,7 +13,7 @@ export interface SeedUser {
   uiLang: 'fr';
 }
 
-const SEED_USERS = [
+export const SEED_USERS = [
   { email: 'admin@xplor.local', name: 'Administrateur', role: Role.ADMIN },
   { email: 'editor@xplor.local', name: 'Éditeur', role: Role.EDITOR },
   { email: 'manager@xplor.local', name: 'Gestionnaire', role: Role.HOTEL_MANAGER },
