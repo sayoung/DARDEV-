@@ -28,10 +28,22 @@ export interface StorageService {
 
 @Injectable()
 export class S3StorageService implements StorageService {
+  private readonly publicS3: S3Client;
+
   constructor(
     @Inject(S3_CLIENT) private readonly s3: S3Client,
     @Inject(ENV) private readonly env: Env,
-  ) {}
+  ) {
+    this.publicS3 = new S3Client({
+      endpoint: env.S3_PUBLIC_ENDPOINT,
+      region: 'us-east-1',
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: env.S3_ACCESS_KEY,
+        secretAccessKey: env.S3_SECRET_KEY,
+      },
+    });
+  }
 
   async generatePresignedUploadUrl(key: string, contentType: string, sizeBytes: number): Promise<string> {
     const command = new PutObjectCommand({
@@ -40,7 +52,7 @@ export class S3StorageService implements StorageService {
       ContentType: contentType,
       ContentLength: sizeBytes,
     });
-    return getSignedUrl(this.s3, command, { expiresIn: UPLOAD_URL_TTL_SECONDS });
+    return getSignedUrl(this.publicS3, command, { expiresIn: UPLOAD_URL_TTL_SECONDS });
   }
 
   async getSignedUrl(key: string, expiresIn: number): Promise<string> {
@@ -48,7 +60,7 @@ export class S3StorageService implements StorageService {
       Bucket: this.env.S3_BUCKET,
       Key: key,
     });
-    return getSignedUrl(this.s3, command, { expiresIn });
+    return getSignedUrl(this.publicS3, command, { expiresIn });
   }
 
   async deleteObject(key: string): Promise<void> {

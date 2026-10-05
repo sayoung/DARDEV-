@@ -31,6 +31,7 @@ describe('S3StorageService', () => {
       DATABASE_URL: 'postgres://',
       REDIS_URL: 'redis://',
       S3_ENDPOINT: 'http://localhost:9000',
+      S3_PUBLIC_ENDPOINT: 'http://localhost:9000',
       S3_ACCESS_KEY: 'test',
       S3_SECRET_KEY: 'test',
       S3_BUCKET: 'test-bucket',
@@ -55,6 +56,21 @@ describe('S3StorageService', () => {
       expect(url).toContain('test-key.jpg');
       expect(url).toContain('X-Amz-Expires=900');
     });
+
+    it('should use S3_PUBLIC_ENDPOINT when it differs from S3_ENDPOINT', async () => {
+      const customEnv = { ...env, S3_ENDPOINT: 'http://minio:9000', S3_PUBLIC_ENDPOINT: 'https://media.xplor.ma' };
+      const customService = new S3StorageService(s3, customEnv);
+      const url = await customService.generatePresignedUploadUrl('test-key.jpg', 'image/jpeg', 1024);
+      expect(url.startsWith('https://media.xplor.ma')).toBe(true);
+    });
+
+    it('should use S3_ENDPOINT when S3_PUBLIC_ENDPOINT falls back to it', async () => {
+      // simulating fallback in env.ts
+      const customEnv = { ...env, S3_ENDPOINT: 'http://minio:9000', S3_PUBLIC_ENDPOINT: 'http://minio:9000' };
+      const customService = new S3StorageService(s3, customEnv);
+      const url = await customService.generatePresignedUploadUrl('test-key.jpg', 'image/jpeg', 1024);
+      expect(url.startsWith('http://minio:9000')).toBe(true);
+    });
   });
 
   describe('getSignedUrl', () => {
@@ -63,6 +79,13 @@ describe('S3StorageService', () => {
       expect(url).toContain('test-bucket');
       expect(url).toContain('test-key.jpg');
       expect(url).toContain('X-Amz-Expires=3600');
+    });
+
+    it('should use S3_PUBLIC_ENDPOINT when it differs from S3_ENDPOINT', async () => {
+      const customEnv = { ...env, S3_ENDPOINT: 'http://minio:9000', S3_PUBLIC_ENDPOINT: 'https://media.xplor.ma' };
+      const customService = new S3StorageService(s3, customEnv);
+      const url = await customService.getSignedUrl('test-key.jpg', 3600);
+      expect(url.startsWith('https://media.xplor.ma')).toBe(true);
     });
   });
 
@@ -143,6 +166,7 @@ describe('LocalStorageService', () => {
       DATABASE_URL: 'postgres://',
       REDIS_URL: 'redis://',
       S3_ENDPOINT: 'http://localhost:9000',
+      S3_PUBLIC_ENDPOINT: 'http://localhost:9000',
       S3_ACCESS_KEY: 'test',
       S3_SECRET_KEY: 'test',
       S3_BUCKET: 'test-bucket',
