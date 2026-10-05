@@ -70,8 +70,8 @@ async function login(): Promise<void> {
 }
 
 // TODO: implémenter la création de visite en partie C
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function createTour(_assetIds: Record<string, string>): Promise<void> {
+  await Promise.resolve(_assetIds);
   // Vide pour le moment
 }
 
