@@ -1,5 +1,5 @@
 import { HttpException } from '@nestjs/common';
-import { AssetKind, ProcessingStatus, type AssetListQuery } from '@xplor/shared';
+import { AssetKind, ProcessingStatus, type AssetListQuery, AssetCleanupDryRunResponseSchema, AssetCleanupResultSchema } from '@xplor/shared';
 import { type Prisma } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
@@ -36,7 +36,14 @@ interface OrderKey {
 }
 
 interface ListArgs {
-  where?: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } };
+  where?: {
+    kind?: AssetKind;
+    processingStatus?: { in?: ProcessingStatus[] };
+    coverOf?: { none: Record<string, never> };
+    panoramas?: { none: Record<string, never> };
+    ambientOf?: { none: Record<string, never> };
+    hotelLogos?: { none: Record<string, never> };
+  };
   orderBy?: OrderKey[];
   skip?: number;
   take?: number;
@@ -79,7 +86,7 @@ function harness(rows: AssetRow[]) {
       findMany: hotspotFindMany,
     },
     asset: {
-      count: ({ where }: { where: { kind?: AssetKind } }): Promise<number> =>
+      count: ({ where }: { where: ListArgs['where'] }): Promise<number> =>
         Promise.resolve(rows.filter((item) => matches(item, where)).length),
       findMany: (args: ListArgs): Promise<AssetRow[]> => {
         lists.push(args);
@@ -142,7 +149,8 @@ function harness(rows: AssetRow[]) {
   return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue, hotspotFindMany };
 }
 
-function matches(item: AssetRow, where: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } }): boolean {
+function matches(item: AssetRow, where: ListArgs['where']): boolean {
+  if (!where) return true;
   if (where.kind !== undefined && item.kind !== where.kind) {
     return false;
   }
@@ -150,6 +158,13 @@ function matches(item: AssetRow, where: { kind?: AssetKind; processingStatus?: {
     if (!where.processingStatus.in.includes(item.processingStatus)) {
       return false;
     }
+  }
+  if (where.coverOf?.none !== undefined) {
+    const withCount = item as AssetRow & { _count?: { coverOf?: number; panoramas?: number; ambientOf?: number; hotelLogos?: number } };
+    if (withCount._count?.coverOf !== undefined && withCount._count.coverOf > 0) return false;
+    if (withCount._count?.panoramas !== undefined && withCount._count.panoramas > 0) return false;
+    if (withCount._count?.ambientOf !== undefined && withCount._count.ambientOf > 0) return false;
+    if (withCount._count?.hotelLogos !== undefined && withCount._count.hotelLogos > 0) return false;
   }
   return true;
 }
@@ -620,6 +635,66 @@ describe('AssetsService', () => {
 
       await expect(service.remove(MIDDLE_ID)).resolves.not.toThrow();
       expect(deletes).toHaveLength(1);
+    });
+  });
+
+  describe('cleanup', () => {
+    it('dryRun true : liste uniquement l\'orphelin', async () => {
+      // 1. orphelin
+      const orphan = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+      // 2. référencé par coverOf
+      const cover = { ...row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z'), _count: { coverOf: 1 } };
+      // 3. référencé par Hotspot.mediaAssetIds
+      const hotspotMedia = row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
+
+      const { service, hotspotFindMany } = harness([orphan, cover, hotspotMedia]);
+      hotspotFindMany.mockResolvedValue([{ mediaAssetIds: [NEWER_ID] }]);
+
+      const result = await service.cleanup(true);
+
+      expect(result.count).toBe(1);
+      expect(result.totalBytes).toBe(128); // since sizeBytes is 128 in row()
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({
+        filename: `unit/${OLDER_ID}`.split('/').pop(),
+        kind: AssetKind.IMAGE,
+        status: ProcessingStatus.PENDING,
+      });
+      expect(() => AssetCleanupDryRunResponseSchema.parse(result)).not.toThrow();
+    });
+
+    it('dryRun false : supprime les orphelins et continue en cas d\'erreur', async () => {
+      const o1 = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+      const o2 = row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z');
+      const o3 = row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
+      
+      const { service, hotspotFindMany } = harness([o1, o2, o3]);
+      hotspotFindMany.mockResolvedValue([]);
+      
+      const removeSpy = vi.spyOn(service, 'remove').mockImplementation((id) => {
+        if (id === MIDDLE_ID) {
+          return Promise.reject(new Error('Erreur de suppression simulée'));
+        }
+        return Promise.resolve();
+      });
+      
+      const result = await service.cleanup(false);
+      
+      expect(result).toEqual({ deleted: 2, failed: 1 });
+      expect(removeSpy).toHaveBeenCalledTimes(3);
+      expect(() => AssetCleanupResultSchema.parse(result)).not.toThrow();
+    });
+
+    it('retourne count 0 / deleted 0 s\'il n\'y a aucun orphelin', async () => {
+      const { service, hotspotFindMany } = harness([]);
+      hotspotFindMany.mockResolvedValue([]);
+
+      const resultTrue = await service.cleanup(true);
+      expect(resultTrue.count).toBe(0);
+      expect(resultTrue.totalBytes).toBe(0);
+
+      const resultFalse = await service.cleanup(false);
+      expect(resultFalse).toEqual({ deleted: 0, failed: 0 });
     });
   });
 });
