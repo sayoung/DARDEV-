@@ -25,23 +25,23 @@ for arg in "$@"; do
 done
 
 echo "Building production images..."
-docker compose -f docker-compose.prod.yml build
+docker compose --env-file .env.production -f docker-compose.prod.yml build
 
 echo "Starting infrastructure services..."
-docker compose -f docker-compose.prod.yml up -d postgres redis minio minio-init
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d postgres redis minio minio-init
 
 echo "Applying database migrations..."
-docker compose -f docker-compose.prod.yml run --rm --no-deps -e HOME=/tmp api npx --yes prisma@6.19.3 migrate deploy --schema prisma/schema.prisma
+docker compose --env-file .env.production -f docker-compose.prod.yml run --rm --no-deps -e HOME=/tmp api npx --yes prisma@6.19.3 migrate deploy --schema prisma/schema.prisma
 
 if [[ "$SEED" == "true" ]]; then
     echo "Seeding database..."
-    docker compose -f docker-compose.prod.yml run --rm --no-deps api node dist/cli/main.js seed
+    docker compose --env-file .env.production -f docker-compose.prod.yml run --rm --no-deps api node dist/cli/main.js seed
 fi
 
 echo "Starting all services..."
-docker compose -f docker-compose.prod.yml up -d
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 
 echo "Container status:"
-docker compose -f docker-compose.prod.yml ps
+docker compose --env-file .env.production -f docker-compose.prod.yml ps
 
 echo "Deployment completed successfully."
