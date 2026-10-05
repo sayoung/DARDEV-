@@ -10,6 +10,7 @@ import { AssetsService } from '../catalog/assets.service.js';
 import { parseReprocessArgs } from './reprocess-args.js';
 import { formatCliError } from './format-error.js';
 import { loadEnv } from '../config/env.js';
+import { runSeed } from '../seed/run-seed.js';
 
 function loadLocalEnvFile(): void {
   const path = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../.env');
@@ -21,6 +22,21 @@ function loadLocalEnvFile(): void {
 
 async function bootstrap() {
   const logger = new Logger('CLI');
+  const command = process.argv[2];
+
+  if (command === 'seed') {
+    loadLocalEnvFile();
+    logger.log('Lancement du script de seed...');
+    try {
+      await runSeed();
+      logger.log('Seed terminé avec succès.');
+      process.exit(0);
+    } catch (error) {
+      logger.error(`Erreur lors du seed: ${formatCliError(error)}`);
+      process.exit(1);
+    }
+    return;
+  }
 
   let mode;
   try {
