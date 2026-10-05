@@ -53,17 +53,17 @@ if [ -z "${POSTGRES_USER:-}" ] || [ -z "${POSTGRES_DB:-}" ]; then
 fi
 
 echo "Arrêt des services api et worker..."
-docker compose -f docker-compose.prod.yml stop api worker
+docker compose --env-file .env.production -f docker-compose.prod.yml stop api worker
 
 echo "Restauration de la base de données..."
-docker compose -f docker-compose.prod.yml exec -T postgres pg_restore --clean --if-exists --no-owner -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" < "$BACKUP_DIR/db.dump"
+docker compose --env-file .env.production -f docker-compose.prod.yml exec -T postgres pg_restore --clean --if-exists --no-owner -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" < "$BACKUP_DIR/db.dump"
 
 if [ -f "$BACKUP_DIR/media.tar.gz" ]; then
     echo "Restauration des médias..."
-    docker compose -f docker-compose.prod.yml exec -T minio sh -c "tar -xzf - -C /data" < "$BACKUP_DIR/media.tar.gz"
+    docker compose --env-file .env.production -f docker-compose.prod.yml exec -T minio sh -c "tar -xzf - -C /data" < "$BACKUP_DIR/media.tar.gz"
 fi
 
 echo "Redémarrage des services api et worker..."
-docker compose -f docker-compose.prod.yml start api worker
+docker compose --env-file .env.production -f docker-compose.prod.yml start api worker
 
 echo "Restauration terminée avec succès."

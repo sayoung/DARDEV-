@@ -39,12 +39,12 @@ trap cleanup EXIT
 
 # 1. Sauvegarde de PostgreSQL
 echo "Sauvegarde de la base de données..."
-docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U "${POSTGRES_USER}" -Fc "${POSTGRES_DB}" > "${CURRENT_BACKUP_DIR}/db.dump.tmp"
+docker compose --env-file .env.production -f docker-compose.prod.yml exec -T postgres pg_dump -U "${POSTGRES_USER}" -Fc "${POSTGRES_DB}" > "${CURRENT_BACKUP_DIR}/db.dump.tmp"
 mv "${CURRENT_BACKUP_DIR}/db.dump.tmp" "${CURRENT_BACKUP_DIR}/db.dump"
 
 # 2. Sauvegarde des médias (MinIO)
 echo "Sauvegarde des médias (volume minio)..."
-docker compose -f docker-compose.prod.yml exec -T minio tar -czf - -C /data . > "${CURRENT_BACKUP_DIR}/media.tar.gz"
+docker compose --env-file .env.production -f docker-compose.prod.yml exec -T minio tar -czf - -C /data . > "${CURRENT_BACKUP_DIR}/media.tar.gz"
 
 # Vérification de l'archive
 if [ ! -s "${CURRENT_BACKUP_DIR}/media.tar.gz" ]; then
