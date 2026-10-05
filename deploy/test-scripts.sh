@@ -11,10 +11,16 @@ for script in *.sh; do
 done
 
 echo "Test de restore.sh (sans argument)..."
-if ./restore.sh > /dev/null 2>&1; then
+if STDERR=$(bash ./restore.sh 2>&1 >/dev/null); then
     echo "Erreur : restore.sh aurait dû échouer sans argument." >&2
     exit 1
 fi
-echo "  -> restore.sh échoue correctement."
+
+if [[ "$STDERR" != *"argument <dossier-de-sauvegarde> manquant"* ]]; then
+    echo "Erreur : le message d'erreur est incorrect." >&2
+    echo "Message obtenu : $STDERR" >&2
+    exit 1
+fi
+echo "  -> restore.sh échoue correctement avec le bon message."
 
 echo "Tests réussis."
