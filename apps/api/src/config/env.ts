@@ -28,6 +28,7 @@ const envKeys = [
   'MEDIA_PUBLIC_URL',
   'PUBLIC_WEB_URL',
   'API_CORS_ORIGINS',
+  'API_TRUST_PROXY',
 ] as const;
 
 export const envSchema = z.object({
@@ -55,6 +56,10 @@ export const envSchema = z.object({
     .refine((val) => !val.endsWith('/'), { message: "L'URL ne doit pas se terminer par un '/'" })
     .default('http://localhost:5174'),
   API_CORS_ORIGINS: z.string().optional(),
+  API_TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((val) => val === 'true'),
 })
 .superRefine((env, ctx) => {
   if (env.NODE_ENV === 'production' && !env.API_CORS_ORIGINS) {

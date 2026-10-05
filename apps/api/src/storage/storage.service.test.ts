@@ -43,6 +43,7 @@ describe('S3StorageService', () => {
       MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor',
       PUBLIC_WEB_URL: 'http://localhost:5174',
       API_CORS_ORIGINS: ['http://localhost:5173', 'http://localhost:5174'],
+      API_TRUST_PROXY: false,
     };
     service = new S3StorageService(s3, env);
   });
@@ -155,6 +156,7 @@ describe('LocalStorageService', () => {
       MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor',
       PUBLIC_WEB_URL: 'http://localhost:5174',
       API_CORS_ORIGINS: ['http://localhost:5173', 'http://localhost:5174'],
+      API_TRUST_PROXY: false,
     };
     service = new LocalStorageService(env);
   });

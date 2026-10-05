@@ -25,7 +25,7 @@ function loadLocalEnvFile(): void {
 async function bootstrap(): Promise<void> {
   loadLocalEnvFile();
   const env = loadEnv(process.env);
-  const fastifyAdapter = new FastifyAdapter({ maxParamLength: 1000 });
+  const fastifyAdapter = new FastifyAdapter({ maxParamLength: 1000, trustProxy: env.API_TRUST_PROXY });
   fastifyAdapter.getInstance().addContentTypeParser('*', (req, payload, done) => {
     done(null, null); // We don't need body, we will read req.raw
   });
