@@ -81,6 +81,12 @@
       "empty": "Aucun média trouvé.",
       "error": "Impossible de charger les médias.",
       "emptyOption": "Sélectionner un média...",
+      "thumbnailOf": "Miniature de {{id}}",
+      "kind": {
+        "IMAGE": "Image",
+        "PANORAMA": "Panorama",
+        "VIDEO": "Vidéo"
+      },
       "status": {
         "PENDING": "En attente",
         "PROCESSING": "En cours",

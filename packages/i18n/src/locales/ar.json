@@ -80,6 +80,12 @@
       "empty": "لم يتم العثور على وسائط.",
       "error": "تعذر تحميل الوسائط.",
       "emptyOption": "اختر وسيط...",
+      "thumbnailOf": "Miniature de {{id}}",
+      "kind": {
+        "IMAGE": "Image",
+        "PANORAMA": "Panorama",
+        "VIDEO": "Vidéo"
+      },
       "status": {
         "PENDING": "قيد الانتظار",
         "PROCESSING": "قيد المعالجة",

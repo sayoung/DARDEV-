@@ -135,7 +135,7 @@ describe('TourForm Pages', () => {
 
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
     fireEvent.click(screen.getByLabelText(/Musée/));
-    fireEvent.change(screen.getByLabelText(resources.fr.tour.form.coverAssetId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e' } });
+    fireEvent.click(await screen.findByRole('radio', { name: /5b2a1d9e/ }));
     
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
@@ -168,7 +168,7 @@ describe('TourForm Pages', () => {
     fireEvent.change(frSummaryInput, { target: { value: 'Un résumé court' } });
 
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
-    fireEvent.change(screen.getByLabelText(resources.fr.tour.form.coverAssetId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e' } });
+    fireEvent.click(await screen.findByRole('radio', { name: /5b2a1d9e/ }));
 
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 

@@ -80,6 +80,12 @@
       "empty": "No media found.",
       "error": "Failed to load media.",
       "emptyOption": "Select media...",
+      "thumbnailOf": "Miniature de {{id}}",
+      "kind": {
+        "IMAGE": "Image",
+        "PANORAMA": "Panorama",
+        "VIDEO": "Vidéo"
+      },
       "status": {
         "PENDING": "Pending",
         "PROCESSING": "Processing",
