@@ -839,3 +839,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | --- | --- | --- |
 | @fastify/cors | CORS limité aux domaines Xplor via API_CORS_ORIGINS | MIT |
 | @fastify/helmet | CSP stricte et HSTS exigés par NF-01 | MIT |
+
+## D-107 — Caddyfile de production (M3b NF-10 / NF-01)
+
+- **Date :** 05/10/2026
+- **Décision :** même domaine avec proxy /api pour les fronts, médias sur media.xplor.ma, demo.xplor.ma servi depuis un dossier monté en lecture seule (DEMO_SITE_DIR) à confirmer par le porteur.
+- **Alternatives :** Nginx ou Traefik comme reverse proxy.
+- **À valider :** oui

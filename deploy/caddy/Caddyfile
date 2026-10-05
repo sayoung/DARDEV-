@@ -1,2 +1,59 @@
-# Caddyfile placeholder
+{
+	email {$ACME_EMAIL}
+}
 
+(securite) {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	header X-Content-Type-Options "nosniff"
+	header Referrer-Policy "strict-origin-when-cross-origin"
+	header -Server
+}
+
+api.xplor.ma {
+	import securite
+	encode zstd gzip
+	reverse_proxy api:3000
+}
+
+admin.xplor.ma {
+	import securite
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv/admin
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+v.xplor.ma {
+	import securite
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+media.xplor.ma {
+	import securite
+	encode zstd gzip
+	reverse_proxy minio:9000
+}
+
+demo.xplor.ma {
+	import securite
+	encode zstd gzip
+	root * /srv/demo
+	file_server
+}
