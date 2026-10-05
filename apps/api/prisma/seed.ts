@@ -7,15 +7,6 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { runSeed } from '../src/seed/run-seed.js';
-import { SEED_CATEGORIES, SEED_CITIES } from '../src/seed/seed-catalog.js';
-import {
-  SEED_HOTEL,
-  SEED_KIOSK,
-  SEED_MANAGER_EMAIL,
-  SEED_SELECTION_ID,
-} from '../src/seed/seed-hotels.js';
-import { SEED_TOURS } from '../src/seed/seed-tours.js';
-import { SEED_USERS } from '../src/seed/seed-users.js';
 
 function loadLocalEnvFile(): void {
   const path = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
@@ -28,14 +19,6 @@ function loadLocalEnvFile(): void {
 async function main(): Promise<void> {
   loadLocalEnvFile();
   await runSeed();
-  console.log(`${String(SEED_USERS.length)} utilisateurs de démonstration prêts.`);
-  console.log(
-    `${String(SEED_CITIES.length)} villes et ${String(SEED_CATEGORIES.length)} catégories de démonstration prêtes.`,
-  );
-  console.log(
-    `${String([SEED_HOTEL].length)} hôtel, ${String([SEED_SELECTION_ID].length)} sélection, ${String([SEED_KIOSK].length)} kiosque et ${String([SEED_MANAGER_EMAIL].length)} rattachement de démonstration prêts.`,
-  );
-  console.log(`${String(SEED_TOURS.length)} visites liées prêtes.`);
 }
 
 void main().catch((error: unknown) => {

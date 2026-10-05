@@ -2,9 +2,15 @@ import { PrismaClient, Role as PrismaRole } from '@prisma/client';
 import { Role } from '@xplor/shared';
 
 import { PasswordService } from '../auth/password.service.js';
-import { seedCatalog } from './seed-catalog.js';
-import { seedHotels } from './seed-hotels.js';
-import { seedTours } from './seed-tours.js';
+import { seedCatalog, SEED_CATEGORIES, SEED_CITIES } from './seed-catalog.js';
+import {
+  seedHotels,
+  SEED_HOTEL,
+  SEED_KIOSK,
+  SEED_MANAGER_EMAIL,
+  SEED_SELECTION_ID,
+} from './seed-hotels.js';
+import { seedTours, SEED_TOURS } from './seed-tours.js';
 import { buildSeedUsers, type SeedUser } from './seed-users.js';
 
 const PRISMA_ROLE: Record<Role, PrismaRole> = {
@@ -54,4 +60,13 @@ export async function runSeed(): Promise<void> {
   } finally {
     await prisma.$disconnect();
   }
+
+  console.log(`${String(users.length)} utilisateurs de démonstration prêts.`);
+  console.log(
+    `${String(SEED_CITIES.length)} villes et ${String(SEED_CATEGORIES.length)} catégories de démonstration prêtes.`,
+  );
+  console.log(
+    `${String([SEED_HOTEL].length)} hôtel, ${String([SEED_SELECTION_ID].length)} sélection, ${String([SEED_KIOSK].length)} kiosque et ${String([SEED_MANAGER_EMAIL].length)} rattachement de démonstration prêts.`,
+  );
+  console.log(`${String(SEED_TOURS.length)} visites liées prêtes.`);
 }
