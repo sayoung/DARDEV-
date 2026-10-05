@@ -309,6 +309,9 @@ importers:
       bullmq:
         specifier: ^6.3.11
         version: 6.3.11(ioredis@6.0.0)
+      ioredis:
+        specifier: ^6.0.0
+        version: 6.0.0
       sharp:
         specifier: ^0.35.5
         version: 0.35.5(@types/node@22.20.4)

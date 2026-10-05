@@ -17,7 +17,8 @@ RUN cd /out && npx --yes prisma@6.19.3 generate --schema prisma/schema.prisma
 RUN test -f /out/dist/main.js && \
     test -f /out/node_modules/@xplor/shared/dist/index.js && \
     find /out/node_modules -path '*/.prisma/client/index.js' | grep -q . && \
-    test -d /out/node_modules/sharp
+    test -d /out/node_modules/sharp && \
+    test -d /out/node_modules/ioredis
 
 # Étape 2 : Production
 FROM node:22-bookworm-slim
