@@ -1,0 +1,197 @@
+{
+  "title": "La Kasbah des Oudayas",
+  "city": "Rabat",
+  "description": "Découvrez la Kasbah des Oudayas, un des plus anciens quartiers de Rabat inscrit au patrimoine mondial de l'UNESCO.",
+  "scenes": [
+    {
+      "file": "001.jpg",
+      "name": "Bab Oudaya, la porte monumentale",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    },
+    {
+      "file": "005.jpg",
+      "name": "Esplanade devant Bab Oudaya",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    },
+    {
+      "file": "004.jpg",
+      "name": "Remparts et porte d'entrée",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    },
+    {
+      "file": "009.jpg",
+      "name": "Passage entre les remparts",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    },
+    {
+      "file": "008.jpg",
+      "name": "Porte intérieure",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    },
+    {
+      "file": "013.jpg",
+      "name": "Ruelle de la kasbah",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "010.jpg",
+      "name": "Ruelle principale",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "029.jpg",
+      "name": "Ruelle bleue et blanche",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "002.jpg",
+      "name": "Ruelle blanchie à la chaux",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "003.jpg",
+      "name": "Ruelle et porte en arc",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "006.jpg",
+      "name": "Vers la plateforme",
+      "info": "Vue dégagée sur l'océan Atlantique et l'embouchure du Bouregreg depuis les hauteurs de la kasbah."
+    },
+    {
+      "file": "007.jpg",
+      "name": "Plateforme du Sémaphore, vue sur l'océan",
+      "info": "Vue dégagée sur l'océan Atlantique et l'embouchure du Bouregreg depuis les hauteurs de la kasbah."
+    },
+    {
+      "file": "026.jpg",
+      "name": "Porte du jardin",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "030.jpg",
+      "name": "Porte du jardin, autre vue",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "031.jpg",
+      "name": "Portes en bois",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "015.jpg",
+      "name": "Jardin andalou : le long des murs",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "017.jpg",
+      "name": "Jardin andalou : l'entrée",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "018.jpg",
+      "name": "Jardin andalou : la porte",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "019.jpg",
+      "name": "Jardin andalou : la pergola",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "021.jpg",
+      "name": "Jardin andalou : la fontaine",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "014.jpg",
+      "name": "Jardin andalou : les allées",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "012.jpg",
+      "name": "Jardin andalou : le pavillon",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "027.jpg",
+      "name": "Vers le café maure",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "028.jpg",
+      "name": "Ruelle près du café",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "024.jpg",
+      "name": "Café maure : ruelle d'accès",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "025.jpg",
+      "name": "Café maure : les abords",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "038.jpg",
+      "name": "Ruelle vers le café",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "032.jpg",
+      "name": "Placette fleurie",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "033.jpg",
+      "name": "Placette de la kasbah",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "034.jpg",
+      "name": "Café maure : terrasse sur le Bouregreg",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "035.jpg",
+      "name": "Café maure : porte de la terrasse",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "036.jpg",
+      "name": "Jardin andalou : vue d'ensemble",
+      "info": "Le jardin andalou, aménagé au début du XXᵉ siècle dans l'enceinte de la kasbah : orangers, allées pavées et fontaines."
+    },
+    {
+      "file": "016.jpg",
+      "name": "Panorama sur l'embouchure",
+      "info": "Vue dégagée sur l'océan Atlantique et l'embouchure du Bouregreg depuis les hauteurs de la kasbah."
+    },
+    {
+      "file": "011.jpg",
+      "name": "Panorama sur les remparts",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    },
+    {
+      "file": "020.jpg",
+      "name": "Passage vers le café",
+      "info": "Le café maure et sa terrasse face à l'embouchure du Bouregreg et à Salé, une halte incontournable de la visite."
+    },
+    {
+      "file": "022.jpg",
+      "name": "Galerie couverte",
+      "info": "Les ruelles blanches et bleues de la kasbah, l'un des plus anciens quartiers de Rabat, inscrit au patrimoine mondial de l'UNESCO avec la ville en 2012."
+    },
+    {
+      "file": "023.jpg",
+      "name": "Montée vers la porte",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    },
+    {
+      "file": "037.jpg",
+      "name": "Bab Oudaya, vue de l'esplanade",
+      "info": "Bab Oudaya, porte monumentale en pierre sculptée de l'époque almohade (fin du XIIᵉ siècle), et les remparts de la kasbah qui domine l'embouchure du Bouregreg."
+    }
+  ]
+}
