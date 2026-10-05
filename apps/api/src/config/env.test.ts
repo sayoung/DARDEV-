@@ -43,6 +43,23 @@ describe('loadEnv', () => {
     expect(withPublicEndpoint.S3_PUBLIC_ENDPOINT).toBe('https://media.xplor.ma');
   });
 
+  it('validates S3_PUBLIC_ENDPOINT correctly', () => {
+    // Empty string falls back to S3_ENDPOINT
+    expect(
+      loadEnv({ ...exampleEnv(), S3_PUBLIC_ENDPOINT: '' }).S3_PUBLIC_ENDPOINT,
+    ).toBe('http://localhost:9000');
+    
+    // Invalid URL rejected
+    expect(() => loadEnv({ ...exampleEnv(), S3_PUBLIC_ENDPOINT: 'not-a-url' })).toThrow(
+      /S3_PUBLIC_ENDPOINT/,
+    );
+    
+    // Non HTTP/HTTPS rejected
+    expect(() => loadEnv({ ...exampleEnv(), S3_PUBLIC_ENDPOINT: 'ftp://media.xplor.ma' })).toThrow(
+      /S3_PUBLIC_ENDPOINT/,
+    );
+  });
+
   it('rejects a SESSION_SECRET that is too short', () => {
     expect(() => loadEnv({ ...exampleEnv(), SESSION_SECRET: 'a'.repeat(31) })).toThrow(
       /SESSION_SECRET/,

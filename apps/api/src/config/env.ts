@@ -38,7 +38,12 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
   S3_ENDPOINT: z.string().min(1),
-  S3_PUBLIC_ENDPOINT: z.string().optional(),
+  S3_PUBLIC_ENDPOINT: z
+    .url()
+    .refine((val) => val.startsWith('http://') || val.startsWith('https://'), {
+      message: 'Le protocole doit être http ou https',
+    })
+    .optional(),
   S3_ACCESS_KEY: z.string().min(1),
   S3_SECRET_KEY: z.string().min(1),
   S3_BUCKET: z.string().min(1),

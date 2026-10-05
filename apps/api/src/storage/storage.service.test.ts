@@ -65,8 +65,22 @@ describe('S3StorageService', () => {
     });
 
     it('should use S3_ENDPOINT when S3_PUBLIC_ENDPOINT falls back to it', async () => {
-      // simulating fallback in env.ts
-      const customEnv = { ...env, S3_ENDPOINT: 'http://minio:9000', S3_PUBLIC_ENDPOINT: 'http://minio:9000' };
+      // Use loadEnv to test the actual fallback
+      const { loadEnv } = await import('../config/env.js');
+      const customEnvSource = {
+        NODE_ENV: 'test',
+        PORT: '3000',
+        DATABASE_URL: 'postgres://',
+        REDIS_URL: 'redis://',
+        S3_ENDPOINT: 'http://minio:9000',
+        S3_ACCESS_KEY: 'test',
+        S3_SECRET_KEY: 'test',
+        S3_BUCKET: 'test-bucket',
+        SMTP_HOST: 'localhost',
+        SMTP_PORT: '1025',
+        SESSION_SECRET: '12345678901234567890123456789012',
+      };
+      const customEnv = loadEnv(customEnvSource);
       const customService = new S3StorageService(s3, customEnv);
       const url = await customService.generatePresignedUploadUrl('test-key.jpg', 'image/jpeg', 1024);
       expect(url.startsWith('http://minio:9000')).toBe(true);
