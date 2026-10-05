@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b NF-10 (build de production des fronts, diagnostic et correction minimale) : sans docker, lance `pnpm --filter "@xplor/admin..." run build`, puis `pnpm --fil… — viewer-core suit le modèle de @xplor/shared (tsconfig.build, script build, exports development/default), les URL localhost figées sont remplacées, le repli VITE_PUBLIC_WEB_URL est préservé et lint/typ… (6820556)
 - 05/10/2026 — M3b NF-10 (worker/Dockerfile) : crée `apps/worker/Dockerfile` multi-étapes, calqué sur `apps/api/Dockerfile`, avec la racine du dépôt comme contexte. Étape buil… — apps/worker/Dockerfile multi-étapes conforme à la consigne et cohérent avec celui de l'API, seul fichier modifié, contrôles lint/typecheck/test OK. (bf66744)
 - 04/10/2026 — M3b NF-10 (apps/api/Dockerfile) : crée `apps/api/Dockerfile` multi-étapes, contexte de build = racine du dépôt. Étape build (`node:22-bookworm-slim`) : `corepac… — Dockerfile multi-étapes conforme (build, deploy --prod, contrôles de fichiers, prisma generate épinglé 6.19.3, utilisateur node), contrôles verts, lockfile et PROGRESS intacts. (aa518a9)
 - 04/10/2026 — M3b NF-10 (.dockerignore) : crée `.dockerignore` à la racine du dépôt avec des motifs récursifs : `**/node_modules`, `**/dist`, `**/.env*` (en gardant `!**/.env… — .dockerignore créé avec tous les motifs récursifs demandés et les exceptions .env.example / .env.production.example dans le bon ordre, sans exclure les fichiers essentiels ni modifier d'autres fichier… (6a8ed3c)
