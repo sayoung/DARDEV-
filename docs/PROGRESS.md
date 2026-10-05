@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b F-01 (2/3, apps/admin/src/catalog/AssetPicker.tsx et AssetPicker.test.tsx uniquement) : reprends l'idée de la branche agent/20261005-111526-m3b-f-01-back-of… — AssetPicker converti en grille radiogroup avec miniatures, multi-kinds, effet stable sur kindsDep, filtrage READY et tests conformes ; seuls des défauts mineurs (traductions en/ar copiées en français,… (c3dcc17)
 - 05/10/2026 — M3b F-01 (1/3, shared + API, ajout rétrocompatible) : les miniatures de médias n'ont aucune source côté admin (`AssetResponse` dans packages/shared/src/catalog.… — thumbnailUrl ajouté au schéma partagé et renseigné dans le service des assets (READY avec contentHash → URL thumb.jpg, sinon null), fixtures admin et test unitaire mis à jour, contrôles verts. (cac1303)
 - 05/10/2026 — M3b NF-10 (3/3, docs/DEPLOY.md uniquement) : 1) Remplace partout `./deploy/xxx.sh` et `deploy/xxx.sh` par `bash deploy/xxx.sh` (déploiement avec --seed, mises à… — Les trois corrections de docs/DEPLOY.md sont appliquées (bash deploy/xxx.sh, chemins /opt/xplor et /home/xplor, openssl -hex 24 et mots de passe liés) sans autre fichier modifié. (7a92bf0)
 - 05/10/2026 — M3b NF-10 (2/3, Dockerfiles) : 1) Dans `apps/api/Dockerfile` et `apps/worker/Dockerfile`, étape build, ligne 4 : remplace `RUN corepack enable && corepack prepa… — Les deux Dockerfiles contiennent bien l'installation d'openssl avant pnpm et le filtre @xplor/api pour le worker ; lint, typecheck et tests passent. (5a5b935)
