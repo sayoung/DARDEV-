@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssetKind, ProcessingStatus, z, type PaginatedAssetResponse } from '@xplor/shared';
 import { listAssets } from '../api/catalog.js';
-import { reprocessAsset, deleteAsset, ApiError } from '../api/client.js';
+import { reprocessAsset, deleteAsset, cleanupAssets, ApiError } from '../api/client.js';
 import { navigateWithSearch, useAppLocation } from '../router.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
@@ -37,6 +37,7 @@ export function MediaPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [cleaning, setCleaning] = useState(false);
 
   const fetchAssets = useCallback(async (mounted: { current: boolean }, silent = false) => {
     try {
@@ -89,6 +90,37 @@ export function MediaPage() {
   const handleUploaded = useCallback(() => {
     setRefreshKey(prev => prev + 1);
   }, []);
+
+  const handleCleanup = async () => {
+    setCleaning(true);
+    setActionError(null);
+    try {
+      const dryRes = await cleanupAssets({ dryRun: true });
+      if ('count' in dryRes) {
+        if (dryRes.count === 0) {
+          window.alert(t('media.cleanup.empty'));
+          return;
+        }
+        
+        const sizeMb = Math.round(dryRes.totalBytes / (1024 * 1024));
+        const confirmMsg = t('media.cleanup.confirm', { count: dryRes.count, size: sizeMb });
+        
+        if (!window.confirm(confirmMsg)) {
+          return;
+        }
+        
+        const res = await cleanupAssets({ dryRun: false });
+        if ('deleted' in res) {
+          window.alert(t('media.cleanup.success', { count: res.deleted }));
+          setRefreshKey(prev => prev + 1);
+        }
+      }
+    } catch (error) {
+      setActionError(error instanceof ApiError && error.message ? error.message : t('catalog.asset.error'));
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   const handleReprocess = async (id: string) => {
     setActionError(null);
@@ -150,6 +182,15 @@ export function MediaPage() {
       <PageHeader
         title={t('media.title')}
         subtitle={t('media.subtitle')}
+        actions={
+          <Button
+            variant="outline"
+            disabled={cleaning || loading}
+            onClick={() => void handleCleanup()}
+          >
+            {cleaning ? t('common.loading') : t('media.cleanup.button')}
+          </Button>
+        }
       />
 
       <Card>

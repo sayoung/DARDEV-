@@ -16,7 +16,7 @@ import {
   type AssetResponse,
   type AssetUploadRequest,
   type AssetUploadResponse,
-  AssetKind,
+  AssetKind, AssetCleanupRequestSchema, AssetCleanupResponseSchema, type AssetCleanupRequest, type AssetCleanupResponse,
 } from '@xplor/shared';
 
 /** Méthodes sans effet de bord : pas d'en-tête CSRF (même règle que `CsrfGuard`). */
@@ -292,4 +292,11 @@ export async function uploadPanorama(file: File, onProgress?: (percent: number) 
     }
     throw error;
   }
+}
+
+export async function cleanupAssets(body: AssetCleanupRequest): Promise<AssetCleanupResponse> {
+  return requestJson('/api/v1/admin/assets/cleanup', AssetCleanupResponseSchema, {
+    method: 'POST',
+    body: JSON.stringify(AssetCleanupRequestSchema.parse(body)),
+  });
 }

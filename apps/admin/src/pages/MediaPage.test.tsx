@@ -280,6 +280,91 @@ describe('MediaPage', () => {
     
     vi.useRealTimers();
   });
+
+  describe('Nettoyage', () => {
+    it('affiche le message si rien à nettoyer', async () => {
+      render(<App />);
+      await screen.findByText('8192 × 4096');
+
+      fetchMock.mockImplementationOnce((input: unknown, init?: unknown) => {
+        const url = requestUrl(input);
+        if (url.endsWith('/cleanup') && methodOf(input, init) === 'POST') {
+          return Promise.resolve(jsonResponse(200, { count: 0, totalBytes: 0, items: [] }));
+        }
+        return Promise.resolve(jsonResponse(404, {}));
+      });
+
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      const cleanupBtn = screen.getByRole('button', { name: resources.fr.media.cleanup.button });
+      fireEvent.click(cleanupBtn);
+
+      await waitFor(() => {
+        expect(alertSpy).toHaveBeenCalledWith(resources.fr.media.cleanup.empty);
+      });
+      alertSpy.mockRestore();
+    });
+
+    it('annule le nettoyage si non confirmé', async () => {
+      render(<App />);
+      await screen.findByText('8192 × 4096');
+
+      fetchMock.mockImplementationOnce((input: unknown, init?: unknown) => {
+        const url = requestUrl(input);
+        if (url.endsWith('/cleanup') && methodOf(input, init) === 'POST') {
+          return Promise.resolve(jsonResponse(200, { count: 12, totalBytes: 340 * 1024 * 1024, items: [] }));
+        }
+        return Promise.resolve(jsonResponse(404, {}));
+      });
+
+      const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => false);
+
+      const cleanupBtn = screen.getByRole('button', { name: resources.fr.media.cleanup.button });
+      fireEvent.click(cleanupBtn);
+
+      await waitFor(() => {
+        expect(confirmSpy).toHaveBeenCalledWith(resources.fr.media.cleanup.confirm.replace('{{count}}', '12').replace('{{size}}', '340'));
+      });
+      confirmSpy.mockRestore();
+    });
+
+    it('exécute le nettoyage si confirmé', async () => {
+      render(<App />);
+      await screen.findByText('8192 × 4096');
+
+      let cleanupCallCount = 0;
+      fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+        const url = requestUrl(input);
+        if (url.endsWith('/cleanup') && methodOf(input, init) === 'POST') {
+          cleanupCallCount++;
+          if (cleanupCallCount === 1) {
+            return Promise.resolve(jsonResponse(200, { count: 12, totalBytes: 340 * 1024 * 1024, items: [] }));
+          } else {
+            return Promise.resolve(jsonResponse(200, { deleted: 12, failed: 0 }));
+          }
+        }
+        if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, { id: 'admin-1', email: 'admin@test.com', role: 'SUPERADMIN' }));
+        if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
+        
+        return Promise.resolve(jsonResponse(404, {}));
+      });
+
+      const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true);
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      const cleanupBtn = screen.getByRole('button', { name: resources.fr.media.cleanup.button });
+      fireEvent.click(cleanupBtn);
+
+      await waitFor(() => {
+        expect(alertSpy).toHaveBeenCalledWith(resources.fr.media.cleanup.success.replace('{{count}}', '12'));
+      });
+
+      expect(cleanupCallCount).toBe(2);
+
+      confirmSpy.mockRestore();
+      alertSpy.mockRestore();
+    });
+  });
 });
 
 // Helpers

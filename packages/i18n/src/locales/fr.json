@@ -242,13 +242,13 @@
       "unpublish": "Dépublier",
       "noIssues": "Aucun problème : la visite peut être publiée",
       "issuesTitle": "Problèmes à corriger avant publication",
-        "shareToken": "Jeton de partage",
-        "regenerateShareLink": "Régénérer le lien de partage",
-        "regenerateConfirm": "Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?",
-        "regenerateSuccess": "Lien de partage régénéré avec succès.",
-        "publicLink": "Lien public",
-        "qrCodeTitle": "QR code de la visite",
-        "downloadQrCode": "Télécharger le QR code"
+      "shareToken": "Jeton de partage",
+      "regenerateShareLink": "Régénérer le lien de partage",
+      "regenerateConfirm": "Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?",
+      "regenerateSuccess": "Lien de partage régénéré avec succès.",
+      "publicLink": "Lien public",
+      "qrCodeTitle": "QR code de la visite",
+      "downloadQrCode": "Télécharger le QR code"
     },
     "issue": {
       "START_SCENE_MISSING": "Scène de départ manquante",
@@ -304,6 +304,12 @@
     },
     "errors": {
       "inUse": "Ce média est utilisé par une scène ou un point d'intérêt."
+    },
+    "cleanup": {
+      "button": "Nettoyer la médiathèque",
+      "empty": "La médiathèque est déjà propre",
+      "confirm": "{{count}} médias inutilisés, {{size}} Mo, seront supprimés définitivement",
+      "success": "{{count}} médias ont été supprimés"
     }
   },
   "page": {
