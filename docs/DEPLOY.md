@@ -88,3 +88,79 @@ Une fois le déploiement terminé avec succès, effectuez les vérifications sui
 3. Connectez-vous avec l'e-mail `admin@xplor.local` et le mot de passe défini dans `SEED_DEFAULT_PASSWORD`.
 4. Vérifiez également l'accessibilité des autres services configurés, comme le site de démo :
    [https://demo.xplor.ma](https://demo.xplor.ma)
+
+## 7. Mises à jour
+
+Pour appliquer la dernière version de l'application :
+
+1. Tirez les derniers changements depuis le dépôt :
+   ```bash
+   git pull
+   ```
+2. Relancez le script de déploiement :
+   ```bash
+   ./deploy/deploy.sh
+   ```
+Ce script validera l'environnement, construira ou téléchargera les nouvelles images, appliquera les éventuelles migrations Prisma et redémarrera les conteneurs sans temps d'arrêt prolongé.
+
+## 8. Sauvegarde (Backup) quotidienne
+
+Pour garantir la pérennité des données (base PostgreSQL et fichiers médias dans MinIO), une sauvegarde régulière est indispensable. Le script `deploy/backup.sh` génère une archive horodatée des données.
+
+Pour automatiser une sauvegarde quotidienne à 3h30 du matin (avec une rotation conservant les 7 dernières archives), ajoutez la ligne suivante à votre table de planification (via `crontab -e`) :
+
+```cron
+30 3 * * * cd /home/xplor/xplor_smit && deploy/backup.sh >> /var/log/xplor-backup.log 2>&1
+```
+
+## 9. Restauration de la sauvegarde
+
+En cas d'incident, utilisez le script `deploy/restore.sh` en lui passant le chemin de l'archive de sauvegarde à restaurer :
+
+```bash
+./deploy/restore.sh path/to/backup.tar.gz
+```
+Le script s'assurera de stopper les services, purger l'état actuel et restaurer la base de données et les volumes MinIO à partir de l'archive, avant de redémarrer les services.
+
+**Recommandation de test :** Il est fortement recommandé d'exécuter un **test de restauration** régulièrement sur un environnement bac à sable distinct pour s'assurer que l'archive est intègre et que la procédure fonctionne.
+
+## 10. Retour arrière (Rollback)
+
+En cas de mise en production instable, vous pouvez restaurer une version précédente du code :
+
+1. Revenez au commit fonctionnel (par exemple, via `git reset --hard <commit>` ou `git checkout <commit>`).
+2. Relancez le script de déploiement :
+   ```bash
+   ./deploy/deploy.sh
+   ```
+
+*Attention :* Si le code instable contenait des migrations de base de données modifiant le schéma, un simple retour arrière de code peut causer des incohérences. Vous devrez alors potentiellement restaurer la dernière sauvegarde fonctionnelle de la base de données via `deploy/restore.sh` pour garantir la synchronisation entre le code et les données.
+
+## 11. Dépannage
+
+Pour diagnostiquer les erreurs en production, examinez les journaux (logs) des conteneurs via Docker Compose.
+
+Par exemple, pour visualiser les journaux de l'API :
+```bash
+docker compose -f docker-compose.prod.yml logs api
+```
+
+**Problème de certificats HTTPS :**
+Si les navigateurs affichent une erreur SSL/TLS sur l'un des sous-domaines, vérifiez les journaux du routeur Caddy :
+```bash
+docker compose -f docker-compose.prod.yml logs caddy
+```
+Contrôlez que `ACME_EMAIL` est correct dans `.env.production`, que vos enregistrements DNS sont propagés et que les ports 80/443 sont libres.
+
+## 12. Démo 1 : Scan QR Code des Oudayas
+
+Pour valider l'expérience globale sur mobile depuis la production :
+1. Dans le back-office, accédez à la visite virtuelle des "Oudayas".
+2. Générez ou affichez le QR code de la visite.
+3. Scannez le QR code avec un smartphone. Vous serez redirigé vers l'URL de visionnage `https://v.xplor.ma/v/<jeton>`.
+4. Vérifiez que la visite charge correctement les panoramas et que le gyroscope répond bien aux mouvements du téléphone.
+
+---
+
+**Note d'exploitation :**
+Les agents de développement IA ne se connectent **JAMAIS** au VPS de production. L'utilisation de commandes telles que `ssh`, `scp` ou d'outils de connexion distants par l'agent est formellement exclue. Ils préparent et testent localement les fichiers nécessaires (compose de prod, scripts shell, configurations), qui sont validés par les tests CI (lint, build, tests scripts). Le déploiement effectif est toujours de la responsabilité du porteur du projet.
