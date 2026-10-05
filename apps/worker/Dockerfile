@@ -1,12 +1,12 @@
 # Étape 1 : Build
 FROM node:22-bookworm-slim AS build
 
-RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/* && corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 WORKDIR /build
 COPY . .
 
-RUN pnpm install --frozen-lockfile --filter @xplor/worker...
+RUN pnpm install --frozen-lockfile --filter @xplor/worker... --filter @xplor/api
 RUN pnpm --filter "@xplor/worker..." run build
 RUN pnpm --filter @xplor/worker deploy --prod /out
 
