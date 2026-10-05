@@ -643,11 +643,17 @@ describe('AssetsService', () => {
       // 1. orphelin
       const orphan = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
       // 2. référencé par coverOf
-      const cover = { ...row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z'), _count: { coverOf: 1 } };
+      const cover = { ...row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z'), _count: { coverOf: 1, panoramas: 0, ambientOf: 0, hotelLogos: 0 } };
       // 3. référencé par Hotspot.mediaAssetIds
-      const hotspotMedia = row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
+      const hotspotMedia = { ...row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z'), _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 0 } };
+      // 4. référencé par panoramas
+      const panoRef = { ...row('01990000-0000-7000-8000-000000000004', AssetKind.PANORAMA, '2026-10-04T00:00:00.000Z'), _count: { coverOf: 0, panoramas: 1, ambientOf: 0, hotelLogos: 0 } };
+      // 5. référencé par ambientOf
+      const ambientRef = { ...row('01990000-0000-7000-8000-000000000005', AssetKind.AUDIO, '2026-10-05T00:00:00.000Z'), _count: { coverOf: 0, panoramas: 0, ambientOf: 1, hotelLogos: 0 } };
+      // 6. référencé par hotelLogos
+      const hotelRef = { ...row('01990000-0000-7000-8000-000000000006', AssetKind.IMAGE, '2026-10-06T00:00:00.000Z'), _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 1 } };
 
-      const { service, hotspotFindMany } = harness([orphan, cover, hotspotMedia]);
+      const { service, hotspotFindMany } = harness([orphan, cover, hotspotMedia, panoRef, ambientRef, hotelRef]);
       hotspotFindMany.mockResolvedValue([{ mediaAssetIds: [NEWER_ID] }]);
 
       const result = await service.cleanup(true);
