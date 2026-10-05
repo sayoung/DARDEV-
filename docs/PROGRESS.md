@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b F-12 (nettoyage 3/3, b1b : test S3 réel) : dans apps/api/test/assets.int.test.ts, ajouter à la fin du describe existant du cleanup un test « suppression rée… — Test S3 réel correct (champs Tour, éligibilité du cleanup, vérifications headObject, nettoyage en finally, skip si driver local) ; lint et typecheck verts, PROGRESS.md intact. (c9f1af1)
 - 05/10/2026 — M3b F-12 (nettoyage 3/3, b1a : préparation du test S3 réel) : dans apps/api/test/assets.int.test.ts, ajouter UNIQUEMENT les imports nécessaires au futur test «… — Aucun import ajouté (diff vide), ce que la consigne prévoit quand les imports ne seraient pas utilisés sans le test ; lint et typecheck verts, PROGRESS.md intact. (683ce8d)
 - 05/10/2026 — M3b F-12 (nettoyage 2/3, d : route) : dans apps/api/src/catalog/assets.controller.ts, ajouter POST /api/v1/admin/assets/cleanup avec les mêmes guards (session,… — Route POST admin/assets/cleanup ajoutée avant :id avec guards session/CSRF, validation Zod et délégation au service, plus un test d'intégration 401/403/200 ; lint, typecheck et tests au vert. (95376ee)
 - 05/10/2026 — M3b F-12 (nettoyage 2/3, c : tests du service) : dans apps/api/src/catalog/assets.service.test.ts, ajouter des tests unitaires (Prisma mocké, même style que les… — Les tests de cleanup couvrent dryRun (exclusion des 5 types de références) et la suppression avec erreur isolée ; lint, typecheck et test sont verts. (522cc8e)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3b NF-10 (.dockerignore) : crée `.dockerignore` à la racine du dépôt avec des motifs récursifs : `**/node_modules`, `**/dist`, `**/.env*` (en gardant `!**/.env… — .dockerignore créé avec tous les motifs récursifs demandés et les exceptions .env.example / .env.production.example dans le bon ordre, sans exclure les fichiers essentiels ni modifier d'autres fichier… (6a8ed3c)
 - 04/10/2026 — M3b NF-10 (i18n compilable pour la prod) : `@xplor/i18n` (packages/i18n/package.json) exporte aujourd'hui `./src/index.ts` et n'a aucun script `build`, donc `no… — i18n compilable via tsconfig.build.json, script build, exports default vers dist avec condition development, prebuild API mis à jour, calqué sur @xplor/shared ; contrôles OK. (3115bfb)
 - 04/10/2026 — M3b NF-01 (branchement dans main.ts) : dans apps/api/src/main.ts, importe `registerHttpSecurity` depuis './http-security.js' et, juste après `await app.register… — registerHttpSecurity est branché dans main.ts après fastifyCookie, la CSP n'est pas modifiée, le test /html est ajouté et les contrôles sont verts. (fa32c88)
-- 04/10/2026 — M3b NF-01 (module http-security, test d'abord) : crée apps/api/src/http-security.ts qui exporte `async function registerHttpSecurity(app: FastifyInstance, corsO… — Module http-security conforme à la spec (CORS credentials, HSTS, CSP stricte) avec tests Vitest couvrant les trois cas demandés, contrôles verts, périmètre respecté. (887c780)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
