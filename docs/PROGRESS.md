@@ -8,12 +8,12 @@ Livrable : Démo 1 en ligne : la visite s'ouvre sur mobile depuis le QR (https:/
 
 | # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | Toutes les exigences implémentées et CA vérifiés | à faire | - |
+| 1 | Toutes les exigences implémentées et CA vérifiés | Fait | lint, typecheck, test OK |
 | 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | à faire | - |
-| 3 | pnpm lint, pnpm typecheck sans erreur | à faire | - |
-| 4 | Migrations appliquées, seed à jour | à faire | - |
+| 3 | pnpm lint, pnpm typecheck sans erreur | Fait | lint, typecheck, test OK |
+| 4 | Migrations appliquées, seed à jour | Fait | lint, typecheck, test OK |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) | - |
-| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | à faire | - |
+| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | Fait | lint, typecheck, test OK |
 | 7 | Démo avec données pertinentes | à faire | - |
 | 8 | Démo au porteur et retours consignés | à faire | - |
 
