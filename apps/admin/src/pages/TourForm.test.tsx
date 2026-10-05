@@ -165,8 +165,8 @@ describe('TourForm Pages', () => {
     fireEvent.click(screen.getByLabelText(/Musée/));
     
     // Le média READY est présent (image d9e)
-    console.log("DEBUG_HTML:", document.body.innerHTML);
     expect(await screen.findByRole('radio', { name: /5b2a1d9e/ })).toBeTruthy();
+    
     // Le panorama READY est présent (5b2a1da0) et on le sélectionne
     const panoramaRadio = await screen.findByRole('radio', { name: /5b2a1da0/ });
     expect(panoramaRadio).toBeTruthy();
@@ -174,7 +174,7 @@ describe('TourForm Pages', () => {
     
     // Le média PENDING n'apparaît pas (5b2a1da1)
     expect(screen.queryByRole('radio', { name: /5b2a1da1/ })).toBeNull();
-    
+
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
     await waitFor(() => {
@@ -216,7 +216,7 @@ describe('TourForm Pages', () => {
     expect(postCall).toBeUndefined();
   });
 
-  it('formulaire invalide (aucune vignette) -> aucun POST et message derreur', async () => {
+  it("formulaire invalide (aucune vignette) -> aucun POST et message d'erreur", async () => {
     window.history.replaceState(null, '', '/tours/new');
     render(<App />);
     await screen.findByText(/Rabat/);
