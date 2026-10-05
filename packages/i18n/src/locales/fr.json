@@ -10,6 +10,9 @@
     },
     "deleteConfirm": "Êtes-vous sûr ?",
     "save": "Enregistrer",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "close": "Fermer",
     "delete": "Supprimer",
     "error": {
       "generic": "Une erreur est survenue."
@@ -304,6 +307,15 @@
     },
     "errors": {
       "inUse": "Ce média est utilisé par une scène ou un point d'intérêt."
+    },
+    "cleanup": {
+      "button": "Nettoyer la médiathèque",
+      "empty": "La médiathèque est déjà propre",
+      "confirm": "{{count}} médias inutilisés, {{size}} Mo, seront supprimés définitivement",
+      "success": "{{count}} médias ont été supprimés",
+      "confirmTitle": "Confirmation",
+      "emptyTitle": "Information",
+      "successTitle": "Succès"
     }
   },
   "page": {

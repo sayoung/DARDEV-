@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssetKind, ProcessingStatus, z, type PaginatedAssetResponse } from '@xplor/shared';
 import { listAssets } from '../api/catalog.js';
-import { reprocessAsset, deleteAsset, ApiError } from '../api/client.js';
+import { reprocessAsset, deleteAsset, cleanupAssetsDryRun, cleanupAssetsConfirm, ApiError } from '../api/client.js';
 import { navigateWithSearch, useAppLocation } from '../router.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
 import { Card, CardContent } from '../components/ui/Card.js';
+import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '../components/ui/Dialog.js';
 import { ProcessingStatusBadge } from '../components/ProcessingStatusBadge.js';
 import { PanoramaUploader } from '../catalog/PanoramaUploader.js';
 import { needsPolling } from '../catalog/media-polling.js';
@@ -37,6 +38,7 @@ export function MediaPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [cleaning, setCleaning] = useState(false);
 
   const fetchAssets = useCallback(async (mounted: { current: boolean }, silent = false) => {
     try {
@@ -89,6 +91,47 @@ export function MediaPage() {
   const handleUploaded = useCallback(() => {
     setRefreshKey(prev => prev + 1);
   }, []);
+
+  type CleanupModalState = 
+    | { type: 'none' }
+    | { type: 'confirm'; count: number; sizeMb: string }
+    | { type: 'success'; count: number }
+    | { type: 'empty' };
+
+  const [cleanupModal, setCleanupModal] = useState<CleanupModalState>({ type: 'none' });
+
+  const handleCleanup = async () => {
+    setCleaning(true);
+    setActionError(null);
+    try {
+      const dryRes = await cleanupAssetsDryRun();
+      if (dryRes.count === 0) {
+        setCleanupModal({ type: 'empty' });
+      } else {
+        const sizeMb = (dryRes.totalBytes / (1024 * 1024)).toFixed(1);
+        setCleanupModal({ type: 'confirm', count: dryRes.count, sizeMb });
+      }
+    } catch (error) {
+      setActionError(error instanceof ApiError && error.message ? error.message : t('catalog.asset.error'));
+    } finally {
+      setCleaning(false);
+    }
+  };
+
+  const confirmCleanup = async () => {
+    setCleaning(true);
+    setActionError(null);
+    try {
+      const res = await cleanupAssetsConfirm();
+      setCleanupModal({ type: 'success', count: res.deleted });
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      setActionError(error instanceof ApiError && error.message ? error.message : t('catalog.asset.error'));
+      setCleanupModal({ type: 'none' });
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   const handleReprocess = async (id: string) => {
     setActionError(null);
@@ -150,6 +193,15 @@ export function MediaPage() {
       <PageHeader
         title={t('media.title')}
         subtitle={t('media.subtitle')}
+        actions={
+          <Button
+            variant="outline"
+            disabled={cleaning || loading}
+            onClick={() => void handleCleanup()}
+          >
+            {cleaning ? t('common.loading') : t('media.cleanup.button')}
+          </Button>
+        }
       />
 
       <Card>
@@ -267,6 +319,56 @@ export function MediaPage() {
           ) : null}
         </>
       )}
+      <Dialog open={cleanupModal.type !== 'none'} onOpenChange={(open) => { if (!open) setCleanupModal({ type: 'none' }); }}>
+        {cleanupModal.type === 'confirm' && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{t('media.cleanup.confirmTitle')}</DialogTitle>
+            </DialogHeader>
+            <DialogContent>
+              <p>{t('media.cleanup.confirm', { count: cleanupModal.count, size: cleanupModal.sizeMb })}</p>
+            </DialogContent>
+            <DialogFooter>
+              <Button variant="outline" disabled={cleaning} onClick={() => { setCleanupModal({ type: 'none' }); }}>
+                {t('common.cancel')}
+              </Button>
+              <Button variant="destructive" disabled={cleaning} onClick={() => void confirmCleanup()}>
+                {cleaning ? t('common.loading') : t('common.confirm')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+        {cleanupModal.type === 'empty' && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{t('media.cleanup.emptyTitle')}</DialogTitle>
+            </DialogHeader>
+            <DialogContent>
+              <p>{t('media.cleanup.empty')}</p>
+            </DialogContent>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setCleanupModal({ type: 'none' }); }}>
+                {t('common.close')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+        {cleanupModal.type === 'success' && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{t('media.cleanup.successTitle')}</DialogTitle>
+            </DialogHeader>
+            <DialogContent>
+              <p>{t('media.cleanup.success', { count: cleanupModal.count })}</p>
+            </DialogContent>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setCleanupModal({ type: 'none' }); }}>
+                {t('common.close')}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </Dialog>
     </div>
   );
 }
