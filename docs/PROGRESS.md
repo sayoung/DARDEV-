@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b F-12 (nettoyage 2/3, d : route) : dans apps/api/src/catalog/assets.controller.ts, ajouter POST /api/v1/admin/assets/cleanup avec les mêmes guards (session,… — Route POST admin/assets/cleanup ajoutée avant :id avec guards session/CSRF, validation Zod et délégation au service, plus un test d'intégration 401/403/200 ; lint, typecheck et tests au vert. (95376ee)
 - 05/10/2026 — M3b F-12 (nettoyage 2/3, c : tests du service) : dans apps/api/src/catalog/assets.service.test.ts, ajouter des tests unitaires (Prisma mocké, même style que les… — Les tests de cleanup couvrent dryRun (exclusion des 5 types de références) et la suppression avec erreur isolée ; lint, typecheck et test sont verts. (522cc8e)
 - 05/10/2026 — M3b F-12 (nettoyage 2/3, b2 : tests) : dans apps/api/src/catalog/assets.service.test.ts, ajouter des tests de `AssetsService.cleanup` (déjà implémenté en b1) en… — Trois tests de AssetsService.cleanup conformes à la demande (orphelin seul listé, échec partiel {deleted:2, failed:1}, aucun orphelin), lint/typecheck/test verts, sans any ni désactivation. (c3d3770)
 - 05/10/2026 — M3b F-12 (nettoyage 2/3, b1 : implémentation) : dans apps/api/src/catalog/assets.service.ts, ajouter `async cleanup(dryRun: true): Promise<AssetCleanupDryRunRes… — cleanup() est correctement implémenté (surcharges, filtrage des orphelins et des médias de hotspots, dry-run validé par Zod, suppression tolérante aux erreurs via remove()), et lint, typecheck et test… (634c4cd)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3b NF-01 (branchement dans main.ts) : dans apps/api/src/main.ts, importe `registerHttpSecurity` depuis './http-security.js' et, juste après `await app.register… — registerHttpSecurity est branché dans main.ts après fastifyCookie, la CSP n'est pas modifiée, le test /html est ajouté et les contrôles sont verts. (fa32c88)
 - 04/10/2026 — M3b NF-01 (module http-security, test d'abord) : crée apps/api/src/http-security.ts qui exporte `async function registerHttpSecurity(app: FastifyInstance, corsO… — Module http-security conforme à la spec (CORS credentials, HSTS, CSP stricte) avec tests Vitest couvrant les trois cas demandés, contrôles verts, périmètre respecté. (887c780)
 - 04/10/2026 — M3b NF-01 (paquets CORS/helmet) : ajoute `@fastify/cors` et `@fastify/helmet` aux dépendances de apps/api (`pnpm --filter api add @fastify/cors @fastify/helmet`… — Les paquets @fastify/cors et @fastify/helmet sont ajoutés avec le lockfile à jour, l'entrée D-106 est complète au format D-105, et lint, typecheck et test passent. (4add2f4)
-- 04/10/2026 — Récupération du travail non commité — Ajout de @fastify/cors et @fastify/helmet avec lockfile cohérent et décision D-106 (raison, licence, alternatives) conforme à AGENTS.md ; contrôles OK. (7f7c7b6)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
