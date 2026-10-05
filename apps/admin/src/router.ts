@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-export type Notice = 'reset' | 'invite';
+export type Notice = 'reset' | 'invite' | 'expired';
 
 export type AppRoute =
   | { name: 'home' }
@@ -68,7 +68,7 @@ export function parsePathname(pathname: string): AppRoute {
 
 export function readNotice(search: string): Notice | null {
   const value = new URLSearchParams(search).get('notice');
-  if (value === 'reset' || value === 'invite') {
+  if (value === 'reset' || value === 'invite' || value === 'expired') {
     return value;
   }
   return null;

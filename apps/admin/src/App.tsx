@@ -14,7 +14,7 @@ import { ToursPage } from './pages/ToursPage.js';
 import { MediaPage } from './pages/MediaPage.js';
 import { HotspotsPage } from './pages/HotspotsPage.js';
 import { HotspotDetailPage } from './pages/HotspotDetailPage.js';
-import { useAppLocation, type Notice } from './router.js';
+import { useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
 
@@ -30,7 +30,7 @@ const SUCCESS_MESSAGE = {
   reset: 'auth.setPassword.successReset',
   invite: 'auth.setPassword.successInvite',
 } as const satisfies Record<
-  Notice,
+  'reset' | 'invite',
   'auth.setPassword.successReset' | 'auth.setPassword.successInvite'
 >;
 
@@ -51,7 +51,7 @@ function AdminShell() {
       {route.name === 'reset' ? <SetPasswordPage kind="reset" token={route.token} /> : null}
       {route.name === 'invite' ? <SetPasswordPage kind="invite" token={route.token} /> : null}
 
-      {isAuthenticatedRoute && isAnonymous && notice !== null ? (
+      {isAuthenticatedRoute && isAnonymous && notice !== null && (notice === 'reset' || notice === 'invite') ? (
         <p className="p-4 text-muted-foreground" role="status">
           {t(SUCCESS_MESSAGE[notice])}
         </p>

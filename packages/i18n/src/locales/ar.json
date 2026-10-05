@@ -23,7 +23,8 @@
       "submit": "تسجيل الدخول",
       "error": "بيانات الاعتماد غير صحيحة",
       "locked": "الحساب مقفل. أعد المحاولة بعد 15 دقيقة.",
-      "failed": "تعذر تسجيل الدخول. أعد المحاولة."
+      "failed": "تعذر تسجيل الدخول. أعد المحاولة.",
+      "expired": "Ta session a expiré ou a été ouverte ailleurs. Reconnecte-toi."
     },
     "forgot": {
       "link": "نسيت كلمة المرور",

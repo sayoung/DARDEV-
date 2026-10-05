@@ -58,6 +58,9 @@ describe('session du back-office', () => {
       if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/login')) {
         return Promise.resolve(jsonResponse(200, profile));
       }
+      if (methodOf(input, init) === 'GET') {
+        return Promise.resolve(jsonResponse(200, { items: [], total: 0 }));
+      }
       return Promise.resolve(anonymous());
     });
     render(<App />);
@@ -94,6 +97,9 @@ describe('session du back-office', () => {
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
       if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/login')) {
         return Promise.resolve(jsonResponse(200, profile));
+      }
+      if (methodOf(input, init) === 'GET') {
+        return Promise.resolve(jsonResponse(200, { items: [], total: 0 }));
       }
       return Promise.resolve(anonymous());
     });
