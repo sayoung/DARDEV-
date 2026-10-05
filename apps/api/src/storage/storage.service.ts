@@ -1,7 +1,10 @@
 import {
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
+  type ListObjectsV2CommandOutput,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -24,6 +27,7 @@ export interface StorageService {
   deleteObject(key: string): Promise<void>;
   headObject(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null>;
   getRange(key: string, start: number, end: number): Promise<Buffer>;
+  deleteByPrefix(prefix: string): Promise<void>;
 }
 
 @Injectable()
@@ -107,6 +111,36 @@ export class S3StorageService implements StorageService {
     const arr = await result.Body.transformToByteArray();
     return Buffer.from(arr);
   }
+
+  async deleteByPrefix(prefix: string): Promise<void> {
+    let isTruncated = true;
+    let continuationToken: string | undefined = undefined;
+
+    while (isTruncated) {
+      const response: ListObjectsV2CommandOutput = await this.s3.send(
+        new ListObjectsV2Command({
+          Bucket: this.env.S3_BUCKET,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+
+      const contents = response.Contents;
+      if (!contents || contents.length === 0) break;
+
+      const keysToDelete = contents.map((c) => ({ Key: c.Key ?? '' }));
+      
+      await this.s3.send(
+        new DeleteObjectsCommand({
+          Bucket: this.env.S3_BUCKET,
+          Delete: { Objects: keysToDelete },
+        }),
+      );
+
+      isTruncated = response.IsTruncated ?? false;
+      continuationToken = response.NextContinuationToken;
+    }
+  }
 }
 
 @Injectable()
@@ -168,6 +202,45 @@ export class LocalStorageService implements StorageService {
       throw e;
     } finally {
       if (handle) await handle.close();
+    }
+  }
+
+  async deleteByPrefix(prefix: string): Promise<void> {
+    const targetPath = this.getFilePath(prefix);
+    
+    try {
+      const stats = await fs.stat(targetPath);
+      if (stats.isDirectory()) {
+        await fs.rm(targetPath, { recursive: true, force: true });
+      } else {
+        await fs.unlink(targetPath);
+      }
+    } catch (e: unknown) {
+      if (typeof e === 'object' && e !== null && 'code' in e && e.code === 'ENOENT') {
+        const dir = path.dirname(targetPath);
+        const base = path.basename(targetPath);
+        try {
+          const files = await fs.readdir(dir);
+          for (const file of files) {
+            if (file.startsWith(base)) {
+              const fullPath = path.join(dir, file);
+              const fileStats = await fs.stat(fullPath).catch(() => null);
+              if (fileStats?.isDirectory()) {
+                await fs.rm(fullPath, { recursive: true, force: true });
+              } else if (fileStats?.isFile()) {
+                await fs.unlink(fullPath).catch(() => {});
+              }
+            }
+          }
+        } catch (dirErr: unknown) {
+          if (typeof dirErr === 'object' && dirErr !== null && 'code' in dirErr && dirErr.code === 'ENOENT') {
+            return;
+          }
+          throw dirErr;
+        }
+      } else {
+        throw e;
+      }
     }
   }
 }

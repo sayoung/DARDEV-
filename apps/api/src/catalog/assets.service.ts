@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
 import { AssetKind as PrismaAssetKind, ProcessingStatus, Prisma, type Asset } from '@prisma/client';
 import {
   AssetKind,
@@ -25,6 +25,8 @@ import { readImageDimensions } from './jpeg-dimensions.js';
 
 @Injectable()
 export class AssetsService {
+  private readonly logger = new Logger(AssetsService.name);
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
@@ -260,8 +262,12 @@ export class AssetsService {
 
     await this.prisma.asset.delete({ where: { id } });
 
-    if (asset.originalKey) {
-      await this.storage.deleteObject(asset.originalKey);
+    try {
+      await this.storage.deleteByPrefix(`uploads/${id}/`);
+      const kindFolder = asset.kind.toLowerCase() + 's';
+      await this.storage.deleteByPrefix(`${kindFolder}/${id}/`);
+    } catch (error) {
+      this.logger.error(`Erreur lors de la suppression des fichiers du média ${id}`, error);
     }
   }
 

@@ -1,13 +1,15 @@
 import {
   DeleteObjectCommand,
   type DeleteObjectCommandOutput,
+  DeleteObjectsCommand,
   GetObjectCommand,
   type GetObjectCommandOutput,
   HeadObjectCommand,
+  ListObjectsV2Command,
   type HeadObjectCommandOutput,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
+import { beforeEach, afterEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 
 import { type Env } from '../config/env.js';
 import { S3StorageService, LocalStorageService } from './storage.service.js';
@@ -167,6 +169,51 @@ describe('S3StorageService', () => {
       await expect(service.getRange('test-key.jpg', 0, 65535)).rejects.toThrow('No body in response');
     });
   });
+
+  describe('deleteByPrefix', () => {
+    it('should delete objects by prefix', async () => {
+      sendSpy
+        .mockResolvedValueOnce({
+          Contents: [{ Key: 'test-prefix/1.jpg' }, { Key: 'test-prefix/2.jpg' }],
+          IsTruncated: false,
+        })
+        .mockResolvedValueOnce({ $metadata: {} });
+
+      await service.deleteByPrefix('test-prefix/');
+
+      expect(sendSpy).toHaveBeenCalledTimes(2);
+      expect(sendSpy).toHaveBeenNthCalledWith(1, expect.any(ListObjectsV2Command));
+      expect(sendSpy).toHaveBeenNthCalledWith(2, expect.any(DeleteObjectsCommand));
+    });
+
+    it('should handle pagination', async () => {
+      sendSpy
+        .mockResolvedValueOnce({
+          Contents: [{ Key: 'test-prefix/1.jpg' }],
+          IsTruncated: true,
+          NextContinuationToken: 'token1',
+        })
+        .mockResolvedValueOnce({ $metadata: {} })
+        .mockResolvedValueOnce({
+          Contents: [{ Key: 'test-prefix/2.jpg' }],
+          IsTruncated: false,
+        })
+        .mockResolvedValueOnce({ $metadata: {} });
+
+      await service.deleteByPrefix('test-prefix/');
+
+      expect(sendSpy).toHaveBeenCalledTimes(4);
+    });
+
+    it('should do nothing if no objects found', async () => {
+      sendSpy.mockResolvedValueOnce({ Contents: [], IsTruncated: false });
+
+      await service.deleteByPrefix('empty-prefix/');
+
+      expect(sendSpy).toHaveBeenCalledTimes(1);
+      expect(sendSpy).toHaveBeenCalledWith(expect.any(ListObjectsV2Command));
+    });
+  });
 });
 
 describe('LocalStorageService', () => {
@@ -213,5 +260,52 @@ describe('LocalStorageService', () => {
     // Just pass a non-existent file path
     const result = await service.headObject('non-existent-file.jpg');
     expect(result).toBeNull();
+  });
+
+  describe('deleteByPrefix', () => {
+    let tmpDir: string;
+    let fs: typeof import('fs/promises');
+    let pathModule: typeof import('path');
+
+    beforeEach(async () => {
+      fs = await import('fs/promises');
+      pathModule = await import('path');
+      tmpDir = env.STORAGE_LOCAL_PATH ?? '/tmp/storage-test';
+      await fs.mkdir(tmpDir, { recursive: true });
+    });
+
+    afterEach(async () => {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+
+    it('should delete a directory and its contents', async () => {
+      const dirPath = pathModule.join(tmpDir, 'test-prefix');
+      await fs.mkdir(dirPath, { recursive: true });
+      await fs.writeFile(pathModule.join(dirPath, 'file1.txt'), 'test');
+      await fs.writeFile(pathModule.join(dirPath, 'file2.txt'), 'test');
+
+      await service.deleteByPrefix('test-prefix/');
+
+      const exists = await fs.stat(dirPath).then(() => true).catch(() => false);
+      expect(exists).toBe(false);
+    });
+
+    it('should delete files matching a prefix', async () => {
+      await fs.writeFile(pathModule.join(tmpDir, 'test-prefix-1.txt'), 'test');
+      await fs.writeFile(pathModule.join(tmpDir, 'test-prefix-2.txt'), 'test');
+      await fs.writeFile(pathModule.join(tmpDir, 'test-other.txt'), 'test');
+
+      await service.deleteByPrefix('test-prefix-');
+
+      const exists1 = await fs.stat(pathModule.join(tmpDir, 'test-prefix-1.txt')).then(() => true).catch(() => false);
+      const existsOther = await fs.stat(pathModule.join(tmpDir, 'test-other.txt')).then(() => true).catch(() => false);
+
+      expect(exists1).toBe(false);
+      expect(existsOther).toBe(true);
+    });
+
+    it('should not throw if prefix does not exist', async () => {
+      await expect(service.deleteByPrefix('non-existent')).resolves.not.toThrow();
+    });
   });
 });
