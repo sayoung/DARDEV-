@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b NF-10 (seed en production, étape 1) : le seed (apps/api/prisma/seed.ts) importe des fichiers TypeScript de src/ et ne tourne pas dans l'image de production… — runSeed() extraite correctement dans run-seed.ts, seed.ts n'en garde que le chargement du .env et l'appel, comportement et messages inchangés, contrôles verts. (7df042a)
 - 05/10/2026 — M3b NF-10 (docker-compose.prod.yml) : crée `docker-compose.prod.yml` à la racine, avec le nom de projet `name: xplor-prod`. Services : postgres:16-alpine (volum… — docker-compose.prod.yml conforme à la tâche : isolation de la prod, seul caddy publie des ports, healthchecks et restart corrects, variables cohérentes avec .env.production.example. (0200ce9)
 - 05/10/2026 — M3b NF-10 (.env.production.example) : crée `.env.production.example` à la racine. Il ne contient aucun secret réel : chaque valeur sensible vaut `CHANGER_MOI`.… — Le fichier .env.production.example couvre toutes les variables requises par env.ts de l'API et par le worker, sans secret réel, et .gitignore ignore .env.production mais pas l'exemple. (4006147)
 - 05/10/2026 — M3b NF-10 / NF-01 (Caddyfile de production) : écris `deploy/caddy/Caddyfile`. Option globale : `email {$ACME_EMAIL}`. Le bloc `(securite)` est un snippet réutil… — Caddyfile de production conforme à la demande (snippet sécurité, 5 sites, encode, SPA fallback, proxy /api) et décision D-107 consignée avec à valider : oui ; contrôles verts. (2d18ee4)
