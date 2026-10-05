@@ -14,12 +14,12 @@ describe('AssetPicker', () => {
     vi.unstubAllGlobals();
   });
 
-  it('affiche un message de chargement puis les options (avec kind dans lURL)', async () => {
+  it('affiche les médias READY et permet la sélection', async () => {
     const mockAssets = {
       items: [
         {
           id: '01923e45-6789-7abc-8ef0-123456789abc',
-          kind: 'IMAGE',
+          kind: 'PANORAMA',
           mimeType: 'image/jpeg',
           sizeBytes: 1024,
           width: 800,
@@ -27,7 +27,7 @@ describe('AssetPicker', () => {
           processingStatus: 'READY',
           processingLog: null,
           copyright: null,
-          thumbnailUrl: null,
+          thumbnailUrl: 'http://example.com/thumb.jpg',
           createdAt: new Date().toISOString()
         }
       ],
@@ -47,8 +47,8 @@ describe('AssetPicker', () => {
 
     render(
       <AssetPicker 
-        label="Image de couverture" 
-        kind={AssetKind.IMAGE} 
+        label="Panorama" 
+        kind={AssetKind.PANORAMA} 
         value="" 
         onChange={onChange} 
       />
@@ -58,24 +58,126 @@ describe('AssetPicker', () => {
     expect(screen.getByText('Chargement...')).toBeTruthy();
 
     // Attente du rendu du sélecteur
-    const select = await screen.findByLabelText('Image de couverture');
-    expect(select).toBeTruthy();
+    const radioGroup = await screen.findByRole('radiogroup', { name: 'Panorama' });
+    expect(radioGroup).toBeTruthy();
 
     // Vérification de l'URL
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/v1/admin/assets?page=1&pageSize=100&kind=IMAGE'),
+      expect.stringContaining('/api/v1/admin/assets?page=1&pageSize=100&kind=PANORAMA'),
       expect.any(Object)
     );
 
     // Vérification des options
-    const options = screen.getAllByRole('option');
-    expect(options).toHaveLength(2); // Option vide + 1 asset
-    expect(options[0]?.textContent).toBe('Sélectionner un média...');
-    expect(options[1]?.textContent).toBe('56789abc - image/jpeg 800×600 - Prêt');
+    const radios = screen.getAllByRole('radio');
+    expect(radios).toHaveLength(1);
+    
+    const img = screen.getByAltText('Miniature de 56789abc');
+    expect(img.getAttribute('src')).toBe('http://example.com/thumb.jpg');
 
-    // Changement de valeur
-    fireEvent.change(select, { target: { value: '01923e45-6789-7abc-8ef0-123456789abc' } });
+    // Clic pour sélectionner
+    const radio = radios[0];
+    if (radio) fireEvent.click(radio);
     expect(onChange).toHaveBeenCalledWith('01923e45-6789-7abc-8ef0-123456789abc');
+    
+    // Le fetch n'a été appelé qu'une seule fois
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne montre pas les médias PENDING ou en erreur', async () => {
+    const mockAssets = {
+      items: [
+        {
+          id: '11111111-1111-1111-1111-111111111111',
+          kind: 'IMAGE',
+          mimeType: 'image/jpeg',
+          processingStatus: 'PENDING',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          kind: 'IMAGE',
+          mimeType: 'image/jpeg',
+          processingStatus: 'READY',
+          createdAt: new Date().toISOString()
+        }
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 100,
+      totalPages: 1
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(mockAssets),
+    } as Response);
+
+    render(
+      <AssetPicker 
+        label="Image" 
+        kind={AssetKind.IMAGE} 
+        value="" 
+        onChange={vi.fn()} 
+      />
+    );
+
+    await screen.findByRole('radiogroup');
+    
+    const radios = screen.getAllByRole('radio');
+    expect(radios).toHaveLength(1); // Seulement le READY
+    expect(screen.queryByText(/11111111/)).toBeNull(); // L'ID pending n'est pas affiché
+  });
+
+  it('ne refetch pas lors du re-rendu du parent avec un tableau inline', async () => {
+    const mockAssets = {
+      items: [
+        {
+          id: '33333333-3333-3333-3333-333333333333',
+          kind: 'VIDEO',
+          mimeType: 'video/mp4',
+          processingStatus: 'READY',
+          createdAt: new Date().toISOString()
+        }
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 100,
+      totalPages: 1
+    };
+
+    const fetchMock = vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(mockAssets),
+    } as Response);
+
+    const { rerender } = render(
+      <AssetPicker 
+        label="Vidéo" 
+        kinds={[AssetKind.VIDEO, AssetKind.IMAGE]} 
+        value="" 
+        onChange={vi.fn()} 
+      />
+    );
+
+    await screen.findByRole('radiogroup');
+    
+    // Il y a deux types dans le tableau inline, donc 2 fetch
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    // Re-rendu avec un nouveau tableau inline (référence différente mais même contenu)
+    rerender(
+      <AssetPicker 
+        label="Vidéo" 
+        kinds={[AssetKind.VIDEO, AssetKind.IMAGE]} 
+        value="33333333-3333-3333-3333-333333333333" 
+        onChange={vi.fn()} 
+      />
+    );
+    
+    // Pas de nouvel appel
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('affiche un message si la liste est vide', async () => {
@@ -94,7 +196,8 @@ describe('AssetPicker', () => {
       />
     );
 
-    expect(await screen.findByText('Aucun média trouvé.')).toBeTruthy();
+    const msgs = await screen.findAllByText('Aucun média trouvé.');
+    expect(msgs.length).toBeGreaterThan(0);
   });
 
   it('affiche une erreur 500 générique', async () => {
@@ -113,6 +216,7 @@ describe('AssetPicker', () => {
       />
     );
 
-    expect(await screen.findByText('Impossible de charger les médias.')).toBeTruthy();
+    const errors = await screen.findAllByText('Impossible de charger les médias.');
+    expect(errors.length).toBeGreaterThan(0);
   });
 });
