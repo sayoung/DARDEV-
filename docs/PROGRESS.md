@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b Démo 1 (import Oudayas 1/3, données de la visite, logique pure, tests d'abord) : la visite statique D:\DARDEV\local\xplor-panoramas-test\visite-oudayas\inde… — Données Oudayas fidèles aux 38 scènes de la source, plan de visite pur conforme aux schémas Zod, tests présents et contrôles verts. (d90f8a8)
 - 05/10/2026 — M3b F-12 (médiathèque, bouton « Nettoyer », back-office) : dans apps/admin/src/pages/MediaPage.tsx, ajoute un bouton shadcn `variant="outline"` « Nettoyer la mé… — Bouton Nettoyer avec aperçu dryRun, confirmation, résultat et tests couvrant les cas demandés, contrôles verts ; réserves mineures sur la suppression des clés ar/en provisoires et la ré-indentation de… (30f2046)
 - 05/10/2026 — M3b F-12 (nettoyage 3/3, c : Hotspot.mediaAssetIds) : dans apps/api/test/assets.int.test.ts, ajouter le test « un asset référencé uniquement par Hotspot.mediaAs… — Le test Hotspot.mediaAssetIds est correct, couvre dry-run et suppression réelle, avec nettoyage en finally, et les contrôles passent. (d175930)
 - 05/10/2026 — M3b F-12 (nettoyage 3/3, b2 : exécution du test S3 réel) : le test « suppression réelle supprime les fichiers S3 » existe dans apps/api/test/assets.int.test.ts… — Le test S3 réel n'est plus ignoré et vérifie les trois critères demandés (fichier libre supprimé, fichier référencé conservé, bucket vide après le finally). Lint et typecheck passent ; la sortie de te… (eb8009c)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 05/10/2026 — M3b NF-10 (image Caddy avec les fronts) : crée `deploy/caddy/Dockerfile` multi-étapes, avec la racine du dépôt comme contexte. Étape build (node:22-bookworm-sli… — Dockerfile multi-étapes et Caddyfile placeholder conformes à la demande, périmètre respecté, contrôles verts. (cabc9b1)
 - 05/10/2026 — M3b NF-10 (build de production des fronts, diagnostic et correction minimale) : sans docker, lance `pnpm --filter "@xplor/admin..." run build`, puis `pnpm --fil… — viewer-core suit le modèle de @xplor/shared (tsconfig.build, script build, exports development/default), les URL localhost figées sont remplacées, le repli VITE_PUBLIC_WEB_URL est préservé et lint/typ… (6820556)
 - 05/10/2026 — M3b NF-10 (worker/Dockerfile) : crée `apps/worker/Dockerfile` multi-étapes, calqué sur `apps/api/Dockerfile`, avec la racine du dépôt comme contexte. Étape buil… — apps/worker/Dockerfile multi-étapes conforme à la consigne et cohérent avec celui de l'API, seul fichier modifié, contrôles lint/typecheck/test OK. (bf66744)
-- 04/10/2026 — M3b NF-10 (apps/api/Dockerfile) : crée `apps/api/Dockerfile` multi-étapes, contexte de build = racine du dépôt. Étape build (`node:22-bookworm-slim`) : `corepac… — Dockerfile multi-étapes conforme (build, deploy --prod, contrôles de fichiers, prisma generate épinglé 6.19.3, utilisateur node), contrôles verts, lockfile et PROGRESS intacts. (aa518a9)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
