@@ -843,6 +843,13 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 ## D-107 — Caddyfile de production (M3b NF-10 / NF-01)
 
 - **Date :** 05/10/2026
-- **Décision :** même domaine avec proxy /api pour les fronts, médias sur media.xplor.ma, demo.xplor.ma servi depuis un dossier monté en lecture seule (DEMO_SITE_DIR) à confirmer par le porteur.
+- **Décision :** même domaine avec proxy /api pour fronts, médias sur media.xplor.ma, demo.xplor.ma servi depuis un dossier monté en lecture seule (DEMO_SITE_DIR) à confirmer par le porteur.
 - **Alternatives :** Nginx ou Traefik comme reverse proxy.
+- **À valider :** oui
+
+## D-108 — Seed de démo en production via la commande CLI (M3b NF-10)
+
+- **Date :** 05/10/2026
+- **Décision :** seed de démo en prod via la commande CLI compilée. Ajout d'une commande `seed` dans `apps/api/src/cli/main.ts` appelant `runSeed` de `src/seed/run-seed.ts`.
+- **Alternatives :** Aucune.
 - **À valider :** oui
