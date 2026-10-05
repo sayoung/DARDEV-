@@ -350,6 +350,7 @@
       "selectCity": "Sélectionner une ville...",
       "categoryIds": "Catégories",
       "coverAssetId": "Vignette",
+      "coverRequired": "Veuillez sélectionner une vignette.",
       "durationMinutes": "Durée (minutes)",
       "lat": "Latitude",
       "lng": "Longitude"

@@ -35,6 +35,8 @@ function isBlank(text: string | undefined): boolean {
   return text === undefined || text.trim() === '';
 }
 
+const COVER_ASSET_KINDS = [AssetKind.IMAGE, AssetKind.PANORAMA] as const;
+
 export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, statusText }: TourFormProps) {
   const { t, i18n } = useTranslation();
   
@@ -84,6 +86,11 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
     
     if (categoryIds.length === 0) {
       setFormError(t('catalog.errors.invalidForm'));
+      return;
+    }
+
+    if (isBlank(coverAssetId)) {
+      setFormError(t('tour.form.coverRequired'));
       return;
     }
 
@@ -199,7 +206,7 @@ export function TourForm({ initialData, onSubmit, onDelete, isSubmitting, status
 
       <AssetPicker
         label={t('tour.form.coverAssetId')}
-        kind={AssetKind.IMAGE}
+        kinds={COVER_ASSET_KINDS}
         value={coverAssetId}
         onChange={setCoverAssetId}
         required

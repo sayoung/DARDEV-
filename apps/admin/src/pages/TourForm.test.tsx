@@ -34,20 +34,48 @@ const mockCategories = [
 ];
 
 const mockAssets = {
-  items: [{
-    id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e',
-    kind: 'IMAGE',
-    mimeType: 'image/jpeg',
-    sizeBytes: 100,
-    width: 800,
-    height: 600,
-    processingStatus: 'READY',
-    processingLog: null,
-    copyright: null,
-    thumbnailUrl: null,
-    createdAt: '2026-01-01T00:00:00.000Z'
-  }],
-  total: 1, page: 1, pageSize: 20
+  items: [
+    {
+      id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e', // Image READY
+      kind: 'IMAGE',
+      mimeType: 'image/jpeg',
+      sizeBytes: 100,
+      width: 800,
+      height: 600,
+      processingStatus: 'READY',
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      createdAt: '2026-01-01T00:00:00.000Z'
+    },
+    {
+      id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1da0', // Panorama READY (shortId: 5b2a1da0)
+      kind: 'PANORAMA',
+      mimeType: 'image/jpeg',
+      sizeBytes: 200,
+      width: 8192,
+      height: 4096,
+      processingStatus: 'READY',
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      createdAt: '2026-01-02T00:00:00.000Z'
+    },
+    {
+      id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1da1', // Image PENDING (shortId: 5b2a1da1)
+      kind: 'IMAGE',
+      mimeType: 'image/jpeg',
+      sizeBytes: 100,
+      width: 800,
+      height: 600,
+      processingStatus: 'PENDING',
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      createdAt: '2026-01-03T00:00:00.000Z'
+    }
+  ],
+  total: 3, page: 1, pageSize: 20
 };
 
 const mockTour: TourResponse = {
@@ -135,7 +163,17 @@ describe('TourForm Pages', () => {
 
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
     fireEvent.click(screen.getByLabelText(/Musée/));
-    fireEvent.click(await screen.findByRole('radio', { name: /5b2a1d9e/ }));
+    
+    // Le média READY est présent (image d9e)
+    console.log("DEBUG_HTML:", document.body.innerHTML);
+    expect(await screen.findByRole('radio', { name: /5b2a1d9e/ })).toBeTruthy();
+    // Le panorama READY est présent (5b2a1da0) et on le sélectionne
+    const panoramaRadio = await screen.findByRole('radio', { name: /5b2a1da0/ });
+    expect(panoramaRadio).toBeTruthy();
+    fireEvent.click(panoramaRadio);
+    
+    // Le média PENDING n'apparaît pas (5b2a1da1)
+    expect(screen.queryByRole('radio', { name: /5b2a1da1/ })).toBeNull();
     
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
@@ -148,7 +186,7 @@ describe('TourForm Pages', () => {
         summary: { fr: 'Un résumé court', ar: '', en: '' },
         cityId: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c',
         categoryIds: ['018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9d'],
-        coverAssetId: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e',
+        coverAssetId: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1da0', // Le panorama a été sélectionné
       }));
       expect(window.location.pathname).toBe('/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d90');
     });
@@ -173,6 +211,31 @@ describe('TourForm Pages', () => {
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
     await screen.findByText(resources.fr.catalog.errors.invalidForm);
+
+    const postCall = recordedCalls().find((c) => c.method === 'POST');
+    expect(postCall).toBeUndefined();
+  });
+
+  it('formulaire invalide (aucune vignette) -> aucun POST et message derreur', async () => {
+    window.history.replaceState(null, '', '/tours/new');
+    render(<App />);
+    await screen.findByText(/Rabat/);
+
+    const frTitleInput = screen.getAllByRole('textbox', { name: resources.fr.tour.form.title }).find((el) => el.getAttribute('lang') === 'fr');
+    if (!frTitleInput) throw new Error('Input frTitleInput not found');
+    fireEvent.change(frTitleInput, { target: { value: 'Nouveau tour' } });
+
+    const frSummaryInput = screen.getAllByRole('textbox', { name: resources.fr.tour.form.summary }).find((el) => el.getAttribute('lang') === 'fr');
+    if (!frSummaryInput) throw new Error('Input frSummaryInput not found');
+    fireEvent.change(frSummaryInput, { target: { value: 'Un résumé court' } });
+
+    fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
+    fireEvent.click(screen.getByLabelText(/Musée/));
+    // Ne sélectionne pas de vignette
+
+    fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
+
+    await screen.findByText(resources.fr.tour.form.coverRequired);
 
     const postCall = recordedCalls().find((c) => c.method === 'POST');
     expect(postCall).toBeUndefined();
