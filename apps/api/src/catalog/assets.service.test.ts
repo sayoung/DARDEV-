@@ -67,22 +67,17 @@ function row(
   };
 }
 
-function harness(rows: AssetRow[]): { 
-  service: AssetsService; 
-  env: { MEDIA_PUBLIC_URL: string };
-  lists: ListArgs[]; 
-  creates: Prisma.AssetCreateArgs[]; 
-  updates: Prisma.AssetUpdateArgs[]; 
-  deletes: Prisma.AssetDeleteArgs[];
-  storage: StorageService;
-  panoramaQueue: PanoramaQueueService;
-} {
+function harness(rows: AssetRow[]) {
   const lists: ListArgs[] = [];
   const creates: Prisma.AssetCreateArgs[] = [];
   const updates: Prisma.AssetUpdateArgs[] = [];
   const deletes: Prisma.AssetDeleteArgs[] = [];
+  const hotspotFindMany = vi.fn().mockResolvedValue([]);
 
   const prisma = {
+    hotspot: {
+      findMany: hotspotFindMany,
+    },
     asset: {
       count: ({ where }: { where: { kind?: AssetKind } }): Promise<number> =>
         Promise.resolve(rows.filter((item) => matches(item, where)).length),
@@ -144,7 +139,7 @@ function harness(rows: AssetRow[]): {
 
   const env = { MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor' };
 
-  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue };
+  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue, hotspotFindMany };
 }
 
 function matches(item: AssetRow, where: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } }): boolean {
@@ -550,6 +545,28 @@ describe('AssetsService', () => {
           code: 'ASSET_IN_USE',
           message: 'Impossible de supprimer ce média : il est utilisé à 3 endroit(s).',
           count: 3,
+        },
+      });
+      expect(deletes).toHaveLength(0);
+    });
+
+    it('répond 409 si un hotspot référence l\'asset', async () => {
+      const asset = {
+        ...row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z'),
+        _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 0 },
+      };
+      const { service, deletes, hotspotFindMany } = harness([asset]);
+      hotspotFindMany.mockResolvedValue([{ mediaAssetIds: [MIDDLE_ID] }]);
+
+      const error = await service.remove(MIDDLE_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(409);
+      expect(error.getResponse()).toEqual({
+        error: {
+          code: 'ASSET_IN_USE',
+          message: 'Impossible de supprimer ce média : il est utilisé à 1 endroit(s).',
+          count: 1,
         },
       });
       expect(deletes).toHaveLength(0);
