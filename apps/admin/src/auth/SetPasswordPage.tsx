@@ -3,7 +3,7 @@ import { useState, type MouseEvent, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { acceptInvite, ApiError, resetPassword } from '../api/client.js';
-import { hrefFor, navigate, type Notice } from '../router.js';
+import { hrefFor, navigate } from '../router.js';
 
 import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '../components/ui/Card.js';
 import { Input } from '../components/ui/Input.js';
@@ -22,9 +22,9 @@ type SetPasswordErrorKey =
 const TITLE_KEY = {
   reset: 'auth.setPassword.titleReset',
   invite: 'auth.setPassword.titleInvite',
-} as const satisfies Record<Notice, string>;
+} as const satisfies Record<'reset' | 'invite', string>;
 
-export function SetPasswordPage({ kind, token }: { kind: Notice; token: string }) {
+export function SetPasswordPage({ kind, token }: { kind: 'reset' | 'invite'; token: string }) {
   const { t } = useTranslation();
   const [errorKey, setErrorKey] = useState<SetPasswordErrorKey | null>(null);
   const [pending, setPending] = useState(false);

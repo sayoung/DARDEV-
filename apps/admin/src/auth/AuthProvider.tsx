@@ -33,8 +33,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
     );
+
+    function onSessionExpired() {
+      if (active) {
+        setState({ status: 'anonymous' });
+      }
+    }
+    window.addEventListener('session-expired', onSessionExpired);
+
     return () => {
       active = false;
+      window.removeEventListener('session-expired', onSessionExpired);
     };
   }, []);
 

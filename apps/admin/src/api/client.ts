@@ -54,18 +54,36 @@ export function clearCsrfToken(): void {
   csrfToken = undefined;
 }
 
+let isRedirecting = false;
+
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const method = (init.method ?? 'GET').toUpperCase();
   const headers = new Headers(init.headers);
   if (!SAFE_METHODS.has(method) && csrfToken !== undefined) {
     headers.set('X-CSRF-Token', csrfToken);
   }
-  return fetch(path, {
+  const response = await fetch(path, {
     ...init,
     method,
     headers,
     credentials: 'include',
   });
+
+  if (response.status === 401 && !isRedirecting) {
+    const isLogin = method === 'POST' && path.endsWith('/auth/login');
+    const isMe = method === 'GET' && path.endsWith('/auth/me');
+    if (!isLogin && !isMe) {
+      isRedirecting = true;
+      clearCsrfToken();
+      window.dispatchEvent(new Event('session-expired'));
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('notice', 'expired');
+      window.history.pushState(null, '', `${window.location.pathname}?${searchParams.toString()}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  }
+
+  return response;
 }
 
 export async function login(input: LoginRequest): Promise<MeResponse> {
@@ -119,6 +137,7 @@ async function readMe(response: Response): Promise<MeResponse> {
   }
   const profile = MeResponseSchema.parse(await readJson(response));
   csrfToken = profile.csrfToken;
+  isRedirecting = false;
   return profile;
 }
 

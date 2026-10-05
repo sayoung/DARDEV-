@@ -24,7 +24,8 @@
       "submit": "Se connecter",
       "error": "Identifiants incorrects",
       "locked": "Compte verrouillé. Réessayez dans 15 minutes.",
-      "failed": "La connexion a échoué. Réessayez."
+      "failed": "La connexion a échoué. Réessayez.",
+      "expired": "Ta session a expiré ou a été ouverte ailleurs. Reconnecte-toi."
     },
     "forgot": {
       "link": "Mot de passe oublié",

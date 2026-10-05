@@ -2,7 +2,7 @@ import { useState, type MouseEvent, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { isAccountLocked, isInvalidCredentials } from '../api/client.js';
-import { hrefFor, navigate } from '../router.js';
+import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { useAuth } from './AuthProvider.js';
 
 import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '../components/ui/Card.js';
@@ -16,6 +16,7 @@ type LoginErrorKey = 'auth.login.error' | 'auth.login.locked' | 'auth.login.fail
 export function LoginPage() {
   const { t } = useTranslation();
   const auth = useAuth();
+  const { notice } = useAppLocation();
   const [errorKey, setErrorKey] = useState<LoginErrorKey | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -46,6 +47,10 @@ export function LoginPage() {
             {errorKey !== null ? (
               <Alert variant="destructive">
                 {t(errorKey)}
+              </Alert>
+            ) : notice === 'expired' ? (
+              <Alert variant="destructive">
+                {t('auth.login.expired')}
               </Alert>
             ) : null}
             <div className="flex flex-col gap-2">

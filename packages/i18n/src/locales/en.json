@@ -23,7 +23,8 @@
       "submit": "Sign in",
       "error": "Incorrect credentials",
       "locked": "Account locked. Try again in 15 minutes.",
-      "failed": "Sign-in failed. Try again."
+      "failed": "Sign-in failed. Try again.",
+      "expired": "Ta session a expiré ou a été ouverte ailleurs. Reconnecte-toi."
     },
     "forgot": {
       "link": "Forgot password",
