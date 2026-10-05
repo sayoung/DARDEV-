@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { AssetUploadRequestSchema, type AssetResponse, type AssetUploadResponse, type Paginated } from '@xplor/shared';
+import { AssetCleanupRequestSchema, AssetUploadRequestSchema, type AssetCleanupResponse, type AssetResponse, type AssetUploadResponse, type Paginated } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
 import type { SessionRequest } from '../auth/session-request.js';
@@ -19,6 +19,21 @@ export class AssetsController {
   ): Promise<Paginated<AssetResponse>> {
     requireContentManager(request);
     return this.assets.list(parseAssetListQuery(query));
+  }
+
+  @Post('cleanup')
+  @HttpCode(200)
+  cleanup(
+    @Req() request: SessionRequest,
+    @Body() body: unknown,
+  ): Promise<AssetCleanupResponse> {
+    requireContentManager(request);
+    const parsed = AssetCleanupRequestSchema.parse(body);
+    if (parsed.dryRun) {
+      return this.assets.cleanup(true);
+    } else {
+      return this.assets.cleanup(false);
+    }
   }
 
   @Get(':id')

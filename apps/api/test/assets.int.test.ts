@@ -420,6 +420,53 @@ describe('médias HTTP', () => {
     const checkDb = await prisma.asset.findUnique({ where: { id: freeAsset.id } });
     expect(checkDb).toBeNull();
   });
+
+  it('gère le POST cleanup (200, 403, 401)', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const manager = await login(MANAGER_EMAIL);
+
+    const payload = JSON.stringify({ dryRun: true });
+
+    const noSession = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/cleanup',
+      headers: { 'content-type': 'application/json' },
+      payload,
+    });
+    expect(noSession.statusCode).toBe(401);
+
+    const noCsrf = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/cleanup',
+      headers: { cookie: sessionCookie(editor.sessionId), 'content-type': 'application/json' },
+      payload,
+    });
+    expect(noCsrf.statusCode).toBe(403);
+
+    const forbidden = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/cleanup',
+      headers: {
+        cookie: sessionCookie(manager.sessionId),
+        'x-csrf-token': manager.csrfToken,
+        'content-type': 'application/json',
+      },
+      payload,
+    });
+    expect(forbidden.statusCode).toBe(403);
+
+    const success = await application().inject({
+      method: 'POST',
+      url: '/api/v1/admin/assets/cleanup',
+      headers: {
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+        'content-type': 'application/json',
+      },
+      payload,
+    });
+    expect(success.statusCode).toBe(200);
+  });
 });
 
 async function insertAsset(
