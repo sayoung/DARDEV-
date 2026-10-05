@@ -3,91 +3,93 @@ name: xplor-prod
 services:
   postgres:
     image: postgres:16-alpine
-    restart: unless-stopped
-    volumes:
-      - xplor_prod_pg:/var/lib/postgresql/data
-    env_file:
-      - .env.production
-    networks:
-      - xplor_prod
+    env_file: .env.production
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
+    volumes:
+      - xplor_prod_pg:/var/lib/postgresql/data
+    networks:
+      - xplor_prod
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
     command: redis-server --appendonly yes
+    env_file: .env.production
     volumes:
       - xplor_prod_redis:/data
-    env_file:
-      - .env.production
     networks:
       - xplor_prod
+    restart: unless-stopped
 
   minio:
-    image: minio/minio
-    restart: unless-stopped
+    build: ./docker/minio
+    image: xplor-prod-minio:2025-09-07
     command: server /data
+    env_file: .env.production
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     volumes:
       - xplor_prod_minio:/data
-    env_file:
-      - .env.production
     networks:
       - xplor_prod
+    restart: unless-stopped
 
   minio-init:
-    image: minio/mc
-    restart: "no"
+    build: ./docker/minio
+    image: xplor-prod-minio:2025-09-07
     depends_on:
-      - minio
-    env_file:
-      - .env.production
-    networks:
-      - xplor_prod
+      minio:
+        condition: service_healthy
+    env_file: .env.production
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         set -eu
-        sleep 5
         mc alias set local http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY"
         mc mb --ignore-existing "local/$$S3_BUCKET"
         mc anonymous set download "local/$$S3_BUCKET/panoramas"
+    networks:
+      - xplor_prod
+    restart: "no"
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    restart: unless-stopped
+    env_file: .env.production
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - .env.production
     networks:
       - xplor_prod
+    restart: unless-stopped
 
   worker:
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
-    restart: unless-stopped
+    env_file: .env.production
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - .env.production
     networks:
       - xplor_prod
+    restart: unless-stopped
 
   caddy:
     build:
       context: .
       dockerfile: deploy/caddy/Dockerfile
-    restart: unless-stopped
+    env_file: .env.production
     ports:
       - "80:80"
       - "443:443"
@@ -95,13 +97,13 @@ services:
       - xplor_prod_caddy_data:/data
       - xplor_prod_caddy_config:/config
       - ${DEMO_SITE_DIR}:/srv/demo:ro
-    env_file:
-      - .env.production
     networks:
       - xplor_prod
+    restart: unless-stopped
 
 networks:
   xplor_prod:
+    name: xplor_prod_net
 
 volumes:
   xplor_prod_pg:
