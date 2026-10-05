@@ -32,10 +32,11 @@ cp .env.production.example .env.production
   - **`ACME_EMAIL`** : L'adresse e-mail utilisée pour générer les certificats TLS via Let's Encrypt.
   - **`S3_PUBLIC_ENDPOINT`** : L'URL publique de MinIO (ex. `https://media.xplor.ma`) utilisée pour signer les URL de téléchargement et d'envoi de fichiers pour le navigateur.
   - **`SEED_DEFAULT_PASSWORD`** : Le mot de passe (à définir avec une valeur sécurisée) qui sera utilisé pour le compte administrateur lors de l'initialisation de la base de données.
+  - **Mots de passe liés** : Le mot de passe de `DATABASE_URL` doit être identique à `POSTGRES_PASSWORD`, et `S3_ACCESS_KEY` / `S3_SECRET_KEY` doivent être identiques à `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` (`minio-init` s'en sert comme compte admin).
 
 Vous pouvez générer des secrets forts pour les mots de passe et jetons via la commande :
 ```bash
-openssl rand -base64 32
+openssl rand -hex 24
 ```
 
 ## 4. Migration de l'ancien site de démonstration (xplor-demo-web)
@@ -48,7 +49,7 @@ Avant de lancer le déploiement, suivez ces étapes :
    ```bash
    docker inspect xplor-demo-web --format '{{ json .Mounts }}'
    ```
-2. Renseignez ce chemin (par défaut `/var/www/demo`) dans la variable `DEMO_SITE_DIR` du fichier `.env.production`.
+2. Renseignez ce chemin (par défaut `/opt/xplor-demo` sur ce VPS) dans la variable `DEMO_SITE_DIR` du fichier `.env.production`.
 3. Vérifiez sur le serveur que ce dossier contient bien les fichiers du site `demo.xplor.ma`.
 4. Arrêtez l'ancien Caddy pour libérer les ports (ne faites qu'un `stop` afin de le garder pour un éventuel retour en arrière, il sera supprimé après validation) :
    ```bash
@@ -63,7 +64,7 @@ Avant de lancer le déploiement, suivez ces étapes :
 
 Assurez-vous d'abord que le dépôt de code a été cloné sur le VPS. Ensuite, exécutez le script de déploiement depuis la racine du dépôt. Lors du tout premier déploiement, ajoutez l'option `--seed` pour initialiser la base de données :
 ```bash
-./deploy/deploy.sh --seed
+bash deploy/deploy.sh --seed
 ```
 Ce script validera la présence du fichier `.env.production`, construira les images nécessaires, appliquera les migrations Prisma, injectera les données de démonstration (seed) et démarrera l'ensemble des conteneurs isolés de la production.
 
@@ -100,13 +101,13 @@ Pour appliquer la dernière version de l'application :
    ```
 2. Relancez le script de déploiement :
    ```bash
-   ./deploy/deploy.sh
+   bash deploy/deploy.sh
    ```
 Ce script validera l'environnement, construira ou téléchargera les nouvelles images, appliquera les éventuelles migrations Prisma et redémarrera les conteneurs sans temps d'arrêt prolongé.
 
 ## 8. Sauvegarde (Backup) quotidienne
 
-Pour garantir la pérennité des données (base PostgreSQL et fichiers médias dans MinIO), une sauvegarde régulière est indispensable. Le script `deploy/backup.sh` génère un dossier horodaté de sauvegarde.
+Pour garantir la pérennité des données (base PostgreSQL et fichiers médias dans MinIO), une sauvegarde régulière est indispensable. Le script `bash deploy/backup.sh` génère un dossier horodaté de sauvegarde.
 
 Ce dossier est créé par défaut dans `/var/backups/xplor/<horodatage>/` (modifiable via la variable `BACKUP_DIR` dans `.env.production`). Il contient deux fichiers :
 - `db.dump` : la base de données PostgreSQL.
@@ -117,22 +118,22 @@ Le script effectue automatiquement une rotation et supprime les dossiers de sauv
 Pour automatiser une sauvegarde quotidienne à 3h30 du matin, ajoutez la ligne suivante à la table de planification de l'utilisateur `xplor` (via `crontab -e`) :
 
 ```cron
-30 3 * * * cd /home/xplor/xplor_smit && deploy/backup.sh >> /var/log/xplor-backup.log 2>&1
+30 3 * * * cd /opt/xplor && bash deploy/backup.sh >> /home/xplor/xplor-backup.log 2>&1
 ```
 
-*Note :* Assurez-vous que le dossier de sauvegarde (`/var/backups/xplor` par défaut) et le fichier de log (`/var/log/xplor-backup.log`) sont accessibles en écriture par l'utilisateur `xplor`.
+*Note :* Assurez-vous que le dossier de sauvegarde (`/var/backups/xplor` par défaut) et le fichier de log (`/home/xplor/xplor-backup.log`) sont accessibles en écriture par l'utilisateur `xplor`.
 
 ## 9. Restauration de la sauvegarde
 
-En cas d'incident, utilisez le script `deploy/restore.sh` en lui passant le chemin du dossier de sauvegarde à restaurer :
+En cas d'incident, utilisez le script `bash deploy/restore.sh` en lui passant le chemin du dossier de sauvegarde à restaurer :
 
 ```bash
-./deploy/restore.sh /var/backups/xplor/<horodatage>
+bash deploy/restore.sh /var/backups/xplor/<horodatage>
 ```
 
 Le script demandera de confirmer l'opération en tapant `OUI`. Vous pouvez contourner cette confirmation en ajoutant l'option `--yes` (utile pour l'automatisation) :
 ```bash
-./deploy/restore.sh /var/backups/xplor/<horodatage> --yes
+bash deploy/restore.sh /var/backups/xplor/<horodatage> --yes
 ```
 
 Le script effectue les opérations suivantes :
@@ -150,10 +151,10 @@ En cas de mise en production instable, vous pouvez restaurer une version précé
 1. Revenez au commit fonctionnel (par exemple, via `git reset --hard <commit>` ou `git checkout <commit>`).
 2. Relancez le script de déploiement :
    ```bash
-   ./deploy/deploy.sh
+   bash deploy/deploy.sh
    ```
 
-*Attention :* Le script `deploy.sh` applique automatiquement les migrations de base de données (`prisma migrate deploy`). Un simple retour arrière du code ne défait **pas** les migrations. Si le code instable contenait des migrations modifiant le schéma, vous devrez potentiellement restaurer la dernière sauvegarde fonctionnelle de la base de données via `deploy/restore.sh /var/backups/xplor/<horodatage>` pour garantir la synchronisation entre le code et les données.
+*Attention :* Le script `deploy.sh` applique automatiquement les migrations de base de données (`prisma migrate deploy`). Un simple retour arrière du code ne défait **pas** les migrations. Si le code instable contenait des migrations modifiant le schéma, vous devrez potentiellement restaurer la dernière sauvegarde fonctionnelle de la base de données via `bash deploy/restore.sh /var/backups/xplor/<horodatage>` pour garantir la synchronisation entre le code et les données.
 
 ## 11. Dépannage
 
