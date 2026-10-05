@@ -170,6 +170,8 @@ docker compose -f docker-compose.prod.yml logs caddy
 ```
 Contrôlez que `ACME_EMAIL` est correct dans `.env.production`, que vos enregistrements DNS sont propagés et que les ports 80/443 sont libres.
 
+**Limitation de débit :** si tous les utilisateurs sont bloqués ensemble, vérifier `API_TRUST_PROXY=true`.
+
 ## 12. Démo 1 : Scan QR Code des Oudayas
 
 Pour valider l'expérience globale sur mobile depuis la production :

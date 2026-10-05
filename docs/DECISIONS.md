@@ -853,3 +853,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** seed de démo en prod via la commande CLI compilée. Ajout d'une commande `seed` dans `apps/api/src/cli/main.ts` appelant `runSeed` de `src/seed/run-seed.ts`.
 - **Alternatives :** Aucune.
 - **À valider :** oui
+
+## D-109 — Confiance dans le proxy inverse (trustProxy)
+
+- **Date :** 05/10/2026
+- **Décision :** trustProxy activé uniquement en prod derrière Caddy.
+- **Alternatives :** faire confiance à une IP précise du réseau Docker.
+- **À valider :** oui
