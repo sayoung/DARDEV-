@@ -27,6 +27,7 @@ describe('AssetPicker', () => {
           processingStatus: 'READY',
           processingLog: null,
           copyright: null,
+          thumbnailUrl: null,
           createdAt: new Date().toISOString()
         }
       ],

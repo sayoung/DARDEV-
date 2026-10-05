@@ -26,6 +26,7 @@ const mockReadyAsset: AssetResponse = {
   processingStatus: ProcessingStatus.READY,
   processingLog: null,
   copyright: null,
+  thumbnailUrl: null,
   createdAt: '2026-10-01T12:00:00Z',
 };
 
@@ -39,6 +40,7 @@ const mockErrorAsset: AssetResponse = {
   processingStatus: ProcessingStatus.ERROR,
   processingLog: 'Image trop petite',
   copyright: null,
+  thumbnailUrl: null,
   createdAt: '2026-10-02T14:30:00Z',
 };
 

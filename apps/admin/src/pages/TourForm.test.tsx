@@ -34,7 +34,19 @@ const mockCategories = [
 ];
 
 const mockAssets = {
-  items: [{ id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e', kind: 'IMAGE', mimeType: 'image/jpeg', sizeBytes: 100, width: 800, height: 600, processingStatus: 'READY', processingLog: null, copyright: null, createdAt: '2026-01-01T00:00:00.000Z' }],
+  items: [{
+    id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e',
+    kind: 'IMAGE',
+    mimeType: 'image/jpeg',
+    sizeBytes: 100,
+    width: 800,
+    height: 600,
+    processingStatus: 'READY',
+    processingLog: null,
+    copyright: null,
+    thumbnailUrl: null,
+    createdAt: '2026-01-01T00:00:00.000Z'
+  }],
   total: 1, page: 1, pageSize: 20
 };
 

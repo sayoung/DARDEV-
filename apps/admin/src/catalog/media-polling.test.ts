@@ -14,6 +14,7 @@ describe('needsPolling', () => {
     processingStatus: status,
     processingLog: null,
     copyright: null,
+    thumbnailUrl: null,
   });
 
   it('retourne false pour une liste vide', () => {

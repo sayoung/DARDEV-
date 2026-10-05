@@ -27,6 +27,7 @@ interface AssetRow {
   copyright: string | null;
   createdAt: Date;
   originalKey: string;
+  contentHash: string;
 }
 
 interface OrderKey {
@@ -48,7 +49,7 @@ function row(
   id: string,
   kind: AssetKind,
   createdAt: string,
-  extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus' | 'processingLog'>> = {},
+  extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus' | 'processingLog' | 'contentHash'>> = {},
 ): AssetRow {
   return {
     id,
@@ -62,11 +63,13 @@ function row(
     copyright: extra.copyright === undefined ? null : extra.copyright,
     createdAt: new Date(createdAt),
     originalKey: `unit/${id}`,
+    contentHash: extra.contentHash !== undefined ? extra.contentHash : 'testhash',
   };
 }
 
 function harness(rows: AssetRow[]): { 
   service: AssetsService; 
+  env: { MEDIA_PUBLIC_URL: string };
   lists: ListArgs[]; 
   creates: Prisma.AssetCreateArgs[]; 
   updates: Prisma.AssetUpdateArgs[]; 
@@ -138,7 +141,9 @@ function harness(rows: AssetRow[]): {
     enqueue: () => Promise.resolve(),
   } as unknown as PanoramaQueueService;
 
-  return { service: new AssetsService(prisma, storage, panoramaQueue), lists, creates, updates, deletes, storage, panoramaQueue };
+  const env = { MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor' };
+
+  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue };
 }
 
 function matches(item: AssetRow, where: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } }): boolean {
@@ -200,7 +205,7 @@ describe('AssetsService', () => {
           height: null,
           processingStatus: ProcessingStatus.PENDING,
           processingLog: null,
-          copyright: null,
+          copyright: null, thumbnailUrl: null,
           createdAt: '2026-09-02T00:00:00.000Z',
         },
       ],
@@ -228,7 +233,7 @@ describe('AssetsService', () => {
         height: 600,
         processingStatus: ProcessingStatus.READY,
         processingLog: null,
-        copyright: 'Libre',
+        copyright: 'Libre', thumbnailUrl: 'http://localhost:9000/xplor/panoramas/01990000-0000-7000-8000-000000000001/testhash/thumb.jpg',
         createdAt: '2026-09-01T00:00:00.000Z',
       },
     ]);
@@ -246,6 +251,30 @@ describe('AssetsService', () => {
     expect(found.id).toBe(OLDER_ID);
     expect(found.kind).toBe(AssetKind.IMAGE);
     expect(found.copyright).toBe('Libre');
+  });
+
+  it('renseigne thumbnailUrl pour les médias READY (IMAGE ou PANORAMA avec contentHash non vide) et null pour PENDING', async () => {
+    const PANO_ID = '01990000-0000-7000-8000-000000000001';
+    const IMG_ID = '01990000-0000-7000-8000-000000000002';
+    const PEND_ID = '01990000-0000-7000-8000-000000000003';
+
+    const readyPanorama = row(PANO_ID, AssetKind.PANORAMA, '2026-10-01', { processingStatus: ProcessingStatus.READY, contentHash: 'hash1' });
+    const readyImageEmptyHash = row(IMG_ID, AssetKind.IMAGE, '2026-10-01', { processingStatus: ProcessingStatus.READY, contentHash: '' });
+    const pendingAsset = row(PEND_ID, AssetKind.PANORAMA, '2026-10-01', { processingStatus: ProcessingStatus.PENDING, contentHash: 'hash2' });
+
+    const { service } = harness([readyPanorama, readyImageEmptyHash, pendingAsset]);
+    
+    const pano = await service.get(PANO_ID);
+    expect(pano.processingStatus).toBe('READY');
+    expect(pano.thumbnailUrl).toBe(`http://localhost:9000/xplor/panoramas/${PANO_ID}/hash1/thumb.jpg`);
+
+    const img = await service.get(IMG_ID);
+    expect(img.processingStatus).toBe('READY');
+    expect(img.thumbnailUrl).toBeNull();
+
+    const pend = await service.get(PEND_ID);
+    expect(pend.processingStatus).toBe('PENDING');
+    expect(pend.thumbnailUrl).toBeNull();
   });
 
   it('répond 404 ASSET_NOT_FOUND si le média est inconnu', async () => {

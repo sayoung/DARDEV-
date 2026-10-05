@@ -6,6 +6,7 @@ import {
   PanoramaUploadIssueCode,
   PANORAMA_MAX_BYTES,
   validatePanoramaUpload,
+  panoramaDerivativeKeys,
   type AssetListQuery,
   type AssetResponse,
   type AssetUploadRequest,
@@ -16,6 +17,9 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PanoramaQueueService } from '../queue/panorama-queue.service.js';
 import { StorageService, STORAGE_SERVICE, UPLOAD_URL_TTL_SECONDS } from '../storage/storage.service.js';
+import { ENV } from '../config/config.module.js';
+import type { Env } from '../config/env.js';
+import { mediaUrl } from '../viewer/media-url.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE, missingException } from './catalog.errors.js';
 import { readImageDimensions } from './jpeg-dimensions.js';
 
@@ -25,6 +29,7 @@ export class AssetsService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
     @Inject(PanoramaQueueService) private readonly panoramaQueue: PanoramaQueueService,
+    @Inject(ENV) private readonly env: Pick<Env, 'MEDIA_PUBLIC_URL'>,
   ) {}
 
   async list(query: AssetListQuery): Promise<Paginated<AssetResponse>> {
@@ -39,7 +44,7 @@ export class AssetsService {
       }),
     ]);
     return {
-      items: rows.map((row) => toAsset(row)),
+      items: rows.map((row) => toAsset(row, this.env.MEDIA_PUBLIC_URL)),
       page: query.page,
       pageSize: query.pageSize,
       total,
@@ -51,7 +56,7 @@ export class AssetsService {
     if (row === null) {
       throw missingException(ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE);
     }
-    return toAsset(row);
+    return toAsset(row, this.env.MEDIA_PUBLIC_URL);
   }
 
   async createUploadUrl(input: AssetUploadRequest): Promise<AssetUploadResponse> {
@@ -172,7 +177,7 @@ export class AssetsService {
       });
 
       await this.panoramaQueue.enqueue(id);
-      return toAsset(updatedAsset);
+      return toAsset(updatedAsset, this.env.MEDIA_PUBLIC_URL);
     } else {
       const updatedAsset = await this.prisma.asset.update({
         where: { id },
@@ -181,7 +186,7 @@ export class AssetsService {
           processingStatus: ProcessingStatus.READY,
         },
       });
-      return toAsset(updatedAsset);
+      return toAsset(updatedAsset, this.env.MEDIA_PUBLIC_URL);
     }
   }
 
@@ -212,7 +217,7 @@ export class AssetsService {
     });
 
     await this.panoramaQueue.enqueue(id, 'reprocess');
-    return toAsset(updatedAsset);
+    return toAsset(updatedAsset, this.env.MEDIA_PUBLIC_URL);
   }
 
   async remove(id: string): Promise<void> {
@@ -301,7 +306,17 @@ function toPrismaKind(kind: AssetKind): PrismaAssetKind {
   }
 }
 
-function toAsset(row: Asset): AssetResponse {
+function toAsset(row: Asset, mediaBase: string): AssetResponse {
+  let thumbnailUrl: string | null = null;
+  if (
+    row.processingStatus === ProcessingStatus.READY &&
+    (row.kind === PrismaAssetKind.IMAGE || row.kind === PrismaAssetKind.PANORAMA) &&
+    row.contentHash !== ''
+  ) {
+    const keys = panoramaDerivativeKeys(row.id, row.contentHash);
+    thumbnailUrl = mediaUrl(mediaBase, keys.thumb);
+  }
+
   return AssetResponseSchema.parse({
     id: row.id,
     kind: row.kind,
@@ -312,6 +327,7 @@ function toAsset(row: Asset): AssetResponse {
     processingStatus: row.processingStatus,
     processingLog: row.processingLog,
     copyright: row.copyright,
+    thumbnailUrl,
     createdAt: row.createdAt.toISOString(),
   });
 }

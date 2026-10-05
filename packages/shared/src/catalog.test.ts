@@ -705,7 +705,7 @@ describe('AssetResponseSchema', () => {
     height: 2000,
     processingStatus: ProcessingStatus.READY,
     processingLog: null,
-    copyright: 'Libre de droits',
+    copyright: 'Libre de droits', thumbnailUrl: null,
     createdAt,
   };
 
@@ -757,7 +757,7 @@ describe('PaginatedAssetResponseSchema', () => {
           height: null,
           processingStatus: ProcessingStatus.PENDING,
           processingLog: null,
-          copyright: null,
+          copyright: null, thumbnailUrl: null,
           createdAt: '2026-09-29T12:00:00.000Z',
         },
       ],
