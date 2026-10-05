@@ -90,7 +90,7 @@ export async function deleteCategory(id: string): Promise<void> {
 }
 
 export async function listTours(query?: TourListQuery): Promise<PaginatedTourResponse> {
-  const url = new URL('/api/v1/admin/tours', 'http://localhost'); // base url doesn't matter for path + search
+  const url = new URL('/api/v1/admin/tours', 'http://d'); // base url doesn't matter for path + search
   if (query) {
     if (query.page) url.searchParams.set('page', query.page.toString());
     if (query.pageSize) url.searchParams.set('pageSize', query.pageSize.toString());
@@ -133,7 +133,7 @@ export async function duplicateTour(id: string): Promise<TourResponse> {
 }
 
 export async function listAssets(query?: AssetListQuery): Promise<PaginatedAssetResponse> {
-  const url = new URL('/api/v1/admin/assets', 'http://localhost'); // base url doesn't matter for path + search
+  const url = new URL('/api/v1/admin/assets', 'http://d'); // base url doesn't matter for path + search
   if (query) {
     if (query.page) url.searchParams.set('page', query.page.toString());
     if (query.pageSize) url.searchParams.set('pageSize', query.pageSize.toString());
