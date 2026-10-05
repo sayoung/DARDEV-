@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b F-12 (nettoyage 2/3, b2 : tests) : dans apps/api/src/catalog/assets.service.test.ts, ajouter des tests de `AssetsService.cleanup` (déjà implémenté en b1) en… — Trois tests de AssetsService.cleanup conformes à la demande (orphelin seul listé, échec partiel {deleted:2, failed:1}, aucun orphelin), lint/typecheck/test verts, sans any ni désactivation. (c3d3770)
 - 05/10/2026 — M3b F-12 (nettoyage 2/3, b1 : implémentation) : dans apps/api/src/catalog/assets.service.ts, ajouter `async cleanup(dryRun: true): Promise<AssetCleanupDryRunRes… — cleanup() est correctement implémenté (surcharges, filtrage des orphelins et des médias de hotspots, dry-run validé par Zod, suppression tolérante aux erreurs via remove()), et lint, typecheck et test… (634c4cd)
 - 05/10/2026 — M3b F-12 (nettoyage 2/3, a : service) : dans apps/api/src/catalog/assets.service.ts, ajouter une méthode privée getHotspotMediaAssetIds() qui retourne un Set de… — getHotspotMediaAssetIds() est ajoutée et utilisée dans remove() (409 ASSET_IN_USE si un hotspot référence l'asset), avec un test dédié ; lint, typecheck et tests passent. (af5bc69)
 - 05/10/2026 — M3b F-12 (nettoyage 1/3, contrat) : reprendre en lecture seule (git show agent/20261005-135739-m3b-f-12-route-de-nettoyage-reprendre-la:<chemin>, sans le suppos… — Schémas/types de nettoyage, exports et route OpenAPI reportés correctement, docs/openapi.json régénéré, lint/typecheck/test verts, périmètre respecté. (861e71b)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 04/10/2026 — M3b NF-01 (paquets CORS/helmet) : ajoute `@fastify/cors` et `@fastify/helmet` aux dépendances de apps/api (`pnpm --filter api add @fastify/cors @fastify/helmet`… — Les paquets @fastify/cors et @fastify/helmet sont ajoutés avec le lockfile à jour, l'entrée D-106 est complète au format D-105, et lint, typecheck et test passent. (4add2f4)
 - 04/10/2026 — Récupération du travail non commité — Ajout de @fastify/cors et @fastify/helmet avec lockfile cohérent et décision D-106 (raison, licence, alternatives) conforme à AGENTS.md ; contrôles OK. (7f7c7b6)
 - 04/10/2026 — M3b NF-01 (configuration CORS, test d'abord) : dans apps/api/src/config/env.ts, ajoute la variable `API_CORS_ORIGINS` (chaîne d'origines séparées par des virgul… — API_CORS_ORIGINS est ajoutée avec défaut en développement, découpage, validation d'URL et exigence en production, avec les tests et .env.example ; lint, typecheck et test passent. (08cb121)
-- 04/10/2026 — M3b NF-10 (build de production du worker) : sans docker, lance `pnpm --filter @xplor/worker build` et vérifie le fichier d'entrée produit dans apps/worker/dist.… — Le script start (node dist/main.js) correspond à l'entrée réellement produite par la build, dist est ignoré par git, PROGRESS.md n'est pas modifié et les contrôles passent. (e5a0bea)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
