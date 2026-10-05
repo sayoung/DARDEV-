@@ -30,6 +30,7 @@ cp .env.production.example .env.production
 
 - **Variables importantes à renseigner :**
   - **`ACME_EMAIL`** : L'adresse e-mail utilisée pour générer les certificats TLS via Let's Encrypt.
+  - **`S3_PUBLIC_ENDPOINT`** : L'URL publique de MinIO (ex. `https://media.xplor.ma`) utilisée pour signer les URL de téléchargement et d'envoi de fichiers pour le navigateur.
   - **`SEED_DEFAULT_PASSWORD`** : Le mot de passe (à définir avec une valeur sécurisée) qui sera utilisé pour le compte administrateur lors de l'initialisation de la base de données.
 
 Vous pouvez générer des secrets forts pour les mots de passe et jetons via la commande :

@@ -26,6 +26,7 @@ describe('loadEnv', () => {
     expect(env.DATABASE_URL).toBe('postgresql://xplor:xplor@localhost:5432/xplor');
     expect(env.REDIS_URL).toBe('redis://localhost:6379');
     expect(env.S3_ENDPOINT).toBe('http://localhost:9000');
+    expect(env.S3_PUBLIC_ENDPOINT).toBe('http://localhost:9000');
     expect(env.S3_ACCESS_KEY).toBe('xplor');
     expect(env.S3_SECRET_KEY).toBe('xplor-dev-secret');
     expect(env.S3_BUCKET).toBe('xplor');
@@ -37,6 +38,26 @@ describe('loadEnv', () => {
     const withoutPort = exampleEnv();
     delete withoutPort.PORT;
     expect(loadEnv(withoutPort).PORT).toBe(3000);
+
+    const withPublicEndpoint = loadEnv({ ...exampleEnv(), S3_PUBLIC_ENDPOINT: 'https://media.xplor.ma' });
+    expect(withPublicEndpoint.S3_PUBLIC_ENDPOINT).toBe('https://media.xplor.ma');
+  });
+
+  it('validates S3_PUBLIC_ENDPOINT correctly', () => {
+    // Empty string falls back to S3_ENDPOINT
+    expect(
+      loadEnv({ ...exampleEnv(), S3_PUBLIC_ENDPOINT: '' }).S3_PUBLIC_ENDPOINT,
+    ).toBe('http://localhost:9000');
+    
+    // Invalid URL rejected
+    expect(() => loadEnv({ ...exampleEnv(), S3_PUBLIC_ENDPOINT: 'not-a-url' })).toThrow(
+      /S3_PUBLIC_ENDPOINT/,
+    );
+    
+    // Non HTTP/HTTPS rejected
+    expect(() => loadEnv({ ...exampleEnv(), S3_PUBLIC_ENDPOINT: 'ftp://media.xplor.ma' })).toThrow(
+      /S3_PUBLIC_ENDPOINT/,
+    );
   });
 
   it('rejects a SESSION_SECRET that is too short', () => {
