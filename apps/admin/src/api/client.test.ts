@@ -374,3 +374,42 @@ describe('Assets API', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('session expiration', () => {
+  let pushStateSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    clearCsrfToken();
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+    pushStateSpy = vi.spyOn(window.history, 'pushState');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('401 on an authenticated request causes a single redirection even with multiple requests', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    await Promise.all([
+      apiFetch('/api/v1/admin/tours'),
+      apiFetch('/api/v1/admin/assets'),
+    ]);
+    expect(pushStateSpy).toHaveBeenCalledTimes(1);
+    expect(pushStateSpy).toHaveBeenCalledWith(null, '', expect.stringContaining('notice=expired'));
+  });
+
+  it('401 on POST /auth/login causes no redirection', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    await apiFetch('/api/v1/auth/login', { method: 'POST' });
+    expect(pushStateSpy).toHaveBeenCalledTimes(0);
+  });
+
+  it('401 on GET /auth/me causes no redirection', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    await apiFetch('/api/v1/auth/me', { method: 'GET' });
+    expect(pushStateSpy).toHaveBeenCalledTimes(0);
+  });
+});
+

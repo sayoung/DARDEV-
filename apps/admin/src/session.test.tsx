@@ -92,6 +92,31 @@ describe('session du back-office', () => {
     expect(screen.queryByText(profile.name)).toBeNull();
   });
 
+  it('affiche le message d’expiration et nettoie l’URL après connexion', async () => {
+    window.history.replaceState(null, '', '/tours?notice=expired');
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/login')) {
+        return Promise.resolve(jsonResponse(200, profile));
+      }
+      if (methodOf(input, init) === 'GET') {
+        return Promise.resolve(jsonResponse(200, { items: [], total: 0 }));
+      }
+      return Promise.resolve(anonymous());
+    });
+    render(<App />);
+
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]?.textContent).toBe(resources.fr.auth.login.expired);
+
+    await submitLogin('ada@xplor.test', 'correct-horse');
+
+    expect(await screen.findAllByText(profile.name)).toBeTruthy();
+    expect(window.location.pathname).toBe('/tours');
+    expect(window.location.search).toBe('');
+  });
+
+
   it('affiche le rôle traduit en arabe', async () => {
     window.history.replaceState(null, '', '/?lang=ar');
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
