@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 05/10/2026 — M3b NF-10 (.env.production.example) : crée `.env.production.example` à la racine. Il ne contient aucun secret réel : chaque valeur sensible vaut `CHANGER_MOI`.… — Le fichier .env.production.example couvre toutes les variables requises par env.ts de l'API et par le worker, sans secret réel, et .gitignore ignore .env.production mais pas l'exemple. (4006147)
 - 05/10/2026 — M3b NF-10 / NF-01 (Caddyfile de production) : écris `deploy/caddy/Caddyfile`. Option globale : `email {$ACME_EMAIL}`. Le bloc `(securite)` est un snippet réutil… — Caddyfile de production conforme à la demande (snippet sécurité, 5 sites, encode, SPA fallback, proxy /api) et décision D-107 consignée avec à valider : oui ; contrôles verts. (2d18ee4)
 - 05/10/2026 — M3b NF-10 (image Caddy avec les fronts) : crée `deploy/caddy/Dockerfile` multi-étapes, avec la racine du dépôt comme contexte. Étape build (node:22-bookworm-sli… — Dockerfile multi-étapes et Caddyfile placeholder conformes à la demande, périmètre respecté, contrôles verts. (cabc9b1)
 - 05/10/2026 — M3b NF-10 (build de production des fronts, diagnostic et correction minimale) : sans docker, lance `pnpm --filter "@xplor/admin..." run build`, puis `pnpm --fil… — viewer-core suit le modèle de @xplor/shared (tsconfig.build, script build, exports development/default), les URL localhost figées sont remplacées, le repli VITE_PUBLIC_WEB_URL est préservé et lint/typ… (6820556)
