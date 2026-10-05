@@ -310,7 +310,8 @@ function toAsset(row: Asset, mediaBase: string): AssetResponse {
   let thumbnailUrl: string | null = null;
   if (
     row.processingStatus === ProcessingStatus.READY &&
-    (row.kind === PrismaAssetKind.IMAGE || row.kind === PrismaAssetKind.PANORAMA)
+    (row.kind === PrismaAssetKind.IMAGE || row.kind === PrismaAssetKind.PANORAMA) &&
+    row.contentHash !== ''
   ) {
     const keys = panoramaDerivativeKeys(row.id, row.contentHash);
     thumbnailUrl = mediaUrl(mediaBase, keys.thumb);

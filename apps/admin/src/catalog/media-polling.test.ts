@@ -13,7 +13,8 @@ describe('needsPolling', () => {
     height: null,
     processingStatus: status,
     processingLog: null,
-    copyright: null, thumbnailUrl: null,
+    copyright: null,
+    thumbnailUrl: null,
   });
 
   it('retourne false pour une liste vide', () => {

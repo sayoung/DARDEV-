@@ -26,7 +26,8 @@ interface AssetRow {
   processingLog: string | null;
   copyright: string | null;
   createdAt: Date;
-  originalKey: string; contentHash: string;
+  originalKey: string;
+  contentHash: string;
 }
 
 interface OrderKey {
@@ -48,7 +49,7 @@ function row(
   id: string,
   kind: AssetKind,
   createdAt: string,
-  extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus' | 'processingLog'>> = {},
+  extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus' | 'processingLog' | 'contentHash'>> = {},
 ): AssetRow {
   return {
     id,
@@ -61,7 +62,8 @@ function row(
     processingLog: extra.processingLog === undefined ? null : extra.processingLog,
     copyright: extra.copyright === undefined ? null : extra.copyright,
     createdAt: new Date(createdAt),
-    originalKey: `unit/${id}`, contentHash: 'testhash',
+    originalKey: `unit/${id}`,
+    contentHash: extra.contentHash !== undefined ? extra.contentHash : 'testhash',
   };
 }
 
@@ -251,16 +253,28 @@ describe('AssetsService', () => {
     expect(found.copyright).toBe('Libre');
   });
 
-  it('renseigne thumbnailUrl pour les médias READY (IMAGE ou PANORAMA) et null pour PENDING', async () => {
-    const { service } = harness(sample);
-    
-    const readyImage = await service.get(OLDER_ID);
-    expect(readyImage.processingStatus).toBe('READY');
-    expect(readyImage.thumbnailUrl).toBe(`http://localhost:9000/xplor/panoramas/${OLDER_ID}/testhash/thumb.jpg`);
+  it('renseigne thumbnailUrl pour les médias READY (IMAGE ou PANORAMA avec contentHash non vide) et null pour PENDING', async () => {
+    const PANO_ID = '01990000-0000-7000-8000-000000000001';
+    const IMG_ID = '01990000-0000-7000-8000-000000000002';
+    const PEND_ID = '01990000-0000-7000-8000-000000000003';
 
-    const pendingAsset = await service.get(NEWER_ID);
-    expect(pendingAsset.processingStatus).toBe('PENDING');
-    expect(pendingAsset.thumbnailUrl).toBeNull();
+    const readyPanorama = row(PANO_ID, AssetKind.PANORAMA, '2026-10-01', { processingStatus: ProcessingStatus.READY, contentHash: 'hash1' });
+    const readyImageEmptyHash = row(IMG_ID, AssetKind.IMAGE, '2026-10-01', { processingStatus: ProcessingStatus.READY, contentHash: '' });
+    const pendingAsset = row(PEND_ID, AssetKind.PANORAMA, '2026-10-01', { processingStatus: ProcessingStatus.PENDING, contentHash: 'hash2' });
+
+    const { service } = harness([readyPanorama, readyImageEmptyHash, pendingAsset]);
+    
+    const pano = await service.get(PANO_ID);
+    expect(pano.processingStatus).toBe('READY');
+    expect(pano.thumbnailUrl).toBe(`http://localhost:9000/xplor/panoramas/${PANO_ID}/hash1/thumb.jpg`);
+
+    const img = await service.get(IMG_ID);
+    expect(img.processingStatus).toBe('READY');
+    expect(img.thumbnailUrl).toBeNull();
+
+    const pend = await service.get(PEND_ID);
+    expect(pend.processingStatus).toBe('PENDING');
+    expect(pend.thumbnailUrl).toBeNull();
   });
 
   it('répond 404 ASSET_NOT_FOUND si le média est inconnu', async () => {
