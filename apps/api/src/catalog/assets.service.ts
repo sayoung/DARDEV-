@@ -223,6 +223,19 @@ export class AssetsService {
     return toAsset(updatedAsset, this.env.MEDIA_PUBLIC_URL);
   }
 
+  private async getHotspotMediaAssetIds(): Promise<Set<string>> {
+    const hotspots = await this.prisma.hotspot.findMany({
+      select: { mediaAssetIds: true },
+    });
+    const used = new Set<string>();
+    for (const h of hotspots) {
+      for (const mediaId of h.mediaAssetIds) {
+        used.add(mediaId);
+      }
+    }
+    return used;
+  }
+
   async remove(id: string): Promise<void> {
     const asset = await this.prisma.asset.findUnique({
       where: { id },
@@ -242,11 +255,14 @@ export class AssetsService {
       throw missingException(ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE);
     }
 
+    const usedInHotspots = await this.getHotspotMediaAssetIds();
+
     const totalUses =
       asset._count.coverOf +
       asset._count.panoramas +
       asset._count.ambientOf +
-      asset._count.hotelLogos;
+      asset._count.hotelLogos +
+      (usedInHotspots.has(id) ? 1 : 0);
 
     if (totalUses > 0) {
       throw new HttpException(
