@@ -55,21 +55,25 @@ Avant de lancer le déploiement, suivez ces étapes :
    ```
 5. Vérifiez ensuite que les ports 80 et 443 sont libres :
    ```bash
-   netstat -tulpn | grep -E ':(80|443)'
+   sudo ss -tulpn | grep -E ':(80|443)\b'
    ```
 
 ## 5. Premier déploiement
 
-Exécutez le script de déploiement depuis la racine du dépôt. Lors du tout premier déploiement, ajoutez l'option `--seed` pour initialiser la base de données avec le compte administrateur par défaut :
+Assurez-vous d'abord que le dépôt de code a été cloné sur le VPS. Ensuite, exécutez le script de déploiement depuis la racine du dépôt. Lors du tout premier déploiement, ajoutez l'option `--seed` pour initialiser la base de données :
 ```bash
 ./deploy/deploy.sh --seed
 ```
-Ce script validera la présence du fichier `.env.production`, construira les images nécessaires, appliquera les migrations Prisma, injectera les données (seed) et démarrera l'ensemble des conteneurs isolés de la production.
+Ce script validera la présence du fichier `.env.production`, construira les images nécessaires, appliquera les migrations Prisma, injectera les données de démonstration (seed) et démarrera l'ensemble des conteneurs isolés de la production.
 
-**Compte d'accès initial :**
-Le paramètre `--seed` crée un compte d'administration avec les identifiants suivants :
-- Identifiant / Email : `admin@xplor.local`
-- Mot de passe : La valeur que vous avez définie dans `SEED_DEFAULT_PASSWORD`.
+**Comptes et données initiaux :**
+Le paramètre `--seed` crée des données de démonstration ainsi que les comptes suivants, utilisant tous le mot de passe défini dans `SEED_DEFAULT_PASSWORD` (qui doit faire au moins 12 caractères et ne pas être courant) :
+- `admin@xplor.local` (Administrateur)
+- `editor@xplor.local` (Éditeur)
+- `manager@xplor.local` (Gestionnaire)
+- `partner@xplor.local` (Partenaire)
+
+*Note importante :* Après le premier déploiement, veillez à changer les mots de passe de ces comptes ou à désactiver les comptes non-administrateur qui ne sont pas nécessaires en production.
 
 ## 6. Vérifications post-déploiement
 
