@@ -13,6 +13,8 @@ import {
   AssetResponseSchema,
   AssetUploadRequestSchema,
   AssetUploadResponseSchema,
+  AssetCleanupRequestSchema,
+  AssetCleanupResponseSchema,
   CategoryCreateSchema,
   CategoryResponseSchema,
   CategoryUpdateSchema,
@@ -400,6 +402,7 @@ registerAssetUpload();
 registerAssetComplete();
 registerAssetReprocess();
 registerAssetDelete();
+registerAssetCleanup();
 registerTourCrud();
 registerTourValidate();
 registerTourPublish();
@@ -617,6 +620,25 @@ function registerAssetDelete(): void {
       '403': jsonResponse('CSRF invalide, ou rôle autre que ADMIN/EDITOR.', forbiddenError),
       '404': jsonResponse('Média introuvable.', assetMissingError),
       '409': jsonResponse('Le média est utilisé par une entité.', z.object({ error: z.object({ code: z.literal('ASSET_IN_USE'), message: z.string() }) })),
+    },
+  });
+}
+
+function registerAssetCleanup(): void {
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/assets/cleanup',
+    summary: 'Nettoyer la médiathèque',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      body: jsonBody(AssetCleanupRequestSchema, 'Options de nettoyage.'),
+    },
+    responses: {
+      '200': jsonResponse('Résultat du nettoyage.', AssetCleanupResponseSchema),
+      '400': jsonResponse('Corps refusé.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('CSRF invalide, ou rôle autre que ADMIN/EDITOR.', forbiddenError),
     },
   });
 }

@@ -429,3 +429,44 @@ export const AssetUploadResponseSchema = z.object({
   expiresInSeconds: z.number().int().positive(),
 });
 export type AssetUploadResponse = z.infer<typeof AssetUploadResponseSchema>;
+
+/**
+ * Requête de nettoyage de la médiathèque (M3b F-12).
+ */
+export const AssetCleanupRequestSchema = z.object({
+  dryRun: z.boolean(),
+});
+export type AssetCleanupRequest = z.infer<typeof AssetCleanupRequestSchema>;
+
+/**
+ * Réponse d'un nettoyage en mode simulation (M3b F-12).
+ */
+export const AssetCleanupDryRunResponseSchema = z.object({
+  count: z.number().int().min(0),
+  totalBytes: z.number().int().min(0),
+  items: z.array(z.object({
+    id: idSchema,
+    filename: z.string(),
+    kind: z.enum(AssetKind),
+    status: z.enum(ProcessingStatus),
+  })),
+});
+export type AssetCleanupDryRunResponse = z.infer<typeof AssetCleanupDryRunResponseSchema>;
+
+/**
+ * Réponse d'un nettoyage réel (M3b F-12).
+ */
+export const AssetCleanupResultSchema = z.object({
+  deleted: z.number().int().min(0),
+  failed: z.number().int().min(0),
+});
+export type AssetCleanupResult = z.infer<typeof AssetCleanupResultSchema>;
+
+/**
+ * Réponse polymorphe du nettoyage (M3b F-12).
+ */
+export const AssetCleanupResponseSchema = z.union([
+  AssetCleanupDryRunResponseSchema,
+  AssetCleanupResultSchema,
+]);
+export type AssetCleanupResponse = z.infer<typeof AssetCleanupResponseSchema>;
