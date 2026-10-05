@@ -4,6 +4,7 @@
  */
 import 'reflect-metadata';
 
+import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
 import fastifyCookie from '@fastify/cookie';
 import { RequestMethod, type CanActivate } from '@nestjs/common';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -11,6 +12,7 @@ import { Test } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AssetKind, PrismaClient, ProcessingStatus } from '@prisma/client';
 import {
+  AssetCleanupResultSchema,
   AssetResponseSchema,
   AssetUploadResponseSchema,
   MeResponseSchema,
@@ -25,9 +27,12 @@ import { toPrismaRole } from '../src/auth/prisma-role.js';
 import { PasswordService } from '../src/auth/password.service.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-cookie.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE } from '../src/catalog/catalog.errors.js';
+import { ENV } from '../src/config/config.module.js';
 import { loadEnv, type Env } from '../src/config/env.js';
+import { S3_CLIENT } from '../src/health/health.probes.js';
 import { REDIS } from '../src/redis/redis.module.js';
 import { buildSeedUsers } from '../src/seed/seed-users.js';
+import { STORAGE_SERVICE, type StorageService } from '../src/storage/storage.service.js';
 import { readDatabaseUrlTest, resetDb } from './global-setup.js';
 
 const MISSING_SEED_PASSWORD =
@@ -466,6 +471,86 @@ describe('médias HTTP', () => {
       payload,
     });
     expect(success.statusCode).toBe(200);
+  });
+
+  it.skipIf(process.env.STORAGE_PROVIDER === 'local')('suppression réelle supprime les fichiers S3', async () => {
+    // Ce test vérifie les appels réels vers S3 si on n'utilise pas le driver local
+    const editor = await login(EDITOR_EMAIL);
+    const storageService = application().get<StorageService>(STORAGE_SERVICE);
+    const s3Client = application().get<S3Client>(S3_CLIENT);
+    const env = application().get<Env>(ENV);
+
+    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-01T10:00:00Z', { processingStatus: ProcessingStatus.READY });
+    const freeKey = `uploads/${freeAsset.id}/free.jpg`;
+    await prisma.asset.update({ where: { id: freeAsset.id }, data: { originalKey: freeKey } });
+
+    const refAsset = await insertAsset(AssetKind.PANORAMA, '2026-10-01T10:00:00Z', { processingStatus: ProcessingStatus.READY });
+    const referencedKey = `uploads/${refAsset.id}/ref.jpg`;
+    await prisma.asset.update({ where: { id: refAsset.id }, data: { originalKey: referencedKey } });
+
+    const adminUser = await prisma.user.findFirstOrThrow({ where: { role: 'ADMIN' } });
+    let city = await prisma.city.findFirst();
+    let cityCreated = false;
+    if (!city) {
+      city = await prisma.city.create({
+        data: { name: { fr: 'Ville' }, region: 'Region', lat: 33, lng: -7 },
+      });
+      cityCreated = true;
+    }
+
+    const tour = await prisma.tour.create({
+      data: {
+        title: { fr: 'Tour Ref' },
+        summary: { fr: 'Résumé' },
+        cityId: city.id,
+        createdById: adminUser.id,
+        coverAssetId: refAsset.id,
+      },
+    });
+
+    try {
+      await s3Client.send(new PutObjectCommand({
+        Bucket: env.S3_BUCKET,
+        Key: freeKey,
+        Body: Buffer.from('free'),
+      }));
+      await s3Client.send(new PutObjectCommand({
+        Bucket: env.S3_BUCKET,
+        Key: referencedKey,
+        Body: Buffer.from('ref'),
+      }));
+
+      const payload = JSON.stringify({ dryRun: false });
+      const response = await application().inject({
+        method: 'POST',
+        url: '/api/v1/admin/assets/cleanup',
+        headers: {
+          cookie: sessionCookie(editor.sessionId),
+          'x-csrf-token': editor.csrfToken,
+          'content-type': 'application/json',
+        },
+        payload,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const parsed = AssetCleanupResultSchema.parse(response.json());
+      expect(parsed.deleted).toBeGreaterThanOrEqual(1);
+
+      const freeHead = await storageService.headObject(freeKey);
+      expect(freeHead).toBeNull();
+
+      const refHead = await storageService.headObject(referencedKey);
+      expect(refHead).not.toBeNull();
+    } finally {
+      await storageService.deleteObject(freeKey).catch(() => {});
+      await storageService.deleteObject(referencedKey).catch(() => {});
+      await prisma.tour.delete({ where: { id: tour.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: freeAsset.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: refAsset.id } }).catch(() => {});
+      if (cityCreated) {
+        await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
+      }
+    }
   });
 });
 
