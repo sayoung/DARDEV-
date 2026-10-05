@@ -4,7 +4,7 @@
  */
 import 'reflect-metadata';
 
-import { PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
+import { ListObjectsV2Command, PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
 import fastifyCookie from '@fastify/cookie';
 import { RequestMethod, type CanActivate } from '@nestjs/common';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -167,10 +167,12 @@ describe('médias HTTP', () => {
       'processingLog',
       'processingStatus',
       'sizeBytes',
+      'thumbnailUrl',
       'width',
     ]);
     const parsed = AssetResponseSchema.parse(body);
-    expect(parsed).toEqual({
+    expect(typeof parsed.thumbnailUrl).toBe('string');
+    expect(parsed).toMatchObject({
       id: image.id,
       kind: AssetKind.IMAGE,
       mimeType: 'image/jpeg',
@@ -473,7 +475,7 @@ describe('médias HTTP', () => {
     expect(success.statusCode).toBe(200);
   });
 
-  it.skipIf(process.env.STORAGE_PROVIDER === 'local')('suppression réelle supprime les fichiers S3', async () => {
+  it('suppression réelle supprime les fichiers S3', async () => {
     // Ce test vérifie les appels réels vers S3 si on n'utilise pas le driver local
     const editor = await login(EDITOR_EMAIL);
     const storageService = application().get<StorageService>(STORAGE_SERVICE);
@@ -551,6 +553,11 @@ describe('médias HTTP', () => {
         await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
       }
     }
+
+    const listFree = await s3Client.send(new ListObjectsV2Command({ Bucket: env.S3_BUCKET, Prefix: `uploads/${freeAsset.id}/` }));
+    expect(listFree.KeyCount).toBe(0);
+    const listRef = await s3Client.send(new ListObjectsV2Command({ Bucket: env.S3_BUCKET, Prefix: `uploads/${refAsset.id}/` }));
+    expect(listRef.KeyCount).toBe(0);
   });
 });
 
