@@ -10,6 +10,9 @@
     },
     "deleteConfirm": "Êtes-vous sûr ?",
     "save": "Enregistrer",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "close": "Fermer",
     "delete": "Supprimer",
     "error": {
       "generic": "Une erreur est survenue."
@@ -242,13 +245,13 @@
       "unpublish": "Dépublier",
       "noIssues": "Aucun problème : la visite peut être publiée",
       "issuesTitle": "Problèmes à corriger avant publication",
-      "shareToken": "Jeton de partage",
-      "regenerateShareLink": "Régénérer le lien de partage",
-      "regenerateConfirm": "Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?",
-      "regenerateSuccess": "Lien de partage régénéré avec succès.",
-      "publicLink": "Lien public",
-      "qrCodeTitle": "QR code de la visite",
-      "downloadQrCode": "Télécharger le QR code"
+        "shareToken": "Jeton de partage",
+        "regenerateShareLink": "Régénérer le lien de partage",
+        "regenerateConfirm": "Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?",
+        "regenerateSuccess": "Lien de partage régénéré avec succès.",
+        "publicLink": "Lien public",
+        "qrCodeTitle": "QR code de la visite",
+        "downloadQrCode": "Télécharger le QR code"
     },
     "issue": {
       "START_SCENE_MISSING": "Scène de départ manquante",
@@ -309,7 +312,10 @@
       "button": "Nettoyer la médiathèque",
       "empty": "La médiathèque est déjà propre",
       "confirm": "{{count}} médias inutilisés, {{size}} Mo, seront supprimés définitivement",
-      "success": "{{count}} médias ont été supprimés"
+      "success": "{{count}} médias ont été supprimés",
+      "confirmTitle": "Confirmation",
+      "emptyTitle": "Information",
+      "successTitle": "Succès"
     }
   },
   "page": {

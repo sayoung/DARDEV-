@@ -226,12 +226,6 @@
     },
     "errors": {
       "inUse": "تُستخدم هذه الوسائط بواسطة مشهد أو نقطة اهتمام."
-    },
-    "cleanup": {
-      "button": "Nettoyer la médiathèque",
-      "empty": "La médiathèque est déjà propre",
-      "confirm": "{{count}} médias inutilisés, {{size}} Mo, seront supprimés définitivement",
-      "success": "{{count}} médias ont été supprimés"
     }
   },
   "page": {

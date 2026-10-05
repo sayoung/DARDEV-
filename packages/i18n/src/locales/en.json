@@ -226,12 +226,6 @@
     },
     "errors": {
       "inUse": "This media is used by a scene or hotspot."
-    },
-    "cleanup": {
-      "button": "Nettoyer la médiathèque",
-      "empty": "La médiathèque est déjà propre",
-      "confirm": "{{count}} médias inutilisés, {{size}} Mo, seront supprimés définitivement",
-      "success": "{{count}} médias ont été supprimés"
     }
   },
   "page": {
