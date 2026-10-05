@@ -128,14 +128,23 @@ export class S3StorageService implements StorageService {
       const contents = response.Contents;
       if (!contents || contents.length === 0) break;
 
-      const keysToDelete = contents.map((c) => ({ Key: c.Key ?? '' }));
-      
-      await this.s3.send(
-        new DeleteObjectsCommand({
-          Bucket: this.env.S3_BUCKET,
-          Delete: { Objects: keysToDelete },
-        }),
-      );
+      const keysToDelete = contents
+        .map((c) => c.Key)
+        .filter((key): key is string => typeof key === 'string' && key.length > 0)
+        .map((key) => ({ Key: key }));
+
+      if (keysToDelete.length > 0) {
+        const deleteResult = await this.s3.send(
+          new DeleteObjectsCommand({
+            Bucket: this.env.S3_BUCKET,
+            Delete: { Objects: keysToDelete, Quiet: true },
+          }),
+        );
+
+        if (deleteResult.Errors && deleteResult.Errors.length > 0) {
+          throw new Error(`Failed to delete some objects: ${JSON.stringify(deleteResult.Errors)}`);
+        }
+      }
 
       isTruncated = response.IsTruncated ?? false;
       continuationToken = response.NextContinuationToken;
@@ -152,7 +161,12 @@ export class LocalStorageService implements StorageService {
   }
 
   private getFilePath(key: string): string {
-    return path.join(this.localPath, key);
+    const root = path.resolve(this.localPath);
+    const target = path.resolve(root, key);
+    if (!target.startsWith(root)) {
+      throw new Error('Path traversal detected');
+    }
+    return target;
   }
 
   generatePresignedUploadUrl(key: string, _contentType: string, sizeBytes: number): Promise<string> {
@@ -207,39 +221,22 @@ export class LocalStorageService implements StorageService {
 
   async deleteByPrefix(prefix: string): Promise<void> {
     const targetPath = this.getFilePath(prefix);
-    
-    try {
-      const stats = await fs.stat(targetPath);
-      if (stats.isDirectory()) {
-        await fs.rm(targetPath, { recursive: true, force: true });
-      } else {
-        await fs.unlink(targetPath);
-      }
-    } catch (e: unknown) {
-      if (typeof e === 'object' && e !== null && 'code' in e && e.code === 'ENOENT') {
-        const dir = path.dirname(targetPath);
-        const base = path.basename(targetPath);
-        try {
-          const files = await fs.readdir(dir);
-          for (const file of files) {
-            if (file.startsWith(base)) {
-              const fullPath = path.join(dir, file);
-              const fileStats = await fs.stat(fullPath).catch(() => null);
-              if (fileStats?.isDirectory()) {
-                await fs.rm(fullPath, { recursive: true, force: true });
-              } else if (fileStats?.isFile()) {
-                await fs.unlink(fullPath).catch(() => {});
-              }
-            }
-          }
-        } catch (dirErr: unknown) {
-          if (typeof dirErr === 'object' && dirErr !== null && 'code' in dirErr && dirErr.code === 'ENOENT') {
-            return;
-          }
-          throw dirErr;
-        }
-      } else {
+    if (prefix.endsWith('/')) {
+      await fs.rm(targetPath, { recursive: true, force: true });
+    } else {
+      const dir = path.dirname(targetPath);
+      const base = path.basename(targetPath);
+      let files: string[];
+      try {
+        files = await fs.readdir(dir);
+      } catch (e: unknown) {
+        if (typeof e === 'object' && e !== null && 'code' in e && e.code === 'ENOENT') return;
         throw e;
+      }
+      for (const file of files) {
+        if (file.startsWith(base)) {
+          await fs.rm(path.join(dir, file), { recursive: true, force: true });
+        }
       }
     }
   }

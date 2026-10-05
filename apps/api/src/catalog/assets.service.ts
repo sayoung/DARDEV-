@@ -7,6 +7,7 @@ import {
   PANORAMA_MAX_BYTES,
   validatePanoramaUpload,
   panoramaDerivativeKeys,
+  panoramaAssetPrefix,
   type AssetListQuery,
   type AssetResponse,
   type AssetUploadRequest,
@@ -264,10 +265,16 @@ export class AssetsService {
 
     try {
       await this.storage.deleteByPrefix(`uploads/${id}/`);
-      const kindFolder = asset.kind.toLowerCase() + 's';
-      await this.storage.deleteByPrefix(`${kindFolder}/${id}/`);
-    } catch (error) {
-      this.logger.error(`Erreur lors de la suppression des fichiers du média ${id}`, error);
+    } catch (error: unknown) {
+      this.logger.error(`Erreur lors de la suppression des uploads du média ${id}`, error);
+    }
+
+    if (asset.kind === PrismaAssetKind.PANORAMA) {
+      try {
+        await this.storage.deleteByPrefix(panoramaAssetPrefix(id));
+      } catch (error: unknown) {
+        this.logger.error(`Erreur lors de la suppression des dérivés du panorama ${id}`, error);
+      }
     }
   }
 

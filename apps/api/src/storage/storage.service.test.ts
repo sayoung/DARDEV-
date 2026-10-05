@@ -152,7 +152,7 @@ describe('S3StorageService', () => {
       expect(sendSpy).toHaveBeenCalledWith(expect.any(DeleteObjectCommand));
     });
   });
-  
+
   describe('getRange', () => {
     it('should request the specified byte range', async () => {
       const mockBody = { transformToByteArray: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3])) };
@@ -219,7 +219,7 @@ describe('S3StorageService', () => {
 describe('LocalStorageService', () => {
   let env: Env;
   let service: LocalStorageService;
-  
+
   beforeEach(() => {
     env = {
       NODE_ENV: 'test',
@@ -260,6 +260,10 @@ describe('LocalStorageService', () => {
     // Just pass a non-existent file path
     const result = await service.headObject('non-existent-file.jpg');
     expect(result).toBeNull();
+  });
+
+  it('should throw Error if path traversal is detected', async () => {
+    await expect(service.headObject('../../../etc/passwd')).rejects.toThrow('Path traversal detected');
   });
 
   describe('deleteByPrefix', () => {

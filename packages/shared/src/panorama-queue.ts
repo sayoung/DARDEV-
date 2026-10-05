@@ -11,8 +11,12 @@ export const PanoramaJobDataSchema = z.object({
 
 export type PanoramaJobData = z.infer<typeof PanoramaJobDataSchema>;
 
+export function panoramaAssetPrefix(assetId: string) {
+  return `panoramas/${assetId}/`;
+}
+
 export function panoramaDerivativeKeys(assetId: string, contentHash: string) {
-  const base = `panoramas/${assetId}/${contentHash}`;
+  const base = `${panoramaAssetPrefix(assetId)}${contentHash}`;
   return {
     preview: `${base}/preview.jpg`,
     web: `${base}/web.jpg`,
