@@ -103,7 +103,7 @@ export function navigateWithSearch(pathname: string, search: string): void {
 
 export function useAppLocation(): { route: AppRoute; notice: Notice | null; search: string } {
   const key = useSyncExternalStore(subscribe, locationKey, locationKey);
-  const url = new URL(key, 'http://localhost');
+  const url = new URL(key, window.location.origin);
   return {
     route: parsePathname(url.pathname),
     notice: readNotice(url.search),
