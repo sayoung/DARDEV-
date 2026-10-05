@@ -26,7 +26,7 @@ interface AssetRow {
   processingLog: string | null;
   copyright: string | null;
   createdAt: Date;
-  originalKey: string;
+  originalKey: string; contentHash: string;
 }
 
 interface OrderKey {
@@ -61,12 +61,13 @@ function row(
     processingLog: extra.processingLog === undefined ? null : extra.processingLog,
     copyright: extra.copyright === undefined ? null : extra.copyright,
     createdAt: new Date(createdAt),
-    originalKey: `unit/${id}`,
+    originalKey: `unit/${id}`, contentHash: 'testhash',
   };
 }
 
 function harness(rows: AssetRow[]): { 
   service: AssetsService; 
+  env: { MEDIA_PUBLIC_URL: string };
   lists: ListArgs[]; 
   creates: Prisma.AssetCreateArgs[]; 
   updates: Prisma.AssetUpdateArgs[]; 
@@ -138,7 +139,9 @@ function harness(rows: AssetRow[]): {
     enqueue: () => Promise.resolve(),
   } as unknown as PanoramaQueueService;
 
-  return { service: new AssetsService(prisma, storage, panoramaQueue), lists, creates, updates, deletes, storage, panoramaQueue };
+  const env = { MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor' };
+
+  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue };
 }
 
 function matches(item: AssetRow, where: { kind?: AssetKind; processingStatus?: { in?: ProcessingStatus[] } }): boolean {
@@ -200,7 +203,7 @@ describe('AssetsService', () => {
           height: null,
           processingStatus: ProcessingStatus.PENDING,
           processingLog: null,
-          copyright: null,
+          copyright: null, thumbnailUrl: null,
           createdAt: '2026-09-02T00:00:00.000Z',
         },
       ],
@@ -228,7 +231,7 @@ describe('AssetsService', () => {
         height: 600,
         processingStatus: ProcessingStatus.READY,
         processingLog: null,
-        copyright: 'Libre',
+        copyright: 'Libre', thumbnailUrl: 'http://localhost:9000/xplor/panoramas/01990000-0000-7000-8000-000000000001/testhash/thumb.jpg',
         createdAt: '2026-09-01T00:00:00.000Z',
       },
     ]);
@@ -246,6 +249,18 @@ describe('AssetsService', () => {
     expect(found.id).toBe(OLDER_ID);
     expect(found.kind).toBe(AssetKind.IMAGE);
     expect(found.copyright).toBe('Libre');
+  });
+
+  it('renseigne thumbnailUrl pour les médias READY (IMAGE ou PANORAMA) et null pour PENDING', async () => {
+    const { service } = harness(sample);
+    
+    const readyImage = await service.get(OLDER_ID);
+    expect(readyImage.processingStatus).toBe('READY');
+    expect(readyImage.thumbnailUrl).toBe(`http://localhost:9000/xplor/panoramas/${OLDER_ID}/testhash/thumb.jpg`);
+
+    const pendingAsset = await service.get(NEWER_ID);
+    expect(pendingAsset.processingStatus).toBe('PENDING');
+    expect(pendingAsset.thumbnailUrl).toBeNull();
   });
 
   it('répond 404 ASSET_NOT_FOUND si le média est inconnu', async () => {

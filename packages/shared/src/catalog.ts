@@ -309,6 +309,7 @@ export const AssetResponseSchema = z.object({
   processingStatus: z.enum(ProcessingStatus),
   processingLog: z.string().nullable(),
   copyright: z.string().nullable(),
+  thumbnailUrl: z.string().nullable(),
   createdAt: z.iso.datetime(),
 });
 export type AssetResponse = z.infer<typeof AssetResponseSchema>;

@@ -3037,6 +3037,12 @@
                               "null"
                             ]
                           },
+                          "thumbnailUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -3052,6 +3058,7 @@
                           "processingStatus",
                           "processingLog",
                           "copyright",
+                          "thumbnailUrl",
                           "createdAt"
                         ]
                       }
@@ -3256,6 +3263,12 @@
                         "null"
                       ]
                     },
+                    "thumbnailUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -3271,6 +3284,7 @@
                     "processingStatus",
                     "processingLog",
                     "copyright",
+                    "thumbnailUrl",
                     "createdAt"
                   ]
                 }
@@ -3880,6 +3894,12 @@
                         "null"
                       ]
                     },
+                    "thumbnailUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -3895,6 +3915,7 @@
                     "processingStatus",
                     "processingLog",
                     "copyright",
+                    "thumbnailUrl",
                     "createdAt"
                   ]
                 }
@@ -4174,6 +4195,12 @@
                         "null"
                       ]
                     },
+                    "thumbnailUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -4189,6 +4216,7 @@
                     "processingStatus",
                     "processingLog",
                     "copyright",
+                    "thumbnailUrl",
                     "createdAt"
                   ]
                 }

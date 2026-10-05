@@ -278,7 +278,7 @@ describe('Assets API', () => {
       height: 512,
       processingStatus: 'READY',
       processingLog: null,
-      copyright: null,
+      copyright: null, thumbnailUrl: null,
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));
@@ -296,7 +296,7 @@ describe('Assets API', () => {
       height: 512,
       processingStatus: 'READY',
       processingLog: null,
-      copyright: null,
+      copyright: null, thumbnailUrl: null,
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));
@@ -329,7 +329,7 @@ describe('Assets API', () => {
       height: 512,
       processingStatus: 'READY',
       processingLog: null,
-      copyright: null,
+      copyright: null, thumbnailUrl: null,
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));
