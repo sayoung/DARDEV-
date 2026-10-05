@@ -135,6 +135,7 @@ function harness(rows: AssetRow[]): {
     headObject: () => Promise.resolve(null),
     getRange: () => Promise.resolve(Buffer.alloc(0)),
     deleteObject: () => Promise.resolve(),
+    deleteByPrefix: () => Promise.resolve(),
   } as unknown as StorageService;
 
   const panoramaQueue = {
@@ -554,19 +555,54 @@ describe('AssetsService', () => {
       expect(deletes).toHaveLength(0);
     });
 
-    it('supprime l\'asset s\'il n\'est pas utilisé', async () => {
+    it('supprime l\'asset s\'il n\'est pas utilisé (test avec un panorama)', async () => {
       const asset = {
-        ...row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z'),
+        ...row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z'),
         _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 0 },
       };
       const { service, storage, deletes } = harness([asset]);
-      const deleteObjectSpy = vi.spyOn(storage, 'deleteObject');
+      const deleteByPrefixSpy = vi.spyOn(storage, 'deleteByPrefix');
 
       await service.remove(MIDDLE_ID);
 
       expect(deletes).toHaveLength(1);
       expect(deletes[0]?.where.id).toBe(MIDDLE_ID);
-      expect(deleteObjectSpy).toHaveBeenCalledWith(asset.originalKey);
+      expect(deleteByPrefixSpy).toHaveBeenCalledWith(`uploads/${MIDDLE_ID}/`);
+      expect(deleteByPrefixSpy).toHaveBeenCalledWith(`panoramas/${MIDDLE_ID}/`);
+      expect(deleteByPrefixSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('tente la deuxième suppression même si la première échoue', async () => {
+      const asset = {
+        ...row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z'),
+        _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 0 },
+      };
+      const { service, storage, deletes } = harness([asset]);
+      
+      const deleteByPrefixSpy = vi.spyOn(storage, 'deleteByPrefix').mockImplementation((prefix) => {
+        if (prefix.startsWith('uploads/')) {
+          return Promise.reject(new Error('Uploads failure'));
+        }
+        return Promise.resolve();
+      });
+
+      await expect(service.remove(MIDDLE_ID)).resolves.not.toThrow();
+      expect(deletes).toHaveLength(1);
+      expect(deleteByPrefixSpy).toHaveBeenCalledWith(`uploads/${MIDDLE_ID}/`);
+      expect(deleteByPrefixSpy).toHaveBeenCalledWith(`panoramas/${MIDDLE_ID}/`);
+      expect(deleteByPrefixSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('supprime la ligne même si le stockage échoue (journalise l\'erreur)', async () => {
+      const asset = {
+        ...row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z'),
+        _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 0 },
+      };
+      const { service, storage, deletes } = harness([asset]);
+      vi.spyOn(storage, 'deleteByPrefix').mockRejectedValue(new Error('Storage failure'));
+
+      await expect(service.remove(MIDDLE_ID)).resolves.not.toThrow();
+      expect(deletes).toHaveLength(1);
     });
   });
 });

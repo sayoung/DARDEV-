@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
 import { AssetKind as PrismaAssetKind, ProcessingStatus, Prisma, type Asset } from '@prisma/client';
 import {
   AssetKind,
@@ -7,6 +7,7 @@ import {
   PANORAMA_MAX_BYTES,
   validatePanoramaUpload,
   panoramaDerivativeKeys,
+  panoramaAssetPrefix,
   type AssetListQuery,
   type AssetResponse,
   type AssetUploadRequest,
@@ -25,6 +26,8 @@ import { readImageDimensions } from './jpeg-dimensions.js';
 
 @Injectable()
 export class AssetsService {
+  private readonly logger = new Logger(AssetsService.name);
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
@@ -260,8 +263,18 @@ export class AssetsService {
 
     await this.prisma.asset.delete({ where: { id } });
 
-    if (asset.originalKey) {
-      await this.storage.deleteObject(asset.originalKey);
+    try {
+      await this.storage.deleteByPrefix(`uploads/${id}/`);
+    } catch (error: unknown) {
+      this.logger.error(`Erreur lors de la suppression des uploads du média ${id}`, error);
+    }
+
+    if (asset.kind === PrismaAssetKind.PANORAMA) {
+      try {
+        await this.storage.deleteByPrefix(panoramaAssetPrefix(id));
+      } catch (error: unknown) {
+        this.logger.error(`Erreur lors de la suppression des dérivés du panorama ${id}`, error);
+      }
     }
   }
 

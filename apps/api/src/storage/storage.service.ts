@@ -1,7 +1,10 @@
 import {
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
+  type ListObjectsV2CommandOutput,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -24,6 +27,7 @@ export interface StorageService {
   deleteObject(key: string): Promise<void>;
   headObject(key: string): Promise<{ sizeBytes: number; contentType: string | undefined } | null>;
   getRange(key: string, start: number, end: number): Promise<Buffer>;
+  deleteByPrefix(prefix: string): Promise<void>;
 }
 
 @Injectable()
@@ -107,6 +111,45 @@ export class S3StorageService implements StorageService {
     const arr = await result.Body.transformToByteArray();
     return Buffer.from(arr);
   }
+
+  async deleteByPrefix(prefix: string): Promise<void> {
+    let isTruncated = true;
+    let continuationToken: string | undefined = undefined;
+
+    while (isTruncated) {
+      const response: ListObjectsV2CommandOutput = await this.s3.send(
+        new ListObjectsV2Command({
+          Bucket: this.env.S3_BUCKET,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+
+      const contents = response.Contents;
+      if (!contents || contents.length === 0) break;
+
+      const keysToDelete = contents
+        .map((c) => c.Key)
+        .filter((key): key is string => typeof key === 'string' && key.length > 0)
+        .map((key) => ({ Key: key }));
+
+      if (keysToDelete.length > 0) {
+        const deleteResult = await this.s3.send(
+          new DeleteObjectsCommand({
+            Bucket: this.env.S3_BUCKET,
+            Delete: { Objects: keysToDelete, Quiet: true },
+          }),
+        );
+
+        if (deleteResult.Errors && deleteResult.Errors.length > 0) {
+          throw new Error(`Failed to delete some objects: ${JSON.stringify(deleteResult.Errors)}`);
+        }
+      }
+
+      isTruncated = response.IsTruncated ?? false;
+      continuationToken = response.NextContinuationToken;
+    }
+  }
 }
 
 @Injectable()
@@ -118,7 +161,12 @@ export class LocalStorageService implements StorageService {
   }
 
   private getFilePath(key: string): string {
-    return path.join(this.localPath, key);
+    const root = path.resolve(this.localPath);
+    const target = path.resolve(root, key);
+    if (!target.startsWith(root)) {
+      throw new Error('Path traversal detected');
+    }
+    return target;
   }
 
   generatePresignedUploadUrl(key: string, _contentType: string, sizeBytes: number): Promise<string> {
@@ -168,6 +216,28 @@ export class LocalStorageService implements StorageService {
       throw e;
     } finally {
       if (handle) await handle.close();
+    }
+  }
+
+  async deleteByPrefix(prefix: string): Promise<void> {
+    const targetPath = this.getFilePath(prefix);
+    if (prefix.endsWith('/')) {
+      await fs.rm(targetPath, { recursive: true, force: true });
+    } else {
+      const dir = path.dirname(targetPath);
+      const base = path.basename(targetPath);
+      let files: string[];
+      try {
+        files = await fs.readdir(dir);
+      } catch (e: unknown) {
+        if (typeof e === 'object' && e !== null && 'code' in e && e.code === 'ENOENT') return;
+        throw e;
+      }
+      for (const file of files) {
+        if (file.startsWith(base)) {
+          await fs.rm(path.join(dir, file), { recursive: true, force: true });
+        }
+      }
     }
   }
 }

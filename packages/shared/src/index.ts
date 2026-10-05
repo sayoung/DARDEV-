@@ -112,6 +112,7 @@ export {
   PANORAMA_WORKER_CONCURRENCY,
   PANORAMA_GRID,
   PanoramaJobDataSchema,
+  panoramaAssetPrefix,
   panoramaDerivativeKeys,
   panoramaTileKey,
   type PanoramaJobData,
