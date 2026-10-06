@@ -65,6 +65,7 @@ export function mountSceneEditor(
     initialView: { yaw: number; pitch: number; zoom: number };
     onPanoramaClick: (yaw: number, pitch: number) => void;
     onMarkerSelect: (id: string) => void;
+    onMarkerMove?: (id: string, yaw: number, pitch: number) => void;
   }
 ) {
   const adapterConfig: EquirectangularTilesAdapterConfig = {
@@ -109,6 +110,94 @@ export function mountSceneEditor(
     options.onMarkerSelect(marker.id);
   });
 
+  let handlePointerDown: ((e: PointerEvent) => void) | undefined;
+  let handlePointerMove: ((e: PointerEvent) => void) | undefined;
+  let handlePointerUp: ((e: PointerEvent) => void) | undefined;
+  let handlePointerCancel: ((e: PointerEvent) => void) | undefined;
+
+  if (options.onMarkerMove) {
+    const onMarkerMoveCb = options.onMarkerMove;
+    let draggedMarkerId: string | null = null;
+    let startYaw: number | null = null;
+    let startPitch: number | null = null;
+    let lastYaw: number | null = null;
+    let lastPitch: number | null = null;
+
+    handlePointerDown = (e: PointerEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const markerEl = target.closest('.psv-marker');
+      if (!markerEl) return;
+
+      let id: string | undefined;
+      if (markerEl instanceof HTMLElement) {
+        id = markerEl.dataset.psvMarker;
+      }
+      if (!id) {
+        const marker = markersPlugin.getMarkers().find((m) => m.domElement === markerEl);
+        if (marker) {
+          id = marker.id;
+        }
+      }
+      if (typeof id !== 'string') return;
+
+      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY }) as { yaw: number; pitch: number } | null;
+      if (!spherical) return;
+
+      e.stopPropagation();
+      draggedMarkerId = id;
+      
+      startYaw = spherical.yaw;
+      startPitch = spherical.pitch;
+      lastYaw = spherical.yaw;
+      lastPitch = spherical.pitch;
+    };
+
+    handlePointerMove = (e: PointerEvent) => {
+      if (!draggedMarkerId) return;
+      
+      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY }) as { yaw: number; pitch: number } | null;
+      if (!spherical) return;
+      
+      lastYaw = spherical.yaw;
+      lastPitch = spherical.pitch;
+      
+      markersPlugin.updateMarker({
+        id: draggedMarkerId,
+        position: { yaw: lastYaw, pitch: lastPitch }
+      });
+    };
+
+    handlePointerUp = () => {
+      if (!draggedMarkerId) return;
+      
+      if (lastYaw !== null && lastPitch !== null && startYaw !== null && startPitch !== null) {
+        if (lastYaw !== startYaw || lastPitch !== startPitch) {
+          onMarkerMoveCb(draggedMarkerId, normalizeYaw(lastYaw), lastPitch);
+        }
+      }
+      
+      draggedMarkerId = null;
+      startYaw = null;
+      startPitch = null;
+      lastYaw = null;
+      lastPitch = null;
+    };
+
+    handlePointerCancel = () => {
+      draggedMarkerId = null;
+      startYaw = null;
+      startPitch = null;
+      lastYaw = null;
+      lastPitch = null;
+    };
+
+    viewer.container.addEventListener('pointerdown', handlePointerDown);
+    viewer.container.addEventListener('pointermove', handlePointerMove);
+    viewer.container.addEventListener('pointerup', handlePointerUp);
+    viewer.container.addEventListener('pointercancel', handlePointerCancel);
+  }
+
   return {
     setMarkers: (markers: EditorMarker[]) => {
       const configs: MarkerConfig[] = markers.map((m) => ({
@@ -125,6 +214,10 @@ export function mountSceneEditor(
       return { yaw: pos.yaw, pitch: pos.pitch, zoom };
     },
     destroy: () => {
+      if (handlePointerDown) viewer.container.removeEventListener('pointerdown', handlePointerDown);
+      if (handlePointerMove) viewer.container.removeEventListener('pointermove', handlePointerMove);
+      if (handlePointerUp) viewer.container.removeEventListener('pointerup', handlePointerUp);
+      if (handlePointerCancel) viewer.container.removeEventListener('pointercancel', handlePointerCancel);
       viewer.destroy();
     },
   };

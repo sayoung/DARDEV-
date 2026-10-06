@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import { HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
 import { editorMarkers, editorPanorama, mountSceneEditor, normalizeYaw } from './scene-editor.js';
 
@@ -129,6 +129,10 @@ vi.mock('@photo-sphere-viewer/equirectangular-tiles-adapter', () => ({
 }));
 
 describe('mountSceneEditor', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   const dummyPanorama = {
     width: 2048,
     cols: 4,
@@ -315,5 +319,108 @@ describe('mountSceneEditor', () => {
     expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointerdown', expect.any(Function));
     expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointermove', expect.any(Function));
     expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointerup', expect.any(Function));
+  });
+
+  it('avec onMarkerMove, gère le drag and drop et appelle onMarkerMove', () => {
+    let handlePointerDown: (e: { target: unknown; clientX: number; clientY: number; stopPropagation: () => void }) => void = () => {};
+    let handlePointerMove: (e: { clientX: number; clientY: number }) => void = () => {};
+    let handlePointerUp: (e: object) => void = () => {};
+
+    const mockContainer = {
+      addEventListener: vi.fn().mockImplementation((event: string, cb: unknown) => {
+        if (event === 'pointerdown' && typeof cb === 'function') handlePointerDown = cb as typeof handlePointerDown;
+        if (event === 'pointermove' && typeof cb === 'function') handlePointerMove = cb as typeof handlePointerMove;
+        if (event === 'pointerup' && typeof cb === 'function') handlePointerUp = cb as typeof handlePointerUp;
+      }),
+      removeEventListener: vi.fn(),
+    };
+    
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
+      getMarkers: vi.fn().mockReturnValue([]),
+    };
+
+    const mockDataHelper = {
+      viewerCoordsToSphericalCoords: vi.fn(),
+    };
+
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: vi.fn(),
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+      container: mockContainer,
+      dataHelper: mockDataHelper,
+    }) as unknown as Viewer);
+
+    const onMarkerMove = vi.fn();
+    mountSceneEditor({} as unknown as HTMLElement, { ...defaultOptions, onMarkerMove });
+
+    const stopPropagation = vi.fn();
+    
+    class FakeElement {
+      dataset = { psvMarker: 'm1' };
+      closest(sel: string) {
+        return sel === '.psv-marker' ? this : null;
+      }
+    }
+    vi.stubGlobal('Element', FakeElement);
+    vi.stubGlobal('HTMLElement', FakeElement);
+
+    const target = new FakeElement();
+
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.1, pitch: 0.1 });
+    handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
+    
+    expect(stopPropagation).toHaveBeenCalled();
+
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.2, pitch: 0.2 });
+    handlePointerMove({ clientX: 20, clientY: 20 });
+    
+    expect(mockMarkersPlugin.updateMarker).toHaveBeenCalledWith({ id: 'm1', position: { yaw: 0.2, pitch: 0.2 } });
+
+    handlePointerUp({});
+    expect(onMarkerMove).toHaveBeenCalledWith('m1', 0.2, 0.2);
+    
+    // Test: clic sans déplacement n'appelle pas onMarkerMove
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.3, pitch: 0.3 });
+    handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
+    handlePointerUp({});
+    expect(onMarkerMove).toHaveBeenCalledTimes(1);
+    
+    // Test: conversion null ignorée
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce(null);
+    handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.4, pitch: 0.4 });
+    handlePointerMove({ clientX: 20, clientY: 20 });
+    expect(mockMarkersPlugin.updateMarker).not.toHaveBeenCalledWith(expect.objectContaining({ position: { yaw: 0.4, pitch: 0.4 } }));
+  });
+
+  it('avec onMarkerMove, destroy retire les quatre écouteurs ajoutés', () => {
+    const mockContainer = {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue({ setMarkers: vi.fn(), addEventListener: vi.fn() }),
+      addEventListener: vi.fn(),
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+      container: mockContainer,
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
+    }) as unknown as Viewer);
+
+    const instance = mountSceneEditor({} as unknown as HTMLElement, { ...defaultOptions, onMarkerMove: vi.fn() });
+    instance.destroy();
+
+    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointerdown', expect.any(Function));
+    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointermove', expect.any(Function));
+    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointerup', expect.any(Function));
+    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointercancel', expect.any(Function));
   });
 });
