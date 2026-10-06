@@ -780,3 +780,77 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
     });
   });
 });
+
+describe('main() — scénarios import et dry-run', () => {
+  let tmpDir: string;
+  let mockFetch: MockedFunction<typeof fetch>;
+  let logSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'xplor-import-dry-run-'));
+    mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    process.exitCode = undefined;
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    if (tmpDir && fs.existsSync(tmpDir)) {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  const writeSceneFiles = (dir: string, omit?: string) => {
+    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf-8')) as { scenes: { file: string }[] };
+    for (const scene of rawData.scenes) {
+      if (scene.file !== omit) {
+        fs.writeFileSync(path.join(dir, scene.file), 'fake-data');
+      }
+    }
+  };
+
+  it('tous les fichiers présents', async () => {
+    writeSceneFiles(tmpDir);
+
+    const env = {
+      ...process.env,
+      XPLOR_API_URL: 'http://localhost:3000',
+      XPLOR_ADMIN_EMAIL: 'admin@test.local',
+      XPLOR_ADMIN_PASSWORD: 'password',
+    };
+
+    await main(['node', 'import.ts', '--dry-run', '--dir', tmpDir], env);
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(process.exitCode).toBeUndefined();
+
+    const logs = logSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(logs).toContain('(OK)');
+  });
+
+  it('un fichier omis', async () => {
+    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf-8')) as { scenes: { file: string }[] };
+    const omitFile = rawData.scenes[0]?.file;
+
+    writeSceneFiles(tmpDir, omitFile);
+
+    const env = {
+      ...process.env,
+      XPLOR_API_URL: 'http://localhost:3000',
+      XPLOR_ADMIN_EMAIL: 'admin@test.local',
+      XPLOR_ADMIN_PASSWORD: 'password',
+    };
+
+    await main(['node', 'import.ts', '--dry-run', '--dir', tmpDir], env);
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+
+    const logs = logSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+    expect(logs).toContain('MANQUANT');
+  });
+});
