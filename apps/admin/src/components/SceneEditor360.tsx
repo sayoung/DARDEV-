@@ -10,6 +10,7 @@ export interface SceneEditor360Props {
   initialView: { yaw: number; pitch: number; zoom: number };
   onPanoramaClick: (yaw: number, pitch: number) => void;
   onMarkerSelect: (id: string) => void;
+  onMarkerMove?: (id: string, yaw: number, pitch: number) => void;
 }
 
 export function SceneEditor360({
@@ -18,16 +19,17 @@ export function SceneEditor360({
   initialView,
   onPanoramaClick,
   onMarkerSelect,
+  onMarkerMove,
 }: SceneEditor360Props) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<ReturnType<typeof mountSceneEditor> | null>(null);
 
   // References to callbacks and hotspots to avoid stale closures or unnecessary remounts
-  const callbacksRef = useRef({ onPanoramaClick, onMarkerSelect });
+  const callbacksRef = useRef({ onPanoramaClick, onMarkerSelect, onMarkerMove });
   useEffect(() => {
-    callbacksRef.current = { onPanoramaClick, onMarkerSelect };
-  }, [onPanoramaClick, onMarkerSelect]);
+    callbacksRef.current = { onPanoramaClick, onMarkerSelect, onMarkerMove };
+  }, [onPanoramaClick, onMarkerSelect, onMarkerMove]);
 
   const initialViewRef = useRef(initialView);
 
@@ -40,6 +42,7 @@ export function SceneEditor360({
       initialView: initialViewRef.current, // Use ref to prevent remount if initialView is a literal passed on each render
       onPanoramaClick: (yaw, pitch) => { callbacksRef.current.onPanoramaClick(yaw, pitch); },
       onMarkerSelect: (id) => { callbacksRef.current.onMarkerSelect(id); },
+      onMarkerMove: (id, yaw, pitch) => { callbacksRef.current.onMarkerMove?.(id, yaw, pitch); },
     });
 
     return () => {

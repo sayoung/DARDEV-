@@ -114,7 +114,7 @@ describe('SceneEditor360', () => {
     expect(mountSceneEditor).not.toHaveBeenCalled();
   });
 
-  it('relaie les callbacks onPanoramaClick et onMarkerSelect, y compris après rerender', () => {
+  it('relaie les callbacks onPanoramaClick, onMarkerSelect et onMarkerMove, y compris après rerender', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: vi.fn(),
       setMarkers: vi.fn(),
@@ -123,9 +123,10 @@ describe('SceneEditor360', () => {
 
     const onPanoramaClick1 = vi.fn();
     const onMarkerSelect1 = vi.fn();
+    const onMarkerMove1 = vi.fn();
     
     const { rerender } = render(
-      <SceneEditor360 {...defaultProps} onPanoramaClick={onPanoramaClick1} onMarkerSelect={onMarkerSelect1} />
+      <SceneEditor360 {...defaultProps} onPanoramaClick={onPanoramaClick1} onMarkerSelect={onMarkerSelect1} onMarkerMove={onMarkerMove1} />
     );
 
     const call1 = vi.mocked(mountSceneEditor).mock.calls[0];
@@ -138,11 +139,17 @@ describe('SceneEditor360', () => {
     options.onMarkerSelect('m1');
     expect(onMarkerSelect1).toHaveBeenCalledWith('m1');
 
+    if (options.onMarkerMove) {
+      options.onMarkerMove('m1', 1.5, 2.5);
+    }
+    expect(onMarkerMove1).toHaveBeenCalledWith('m1', 1.5, 2.5);
+
     const onPanoramaClick2 = vi.fn();
     const onMarkerSelect2 = vi.fn();
+    const onMarkerMove2 = vi.fn();
 
     rerender(
-      <SceneEditor360 {...defaultProps} onPanoramaClick={onPanoramaClick2} onMarkerSelect={onMarkerSelect2} />
+      <SceneEditor360 {...defaultProps} onPanoramaClick={onPanoramaClick2} onMarkerSelect={onMarkerSelect2} onMarkerMove={onMarkerMove2} />
     );
 
     options.onPanoramaClick(3, 4);
@@ -152,6 +159,12 @@ describe('SceneEditor360', () => {
     options.onMarkerSelect('m2');
     expect(onMarkerSelect2).toHaveBeenCalledWith('m2');
     expect(onMarkerSelect1).toHaveBeenCalledTimes(1);
+
+    if (options.onMarkerMove) {
+      options.onMarkerMove('m2', 3.5, 4.5);
+    }
+    expect(onMarkerMove2).toHaveBeenCalledWith('m2', 3.5, 4.5);
+    expect(onMarkerMove1).toHaveBeenCalledTimes(1);
   });
 
   it('l\'aria-label provient de i18n', () => {
