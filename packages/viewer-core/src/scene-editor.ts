@@ -5,6 +5,16 @@ import { EquirectangularTilesAdapter, type EquirectangularTilesAdapterConfig } f
 import { hotspotKind } from './scene-markers.js';
 import { EditorPanorama } from './tour-nodes.js';
 
+export function normalizeYaw(yaw: number): number {
+  let y = yaw % (2 * Math.PI);
+  if (y > Math.PI) {
+    y -= 2 * Math.PI;
+  } else if (y <= -Math.PI) {
+    y += 2 * Math.PI;
+  }
+  return y;
+}
+
 export type EditorMarker = {
   id: string;
   position: {
@@ -92,7 +102,7 @@ export function mountSceneEditor(
        return;
     }
     
-    options.onPanoramaClick(e.data.yaw, e.data.pitch);
+    options.onPanoramaClick(normalizeYaw(e.data.yaw), e.data.pitch);
   });
 
   markersPlugin.addEventListener('select-marker', ({ marker }) => {
