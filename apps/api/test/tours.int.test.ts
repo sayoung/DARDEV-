@@ -348,9 +348,23 @@ describe('visites HTTP', () => {
     expect(updated.publicShare).toBe(true);
     expect(updated.categoryIds).toEqual([refs.category.id, refs.otherCategory.id]);
 
+    const scene = await prisma.scene.create({
+      data: {
+        tourId: created.id,
+        title: { fr: 'La porte' },
+        panoramaAssetId: refs.coverAssetId,
+        weight: 0,
+        createdById: editor.userId,
+      },
+    });
+
     await prisma.tour.update({
       where: { id: created.id },
-      data: { status: 'PUBLISHED', publishedAt: new Date() },
+      data: { 
+        status: 'PUBLISHED', 
+        publishedAt: new Date(),
+        startSceneId: scene.id,
+      },
     });
 
     const publicRead = await application().inject({
@@ -417,6 +431,14 @@ async function prepare(editor: Session): Promise<Refs> {
       mimeType: 'image/jpeg',
       sizeBytes: 128,
       contentHash: `tours-int-${city.id}`,
+      processingStatus: 'READY',
+      derivatives: {
+        preview: 'derived/preview.jpg',
+        web: 'derived/web.jpg',
+        thumb: 'derived/thumb.jpg',
+        tilesPrefix: 'derived/tiles/',
+        tileGrid: { cols: 8, rows: 4, size: 512 },
+      },
     },
   });
   return { city, otherCity, category, otherCategory, coverAssetId: asset.id };
