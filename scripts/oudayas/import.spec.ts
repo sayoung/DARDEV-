@@ -634,31 +634,25 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
       callIndex++;
 
-      const hotspotCalls = [];
-      const scene1HotspotsCount = plan.scenes[0]?.hotspots.length ?? 0;
-      for (let i = 0; i < scene1HotspotsCount; i++) {
-        expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/scenes/${realSceneId1}/hotspots`);
-        expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
-        hotspotCalls.push(mockFetch.mock.calls[callIndex]);
-        callIndex++;
-      }
+      const expectedHotspotsCount = plan.scenes.map((s) => s.hotspots.length);
+      expect(expectedHotspotsCount).toHaveLength(2);
 
-      const scene2HotspotsCount = plan.scenes[1]?.hotspots.length ?? 0;
-      for (let i = 0; i < scene2HotspotsCount; i++) {
-        expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/scenes/${realSceneId2}/hotspots`);
-        expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
-        hotspotCalls.push(mockFetch.mock.calls[callIndex]);
-        callIndex++;
+      const hotspotCalls = [];
+      let currentRealSceneId = realSceneId1;
+      for (const count of expectedHotspotsCount) {
+        for (let i = 0; i < count; i++) {
+          expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/scenes/${currentRealSceneId}/hotspots`);
+          expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+          hotspotCalls.push(mockFetch.mock.calls[callIndex]);
+          callIndex++;
+        }
+        currentRealSceneId = realSceneId2;
       }
 
       expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/scenes/set-start`);
       expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
-      const setStartBody = mockFetch.mock.calls[callIndex]?.[1]?.body;
-      if (typeof setStartBody === 'string') {
-        expect(JSON.parse(setStartBody)).toEqual({ sceneId: realSceneId1 });
-      } else {
-        throw new Error('Le corps de la requête set-start doit être une chaîne');
-      }
+      const setStartBody = z.object({ sceneId: z.string() }).parse(JSON.parse(z.string().parse(mockFetch.mock.calls[callIndex]?.[1]?.body)));
+      expect(setStartBody).toEqual({ sceneId: realSceneId1 });
       callIndex++;
 
       expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/publish`);
@@ -670,13 +664,9 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       callIndex++;
 
       const expectedSceneLinkCount = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.filter((h) => h.type === HotspotType.SCENE_LINK).length, 0);
-      
+      expect(expectedSceneLinkCount).toBeGreaterThanOrEqual(1);
       const sceneLinkBodies = hotspotCalls
-        .map((call) => {
-          const bodyStr = call?.[1]?.body;
-          if (typeof bodyStr !== 'string') throw new Error('Le corps du hotspot doit être une chaîne');
-          return HotspotCreateSchema.parse(JSON.parse(bodyStr));
-        })
+        .map((call) => HotspotCreateSchema.parse(JSON.parse(z.string().parse(call?.[1]?.body))))
         .filter((body) => body.type === HotspotType.SCENE_LINK);
 
       expect(sceneLinkBodies).toHaveLength(expectedSceneLinkCount);
@@ -684,7 +674,6 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
         expect(body.targetSceneId).toBeDefined();
         expect([realSceneId1, realSceneId2]).toContain(body.targetSceneId);
       }
-
     });
   });
 
