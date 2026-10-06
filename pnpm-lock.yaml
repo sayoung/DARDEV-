@@ -59,6 +59,12 @@ importers:
       '@fontsource/montserrat':
         specifier: ^5.3.0
         version: 5.3.0
+      '@photo-sphere-viewer/core':
+        specifier: 5.15.1
+        version: 5.15.1
+      '@photo-sphere-viewer/markers-plugin':
+        specifier: 5.15.1
+        version: 5.15.1(@photo-sphere-viewer/core@5.15.1)
       '@radix-ui/react-label':
         specifier: ^2.1.15
         version: 2.1.15(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -77,6 +83,9 @@ importers:
       '@xplor/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@xplor/viewer-core':
+        specifier: workspace:*
+        version: link:../../packages/viewer-core
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
