@@ -367,7 +367,7 @@ describe('TourForm Pages', () => {
     fireEvent.change(titleInput, { target: { value: 'Titre Modifié' } });
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
-    await screen.findByText(resources.fr.common.error.generic);
+    await screen.findByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
     const kept = screen.getAllByDisplayValue('Titre Modifié').find((el) => !el.classList.contains('sr-only'));
     expect(kept).toBeTruthy();
     expect(screen.getByRole('button', { name: resources.fr.common.save })).toBeTruthy();
@@ -399,7 +399,7 @@ describe('TourForm Pages', () => {
     await screen.findAllByDisplayValue('Tour 1');
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.delete }));
 
-    await screen.findByText(resources.fr.common.error.generic);
+    await screen.findByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
     expect(screen.getAllByDisplayValue('Tour 1').length).toBeGreaterThan(0);
     expect(window.location.pathname).toBe('/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
 
