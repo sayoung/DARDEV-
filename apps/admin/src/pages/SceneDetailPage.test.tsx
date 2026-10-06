@@ -257,10 +257,14 @@ describe('SceneDetailPage', () => {
       expect(SceneEditor360).toHaveBeenCalledWith(
         expect.objectContaining({
           initialView: { yaw: 10, pitch: -5, zoom: 50 },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          hotspots: expect.arrayContaining([
-            expect.objectContaining({ id: 'h-1' })
-          ]),
+          hotspots: [
+            {
+              id: 'h-1',
+              position: { yaw: 0, pitch: 0 },
+              tooltip: 'Info',
+              className: 'xplor-marker xplor-marker-info',
+            }
+          ],
         }),
         undefined
       );
