@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 3b-2b : test séquence complète avec Cookie et X-CSRF-Token) : dans scripts/oudayas/import.spec.ts, dans le descr… — Test de séquence complète (ordre des appels, Cookie, X-CSRF-Token, login sans en-têtes, exitCode) correct, indépendant de l'ordre grâce à resetModules, contrôles verts. (b081e1b)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 3b-2a : aide installMainFetch) : dans scripts/oudayas/import.spec.ts, lis le test « main() respecte la limite de… — installMainFetch est factorisée correctement et typée sans any ; le test garde son comportement et ses assertions (comptage des PUT simultanés via un wrapper), sans nouveau test, et lint/typecheck/tes… (48ef485)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 3b-1 : aides communes + test dry-run de main) : dans scripts/oudayas/import.spec.ts (lis-le d'abord ; il contien… — Les deux tests dry-run (fichiers présents / un fichier omis) et l'aide writeSceneFiles sont conformes à la demande ; lint, typecheck et test sont verts. (c6d5613)
 - 06/10/2026 — M3b F-12 (nettoyage 3/3, a : dry-run) : ne modifier que apps/api/test/assets.int.test.ts, pas docs/PROGRESS.md. Dans le describe « médias HTTP », (1) renommer l… — Renommage du test et ajout du test dry-run conformes à la demande, limités à assets.int.test.ts ; lint, typecheck et test passent, sortie de test:int non vue (tronquée). (0fadddd)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 05/10/2026 — M3b NF-10 (3/3, docs/DEPLOY.md uniquement) : 1) Remplace partout `./deploy/xxx.sh` et `deploy/xxx.sh` par `bash deploy/xxx.sh` (déploiement avec --seed, mises à… — Les trois corrections de docs/DEPLOY.md sont appliquées (bash deploy/xxx.sh, chemins /opt/xplor et /home/xplor, openssl -hex 24 et mots de passe liés) sans autre fichier modifié. (7a92bf0)
 - 05/10/2026 — M3b NF-10 (2/3, Dockerfiles) : 1) Dans `apps/api/Dockerfile` et `apps/worker/Dockerfile`, étape build, ligne 4 : remplace `RUN corepack enable && corepack prepa… — Les deux Dockerfiles contiennent bien l'installation d'openssl avant pnpm et le filtre @xplor/api pour le worker ; lint, typecheck et tests passent. (5a5b935)
 - 05/10/2026 — Récupération du travail non commité — Correctifs Dockerfile api/worker (openssl à l'étape build, installation de @xplor/api pour le prebuild du worker) conformes aux correctifs de production M3b, minimaux et sûrs. (f31648a)
-- 05/10/2026 — M3b NF-10 (1/3, fins de ligne et scripts) : 1) Dans `.gitattributes`, garde la ligne `docs/openapi.json text eol=lf` et ajoute `*.sh text eol=lf` et `.env* text… — Fins de ligne LF et .gitattributes corrects, --env-file ajouté à toutes les commandes docker compose des trois scripts, périmètre respecté. (3dbeeb7)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
