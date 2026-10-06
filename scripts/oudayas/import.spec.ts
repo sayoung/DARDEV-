@@ -871,4 +871,60 @@ describe('main() — scénarios import et dry-run', () => {
     const logs = logSpy.mock.calls.map((call) => call.join(' ')).join('\n');
     expect(logs).toContain('MANQUANT');
   });
+
+  it('test séquence complète avec Cookie et X-CSRF-Token', async () => {
+    vi.resetModules();
+    const { main: freshMain } = await import('./import.js');
+
+    installMainFetch(mockFetch, { assetStatus: 'READY' });
+    writeSceneFiles(tmpDir);
+
+    const env = {
+      ...process.env,
+      XPLOR_API_URL: 'http://localhost:3000',
+      XPLOR_ADMIN_EMAIL: 'admin@test.local',
+      XPLOR_ADMIN_PASSWORD: 'password',
+    };
+
+    await freshMain(['node', 'import.ts', '--dir', tmpDir], env);
+
+    const calls = mockFetch.mock.calls.map((call) => {
+      const url = typeof call[0] === 'string' ? call[0] : call[0] instanceof URL ? call[0].toString() : call[0].url;
+      const method = call[1]?.method || 'GET';
+      const headers = new Headers(call[1]?.headers);
+      return { url, method, headers };
+    });
+
+    // (1) l'ordre des index
+    const firstLoginIdx = calls.findIndex((c) => c.url.includes('/api/v1/auth/login') && c.method === 'POST');
+    const firstUploadUrlIdx = calls.findIndex((c) => c.url.includes('/api/v1/admin/assets/upload-url') && c.method === 'POST');
+    const firstPutIdx = calls.findIndex((c) => !c.url.startsWith('http://localhost:3000') && c.method === 'PUT');
+    const firstCompleteIdx = calls.findIndex((c) => c.url.includes('/complete') && c.method === 'POST');
+    const firstGetAssetIdx = calls.findIndex((c) => c.url.includes('/api/v1/admin/assets/') && c.method === 'GET' && !c.url.includes('upload-url'));
+
+    expect(firstLoginIdx).toBeGreaterThan(-1);
+    expect(firstUploadUrlIdx).toBeGreaterThan(firstLoginIdx);
+    expect(firstPutIdx).toBeGreaterThan(firstUploadUrlIdx);
+    expect(firstCompleteIdx).toBeGreaterThan(firstPutIdx);
+    expect(firstGetAssetIdx).toBeGreaterThan(firstCompleteIdx);
+
+    // (2) tous les appels dont l'URL commence par http://localhost:3000 sauf le POST de login ont un Cookie contenant 'sid=abc'
+    const appelsApiHorsLogin = calls.filter((c) => c.url.startsWith('http://localhost:3000') && !(c.url.includes('/api/v1/auth/login') && c.method === 'POST'));
+    expect(appelsApiHorsLogin.length).toBeGreaterThan(0);
+    expect(appelsApiHorsLogin.every((c) => c.headers.get('Cookie')?.includes('sid=abc'))).toBe(true);
+
+    // (3) tous les POST vers l'API hors login ont X-CSRF-Token === 'tok'
+    const postsApiHorsLogin = appelsApiHorsLogin.filter((c) => c.method === 'POST');
+    expect(postsApiHorsLogin.length).toBeGreaterThan(0);
+    expect(postsApiHorsLogin.every((c) => c.headers.get('X-CSRF-Token') === 'tok')).toBe(true);
+
+    // (4) le POST de login n'a ni Cookie ni X-CSRF-Token
+    const loginCall = calls[firstLoginIdx];
+    expect(loginCall).toBeDefined();
+    expect(loginCall?.headers.has('Cookie')).toBe(false);
+    expect(loginCall?.headers.has('X-CSRF-Token')).toBe(false);
+
+    // (5) process.exitCode est undefined
+    expect(process.exitCode).toBeUndefined();
+  });
 });
