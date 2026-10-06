@@ -24,7 +24,7 @@ import { PanoramaQueueService } from '../queue/panorama-queue.service.js';
 import { StorageService, STORAGE_SERVICE, UPLOAD_URL_TTL_SECONDS } from '../storage/storage.service.js';
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
-import { mediaUrl } from '../viewer/media-url.js';
+import { mediaUrl, panoramaUrls } from '../viewer/media-url.js';
 import { ASSET_NOT_FOUND, ASSET_NOT_FOUND_MESSAGE, missingException } from './catalog.errors.js';
 import { readImageDimensions } from './jpeg-dimensions.js';
 
@@ -396,6 +396,20 @@ function toAsset(row: Asset, mediaBase: string): AssetResponse {
     thumbnailUrl = mediaUrl(mediaBase, keys.thumb);
   }
 
+  let panorama = null;
+  if (row.processingStatus === ProcessingStatus.READY && row.kind === PrismaAssetKind.PANORAMA) {
+    try {
+      const urls = panoramaUrls(mediaBase, row.derivatives);
+      panorama = {
+        preview: urls.preview,
+        web: urls.web,
+        tiles: urls.tiles,
+      };
+    } catch {
+      panorama = null;
+    }
+  }
+
   return AssetResponseSchema.parse({
     id: row.id,
     kind: row.kind,
@@ -408,7 +422,7 @@ function toAsset(row: Asset, mediaBase: string): AssetResponse {
     copyright: row.copyright,
     thumbnailUrl,
     derivatives: row.derivatives,
-    panorama: null,
+    panorama,
     createdAt: row.createdAt.toISOString(),
   });
 }

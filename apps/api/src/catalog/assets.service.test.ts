@@ -292,6 +292,44 @@ describe('AssetsService', () => {
     expect(pend.thumbnailUrl).toBeNull();
   });
 
+  it('renseigne panorama avec preview, web et tiles pour les panoramas READY avec dérivés valides', async () => {
+    const PANO_ID = '01990000-0000-7000-8000-000000000001';
+    const readyPanorama = row(PANO_ID, AssetKind.PANORAMA, '2026-10-01', { processingStatus: ProcessingStatus.READY });
+    readyPanorama.derivatives = {
+      preview: 'path/to/preview.jpg',
+      web: 'path/to/web.jpg',
+      thumb: 'path/to/thumb.jpg',
+      tilesPrefix: 'path/to/tiles/',
+      tileGrid: { cols: 8, rows: 4, size: 512 }
+    };
+    
+    const { service } = harness([readyPanorama]);
+    const pano = await service.get(PANO_ID);
+    
+    expect(pano.panorama).not.toBeNull();
+    expect(pano.panorama?.preview).toBe('http://localhost:9000/xplor/path/to/preview.jpg');
+    expect(pano.panorama?.web).toBe('http://localhost:9000/xplor/path/to/web.jpg');
+    expect(pano.panorama?.tiles.baseUrl).toBe('http://localhost:9000/xplor/path/to/tiles/{col}_{row}.jpg');
+    expect(pano.panorama).not.toHaveProperty('thumb');
+  });
+
+  it('renseigne panorama à null si l\'asset n\'est pas READY (ex. PENDING)', async () => {
+    const PEND_ID = '01990000-0000-7000-8000-000000000003';
+    const pendingAsset = row(PEND_ID, AssetKind.PANORAMA, '2026-10-01', { processingStatus: ProcessingStatus.PENDING });
+    pendingAsset.derivatives = {
+      preview: 'path/to/preview.jpg',
+      web: 'path/to/web.jpg',
+      thumb: 'path/to/thumb.jpg',
+      tilesPrefix: 'path/to/tiles/',
+      tileGrid: { cols: 8, rows: 4, size: 512 }
+    };
+    
+    const { service } = harness([pendingAsset]);
+    const pend = await service.get(PEND_ID);
+    
+    expect(pend.panorama).toBeNull();
+  });
+
   it('répond 404 ASSET_NOT_FOUND si le média est inconnu', async () => {
     const { service } = harness(sample);
     const error = await service.get(UNKNOWN_ID).then(
