@@ -407,6 +407,7 @@ function toAsset(row: Asset, mediaBase: string): AssetResponse {
     processingLog: row.processingLog,
     copyright: row.copyright,
     thumbnailUrl,
+    derivatives: row.derivatives,
     createdAt: row.createdAt.toISOString(),
   });
 }

@@ -116,7 +116,8 @@
       "inUse": "Cet élément est utilisé et ne peut pas être supprimé.",
       "panoramaAssetNotFound": "Le panorama sélectionné est introuvable.",
       "sceneSetMismatch": "La liste des scènes est invalide ou incomplète.",
-      "sceneNotFound": "La scène demandée est introuvable."
+      "sceneNotFound": "La scène demandée est introuvable.",
+      "panoramaNotReady": "Le panorama n'est pas prêt."
     },
     "actions": "Actions",
     "edit": "Modifier",
@@ -266,6 +267,12 @@
       "TOUR_LINK_SELF": "Un lien pointe vers la même visite",
       "TOUR_LINK_TARGET_UNPUBLISHED": "La visite cible n'est pas publiée",
       "TOUR_LINK_SCENE_FOREIGN": "La scène cible appartient à une autre visite"
+    },
+    "scenes": {
+      "tabs": {
+        "info": "Informations",
+        "editor": "Éditeur 360"
+      }
     }
   },
   "nav": {

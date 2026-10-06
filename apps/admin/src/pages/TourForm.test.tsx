@@ -46,6 +46,7 @@ const mockAssets = {
       processingLog: null,
       copyright: null,
       thumbnailUrl: null,
+  derivatives: {},
       createdAt: '2026-01-01T00:00:00.000Z'
     },
     {
@@ -59,6 +60,7 @@ const mockAssets = {
       processingLog: null,
       copyright: null,
       thumbnailUrl: null,
+  derivatives: {},
       createdAt: '2026-01-02T00:00:00.000Z'
     },
     {
@@ -72,6 +74,7 @@ const mockAssets = {
       processingLog: null,
       copyright: null,
       thumbnailUrl: null,
+  derivatives: {},
       createdAt: '2026-01-03T00:00:00.000Z'
     }
   ],

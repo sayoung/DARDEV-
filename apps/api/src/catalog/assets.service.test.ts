@@ -28,6 +28,7 @@ interface AssetRow {
   createdAt: Date;
   originalKey: string;
   contentHash: string;
+  derivatives: object;
 }
 
 interface OrderKey {
@@ -71,6 +72,7 @@ function row(
     createdAt: new Date(createdAt),
     originalKey: `unit/${id}`,
     contentHash: extra.contentHash !== undefined ? extra.contentHash : 'testhash',
+      derivatives: {},
   };
 }
 
@@ -217,6 +219,7 @@ describe('AssetsService', () => {
           processingStatus: ProcessingStatus.PENDING,
           processingLog: null,
           copyright: null, thumbnailUrl: null,
+  derivatives: {},
           createdAt: '2026-09-02T00:00:00.000Z',
         },
       ],
@@ -245,6 +248,7 @@ describe('AssetsService', () => {
         processingStatus: ProcessingStatus.READY,
         processingLog: null,
         copyright: 'Libre', thumbnailUrl: 'http://localhost:9000/xplor/panoramas/01990000-0000-7000-8000-000000000001/testhash/thumb.jpg',
+  derivatives: {},
         createdAt: '2026-09-01T00:00:00.000Z',
       },
     ]);
