@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 06/10/2026 — M4 F-20 (4/4, étape c) : dans apps/admin/src/pages/SceneDetailPage.test.tsx, avec SceneEditor360 mocké (vi.mock) et sans `as unknown as` (construis des assets t… — Deux tests ajoutés (éditeur 360 avec asset READY et alerte panoramaNotReady avec asset non READY), correctement typés et mockés, sans toucher au code de production ; lint, typecheck et tests au vert. (fa64adc)
 - 06/10/2026 — M4 F-20 (4/4, étape b) : dans apps/admin/src/pages/SceneDetailPage.tsx (scène existante seulement), ajoute des onglets Radix (composant Tabs existant ou @radix-… — Onglets Informations / Éditeur 360 ajoutés correctement, chargement asset+hotspots, alerte si non READY, langue normalisée sans cast, lint/typecheck/test verts. (149a3f9)
 - 06/10/2026 — M4 F-20 (4/4, étape a) : expose le champ `derivatives` dans la réponse d'asset (reprendre `git show agent/20261006-201013-m4-f-20-4-4-dans-apps-admin-src-pages-… — Le champ derivatives est exposé avec un schéma Zod strict, les trois clés fr.json sont ajoutées, openapi est régénéré et lint, typecheck et test sont verts. (76dc19a)
 - 06/10/2026 — M4 F-20 (3/4, étape c) : écris apps/admin/src/components/SceneEditor360.test.tsx (Vitest + Testing Library, vi.mock('@xplor/viewer-core') avec un mountSceneEdit… — Le test SceneEditor360.test.tsx couvre les 7 cas demandés de façon fidèle au composant, sans autre fichier modifié, et lint, typecheck et tests sont verts. (460a738)
