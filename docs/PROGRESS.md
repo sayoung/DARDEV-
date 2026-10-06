@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie C1 : fonctions pures + dry-run). Dans scripts/oudayas/import-lib.ts, ajoute des fonctions pures et exportées, avec leurs… — countPlannedHotspots et remapHotspotTargets sont corrects et testés, le dry-run affiche les hotspots prévus sans appel réseau et le schéma TourDataSchema est aligné sur tour-data.json ; lint, typechec… (b8df0fa)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 3c : test de la limite de 3 envois simultanés dans scripts/oudayas/import.spec.ts). Complète scripts/oudayas/imp… — Test de la limite de 3 envois simultanés ajouté correctement dans import.spec.ts, fichier propre et contrôles verts. (5b96e1c)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 3a : tests de uploadFile et de l'authentification dans scripts/oudayas/import.spec.ts). Crée scripts/oudayas/imp… — Tests de login et uploadFile conformes à la consigne (séquence fetch, en-têtes Cookie/CSRF sur les POST seulement, erreur avec nom de fichier) ; lint, typecheck et test passent. (00784f2)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 2 : rendre scripts/oudayas/import.ts testable et conforme). Dans scripts/oudayas/import.ts (déjà présent, 220 li… — import.ts est exporté et sans effet de bord à l'import, les envois (pool) et l'attente READY sont séparés, le timeout est global, les erreurs nomment le fichier avec code de sortie non nul, et le dry-… (94e9af8)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 05/10/2026 — M3b NF-10 (deploy/backup.sh) : crée `deploy/backup.sh` (bash, `set -euo pipefail`) pour le projet xplor-prod : `pg_dump -Fc` exécuté via `docker compose -f dock… — deploy/backup.sh est conforme à la demande : pg_dump -Fc via compose, archive tar des médias MinIO, rotation à 7 jours, variables chargées sans affichage, nettoyage en cas d'erreur. (59ea7e9)
 - 05/10/2026 — M3b NF-10 (deploy/deploy.sh) : crée `deploy/deploy.sh` (bash, `set -euo pipefail`, idempotent, lancé par le porteur depuis la racine du dépôt sur le VPS). Étape… — deploy/deploy.sh conforme à la spécification (vérifications .env.production, build, infra, migrations, --seed optionnel, up -d, ps) et limité au projet xplor-prod. (00ec1c3)
 - 05/10/2026 — M3b NF-10 (seed en production, étape 2) : dans apps/api/src/cli/main.ts, ajoute une commande `seed` qui appelle `runSeed` de src/seed/run-seed.ts, en suivant le… — Commande CLI `seed` ajoutée dans main.ts (appelle runSeed, gestion d'erreur et codes de sortie cohérents) et D-108 consignée ; lint, typecheck et test passent. (b5cbc6f)
-- 05/10/2026 — M3b NF-10 (seed en production, étape 1) : le seed (apps/api/prisma/seed.ts) importe des fichiers TypeScript de src/ et ne tourne pas dans l'image de production… — runSeed() extraite correctement dans run-seed.ts, seed.ts n'en garde que le chargement du .env et l'appel, comportement et messages inchangés, contrôles verts. (7df042a)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
