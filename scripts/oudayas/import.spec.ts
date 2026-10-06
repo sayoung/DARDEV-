@@ -356,7 +356,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     const dataPath = path.resolve('scripts/oudayas/tour-data.json');
     const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
     const parsedData = z.object({ scenes: z.array(z.object({ file: z.string() })) }).parse(rawData);
-    
+
     for (const scene of parsedData.scenes) {
       fs.writeFileSync(path.join(tmpDir, scene.file), 'fake-data');
     }
@@ -367,13 +367,13 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     installMainFetch(mockFetch, { assetStatus: ProcessingStatus.READY });
     const baseMock = mockFetch.getMockImplementation();
     if (!baseMock) throw new Error('Mock non défini');
-    
+
     let targetAssetId = '';
-    
+
     mockFetch.mockImplementation(async (input, init) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
       const method = init?.method || 'GET';
-      
+
       if (url.includes('/api/v1/admin/assets/upload-url') && method === 'POST') {
         const bodyStr = z.string().parse(init?.body);
         const body = z.object({ filename: z.string() }).parse(JSON.parse(bodyStr));
@@ -386,11 +386,11 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
         }
         return res;
       }
-      
+
       if (url.includes('/api/v1/admin/assets/') && method === 'GET') {
-         const urlId = url.split('/').pop() || '';
-         if (targetAssetId && urlId === targetAssetId) {
-           return new Response(
+        const urlId = url.split('/').pop() || '';
+        if (targetAssetId && urlId === targetAssetId) {
+          return new Response(
             JSON.stringify({
               id: urlId,
               kind: AssetKind.PANORAMA,
@@ -406,10 +406,10 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
             }),
             { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
           );
-         }
-         return baseMock(input, init);
+        }
+        return baseMock(input, init);
       }
-      
+
       return baseMock(input, init);
     });
 
@@ -427,11 +427,11 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
 
   it('main() rejette avec erreur si le délai d\'attente est dépassé', async () => {
     vi.useFakeTimers();
-    
+
     const dataPath = path.resolve('scripts/oudayas/tour-data.json');
     const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
     const parsedData = z.object({ scenes: z.array(z.object({ file: z.string() })) }).parse(rawData);
-    
+
     for (const scene of parsedData.scenes) {
       fs.writeFileSync(path.join(tmpDir, scene.file), 'fake-data');
     }
@@ -439,7 +439,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     installMainFetch(mockFetch, { assetStatus: ProcessingStatus.PROCESSING });
     const baseMock = mockFetch.getMockImplementation();
     if (!baseMock) throw new Error('Mock non défini');
-    
+
     mockFetch.mockImplementation(async (input, init) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
       const method = init?.method || 'GET';
@@ -458,11 +458,11 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     };
 
     const p = main(['node', 'import.ts', '--dir', tmpDir, '--timeout', '4'], env);
-    
+
     const catchPromise = expect(p).rejects.toThrowError(/Délai d'attente dépassé pour : .*\.jpg/);
-    
+
     await vi.advanceTimersByTimeAsync(10000);
-    
+
     await catchPromise;
   });
 });
