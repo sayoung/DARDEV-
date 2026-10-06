@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 3b-1 : aides communes + test dry-run de main) : dans scripts/oudayas/import.spec.ts (lis-le d'abord ; il contien… — Les deux tests dry-run (fichiers présents / un fichier omis) et l'aide writeSceneFiles sont conformes à la demande ; lint, typecheck et test sont verts. (c6d5613)
 - 06/10/2026 — M3b F-12 (nettoyage 3/3, a : dry-run) : ne modifier que apps/api/test/assets.int.test.ts, pas docs/PROGRESS.md. Dans le describe « médias HTTP », (1) renommer l… — Renommage du test et ajout du test dry-run conformes à la demande, limités à assets.int.test.ts ; lint, typecheck et test passent, sortie de test:int non vue (tronquée). (0fadddd)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 3/3, documentation) : dans docs/DEPLOY.md, ajoute une section « Importer la visite des Oudayas » : prérequis (médiathèque fonctionnel… — Section « Importer la visite des Oudayas » ajoutée dans docs/DEPLOY.md, conforme à la tâche et aux variables et options réelles du script ; aucun autre fichier modifié. (155666d)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie C3b-2 : tests d'échec de createTour). Dans scripts/oudayas/import.spec.ts, dans `describe('createTour')` (après le test n… — Les 3 tests d'échec de createTour (scène 2, publication sans share-token, création visite avec 1 seul appel) sont corrects, alignés sur les messages d'erreur de import.ts, avec mocks factorisés et con… (fdc2215)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 05/10/2026 — Récupération du travail non commité — Correctifs Dockerfile api/worker (openssl à l'étape build, installation de @xplor/api pour le prebuild du worker) conformes aux correctifs de production M3b, minimaux et sûrs. (f31648a)
 - 05/10/2026 — M3b NF-10 (1/3, fins de ligne et scripts) : 1) Dans `.gitattributes`, garde la ligne `docs/openapi.json text eol=lf` et ajoute `*.sh text eol=lf` et `.env* text… — Fins de ligne LF et .gitattributes corrects, --env-file ajouté à toutes les commandes docker compose des trois scripts, périmètre respecté. (3dbeeb7)
 - 05/10/2026 — M3b F-11 (worker, dépendance ioredis manquante en production) : ajoute `ioredis` ^6.0.0 (même version que apps/api) aux dependencies de apps/worker avec `pnpm -… — ioredis ^6.0.0 ajouté au worker avec lockfile, contrôle Dockerfile et D-110 ; diff limité aux 4 fichiers demandés, contrôles au vert. (a65924a)
-- 05/10/2026 — M3b F-10 (URL signées publiques du stockage) : en production, S3_ENDPOINT=http://minio:9000 (réseau Docker interne) sert aussi à signer les URL données au navig… — S3_PUBLIC_ENDPOINT ajouté (env, .env.production.example, second client S3 réservé à la signature, docs/DEPLOY.md) avec tests unitaires ; lint et typecheck verts, sortie de pnpm test tronquée donc non… (5e176eb)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
