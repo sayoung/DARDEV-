@@ -48,7 +48,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
       const lang = normalizeLang(i18n.language);
       setHotspots(editorMarkers(hotspotsRes, lang));
     }).catch(() => {
-      setError('common.error.generic');
+      setActionError('common.error.generic');
     });
   };
 
@@ -141,6 +141,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
             <h3 className="text-lg font-semibold">{t('catalog.hotspots.editor.newTitle')}</h3>
             {actionError && <Alert variant="destructive">{t(actionError)}</Alert>}
             <HotspotForm
+              key={`${String(draftPosition.yaw)}-${String(draftPosition.pitch)}`}
               defaultPosition={draftPosition}
               currentTourScenes={currentTourScenes}
               onSubmit={handleCreateHotspot}
