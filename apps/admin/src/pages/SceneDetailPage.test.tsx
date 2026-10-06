@@ -4,8 +4,9 @@ import { i18n } from '../i18n.js';
 import { SceneDetailPage } from './SceneDetailPage.js';
 import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { getScene, createScene, listScenes } from '../api/catalog.js';
-import { Role, type SceneResponse } from '@xplor/shared';
+import { getScene, createScene, listScenes, getAsset, listHotspots } from '../api/catalog.js';
+import { Role, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus } from '@xplor/shared';
+import { SceneEditor360 } from '../components/SceneEditor360.js';
 
 vi.mock('../router.js', () => ({
   useAppLocation: vi.fn(),
@@ -22,7 +23,13 @@ vi.mock('../api/catalog.js', () => ({
   createScene: vi.fn(),
   updateScene: vi.fn(),
   listScenes: vi.fn(),
+  getAsset: vi.fn(),
+  listHotspots: vi.fn(),
   listAssets: vi.fn(() => Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })),
+}));
+
+vi.mock('../components/SceneEditor360.js', () => ({
+  SceneEditor360: vi.fn(() => <div data-testid="mock-scene-editor" />),
 }));
 
 interface MockAssetPickerProps {
@@ -170,5 +177,118 @@ describe('SceneDetailPage', () => {
     fireEvent.submit(form);
 
     expect(await screen.findByText('Veuillez corriger les erreurs dans le formulaire.')).toBeDefined();
+  });
+
+  it('opens Editor 360 tab with READY asset and passes hotspots', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+    
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1',
+      tourId: 't-1',
+      title: { fr: 'Titre' },
+      panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      initialYaw: 10,
+      initialPitch: -5,
+      initialZoom: 50,
+      weight: 0,
+      hotspotCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    
+    const mockAsset: AssetResponse = {
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1000,
+      width: 4000,
+      height: 2000,
+      processingStatus: ProcessingStatus.READY,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {
+        preview: 'mock.jpg',
+        web: 'mock.jpg',
+        thumb: 'mock.jpg',
+        tilesPrefix: 'mock/',
+        tileGrid: { cols: 4, rows: 2, size: 512 },
+      },
+      createdAt: new Date().toISOString(),
+    };
+    vi.mocked(getAsset).mockResolvedValue(mockAsset);
+    vi.mocked(listHotspots).mockResolvedValue([]);
+    
+    render(<SceneDetailPage />);
+    
+    // Wait for the scene to load and tabs to be visible
+    const editorTab = await screen.findByText('Éditeur 360');
+    fireEvent.mouseDown(editorTab);
+    fireEvent.click(editorTab);
+    
+    await waitFor(() => {
+      expect(SceneEditor360).toHaveBeenCalledWith(
+        expect.objectContaining({
+          initialView: { yaw: 10, pitch: -5, zoom: 50 },
+          hotspots: [],
+        }),
+        undefined
+      );
+    });
+  });
+
+  it('displays alert when asset is not READY in Editor 360 tab', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+    
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1',
+      tourId: 't-1',
+      title: { fr: 'Titre' },
+      panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      weight: 0,
+      hotspotCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    
+    const mockAsset: AssetResponse = {
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1000,
+      width: null,
+      height: null,
+      processingStatus: ProcessingStatus.PROCESSING,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      createdAt: new Date().toISOString(),
+    };
+    vi.mocked(getAsset).mockResolvedValue(mockAsset);
+    vi.mocked(listHotspots).mockResolvedValue([]);
+    
+    render(<SceneDetailPage />);
+    
+    const editorTab = await screen.findByText('Éditeur 360');
+    fireEvent.mouseDown(editorTab);
+    fireEvent.click(editorTab);
+    
+    expect(await screen.findByText("Le panorama n'est pas prêt.")).toBeDefined();
   });
 });
