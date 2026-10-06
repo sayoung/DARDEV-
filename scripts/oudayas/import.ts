@@ -11,8 +11,8 @@ import {
   z,
 } from '@xplor/shared';
 
-import { parseArgs, runPool } from './import-lib.js';
-
+import { parseArgs, runPool, countPlannedHotspots } from './import-lib.js';
+import { buildTourPlan, generateId } from './plan.js';
 export let csrfToken: string | undefined;
 export let cookieHeader = '';
 export let apiUrl = 'http://localhost:3000';
@@ -139,9 +139,12 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
   
   const TourDataSchema = z.object({
     title: z.string(),
+    city: z.string(),
+    description: z.string(),
     scenes: z.array(z.object({
       file: z.string(),
       name: z.string(),
+      info: z.string(),
     })),
   });
   
@@ -152,6 +155,14 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
     console.log(`[Dry-Run] Planification de l'import :`);
     console.log(`- Titre : ${data.title}`);
     console.log(`- Nombre de scènes : ${String(files.length)}`);
+    
+    const fakeAssetIds: Record<string, string> = {};
+    for (const file of files) {
+      fakeAssetIds[file] = generateId();
+    }
+    const plan = buildTourPlan(data, fakeAssetIds);
+    console.log(`- Hotspots prévus : ${String(countPlannedHotspots(plan))}`);
+
     console.log(`- Fichiers à importer :`);
     let hasError = false;
     for (const file of files) {

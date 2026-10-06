@@ -1,4 +1,5 @@
-import { z, TourResponse } from '@xplor/shared';
+import { z, TourResponse, HotspotCreate, HotspotType } from '@xplor/shared';
+import { TourPlanPayloads } from './plan.js';
 
 export interface ImportOptions {
   apiUrl: string;
@@ -137,4 +138,22 @@ export function findExistingTour(tours: TourResponse[], titleFr: string): TourRe
 
 export function publicUrl(token: string): string {
   return `https://v.xplor.ma/v/${token}`;
+}
+
+
+export function countPlannedHotspots(plan: TourPlanPayloads): number {
+  return plan.scenes.reduce((sum, scene) => sum + scene.hotspots.length, 0);
+}
+
+export function remapHotspotTargets(hotspots: HotspotCreate[], idMap: Record<string, string>): HotspotCreate[] {
+  return hotspots.map((h) => {
+    if (h.type === HotspotType.SCENE_LINK && h.targetSceneId) {
+      const realId = idMap[h.targetSceneId];
+      if (!realId) {
+        throw new Error(`Cible de hotspot introuvable dans la correspondance : ${h.targetSceneId}`);
+      }
+      return { ...h, targetSceneId: realId };
+    }
+    return h;
+  });
 }
