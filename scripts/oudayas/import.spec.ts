@@ -6,7 +6,7 @@ import { AssetKind, ProcessingStatus, z } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 
-import { login, uploadFile, main, listTours, resolveReferences, ensureNoDuplicate } from './import.js';
+import { login, uploadFile, main, listTours, resolveReferences, ensureNoDuplicate, createTour } from './import.js';
 
 describe('Import Oudaïas (partie upload et authentification)', () => {
   let tmpDir: string;
@@ -230,6 +230,18 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
           }),
           { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
         );
+      }
+
+      if (url.includes('/api/v1/admin/tours') && method === 'POST') {
+        const mockTour = { id: '00000000-0000-7000-8000-000000000012', title: { fr: 'T' }, summary: { fr: 'Sum' }, description: { fr: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: ['00000000-0000-7000-8000-000000000009'], cityId: '00000000-0000-7000-8000-000000000008', coverAssetId: '00000000-0000-7000-8000-000000000010', publicShare: false, sceneCount: 1, contentVersion: 1, shareToken: 'tok-main', startSceneId: null, publishedAt: null };
+        if (url.includes('/scenes/set-start')) return new Response(null, { status: 200 });
+        if (url.includes('/publish')) return new Response(null, { status: 200 });
+        if (url.includes('/share-token')) return new Response(JSON.stringify(mockTour), { status: 200 });
+        if (url.includes('/scenes')) return new Response(JSON.stringify({ id: '00000000-0000-7000-8000-000000000013', tourId: '00000000-0000-7000-8000-000000000012', title: { fr: 'S' }, info: { fr: 'I' }, panoramaAssetId: '00000000-0000-7000-8000-000000000010', initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 });
+        return new Response(JSON.stringify(mockTour), { status: 201 });
+      }
+      if (url.includes('/hotspots') && method === 'POST') {
+        return new Response(null, { status: 201 });
       }
 
       return new Response('Not Found', { status: 404 });
@@ -557,6 +569,45 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(mockFetch.mock.calls[1]?.[0]).toBe('http://localhost:3000/api/v1/admin/tours/00000000-0000-7000-8000-000000000001');
       expect(mockFetch.mock.calls[1]?.[1]?.method).toBe('DELETE');
+    });
+  });
+
+  describe('createTour', () => {
+    it('crée une visite, ajoute des scènes et publie', async () => {
+      // Valid UUIDv7 mock IDs
+      const tourId = '00000000-0000-7000-8000-000000000001';
+      const cityId = '00000000-0000-7000-8000-000000000008';
+      const catId = '00000000-0000-7000-8000-000000000009';
+      const assetId = '00000000-0000-7000-8000-000000000010';
+      const sceneId = '00000000-0000-7000-8000-000000000011';
+
+      const mockTour = { id: tourId, title: { fr: 'T', en: 'T', ar: 'T' }, summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' }, description: { fr: 'Desc', en: 'Desc', ar: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: [catId], cityId, coverAssetId: assetId, publicShare: false, sceneCount: 1, contentVersion: 1, shareToken: 'tok-xyz', startSceneId: null, publishedAt: null };
+      mockFetch.mockImplementation(async (input, init) => {
+        await Promise.resolve();
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes('/api/v1/admin/tours') && (init?.method || 'GET') === 'POST') {
+          if (url.includes('/scenes/set-start')) return new Response(null, { status: 200 });
+          if (url.includes('/publish')) return new Response(null, { status: 200 });
+          if (url.includes('/share-token')) return new Response(JSON.stringify(mockTour), { status: 200 });
+          if (url.includes('/scenes')) return new Response(JSON.stringify({ id: sceneId, tourId, title: { fr: 'S', en: 'S', ar: 'S' }, info: { fr: 'I', en: 'I', ar: 'I' }, panoramaAssetId: assetId, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 });
+          return new Response(JSON.stringify(mockTour), { status: 201 });
+        }
+        if (url.includes('/hotspots') && (init?.method || 'GET') === 'POST') {
+          return new Response(null, { status: 201 });
+        }
+        return new Response('Not Found', { status: 404 });
+      });
+
+      const mockData = {
+        title: 'Tour',
+        city: 'Rabat',
+        description: 'Desc',
+        scenes: [{ file: 'test.jpg', name: 'Scène 1', info: 'Info 1' }]
+      };
+      const assetIds = { 'test.jpg': assetId };
+
+      const token = await createTour(mockData, assetIds, cityId, catId);
+      expect(token).toBe('tok-xyz');
     });
   });
 
