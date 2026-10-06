@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 2 : rendre scripts/oudayas/import.ts testable et conforme). Dans scripts/oudayas/import.ts (déjà présent, 220 li… — import.ts est exporté et sans effet de bord à l'import, les envois (pool) et l'attente READY sont séparés, le timeout est global, les erreurs nomment le fichier avec code de sortie non nul, et le dry-… (94e9af8)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie B, étape 1 : remettre les contrôles au vert). Lance pnpm lint, pnpm typecheck puis pnpm test (sans docker : les services… — Correction d'un test fragile par timeout dans TourForm.test.tsx, sans contournement interdit ; lint, typecheck et test sortent avec le code 0. (d6b5e8f)
 - 06/10/2026 — Récupération du travail non commité — Partie B de l'import Oudayas (connexion, envoi, attente READY) cohérente avec l'API et les schémas partagés ; lint, typecheck et test au vert ; createTour reste un stub prévu pour la partie C. (474d62d)
 - 05/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie A : options et client API). Crée scripts/oudayas/import-lib.ts, qui contient la logique pure et testable. (1) parseArgs(a… — import-lib.ts et son spec respectent la demande (options, plafond de concurrence, pool, détection de visite, URL publique, aucune fuite du mot de passe) et lint, typecheck et test sont verts. (e958b84)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 05/10/2026 — M3b NF-10 (seed en production, étape 1) : le seed (apps/api/prisma/seed.ts) importe des fichiers TypeScript de src/ et ne tourne pas dans l'image de production… — runSeed() extraite correctement dans run-seed.ts, seed.ts n'en garde que le chargement du .env et l'appel, comportement et messages inchangés, contrôles verts. (7df042a)
 - 05/10/2026 — M3b NF-10 (docker-compose.prod.yml) : crée `docker-compose.prod.yml` à la racine, avec le nom de projet `name: xplor-prod`. Services : postgres:16-alpine (volum… — docker-compose.prod.yml conforme à la tâche : isolation de la prod, seul caddy publie des ports, healthchecks et restart corrects, variables cohérentes avec .env.production.example. (0200ce9)
 - 05/10/2026 — M3b NF-10 (.env.production.example) : crée `.env.production.example` à la racine. Il ne contient aucun secret réel : chaque valeur sensible vaut `CHANGER_MOI`.… — Le fichier .env.production.example couvre toutes les variables requises par env.ts de l'API et par le worker, sans secret réel, et .gitignore ignore .env.production mais pas l'exemple. (4006147)
-- 05/10/2026 — M3b NF-10 / NF-01 (Caddyfile de production) : écris `deploy/caddy/Caddyfile`. Option globale : `email {$ACME_EMAIL}`. Le bloc `(securite)` est un snippet réutil… — Caddyfile de production conforme à la demande (snippet sécurité, 5 sites, encode, SPA fallback, proxy /api) et décision D-107 consignée avec à valider : oui ; contrôles verts. (2d18ee4)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
