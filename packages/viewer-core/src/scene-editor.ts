@@ -1,4 +1,4 @@
-import { HotspotResponse, Lang, localize, PanoramaDerivativesSchema, panoramaTileKey } from '@xplor/shared';
+import { HotspotResponse, Lang, localize, PanoramaUrls } from '@xplor/shared';
 import { Viewer } from '@photo-sphere-viewer/core';
 import { MarkersPlugin, type MarkerConfig } from '@photo-sphere-viewer/markers-plugin';
 import { EquirectangularTilesAdapter, type EquirectangularTilesAdapterConfig } from '@photo-sphere-viewer/equirectangular-tiles-adapter';
@@ -30,25 +30,20 @@ export function editorMarkers(hotspots: HotspotResponse[], lang: Lang): EditorMa
   });
 }
 
-export function editorPanorama(asset: { derivatives?: unknown }): EditorPanorama {
-  if (!asset.derivatives) {
+export function editorPanorama(asset: { panorama: PanoramaUrls | null }): EditorPanorama {
+  if (!asset.panorama) {
     throw new Error('Les dérivés du panorama sont manquants ou incomplets.');
   }
 
-  const parsed = PanoramaDerivativesSchema.safeParse(asset.derivatives);
-  
-  if (!parsed.success) {
-    throw new Error('Les dérivés du panorama sont manquants ou incomplets.');
-  }
-
-  const data = parsed.data;
+  const panorama = asset.panorama;
+  const tiles = panorama.tiles;
 
   return {
-    width: data.tileGrid.cols * data.tileGrid.size,
-    cols: data.tileGrid.cols,
-    rows: data.tileGrid.rows,
-    baseUrl: data.preview,
-    tileUrl: (col: number, row: number) => panoramaTileKey(data.tilesPrefix, col, row),
+    width: tiles.width,
+    cols: tiles.cols,
+    rows: tiles.rows,
+    baseUrl: panorama.preview,
+    tileUrl: (col: number, row: number) => tiles.baseUrl.replace('{col}', String(col)).replace('{row}', String(row)),
   };
 }
 

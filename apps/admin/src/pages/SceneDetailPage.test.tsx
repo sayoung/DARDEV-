@@ -213,14 +213,12 @@ describe('SceneDetailPage', () => {
       processingLog: null,
       copyright: null,
       thumbnailUrl: null,
-      derivatives: {
+      derivatives: {},
+      panorama: {
         preview: 'mock.jpg',
         web: 'mock.jpg',
-        thumb: 'mock.jpg',
-        tilesPrefix: 'mock/',
-        tileGrid: { cols: 4, rows: 2, size: 512 },
+        tiles: { width: 2048, cols: 4, rows: 2, baseUrl: 'mock/tiles/{col}_{row}.jpg' },
       },
-      panorama: null,
       createdAt: new Date().toISOString(),
     };
     vi.mocked(getAsset).mockResolvedValue(mockAsset);
