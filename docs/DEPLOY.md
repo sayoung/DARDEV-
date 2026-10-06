@@ -174,7 +174,52 @@ Contrôlez que `ACME_EMAIL` est correct dans `.env.production`, que vos enregist
 
 **Limitation de débit :** si tous les utilisateurs sont bloqués ensemble, vérifier `API_TRUST_PROXY=true`.
 
-## 12. Démo 1 : Scan QR Code des Oudayas
+## 12. Importer la visite des Oudayas
+
+Pour préparer la Démo 1, vous devez importer la visite des Oudayas en utilisant un script depuis votre PC.
+
+**Prérequis :**
+- La médiathèque doit être fonctionnelle en production.
+- Vous devez disposer d'un compte admin.
+
+**Procédure (PowerShell) :**
+Depuis une invite PowerShell sur votre PC, configurez l'accès à l'environnement de production. *Rappel : une connexion via le script fermera la session de votre navigateur sur le même compte.*
+
+```powershell
+$env:XPLOR_API_URL='https://admin.xplor.ma'
+$env:XPLOR_ADMIN_EMAIL='admin@xplor.local'
+$securePwd = Read-Host -Prompt "Mot de passe admin" -AsSecureString
+$env:XPLOR_ADMIN_PASSWORD = [System.Net.NetworkCredential]::new("", $securePwd).Password
+```
+
+Exécutez ensuite le script d'import en mode simulation pour valider le processus :
+```powershell
+pnpm import:oudayas --dry-run
+```
+
+Si le test est concluant, lancez l'importation réelle :
+```powershell
+pnpm import:oudayas
+```
+
+**Ce qui est créé :**
+- Les images des panoramas sont ajoutées à la médiathèque.
+- Une nouvelle visite virtuelle "Les Oudayas" est créée avec ses scènes et hotspots.
+- La visite est publiée automatiquement.
+
+**Comment vérifier :**
+1. Accédez à la **Médiathèque** du back-office pour vérifier la présence des médias.
+2. Dans la liste des visites, vérifiez que "Les Oudayas" est une visite **publiée**.
+3. Affichez le **QR** de la visite.
+4. Scannez ce QR avec un smartphone pour vérifier que l'URL `https://v.xplor.ma/v/<jeton>` s'ouvre correctement sur mobile.
+
+**Comment recommencer :**
+Pour réimporter ou mettre à jour la visite, utilisez l'option `--replace` :
+```powershell
+pnpm import:oudayas --replace
+```
+
+## 13. Démo 1 : Scan QR Code des Oudayas
 
 Pour valider l'expérience globale sur mobile depuis la production :
 1. Dans le back-office, accédez à la visite virtuelle des "Oudayas".
