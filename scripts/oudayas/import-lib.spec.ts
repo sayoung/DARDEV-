@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseArgs, runPool, findExistingTour, publicUrl } from './import-lib';
-import { TourResponse, TourStatus } from '@xplor/shared';
+import { parseArgs, runPool, findExistingTour, publicUrl, countPlannedHotspots, remapHotspotTargets } from './import-lib';
+import { TourResponse, TourStatus, HotspotType, HotspotCreate, HotspotCreateSchema } from '@xplor/shared';
+import { buildTourPlan, generateId } from './plan';
 
 describe('import-lib', () => {
   describe('parseArgs', () => {
@@ -152,6 +153,51 @@ describe('import-lib', () => {
   describe('publicUrl', () => {
     it('should return the correct public URL', () => {
       expect(publicUrl('mytoken')).toBe('https://v.xplor.ma/v/mytoken');
+    });
+  });
+  describe('countPlannedHotspots', () => {
+    it('should total all hotspots from all scenes', () => {
+      const data = {
+        title: 'T',
+        city: 'C',
+        description: 'D',
+        scenes: [
+          { file: 'f1', name: 'N1', info: 'I1' },
+          { file: 'f2', name: 'N2', info: 'I2' }
+        ]
+      };
+      const assetIds = { f1: generateId(), f2: generateId() };
+      const plan = buildTourPlan(data, assetIds);
+      expect(countPlannedHotspots(plan)).toBe(6);
+    });
+  });
+
+  describe('remapHotspotTargets', () => {
+    it('should replace targetSceneId with real id from map for SCENE_LINK', () => {
+      const fakeSceneId = generateId();
+      const realSceneId = generateId();
+      const hotspots: HotspotCreate[] = [
+        HotspotCreateSchema.parse({ type: HotspotType.SCENE_LINK, targetSceneId: fakeSceneId, yaw: 0, pitch: 0, label: { fr: 'L' } }),
+        HotspotCreateSchema.parse({ type: HotspotType.INFO, body: { fr: 'B' }, yaw: 0, pitch: 0, label: { fr: 'L' } }),
+      ];
+      const idMap = { [fakeSceneId]: realSceneId };
+      const remapped = remapHotspotTargets(hotspots, idMap);
+      const first = remapped[0];
+      if (first && first.type === HotspotType.SCENE_LINK) {
+        expect(first.targetSceneId).toBe(realSceneId);
+      } else {
+        throw new Error('Type mismatch');
+      }
+      expect(remapped[1]).toEqual(hotspots[1]); // Unchanged
+    });
+
+    it('should throw an error if targetSceneId is missing in idMap', () => {
+      const fakeSceneId = generateId();
+      const hotspots: HotspotCreate[] = [
+        HotspotCreateSchema.parse({ type: HotspotType.SCENE_LINK, targetSceneId: fakeSceneId, yaw: 0, pitch: 0, label: { fr: 'L' } }),
+      ];
+      const idMap = { 'someOtherId': generateId() };
+      expect(() => remapHotspotTargets(hotspots, idMap)).toThrow(new RegExp(`Cible de hotspot introuvable dans la correspondance : ${fakeSceneId}`));
     });
   });
 });
