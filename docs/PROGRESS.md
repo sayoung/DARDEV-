@@ -27,3 +27,5 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 - Aucun.
 
 ### Fait
+
+- 06/10/2026 — M4 bilan d'ouverture : copie le contenu actuel de docs/PROGRESS.md dans docs/archive/PROGRESS-M3b.md, en suivant le modèle de docs/archive/PROGRESS-M3.md. Puis,… — Archive PROGRESS-M3b.md créée et PROGRESS.md réinitialisé pour M4 conformément à la demande, sans autre fichier modifié ; lint, typecheck et test au vert. (972c8ac)
