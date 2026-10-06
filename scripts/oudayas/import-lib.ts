@@ -17,6 +17,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv): ImportOptions
   let dryRun = false;
   let timeoutSec = 600;
   let concurrency = 3;
+  let customDir: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -38,6 +39,12 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv): ImportOptions
         throw new Error('Option --concurrency requires a numeric value.');
       }
       concurrency = parseInt(val, 10);
+    } else if (arg === '--dir') {
+      const val = argv[++i];
+      if (val === undefined) {
+        throw new Error('Option --dir requires a value.');
+      }
+      customDir = val;
     } else if (arg.startsWith('-')) {
       throw new Error(`Unknown option: ${arg}`);
     }
@@ -60,7 +67,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv): ImportOptions
     }
   }
 
-  const dir = env.XPLOR_OUDAYAS_DIR ?? 'D:/DARDEV/local/xplor-panoramas-test/visite-oudayas/pano';
+  const dir = customDir ?? env.XPLOR_OUDAYAS_DIR ?? 'D:/DARDEV/local/xplor-panoramas-test/visite-oudayas/pano';
 
   const schema = z.object({
     apiUrl: z.string().min(1, 'XPLOR_API_URL must not be empty.'),
