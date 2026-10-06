@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   AssetKind,
@@ -12,22 +13,12 @@ import {
 
 import { parseArgs, runPool } from './import-lib.js';
 
-try {
-  process.loadEnvFile('.env');
-} catch {
-  // Ignore si le fichier n'existe pas
-}
+export let csrfToken: string | undefined;
+export let cookieHeader = '';
+export let apiUrl = 'http://localhost:3000';
 
-process.env.XPLOR_API_URL = process.env.XPLOR_API_URL || `http://localhost:${process.env.PORT || '3000'}`;
-if (!process.env.XPLOR_ADMIN_EMAIL) process.env.XPLOR_ADMIN_EMAIL = 'admin@xplor.local';
-
-const args = parseArgs(process.argv.slice(2), process.env);
-
-let csrfToken: string | undefined;
-let cookieHeader = '';
-
-async function apiFetch(apiPath: string, init: RequestInit = {}): Promise<Response> {
-  const url = `${args.apiUrl}${apiPath}`;
+export async function apiFetch(apiPath: string, init: RequestInit = {}): Promise<Response> {
+  const url = `${apiUrl}${apiPath}`;
   const headers = new Headers(init.headers);
   if (cookieHeader) {
     headers.set('Cookie', cookieHeader);
@@ -47,14 +38,14 @@ async function apiFetch(apiPath: string, init: RequestInit = {}): Promise<Respon
   return res;
 }
 
-async function login(): Promise<void> {
-  if (!args.email || !args.password) {
+export async function login(email?: string, password?: string): Promise<void> {
+  if (!email || !password) {
     throw new Error('Email et mot de passe requis pour la connexion.');
   }
   const res = await apiFetch('/api/v1/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: args.email, password: args.password }),
+    body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
     throw new Error(`Échec de connexion : ${String(res.status)}`);
@@ -70,17 +61,16 @@ async function login(): Promise<void> {
 }
 
 // TODO: implémenter la création de visite en partie C
-async function createTour(_assetIds: Record<string, string>): Promise<void> {
+export async function createTour(_assetIds: Record<string, string>): Promise<void> {
   await Promise.resolve(_assetIds);
   // Vide pour le moment
 }
 
-async function uploadFile(
+export async function uploadFile(
   fileName: string,
-  index: number,
-  total: number
+  dir: string
 ): Promise<{ file: string; assetId: string }> {
-  const fullPath = path.join(args.dir, fileName);
+  const fullPath = path.join(dir, fileName);
   if (!fs.existsSync(fullPath)) {
     throw new Error(`Fichier introuvable : ${fullPath}`);
   }
@@ -128,33 +118,22 @@ async function uploadFile(
     throw new Error(`complete échoué pour ${fileName} : ${String(completeResRaw.status)} - ${await completeResRaw.text()}`);
   }
 
-  // 4. Interrogation jusqu'au statut READY
-  const pollInterval = 2000;
-  const maxPolls = Math.max(1, Math.floor((args.timeoutSec * 1000) / pollInterval));
-
-  for (let i = 0; i < maxPolls; i++) {
-    const getResRaw = await apiFetch(`/api/v1/admin/assets/${uploadRes.assetId}`);
-    if (!getResRaw.ok) {
-      throw new Error(`GET asset échoué pour ${fileName} : ${String(getResRaw.status)} - ${await getResRaw.text()}`);
-    }
-    const getRes = AssetResponseSchema.parse(await getResRaw.json());
-
-    if (getRes.processingStatus === ProcessingStatus.READY) {
-      console.log(`[Succès] ${fileName} est READY (${String(index + 1)}/${String(total)} envoyé)`);
-      return { file: fileName, assetId: uploadRes.assetId };
-    }
-
-    if (getRes.processingStatus === ProcessingStatus.ERROR) {
-      throw new Error(`Erreur de traitement pour ${fileName} : ${getRes.processingLog || 'Raison inconnue'}`);
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, pollInterval));
-  }
-
-  throw new Error(`Délai d'attente dépassé pour ${fileName}`);
+  return { file: fileName, assetId: uploadRes.assetId };
 }
 
-async function main() {
+export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void> {
+  try {
+    process.loadEnvFile('.env');
+  } catch {
+    // Ignore si le fichier n'existe pas
+  }
+
+  env.XPLOR_API_URL = env.XPLOR_API_URL || `http://localhost:${env.PORT || '3000'}`;
+  if (!env.XPLOR_ADMIN_EMAIL) env.XPLOR_ADMIN_EMAIL = 'admin@xplor.local';
+
+  const args = parseArgs(argv.slice(2), env);
+  apiUrl = args.apiUrl;
+
   const dataPath = path.resolve('scripts/oudayas/tour-data.json');
   const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
   
@@ -167,7 +146,6 @@ async function main() {
   });
   
   const data = TourDataSchema.parse(rawData);
-
   const files = data.scenes.map((s) => s.file);
 
   if (args.dryRun) {
@@ -191,7 +169,7 @@ async function main() {
     return;
   }
 
-  await login();
+  await login(args.email, args.password);
   console.log('Connexion réussie.');
 
   for (const file of files) {
@@ -201,9 +179,49 @@ async function main() {
     }
   }
 
-  const results = await runPool(files, args.concurrency, (file, index) =>
-    uploadFile(file, index, files.length)
-  );
+  let uploadCount = 0;
+  const results = await runPool(files, args.concurrency, async (file) => {
+    const res = await uploadFile(file, args.dir);
+    uploadCount++;
+    console.log(`[Succès] ${file} est envoyé (${String(uploadCount)}/${String(files.length)} envoyé)`);
+    return res;
+  });
+
+  const pollInterval = 2000;
+  const maxPolls = Math.max(1, Math.floor((args.timeoutSec * 1000) / pollInterval));
+  
+  const pendingAssets = new Map<string, string>();
+  for (const r of results) {
+    pendingAssets.set(r.assetId, r.file);
+  }
+  
+  for (let i = 0; i < maxPolls; i++) {
+    if (pendingAssets.size === 0) break;
+    
+    for (const [assetId, file] of Array.from(pendingAssets.entries())) {
+      const getResRaw = await apiFetch(`/api/v1/admin/assets/${assetId}`);
+      if (!getResRaw.ok) {
+        throw new Error(`GET asset échoué pour ${file} : ${String(getResRaw.status)} - ${await getResRaw.text()}`);
+      }
+      const getRes = AssetResponseSchema.parse(await getResRaw.json());
+      
+      if (getRes.processingStatus === ProcessingStatus.READY) {
+        console.log(`[Succès] ${file} est READY`);
+        pendingAssets.delete(assetId);
+      } else if (getRes.processingStatus === ProcessingStatus.ERROR) {
+        throw new Error(`Erreur de traitement pour ${file} : ${getRes.processingLog || 'Raison inconnue'}`);
+      }
+    }
+    
+    if (pendingAssets.size > 0) {
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    }
+  }
+  
+  if (pendingAssets.size > 0) {
+    const pendingFiles = Array.from(pendingAssets.values()).join(', ');
+    throw new Error(`Délai d'attente dépassé pour : ${pendingFiles}`);
+  }
 
   const assetIds: Record<string, string> = {};
   for (const r of results) {
@@ -214,7 +232,11 @@ async function main() {
   console.log('Importation terminée avec succès.');
 }
 
-main().catch((err: unknown) => {
-  console.error('Erreur fatale :', err instanceof Error ? err.message : String(err));
-  process.exitCode = 1;
-});
+// @ts-expect-error: TS1470 - file is run with tsx which supports import.meta
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+if (isMain) {
+  main(process.argv, process.env).catch((err: unknown) => {
+    console.error('Erreur fatale :', err instanceof Error ? err.message : String(err));
+    process.exitCode = 1;
+  });
+}
