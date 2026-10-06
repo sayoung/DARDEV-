@@ -2,11 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { AssetKind, ProcessingStatus, z } from '@xplor/shared';
+import { AssetKind, HotspotType, ProcessingStatus, z, HotspotCreateSchema } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 
-import { login, uploadFile, main, listTours, resolveReferences, ensureNoDuplicate, createTour } from './import.js';
+import { login, uploadFile, main, listTours, resolveReferences, ensureNoDuplicate, createTour, apiUrl } from './import.js';
+import { buildTourPlan } from './plan.js';
 
 describe('Import Oudaïas (partie upload et authentification)', () => {
   let tmpDir: string;
@@ -574,40 +575,105 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
   describe('createTour', () => {
     it('crée une visite, ajoute des scènes et publie', async () => {
-      // Valid UUIDv7 mock IDs
-      const tourId = '00000000-0000-7000-8000-000000000001';
-      const cityId = '00000000-0000-7000-8000-000000000008';
-      const catId = '00000000-0000-7000-8000-000000000009';
-      const assetId = '00000000-0000-7000-8000-000000000010';
-      const sceneId = '00000000-0000-7000-8000-000000000011';
-
-      const mockTour = { id: tourId, title: { fr: 'T', en: 'T', ar: 'T' }, summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' }, description: { fr: 'Desc', en: 'Desc', ar: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: [catId], cityId, coverAssetId: assetId, publicShare: false, sceneCount: 1, contentVersion: 1, shareToken: 'tok-xyz', startSceneId: null, publishedAt: null };
-      mockFetch.mockImplementation(async (input, init) => {
-        await Promise.resolve();
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-        if (url.includes('/api/v1/admin/tours') && (init?.method || 'GET') === 'POST') {
-          if (url.includes('/scenes/set-start')) return new Response(null, { status: 200 });
-          if (url.includes('/publish')) return new Response(null, { status: 200 });
-          if (url.includes('/share-token')) return new Response(JSON.stringify(mockTour), { status: 200 });
-          if (url.includes('/scenes')) return new Response(JSON.stringify({ id: sceneId, tourId, title: { fr: 'S', en: 'S', ar: 'S' }, info: { fr: 'I', en: 'I', ar: 'I' }, panoramaAssetId: assetId, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 });
-          return new Response(JSON.stringify(mockTour), { status: 201 });
-        }
-        if (url.includes('/hotspots') && (init?.method || 'GET') === 'POST') {
-          return new Response(null, { status: 201 });
-        }
-        return new Response('Not Found', { status: 404 });
-      });
-
       const mockData = {
         title: 'Tour',
         city: 'Rabat',
         description: 'Desc',
-        scenes: [{ file: 'test.jpg', name: 'Scène 1', info: 'Info 1' }]
+        scenes: [
+          { file: 'a.jpg', name: 'Scène 1', info: 'Info 1' },
+          { file: 'b.jpg', name: 'Scène 2', info: 'Info 2' },
+        ],
       };
-      const assetIds = { 'test.jpg': assetId };
+
+      const cityId = '00000000-0000-7000-8000-000000000008';
+      const catId = '00000000-0000-7000-8000-000000000009';
+      const assetId1 = '00000000-0000-7000-8000-0000000000a1';
+      const assetId2 = '00000000-0000-7000-8000-0000000000b2';
+      const assetIds = { 'a.jpg': assetId1, 'b.jpg': assetId2 };
+
+      const plan = buildTourPlan(mockData, assetIds, cityId, catId);
+      const nbHotspots = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.length, 0);
+      expect(nbHotspots).toBeGreaterThanOrEqual(1);
+
+      const tourId = '00000000-0000-7000-8000-000000000001';
+      const realSceneId1 = '00000000-0000-7000-8000-000000000011';
+      const realSceneId2 = '00000000-0000-7000-8000-000000000012';
+
+      const mockTour = { id: tourId, title: { fr: 'T', en: 'T', ar: 'T' }, summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' }, description: { fr: 'Desc', en: 'Desc', ar: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: [catId], cityId, coverAssetId: assetId1, publicShare: false, sceneCount: 2, contentVersion: 1, shareToken: 'tok-xyz', startSceneId: null, publishedAt: null };
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId1, tourId, title: { fr: 'S1', en: 'S1', ar: 'S1' }, info: { fr: 'I1', en: 'I1', ar: 'I1' }, panoramaAssetId: assetId1, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId2, tourId, title: { fr: 'S2', en: 'S2', ar: 'S2' }, info: { fr: 'I2', en: 'I2', ar: 'I2' }, panoramaAssetId: assetId2, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 2, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }));
+
+      for (let i = 0; i < nbHotspots; i++) {
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 201 }));
+      }
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 200 }));
 
       const token = await createTour(mockData, assetIds, cityId, catId);
       expect(token).toBe('tok-xyz');
+
+      expect(mockFetch).toHaveBeenCalledTimes(1 + 2 + nbHotspots + 3);
+
+      let callIndex = 0;
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+      callIndex++;
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/scenes`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+      callIndex++;
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/scenes`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+      callIndex++;
+
+      const expectedHotspotsCount = plan.scenes.map((s) => s.hotspots.length);
+      expect(expectedHotspotsCount).toHaveLength(2);
+
+      const hotspotCalls = [];
+      let currentRealSceneId = realSceneId1;
+      for (const count of expectedHotspotsCount) {
+        for (let i = 0; i < count; i++) {
+          expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/scenes/${currentRealSceneId}/hotspots`);
+          expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+          hotspotCalls.push(mockFetch.mock.calls[callIndex]);
+          callIndex++;
+        }
+        currentRealSceneId = realSceneId2;
+      }
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/scenes/set-start`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+      const setStartBody = z.object({ sceneId: z.string() }).parse(JSON.parse(z.string().parse(mockFetch.mock.calls[callIndex]?.[1]?.body)));
+      expect(setStartBody).toEqual({ sceneId: realSceneId1 });
+      callIndex++;
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/publish`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+      callIndex++;
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/share-token`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+      callIndex++;
+
+      const expectedSceneLinkCount = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.filter((h) => h.type === HotspotType.SCENE_LINK).length, 0);
+      expect(expectedSceneLinkCount).toBeGreaterThanOrEqual(1);
+      const sceneLinkBodies = hotspotCalls
+        .map((call) => HotspotCreateSchema.parse(JSON.parse(z.string().parse(call?.[1]?.body))))
+        .filter((body) => body.type === HotspotType.SCENE_LINK);
+
+      expect(sceneLinkBodies).toHaveLength(expectedSceneLinkCount);
+      for (const body of sceneLinkBodies) {
+        expect(body.targetSceneId).toBeDefined();
+        expect([realSceneId1, realSceneId2]).toContain(body.targetSceneId);
+      }
     });
   });
 
