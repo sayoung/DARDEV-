@@ -72,7 +72,7 @@ function row(
     createdAt: new Date(createdAt),
     originalKey: `unit/${id}`,
     contentHash: extra.contentHash !== undefined ? extra.contentHash : 'testhash',
-      derivatives: {}, panorama: null,
+    derivatives: {},
   };
 }
 
