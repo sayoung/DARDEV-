@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 06/10/2026 — M4 F-21 (1/4, tests d'abord) : dans packages/viewer-core/src/scene-editor.ts, ajoute et exporte `normalizeYaw(yaw: number): number`, qui ramène un angle en radi… — normalizeYaw correct, exporté et appliqué au clic, tests conformes à la demande, lint/typecheck/test verts. (3af0381)
 - 06/10/2026 — M4 F-20 (correctif 2/2, éditeur) : dans packages/viewer-core/src/scene-editor.ts, change `editorPanorama` pour qu'elle prenne `asset: { panorama: PanoramaUrls |… — editorPanorama utilise désormais asset.panorama (PanoramaUrls) avec tileUrl par gabarit, tests et fixtures mis à jour, contrôles verts. (a1a39f9)
 - 06/10/2026 — M4 F-20 (correctif 1/2, étape b, API + tests + OpenAPI) : dans apps/api/src/catalog/assets.service.ts, fonction `toAsset(row, mediaBase)` (fin du fichier), remp… — toAsset calcule panorama (preview/web/tiles, null sinon) avec try/catch, deux tests pertinents ajoutés, openapi.json déjà à jour depuis l'étape a, contrôles verts. (e641ca3)
 - 06/10/2026 — M4 F-20 (correctif 1/2, étape a, schémas partagés) : (1) dans packages/shared/src/panorama-queue.ts, crée et exporte `PanoramaUrlsSchema` = z.object({ preview:… — PanoramaUrlsSchema créé, exporté et réutilisé dans tour-graph et AssetResponseSchema, avec panorama: null provisoire dans toAsset et les fixtures ; lint, typecheck et tests au vert. (4a2a125)
