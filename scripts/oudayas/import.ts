@@ -9,9 +9,13 @@ import {
   AssetUploadResponseSchema,
   ProcessingStatus,
   z,
+  type TourResponse,
+  PaginatedTourResponseSchema,
+  CityListResponseSchema,
+  CategoryListResponseSchema,
 } from '@xplor/shared';
 
-import { parseArgs, runPool, countPlannedHotspots } from './import-lib.js';
+import { parseArgs, runPool, countPlannedHotspots, fetchAllPages, matchCity, matchCategory } from './import-lib.js';
 import { buildTourPlan, generateId } from './plan.js';
 export let csrfToken: string | undefined;
 export let cookieHeader = '';
@@ -64,6 +68,59 @@ export async function login(email?: string, password?: string): Promise<void> {
 export async function createTour(_assetIds: Record<string, string>): Promise<void> {
   await Promise.resolve(_assetIds);
   // Vide pour le moment
+}
+
+export async function listTours(): Promise<TourResponse[]> {
+  return fetchAllPages(async (page) => {
+    const res = await apiFetch(`/api/v1/admin/tours?page=${String(page)}`);
+    if (!res.ok) {
+      throw new Error(`[liste visites] Erreur HTTP ${String(res.status)}`);
+    }
+    try {
+      const data: unknown = await res.json();
+      const paginatedRes = PaginatedTourResponseSchema.parse(data);
+      return {
+        data: paginatedRes.items,
+        hasMore: paginatedRes.page * paginatedRes.pageSize < paginatedRes.total,
+      };
+    } catch (e) {
+      throw new Error(`[liste visites] Réponse invalide : ${e instanceof Error ? e.message : String(e)}`);
+    }
+  });
+}
+
+export async function resolveReferences(tourData: { city: string }): Promise<{ cityId: string; categoryId: string }> {
+  const citiesRes = await apiFetch('/api/v1/admin/cities');
+  if (!citiesRes.ok) {
+    throw new Error(`[référentiel] Erreur HTTP ${String(citiesRes.status)} sur les villes`);
+  }
+  let cities;
+  try {
+    const citiesData: unknown = await citiesRes.json();
+    cities = CityListResponseSchema.parse(citiesData);
+  } catch (e) {
+    throw new Error(`[référentiel] Réponse invalide (villes) : ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  const categoriesRes = await apiFetch('/api/v1/admin/categories');
+  if (!categoriesRes.ok) {
+    throw new Error(`[référentiel] Erreur HTTP ${String(categoriesRes.status)} sur les catégories`);
+  }
+  let categories;
+  try {
+    const categoriesData: unknown = await categoriesRes.json();
+    categories = CategoryListResponseSchema.parse(categoriesData);
+  } catch (e) {
+    throw new Error(`[référentiel] Réponse invalide (catégories) : ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  const matchedCity = matchCity(cities, tourData.city);
+  const matchedCategory = matchCategory(categories);
+
+  return {
+    cityId: matchedCity.id,
+    categoryId: matchedCategory.id,
+  };
 }
 
 export async function uploadFile(
