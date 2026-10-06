@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseArgs, runPool, findExistingTour, publicUrl, countPlannedHotspots, remapHotspotTargets } from './import-lib';
-import { TourResponse, TourStatus, HotspotType, HotspotCreate, HotspotCreateSchema } from '@xplor/shared';
+import { parseArgs, runPool, findExistingTour, publicUrl, countPlannedHotspots, remapHotspotTargets, matchCity, matchCategory, fetchAllPages } from './import-lib';
+import { TourResponse, TourStatus, HotspotType, HotspotCreate, HotspotCreateSchema, CityResponse, CategoryResponse } from '@xplor/shared';
 import { buildTourPlan, generateId } from './plan';
 
 describe('import-lib', () => {
@@ -200,4 +200,71 @@ describe('import-lib', () => {
       expect(() => remapHotspotTargets(hotspots, idMap)).toThrow(new RegExp(`Cible de hotspot introuvable dans la correspondance : ${fakeSceneId}`));
     });
   });
+  describe('matchCity', () => {
+    it('should return the matching city', () => {
+      const cities: CityResponse[] = [
+        { id: '1', name: { fr: 'Autre' }, region: 'RSK', lat: 0, lng: 0 },
+        { id: '2', name: { fr: 'Rabat' }, region: 'RSK', lat: 0, lng: 0 },
+      ];
+      expect(matchCity(cities, 'Rabat').id).toBe('2');
+    });
+
+    it('should return the first city if no match is found', () => {
+      const cities: CityResponse[] = [
+        { id: '1', name: { fr: 'Casablanca' }, region: 'RSK', lat: 0, lng: 0 },
+        { id: '2', name: { fr: 'Tanger' }, region: 'RSK', lat: 0, lng: 0 },
+      ];
+      expect(matchCity(cities, 'Rabat').id).toBe('1');
+    });
+
+    it('should throw an error if the list is empty', () => {
+      expect(() => matchCity([], 'Rabat')).toThrowError('[référentiel] Aucune ville trouvée. Créez au moins une ville.');
+    });
+  });
+
+  describe('matchCategory', () => {
+    it('should return a category containing "monument" or "patrimoine"', () => {
+      const categories: CategoryResponse[] = [
+        { id: '1', name: { fr: 'Nature' }, icon: 'tree', color: '#000', weight: 0 },
+        { id: '2', name: { fr: 'Monuments historiques' }, icon: 'monument', color: '#000', weight: 0 },
+      ];
+      expect(matchCategory(categories).id).toBe('2');
+
+      const categories2: CategoryResponse[] = [
+        { id: '1', name: { fr: 'Nature' }, icon: 'tree', color: '#000', weight: 0 },
+        { id: '2', name: { fr: 'Patrimoine' }, icon: 'monument', color: '#000', weight: 0 },
+      ];
+      expect(matchCategory(categories2).id).toBe('2');
+    });
+
+    it('should return the first category if no match is found', () => {
+      const categories: CategoryResponse[] = [
+        { id: '1', name: { fr: 'Nature' }, icon: 'tree', color: '#000', weight: 0 },
+        { id: '2', name: { fr: 'Plage' }, icon: 'sun', color: '#000', weight: 0 },
+      ];
+      expect(matchCategory(categories).id).toBe('1');
+    });
+
+    it('should throw an error if the list is empty', () => {
+      expect(() => matchCategory([])).toThrowError('[référentiel] Aucune catégorie trouvée. Créez au moins une catégorie.');
+    });
+  });
+
+  describe('fetchAllPages', () => {
+    it('should fetch all pages until hasMore is false', async () => {
+      let fetchCount = 0;
+      const fetchPage = (page: number) => {
+        fetchCount++;
+        return Promise.resolve({
+          data: [page, page * 10],
+          hasMore: page < 3,
+        });
+      };
+
+      const result = await fetchAllPages(fetchPage);
+      expect(fetchCount).toBe(3);
+      expect(result).toEqual([1, 10, 2, 20, 3, 30]);
+    });
+  });
+
 });

@@ -1,4 +1,4 @@
-import { z, TourResponse, HotspotCreate, HotspotType } from '@xplor/shared';
+import { z, TourResponse, HotspotCreate, HotspotType, CityResponse, CategoryResponse } from '@xplor/shared';
 import { TourPlanPayloads } from './plan.js';
 
 export interface ImportOptions {
@@ -156,4 +156,37 @@ export function remapHotspotTargets(hotspots: HotspotCreate[], idMap: Record<str
     }
     return h;
   });
+}
+
+export function matchCity(cities: CityResponse[], cityName: string): CityResponse {
+  const first = cities[0];
+  if (!first) {
+    throw new Error('[référentiel] Aucune ville trouvée. Créez au moins une ville.');
+  }
+  const match = cities.find(c => c.name.fr === cityName);
+  return match ?? first;
+}
+
+export function matchCategory(categories: CategoryResponse[]): CategoryResponse {
+  const first = categories[0];
+  if (!first) {
+    throw new Error('[référentiel] Aucune catégorie trouvée. Créez au moins une catégorie.');
+  }
+  const match = categories.find(c => {
+    const name = c.name.fr.toLowerCase();
+    return name.includes('monument') || name.includes('patrimoine');
+  });
+  return match ?? first;
+}
+
+export async function fetchAllPages<T>(fetchPage: (page: number) => Promise<{ data: T[]; hasMore: boolean }>): Promise<T[]> {
+  const all: T[] = [];
+  for (let page = 1; ; page++) {
+    const res = await fetchPage(page);
+    all.push(...res.data);
+    if (!res.hasMore) {
+      break;
+    }
+  }
+  return all;
 }
