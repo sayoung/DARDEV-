@@ -5,7 +5,7 @@ import { SceneDetailPage } from './SceneDetailPage.js';
 import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
 import { getScene, createScene, listScenes, getAsset, listHotspots } from '../api/catalog.js';
-import { Role, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus } from '@xplor/shared';
+import { Role, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus, type HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
 import { SceneEditor360 } from '../components/SceneEditor360.js';
 
 vi.mock('../router.js', () => ({
@@ -40,10 +40,10 @@ interface MockAssetPickerProps {
 
 vi.mock('../catalog/AssetPicker.js', () => ({
   AssetPicker: (props: MockAssetPickerProps) => (
-    <input 
+    <input
       data-testid={`mock-asset-picker-${props.kind}`}
-      value={props.value || ''} 
-      onChange={(e) => { props.onChange(e.target.value); }} 
+      value={props.value || ''}
+      onChange={(e) => { props.onChange(e.target.value); }}
     />
   )
 }));
@@ -99,7 +99,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(listScenes).mockResolvedValue([]);
 
     render(<SceneDetailPage />);
-    
+
     const submitBtn = await screen.findByTestId('submit-scene-btn');
     expect(submitBtn).toBeDefined();
   });
@@ -128,13 +128,13 @@ describe('SceneDetailPage', () => {
     vi.mocked(createScene).mockResolvedValue(mockSceneResponse);
 
     const { container } = render(<SceneDetailPage />);
-    
+
     await screen.findByTestId('submit-scene-btn');
 
     // Fill title
     const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Nouvelle scène' } });
-    
+
     // Fill panorama with valid UUID
     const panoramaInput = screen.getByTestId('mock-asset-picker-PANORAMA');
     fireEvent.change(panoramaInput, { target: { value: '018b1d62-a5e3-7a91-9e23-2834b6b63300' } });
@@ -166,9 +166,9 @@ describe('SceneDetailPage', () => {
     vi.mocked(listScenes).mockResolvedValue([]);
 
     const { container } = render(<SceneDetailPage />);
-    
+
     await screen.findByTestId('submit-scene-btn');
-    
+
     // Fill title to bypass LocalizedTextField's block, leaving panorama empty to trigger Zod error
     const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Nouvelle scène' } });
@@ -186,7 +186,7 @@ describe('SceneDetailPage', () => {
       notice: null,
       search: '',
     });
-    
+
     const mockSceneResponse: SceneResponse = {
       id: 's-1',
       tourId: 't-1',
@@ -201,7 +201,7 @@ describe('SceneDetailPage', () => {
       updatedAt: new Date().toISOString(),
     };
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
-    
+
     const mockAsset: AssetResponse = {
       id: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
       kind: AssetKind.PANORAMA,
@@ -223,20 +223,44 @@ describe('SceneDetailPage', () => {
       createdAt: new Date().toISOString(),
     };
     vi.mocked(getAsset).mockResolvedValue(mockAsset);
-    vi.mocked(listHotspots).mockResolvedValue([]);
-    
+
+    const mockHotspots: HotspotResponse[] = [
+      {
+        id: 'h-1',
+        sceneId: 's-1',
+        type: HotspotType.INFO,
+        yaw: 0,
+        pitch: 0,
+        label: { fr: 'Info' },
+        targetSceneId: null,
+        targetTourId: null,
+        targetTourSceneId: null,
+        body: { fr: 'Details' },
+        url: null,
+        arrivalYaw: null,
+        mediaAssetIds: [],
+        icon: HotspotIcon.INFO,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+    vi.mocked(listHotspots).mockResolvedValue(mockHotspots);
+
     render(<SceneDetailPage />);
-    
+
     // Wait for the scene to load and tabs to be visible
     const editorTab = await screen.findByText('Éditeur 360');
     fireEvent.mouseDown(editorTab);
     fireEvent.click(editorTab);
-    
+
     await waitFor(() => {
       expect(SceneEditor360).toHaveBeenCalledWith(
         expect.objectContaining({
           initialView: { yaw: 10, pitch: -5, zoom: 50 },
-          hotspots: [],
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          hotspots: expect.arrayContaining([
+            expect.objectContaining({ id: 'h-1' })
+          ]),
         }),
         undefined
       );
@@ -250,7 +274,7 @@ describe('SceneDetailPage', () => {
       notice: null,
       search: '',
     });
-    
+
     const mockSceneResponse: SceneResponse = {
       id: 's-1',
       tourId: 't-1',
@@ -265,7 +289,7 @@ describe('SceneDetailPage', () => {
       updatedAt: new Date().toISOString(),
     };
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
-    
+
     const mockAsset: AssetResponse = {
       id: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
       kind: AssetKind.PANORAMA,
@@ -282,13 +306,13 @@ describe('SceneDetailPage', () => {
     };
     vi.mocked(getAsset).mockResolvedValue(mockAsset);
     vi.mocked(listHotspots).mockResolvedValue([]);
-    
+
     render(<SceneDetailPage />);
-    
+
     const editorTab = await screen.findByText('Éditeur 360');
     fireEvent.mouseDown(editorTab);
     fireEvent.click(editorTab);
-    
+
     expect(await screen.findByText("Le panorama n'est pas prêt.")).toBeDefined();
   });
 });
