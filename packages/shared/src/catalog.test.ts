@@ -200,8 +200,17 @@ describe('TourCreateSchema', () => {
 });
 
 describe('TourUpdateSchema', () => {
-  it('accepte le même corps qu’une création', () => {
+  it('accepte le même corps qu’une création (sans publicShare)', () => {
     expect(TourUpdateSchema.parse(tour)).toEqual(tour);
+  });
+
+  it('accepte le corps complet avec publicShare', () => {
+    const withShare = { ...tour, publicShare: true };
+    expect(TourUpdateSchema.parse(withShare)).toEqual(withShare);
+  });
+
+  it('refuse un corps partiel (seulement publicShare)', () => {
+    expect(TourUpdateSchema.safeParse({ publicShare: true }).success).toBe(false);
   });
 
   it('refuse une latitude hors bornes', () => {

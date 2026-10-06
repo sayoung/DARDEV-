@@ -126,6 +126,7 @@ export class ToursService {
           where: { id },
           data: {
             ...tourScalars(input),
+            ...(input.publicShare !== undefined ? { publicShare: input.publicShare } : {}),
             contentVersion: { increment: 1 },
           },
         });

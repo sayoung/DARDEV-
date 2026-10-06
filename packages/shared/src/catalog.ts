@@ -119,7 +119,7 @@ export const TourCreateSchema = z.object(tourShape);
 export type TourCreate = z.infer<typeof TourCreateSchema>;
 
 /** Remplacement d'une visite : mêmes champs que la création. */
-export const TourUpdateSchema = z.object(tourShape);
+export const TourUpdateSchema = z.object(tourShape).extend({ publicShare: z.boolean().optional() });
 export type TourUpdate = z.infer<typeof TourUpdateSchema>;
 
 /**
