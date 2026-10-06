@@ -582,7 +582,8 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       const sceneId = '00000000-0000-7000-8000-000000000011';
 
       const mockTour = { id: tourId, title: { fr: 'T', en: 'T', ar: 'T' }, summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' }, description: { fr: 'Desc', en: 'Desc', ar: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: [catId], cityId, coverAssetId: assetId, publicShare: false, sceneCount: 1, contentVersion: 1, shareToken: 'tok-xyz', startSceneId: null, publishedAt: null };
-      mockFetch.mockImplementation((input, init) => {
+      mockFetch.mockImplementation(async (input, init) => {
+        await Promise.resolve();
         const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
         if (url.includes('/api/v1/admin/tours') && (init?.method || 'GET') === 'POST') {
           if (url.includes('/scenes/set-start')) return new Response(null, { status: 200 });
