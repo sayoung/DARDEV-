@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { SceneForm } from './SceneForm.js';
-import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots } from '../api/catalog.js';
+import { HotspotForm } from './HotspotForm.js';
+import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
-import { Role, type SceneResponse, type SceneCreate, z, ProcessingStatus } from '@xplor/shared';
+import { Role, type SceneResponse, type SceneCreate, type HotspotCreate, z, ProcessingStatus } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
@@ -28,6 +29,28 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const [notReady, setNotReady] = useState(false);
   const [panorama, setPanorama] = useState<EditorPanorama | null>(null);
   const [hotspots, setHotspots] = useState<EditorMarker[]>([]);
+
+  const [draftPosition, setDraftPosition] = useState<{ yaw: number; pitch: number } | null>(null);
+  const [currentTourScenes, setCurrentTourScenes] = useState<SceneResponse[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    listScenes(scene.tourId).then((res) => {
+      if (active) setCurrentTourScenes(res);
+    }).catch(console.error);
+    return () => { active = false; };
+  }, [scene.tourId]);
+
+  const loadHotspots = () => {
+    listHotspots(scene.id).then((hotspotsRes) => {
+      const lang = normalizeLang(i18n.language);
+      setHotspots(editorMarkers(hotspotsRes, lang));
+    }).catch(() => {
+      setActionError('common.error.generic');
+    });
+  };
 
   useEffect(() => {
     let active = true;
@@ -64,6 +87,24 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
     return () => { active = false; };
   }, [scene.id, scene.panoramaAssetId, i18n.language]);
 
+  const handleCreateHotspot = async (data: HotspotCreate) => {
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      await createHotspot(scene.id, data);
+      setDraftPosition(null);
+      loadHotspots();
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 422) {
+        setActionError('catalog.errors.invalidForm');
+      } else {
+        setActionError('common.error.generic');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <p className="p-4">{t('common.loading')}</p>;
   }
@@ -79,17 +120,42 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   if (!panorama) return null;
 
   return (
-    <SceneEditor360
-      panorama={panorama}
-      hotspots={hotspots}
-      initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}
-      onPanoramaClick={() => {
-        // Ignoré pour l'instant
-      }}
-      onMarkerSelect={() => {
-        // Ignoré pour l'instant
-      }}
-    />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 min-h-[500px]">
+        <SceneEditor360
+          panorama={panorama}
+          hotspots={hotspots}
+          initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}
+          onPanoramaClick={(yaw, pitch) => {
+            setDraftPosition({ yaw, pitch });
+            setActionError(null);
+          }}
+          onMarkerSelect={() => {
+            // Ignoré pour l'instant
+          }}
+        />
+      </div>
+      <div>
+        {draftPosition ? (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('catalog.hotspots.editor.newTitle')}</h3>
+            {actionError && <Alert variant="destructive">{t(actionError)}</Alert>}
+            <HotspotForm
+              key={`${String(draftPosition.yaw)}-${String(draftPosition.pitch)}`}
+              defaultPosition={draftPosition}
+              currentTourScenes={currentTourScenes}
+              onSubmit={handleCreateHotspot}
+              isSubmitting={isSubmitting}
+              onCancel={() => { setDraftPosition(null); }}
+            />
+          </div>
+        ) : (
+          <div className="p-4 bg-muted text-muted-foreground rounded-md text-sm">
+            {t('catalog.hotspots.editor.hint')}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

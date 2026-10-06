@@ -207,6 +207,10 @@
       "edit": "Modifier le hotspot",
       "empty": "Aucun hotspot pour cette scène.",
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce hotspot ?",
+      "editor": {
+        "newTitle": "Nouveau hotspot",
+        "hint": "Cliquez sur le panorama pour placer un hotspot."
+      },
       "columns": {
         "type": "Type",
         "label": "Libellé",
