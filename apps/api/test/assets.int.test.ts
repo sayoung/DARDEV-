@@ -429,7 +429,7 @@ describe('médias HTTP', () => {
     expect(checkDb).toBeNull();
   });
 
-  it('gère le POST cleanup (200, 403, 401)', async () => {
+  it('POST cleanup : 401 sans session, 403 sans CSRF, 403 pour HOTEL_MANAGER, 200 pour un éditeur', async () => {
     const editor = await login(EDITOR_EMAIL);
     const manager = await login(MANAGER_EMAIL);
 
@@ -474,6 +474,77 @@ describe('médias HTTP', () => {
       payload,
     });
     expect(success.statusCode).toBe(200);
+  });
+
+  it('dry-run : liste les assets libres, ignore les assets utilisés et ne supprime rien', async () => {
+    const editor = await login(EDITOR_EMAIL);
+
+    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-01T10:00:00.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    const coverAsset = await insertAsset(AssetKind.PANORAMA, '2026-10-01T10:00:01.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+
+    const adminUser = await prisma.user.findFirstOrThrow({ where: { role: 'ADMIN' } });
+    let city = await prisma.city.findFirst();
+    let cityCreated = false;
+    if (!city) {
+      city = await prisma.city.create({
+        data: { name: { fr: 'Ville' }, region: 'Region', lat: 33, lng: -7 },
+      });
+      cityCreated = true;
+    }
+
+    const tour = await prisma.tour.create({
+      data: {
+        title: { fr: 'Tour' },
+        summary: { fr: 'Résumé' },
+        cityId: city.id,
+        createdById: adminUser.id,
+        coverAssetId: coverAsset.id,
+      },
+    });
+
+    try {
+      const payload = JSON.stringify({ dryRun: true });
+      const res = await application().inject({
+        method: 'POST',
+        url: '/api/v1/admin/assets/cleanup',
+        headers: {
+          cookie: sessionCookie(editor.sessionId),
+          'x-csrf-token': editor.csrfToken,
+          'content-type': 'application/json',
+        },
+        payload,
+      });
+
+      expect(res.statusCode).toBe(200);
+      const parsed = AssetCleanupDryRunResponseSchema.parse(res.json());
+
+      expect(parsed.items.find((i) => i.id === freeAsset.id)).toBeDefined();
+      expect(parsed.items.find((i) => i.id === coverAsset.id)).toBeUndefined();
+      expect(parsed.count).toBe(parsed.items.length);
+
+      const rows = await prisma.asset.findMany({
+        where: { id: { in: parsed.items.map((i) => i.id) } },
+        select: { sizeBytes: true },
+      });
+      expect(rows.length).toBe(parsed.items.length);
+      expect(parsed.totalBytes).toBe(rows.reduce((s, r) => s + r.sizeBytes, 0));
+
+      const freeDb = await prisma.asset.findUnique({ where: { id: freeAsset.id } });
+      expect(freeDb).not.toBeNull();
+      const usedDb = await prisma.asset.findUnique({ where: { id: coverAsset.id } });
+      expect(usedDb).not.toBeNull();
+    } finally {
+      await prisma.tour.delete({ where: { id: tour.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: freeAsset.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: coverAsset.id } }).catch(() => {});
+      if (cityCreated) {
+        await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
+      }
+    }
   });
 
   it('suppression réelle supprime les fichiers S3', async () => {
