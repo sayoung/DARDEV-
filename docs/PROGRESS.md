@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 06/10/2026 — M4 F-22 (3/7) : dans packages/viewer-core/src/scene-editor.test.ts, ajoute les tests du glisser-déposer de mountSceneEditor avec onMarkerMove (en t'appuyant sur… — Tests de glisser-déposer (a) yaw hors plage normalisé, (b) pas de déplacement donc pas d'appel, (c) retrait des écouteurs au destroy sont présents et corrects ; lint, typecheck et test passent. (bed07ec)
 - 06/10/2026 — M4 F-22 (3/7) : dans packages/viewer-core/src/scene-editor.ts, ajoute à l'option de mountSceneEditor `onMarkerMove?: (id: string, yaw: number, pitch: number) =>… — onMarkerMove ajouté avec écouteurs conditionnels, drag/drop et nettoyage dans destroy() conformes à la tâche ; contrôles verts. (268362d)
 - 06/10/2026 — M4 F-22 (3/7) : dans packages/viewer-core/src/scene-editor.test.ts, prépare le mock PSV existant pour le glisser-déposer, sans modifier scene-editor.ts. Ajoute… — Mocks PSV préparés (container, dataHelper, updateMarker) et test d'absence d'écouteurs pointer ajouté, sans toucher scene-editor.ts ni apps/admin ; lint, typecheck et tests verts. (0354ed2)
 - 06/10/2026 — M4 F-22 (2/7, tests d'abord) : crée apps/admin/src/editor/debouncedSaver.ts et debouncedSaver.test.ts (TypeScript pur). Exporte `type SaveStatus = 'idle' | 'pen… — debouncedSaver et ses tests respectent la spec (regroupement par clé, statuts, flush, cancel, error) et les contrôles sont verts. (1b3e4e3)
