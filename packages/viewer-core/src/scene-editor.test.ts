@@ -113,6 +113,8 @@ vi.mock('@photo-sphere-viewer/core', () => {
         getPosition: vi.fn().mockReturnValue({ yaw: 1.2, pitch: 0.5 }),
         getZoomLevel: vi.fn().mockReturnValue(60),
         destroy: vi.fn(),
+        container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+        dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
       };
     }),
   };
@@ -152,6 +154,7 @@ describe('mountSceneEditor', () => {
     const mockMarkersPlugin = {
       setMarkers: vi.fn(),
       addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
     };
     vi.mocked(Viewer).mockImplementationOnce(() => ({
       getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
@@ -159,6 +162,8 @@ describe('mountSceneEditor', () => {
       getPosition: vi.fn(),
       getZoomLevel: vi.fn(),
       destroy: vi.fn(),
+      container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
     }) as unknown as Viewer);
 
     const onPanoramaClick = vi.fn();
@@ -189,6 +194,7 @@ describe('mountSceneEditor', () => {
     const mockMarkersPlugin = {
       setMarkers: vi.fn(),
       addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
     };
     vi.mocked(Viewer).mockImplementationOnce(() => ({
       getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
@@ -196,6 +202,8 @@ describe('mountSceneEditor', () => {
       getPosition: vi.fn(),
       getZoomLevel: vi.fn(),
       destroy: vi.fn(),
+      container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
     }) as unknown as Viewer);
 
     const onPanoramaClick = vi.fn();
@@ -229,6 +237,7 @@ describe('mountSceneEditor', () => {
     const mockMarkersPlugin = {
       setMarkers: vi.fn(),
       addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
     };
     vi.mocked(Viewer).mockImplementationOnce(() => ({
       getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
@@ -236,6 +245,8 @@ describe('mountSceneEditor', () => {
       getPosition: vi.fn(),
       getZoomLevel: vi.fn(),
       destroy: vi.fn(),
+      container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
     }) as unknown as Viewer);
 
     const instance = mountSceneEditor({} as HTMLElement, defaultOptions);
@@ -258,6 +269,7 @@ describe('mountSceneEditor', () => {
     const mockMarkersPlugin = {
       setMarkers: vi.fn(),
       addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
     };
     const destroyMock = vi.fn();
     vi.mocked(Viewer).mockImplementationOnce(() => ({
@@ -266,11 +278,42 @@ describe('mountSceneEditor', () => {
       getPosition: vi.fn(),
       getZoomLevel: vi.fn(),
       destroy: destroyMock,
+      container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
     }) as unknown as Viewer);
 
     const instance = mountSceneEditor({} as HTMLElement, defaultOptions);
     instance.destroy();
 
     expect(destroyMock).toHaveBeenCalled();
+  });
+
+  it('sans onMarkerMove, mountSceneEditor n\'enregistre aucun écouteur pointerdown/pointermove/pointerup', () => {
+    const mockContainer = {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
+    };
+
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: vi.fn(),
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+      container: mockContainer as unknown as HTMLElement,
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
+    }) as unknown as Viewer);
+
+    mountSceneEditor({} as HTMLElement, defaultOptions);
+
+    expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointerdown', expect.any(Function));
+    expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointermove', expect.any(Function));
+    expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointerup', expect.any(Function));
   });
 });
