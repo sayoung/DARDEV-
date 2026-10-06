@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 06/10/2026 — M4 F-22 (1/7, tests d'abord) : crée apps/admin/src/editor/editHistory.ts (TypeScript pur, sans React) et editHistory.test.ts. Exporte le type `EditCommand = { k… — editHistory.ts et ses tests respectent la spécification, D-112 est ajoutée avec le bon numéro, seuls les fichiers demandés sont touchés et lint/typecheck/test passent. (edd4632)
 - 06/10/2026 — M4 F-21 (4/4, tests) : dans apps/admin/src/pages/SceneDetailPage.test.tsx (SceneEditor360 mocké, le mock expose onPanoramaClick par exemple via un bouton de tes… — Les 3 tests demandés (aide puis formulaire yaw/pitch, soumission avec rafraîchissement, annulation) sont ajoutés dans le seul fichier de test, sans toucher à la production ni au suivi, et lint, typech… (c081c42)
 - 06/10/2026 — M4 F-21 (3/4) : dans apps/admin/src/pages/SceneDetailPage.tsx (onglet Éditeur 360), mets la vue en deux colonnes (éditeur à gauche, panneau latéral à droite, Ta… — L'éditeur 360 passe en deux colonnes avec le formulaire de création de hotspot, la gestion d'erreur et les clés fr demandées. Lint, typecheck et tests passent. (57d1f1e)
 - 06/10/2026 — M4 F-21 (2/4) : dans apps/admin/src/pages/HotspotForm.tsx, ajoute une prop facultative `defaultPosition?: { yaw: number; pitch: number }` utilisée comme valeur… — defaultPosition et onCancel ajoutés dans HotspotForm avec la clé i18n common.actions.cancel et deux tests ciblés ; lint, typecheck et test sont au vert. (f64e2a0)
