@@ -1,5 +1,5 @@
 import { z } from 'zod';
-
+import { PanoramaDerivativesSchema } from './panorama-queue.js';
 import { LocalizedTextSchema, localizedText } from './localized-text.js';
 
 /** Statut d'une visite (cahier, 5.2). Création en brouillon : D-26. */
@@ -310,6 +310,7 @@ export const AssetResponseSchema = z.object({
   processingLog: z.string().nullable(),
   copyright: z.string().nullable(),
   thumbnailUrl: z.string().nullable(),
+  derivatives: z.union([PanoramaDerivativesSchema, z.object({}).strict()]).optional(),
   createdAt: z.iso.datetime(),
 });
 export type AssetResponse = z.infer<typeof AssetResponseSchema>;

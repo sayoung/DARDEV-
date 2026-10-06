@@ -3043,6 +3043,61 @@
                               "null"
                             ]
                           },
+                          "derivatives": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "preview": {
+                                    "type": "string"
+                                  },
+                                  "web": {
+                                    "type": "string"
+                                  },
+                                  "thumb": {
+                                    "type": "string"
+                                  },
+                                  "tilesPrefix": {
+                                    "type": "string"
+                                  },
+                                  "tileGrid": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cols": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0
+                                      },
+                                      "rows": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0
+                                      },
+                                      "size": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0
+                                      }
+                                    },
+                                    "required": [
+                                      "cols",
+                                      "rows",
+                                      "size"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "preview",
+                                  "web",
+                                  "thumb",
+                                  "tilesPrefix",
+                                  "tileGrid"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {},
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -3267,6 +3322,61 @@
                       "type": [
                         "string",
                         "null"
+                      ]
+                    },
+                    "derivatives": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "preview": {
+                              "type": "string"
+                            },
+                            "web": {
+                              "type": "string"
+                            },
+                            "thumb": {
+                              "type": "string"
+                            },
+                            "tilesPrefix": {
+                              "type": "string"
+                            },
+                            "tileGrid": {
+                              "type": "object",
+                              "properties": {
+                                "cols": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "rows": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "size": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                }
+                              },
+                              "required": [
+                                "cols",
+                                "rows",
+                                "size"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "preview",
+                            "web",
+                            "thumb",
+                            "tilesPrefix",
+                            "tileGrid"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {},
+                          "additionalProperties": false
+                        }
                       ]
                     },
                     "createdAt": {
@@ -3900,6 +4010,61 @@
                         "null"
                       ]
                     },
+                    "derivatives": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "preview": {
+                              "type": "string"
+                            },
+                            "web": {
+                              "type": "string"
+                            },
+                            "thumb": {
+                              "type": "string"
+                            },
+                            "tilesPrefix": {
+                              "type": "string"
+                            },
+                            "tileGrid": {
+                              "type": "object",
+                              "properties": {
+                                "cols": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "rows": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "size": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                }
+                              },
+                              "required": [
+                                "cols",
+                                "rows",
+                                "size"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "preview",
+                            "web",
+                            "thumb",
+                            "tilesPrefix",
+                            "tileGrid"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {},
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -4199,6 +4364,61 @@
                       "type": [
                         "string",
                         "null"
+                      ]
+                    },
+                    "derivatives": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "preview": {
+                              "type": "string"
+                            },
+                            "web": {
+                              "type": "string"
+                            },
+                            "thumb": {
+                              "type": "string"
+                            },
+                            "tilesPrefix": {
+                              "type": "string"
+                            },
+                            "tileGrid": {
+                              "type": "object",
+                              "properties": {
+                                "cols": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "rows": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                },
+                                "size": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0
+                                }
+                              },
+                              "required": [
+                                "cols",
+                                "rows",
+                                "size"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "preview",
+                            "web",
+                            "thumb",
+                            "tilesPrefix",
+                            "tileGrid"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {},
+                          "additionalProperties": false
+                        }
                       ]
                     },
                     "createdAt": {
