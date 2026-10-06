@@ -76,7 +76,6 @@ function installMainFetch(mockFetch: MockedFunction<typeof fetch>, options: { as
           copyright: null,
           thumbnailUrl: null,
   derivatives: {},
-panorama: null,
             panorama: null,
           createdAt: new Date().toISOString(),
         }),
