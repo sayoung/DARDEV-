@@ -23,6 +23,7 @@ import {
   type CityResponse,
   type TourCreate,
   type TourResponse,
+  type TourUpdate,
 } from '@xplor/shared';
 import { Redis } from 'ioredis';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -308,6 +309,68 @@ describe('visites HTTP', () => {
     });
     expect(await prisma.tour.count()).toBe(0);
   });
+
+  it('modifie publicShare via PATCH et préserve les catégories', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const refs = await prepare(editor);
+    const created = await createTour(editor, {
+      title: { fr: 'Kasbah des Oudayas', ar: 'قصبة الأوداية', en: 'Oudayas Kasbah' },
+      summary: { fr: 'Remparts face à la mer' },
+      cityId: refs.city.id,
+      categoryIds: [refs.category.id],
+      coverAssetId: refs.coverAssetId,
+    });
+
+    // (b) PATCH avec le seul corps { publicShare: true } -> 400
+    const patchPartial = await application().inject({
+      method: 'PATCH',
+      url: `/api/v1/admin/tours/${created.id}`,
+      headers: {
+        'content-type': 'application/json',
+        cookie: sessionCookie(editor.sessionId),
+        'x-csrf-token': editor.csrfToken,
+      },
+      payload: JSON.stringify({ publicShare: true }),
+    });
+    expect(patchPartial.statusCode).toBe(400);
+
+    // (a) PATCH complet + publicShare: true -> 200
+    const patchComplete = await send('PATCH', `/api/v1/admin/tours/${created.id}`, editor, {
+      title: { fr: 'Kasbah des Oudayas', ar: 'قصبة الأوداية', en: 'Oudayas Kasbah' },
+      summary: { fr: 'Remparts face à la mer' },
+      cityId: refs.city.id,
+      categoryIds: [refs.category.id, refs.otherCategory.id],
+      coverAssetId: refs.coverAssetId,
+      publicShare: true,
+    });
+    expect(patchComplete.statusCode).toBe(200);
+    const updated = TourResponseSchema.parse(parseJson(patchComplete.body));
+    expect(updated.publicShare).toBe(true);
+    expect(updated.categoryIds).toEqual([refs.category.id, refs.otherCategory.id]);
+
+    await prisma.tour.update({
+      where: { id: created.id },
+      data: { status: 'PUBLISHED', publishedAt: new Date() },
+    });
+
+    const publicRead = await application().inject({
+      method: 'GET',
+      url: `/api/v1/public/tours/${updated.shareToken}`,
+    });
+    expect(publicRead.statusCode).toBe(200);
+
+    // (c) PATCH complet sans publicShare après (a) -> publicShare reste vrai
+    const patchWithoutShare = await send('PATCH', `/api/v1/admin/tours/${created.id}`, editor, {
+      title: { fr: 'Kasbah des Oudayas Modifié', ar: 'قصبة الأوداية', en: 'Oudayas Kasbah' },
+      summary: { fr: 'Remparts' },
+      cityId: refs.city.id,
+      categoryIds: [refs.category.id],
+      coverAssetId: refs.coverAssetId,
+    });
+    expect(patchWithoutShare.statusCode).toBe(200);
+    const updatedAgain = TourResponseSchema.parse(parseJson(patchWithoutShare.body));
+    expect(updatedAgain.publicShare).toBe(true);
+  });
 });
 
 interface Session {
@@ -490,7 +553,7 @@ function send(
   method: 'POST' | 'PATCH' | 'DELETE',
   url: string,
   session: Session,
-  body?: TourCreate | CityCreate | CategoryCreate,
+  body?: TourCreate | TourUpdate | CityCreate | CategoryCreate,
 ): Promise<Injected> {
   const headers: Record<string, string> = {
     cookie: sessionCookie(session.sessionId),
