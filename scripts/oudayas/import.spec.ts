@@ -26,7 +26,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
   it('login() effectue un appel API et sauvegarde les jetons', async () => {
     const mockHeaders = new Headers();
     mockHeaders.append('Set-Cookie', 'sid=abc; Path=/');
-    
+
     mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify({ csrfToken: 'tok' }), {
         status: 200,
@@ -63,7 +63,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     // Créer le fichier de test
     const fileName = 'a.jpg';
     fs.writeFileSync(path.join(tmpDir, fileName), 'fake-image-data');
-    
+
     // 1. upload-url response
     mockFetch.mockResolvedValueOnce(
       new Response(
@@ -87,7 +87,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
 
     // Vérifie que le retour est exactement ce qui est attendu
     expect(result).toEqual({ file: fileName, assetId: '018e6988-51f7-727c-9b65-6804aeb88941' });
-    
+
     // Vérifie la séquence de 3 appels
     expect(mockFetch).toHaveBeenCalledTimes(3);
 
@@ -137,7 +137,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
   it('uploadFile échoue avec un statut HTTP non ok sur upload-url', async () => {
     const fileName = 'error.jpg';
     fs.writeFileSync(path.join(tmpDir, fileName), 'error-image-data');
-    
+
     mockFetch.mockResolvedValueOnce(new Response('Bad Request', { status: 400 }));
 
     await expect(uploadFile(fileName, tmpDir)).rejects.toThrowError(/upload-url échoué pour error\.jpg/);
