@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
-import { editorMarkers, editorPanorama, mountSceneEditor } from './scene-editor.js';
+import { editorMarkers, editorPanorama, mountSceneEditor, normalizeYaw } from './scene-editor.js';
 
 describe('editorMarkers', () => {
   const baseHotspot: HotspotResponse = {
@@ -84,6 +84,24 @@ describe('editorPanorama', () => {
   });
 });
 
+describe('normalizeYaw', () => {
+  it('ramène 3π/2 à -π/2', () => {
+    expect(normalizeYaw(3 * Math.PI / 2)).toBeCloseTo(-Math.PI / 2);
+  });
+
+  it('ramène 2π à 0', () => {
+    expect(normalizeYaw(2 * Math.PI)).toBeCloseTo(0);
+  });
+
+  it('ramène -3π/2 à π/2', () => {
+    expect(normalizeYaw(-3 * Math.PI / 2)).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('conserve π', () => {
+    expect(normalizeYaw(Math.PI)).toBeCloseTo(Math.PI);
+  });
+});
+
 import { Viewer } from '@photo-sphere-viewer/core';
 
 vi.mock('@photo-sphere-viewer/core', () => {
@@ -153,17 +171,17 @@ describe('mountSceneEditor', () => {
     if (!clickCall) throw new Error('Événement click non branché');
     const clickHandler = clickCall[1] as (e: { data: { rightclick: boolean, yaw: number, pitch: number, target: unknown } }) => void;
 
-    // Simule un clic normal
+    // Simule un clic normal (avec un angle à normaliser)
     clickHandler({
       data: {
         rightclick: false,
-        yaw: 2.5,
+        yaw: 3 * Math.PI / 2,
         pitch: -1.0,
         target: { closest: () => null }, // Pas de .psv-marker
       }
     });
 
-    expect(onPanoramaClick).toHaveBeenCalledWith(2.5, -1.0);
+    expect(onPanoramaClick).toHaveBeenCalledWith(-Math.PI / 2, -1.0);
   });
 
   it('un clic sur un marqueur n\'appelle pas onPanoramaClick', () => {
