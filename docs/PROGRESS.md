@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 06/10/2026 — M4 F-22 (5/7) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), onMarkerSelect enregistre `selectedHotspotId` (et vide draftPosition). Si un hot… — Sélection de hotspot, suppression avec confirmation, bouton Fermer, clés fr et 2 tests conformes à la demande ; lint, typecheck et test au vert. (03a8fbe)
 - 06/10/2026 — M4 F-22 (4/7) : dans apps/admin/src/components/SceneEditor360.tsx, ajoute une prop facultative `onMarkerMove?: (id: string, yaw: number, pitch: number) => void`… — onMarkerMove est transmis via callbacksRef sans remontage, avec un test couvrant l'appel et le rerender ; lint, typecheck et tests sont au vert. (f04698a)
 - 06/10/2026 — M4 F-22 (3/7) : dans packages/viewer-core/src/scene-editor.test.ts, ajoute les tests du glisser-déposer de mountSceneEditor avec onMarkerMove (en t'appuyant sur… — Tests de glisser-déposer (a) yaw hors plage normalisé, (b) pas de déplacement donc pas d'appel, (c) retrait des écouteurs au destroy sont présents et corrects ; lint, typecheck et test passent. (bed07ec)
 - 06/10/2026 — M4 F-22 (3/7) : dans packages/viewer-core/src/scene-editor.ts, ajoute à l'option de mountSceneEditor `onMarkerMove?: (id: string, yaw: number, pitch: number) =>… — onMarkerMove ajouté avec écouteurs conditionnels, drag/drop et nettoyage dans destroy() conformes à la tâche ; contrôles verts. (268362d)
