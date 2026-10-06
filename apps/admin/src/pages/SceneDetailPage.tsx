@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { SceneForm } from './SceneForm.js';
 import { HotspotForm } from './HotspotForm.js';
-import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot } from '../api/catalog.js';
+import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot, deleteHotspot } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Role, type SceneResponse, type SceneCreate, type HotspotCreate, z, ProcessingStatus } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
 import { Alert } from '../components/ui/Alert.js';
+import { Button } from '../components/ui/Button.js';
 import { SceneCreateSchema, SceneUpdateSchema } from '@xplor/shared';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs.js';
 import { SceneEditor360 } from '../components/SceneEditor360.js';
@@ -30,6 +31,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const [panorama, setPanorama] = useState<EditorPanorama | null>(null);
   const [hotspots, setHotspots] = useState<EditorMarker[]>([]);
 
+  const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
   const [draftPosition, setDraftPosition] = useState<{ yaw: number; pitch: number } | null>(null);
   const [currentTourScenes, setCurrentTourScenes] = useState<SceneResponse[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,10 +130,13 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
           initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}
           onPanoramaClick={(yaw, pitch) => {
             setDraftPosition({ yaw, pitch });
+            setSelectedHotspotId(null);
             setActionError(null);
           }}
-          onMarkerSelect={() => {
-            // Ignoré pour l'instant
+          onMarkerSelect={(id) => {
+            setSelectedHotspotId(id);
+            setDraftPosition(null);
+            setActionError(null);
           }}
         />
       </div>
@@ -149,6 +154,49 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
               onCancel={() => { setDraftPosition(null); }}
             />
           </div>
+        ) : selectedHotspotId ? (
+          (() => {
+            const hotspot = hotspots.find(h => h.id === selectedHotspotId);
+            if (!hotspot) return null;
+            return (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">{hotspot.tooltip}</h3>
+                {actionError && <Alert variant="destructive">{t(actionError)}</Alert>}
+                <div className="flex space-x-4">
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (window.confirm(t('catalog.hotspots.editor.confirmDelete'))) {
+                        setIsSubmitting(true);
+                        setActionError(null);
+                        deleteHotspot(selectedHotspotId)
+                          .then(() => {
+                            setSelectedHotspotId(null);
+                            loadHotspots();
+                          })
+                          .catch(() => {
+                            setActionError('common.error.generic');
+                          })
+                          .finally(() => {
+                            setIsSubmitting(false);
+                          });
+                      }
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    {t('catalog.hotspots.editor.delete')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setSelectedHotspotId(null); }}
+                    disabled={isSubmitting}
+                  >
+                    {t('common.actions.cancel')}
+                  </Button>
+                </div>
+              </div>
+            );
+          })()
         ) : (
           <div className="p-4 bg-muted text-muted-foreground rounded-md text-sm">
             {t('catalog.hotspots.editor.hint')}

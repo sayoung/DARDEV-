@@ -209,7 +209,9 @@
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce hotspot ?",
       "editor": {
         "newTitle": "Nouveau hotspot",
-        "hint": "Cliquez sur le panorama pour placer un hotspot."
+        "hint": "Cliquez sur le panorama pour placer un hotspot.",
+        "delete": "Supprimer",
+        "confirmDelete": "Supprimer ce hotspot ?"
       },
       "columns": {
         "type": "Type",
