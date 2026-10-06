@@ -107,6 +107,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
@@ -349,6 +350,120 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
       return url.includes('/api/v1/admin/assets/upload-url');
     });
     expect(uploadUrlCalled).toBe(false);
+  });
+
+  it('main() rejette si le traitement de l\'image échoue (status ERROR)', async () => {
+    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+    const parsedData = z.object({ scenes: z.array(z.object({ file: z.string() })) }).parse(rawData);
+    
+    for (const scene of parsedData.scenes) {
+      fs.writeFileSync(path.join(tmpDir, scene.file), 'fake-data');
+    }
+
+    const targetFilename = parsedData.scenes[0]?.file;
+    if (!targetFilename) throw new Error('Aucun fichier');
+
+    installMainFetch(mockFetch, { assetStatus: ProcessingStatus.READY });
+    const baseMock = mockFetch.getMockImplementation();
+    if (!baseMock) throw new Error('Mock non défini');
+    
+    let targetAssetId = '';
+    
+    mockFetch.mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method || 'GET';
+      
+      if (url.includes('/api/v1/admin/assets/upload-url') && method === 'POST') {
+        const bodyStr = z.string().parse(init?.body);
+        const body = z.object({ filename: z.string() }).parse(JSON.parse(bodyStr));
+        const res = await baseMock(input, init);
+        if (body.filename === targetFilename) {
+          const cloned = res.clone();
+          const data: unknown = await cloned.json();
+          const parsed = z.object({ assetId: z.string() }).parse(data);
+          targetAssetId = parsed.assetId;
+        }
+        return res;
+      }
+      
+      if (url.includes('/api/v1/admin/assets/') && method === 'GET') {
+         const urlId = url.split('/').pop() || '';
+         if (targetAssetId && urlId === targetAssetId) {
+           return new Response(
+            JSON.stringify({
+              id: urlId,
+              kind: AssetKind.PANORAMA,
+              mimeType: 'image/jpeg',
+              sizeBytes: 9,
+              width: null,
+              height: null,
+              processingStatus: ProcessingStatus.ERROR,
+              processingLog: 'image invalide',
+              copyright: null,
+              thumbnailUrl: null,
+              createdAt: new Date().toISOString(),
+            }),
+            { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
+          );
+         }
+         return baseMock(input, init);
+      }
+      
+      return baseMock(input, init);
+    });
+
+    const env = {
+      ...process.env,
+      XPLOR_API_URL: 'http://localhost:3000',
+      XPLOR_ADMIN_EMAIL: 'admin@test.local',
+      XPLOR_ADMIN_PASSWORD: 'password',
+      XPLOR_OUDAYAS_DIR: tmpDir,
+    };
+
+    const regex = new RegExp(`Erreur de traitement pour ${targetFilename.replace(/\\./g, '\\.')}`, 'i');
+    await expect(main(['node', 'import.ts', '--dir', tmpDir], env)).rejects.toThrowError(regex);
+  });
+
+  it('main() rejette avec erreur si le délai d\'attente est dépassé', async () => {
+    vi.useFakeTimers();
+    
+    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+    const parsedData = z.object({ scenes: z.array(z.object({ file: z.string() })) }).parse(rawData);
+    
+    for (const scene of parsedData.scenes) {
+      fs.writeFileSync(path.join(tmpDir, scene.file), 'fake-data');
+    }
+
+    installMainFetch(mockFetch, { assetStatus: ProcessingStatus.PROCESSING });
+    const baseMock = mockFetch.getMockImplementation();
+    if (!baseMock) throw new Error('Mock non défini');
+    
+    mockFetch.mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method || 'GET';
+      if (method === 'PUT' && url.startsWith('http://s3.local/upload/')) {
+        return new Response('', { status: 200 });
+      }
+      return baseMock(input, init);
+    });
+
+    const env = {
+      ...process.env,
+      XPLOR_API_URL: 'http://localhost:3000',
+      XPLOR_ADMIN_EMAIL: 'admin@test.local',
+      XPLOR_ADMIN_PASSWORD: 'password',
+      XPLOR_OUDAYAS_DIR: tmpDir,
+    };
+
+    const p = main(['node', 'import.ts', '--dir', tmpDir, '--timeout', '4'], env);
+    
+    const catchPromise = expect(p).rejects.toThrowError(/Délai d'attente dépassé pour : .*\.jpg/);
+    
+    await vi.advanceTimersByTimeAsync(10000);
+    
+    await catchPromise;
   });
 });
 
