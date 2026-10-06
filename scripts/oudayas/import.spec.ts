@@ -583,6 +583,28 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
   });
 
   describe('createTour', () => {
+    const mockData = {
+      title: 'Tour',
+      city: 'Rabat',
+      description: 'Desc',
+      scenes: [
+        { file: 'a.jpg', name: 'Scène 1', info: 'Info 1' },
+        { file: 'b.jpg', name: 'Scène 2', info: 'Info 2' },
+      ],
+    };
+
+    const cityId = '00000000-0000-7000-8000-000000000008';
+    const catId = '00000000-0000-7000-8000-000000000009';
+    const assetId1 = '00000000-0000-7000-8000-0000000000a1';
+    const assetId2 = '00000000-0000-7000-8000-0000000000b2';
+    const assetIds = { 'a.jpg': assetId1, 'b.jpg': assetId2 };
+
+    const tourId = '00000000-0000-7000-8000-000000000001';
+    const realSceneId1 = '00000000-0000-7000-8000-000000000011';
+    const realSceneId2 = '00000000-0000-7000-8000-000000000012';
+
+    const mockTour = { id: tourId, title: { fr: 'T', en: 'T', ar: 'T' }, summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' }, description: { fr: 'Desc', en: 'Desc', ar: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: [catId], cityId, coverAssetId: assetId1, publicShare: false, sceneCount: 2, contentVersion: 1, shareToken: 'tok-xyz', startSceneId: null, publishedAt: null };
+
     it('crée une visite, ajoute des scènes et publie', async () => {
       vi.mocked(randomUUID)
         .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
@@ -593,31 +615,9 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       const planSceneId1 = 'aaaaaaaa-aaaa-7aaa-8aaa-aaaaaaaaaaaa';
       const planSceneId2 = 'bbbbbbbb-bbbb-7bbb-8bbb-bbbbbbbbbbbb';
 
-      const mockData = {
-        title: 'Tour',
-        city: 'Rabat',
-        description: 'Desc',
-        scenes: [
-          { file: 'a.jpg', name: 'Scène 1', info: 'Info 1' },
-          { file: 'b.jpg', name: 'Scène 2', info: 'Info 2' },
-        ],
-      };
-
-      const cityId = '00000000-0000-7000-8000-000000000008';
-      const catId = '00000000-0000-7000-8000-000000000009';
-      const assetId1 = '00000000-0000-7000-8000-0000000000a1';
-      const assetId2 = '00000000-0000-7000-8000-0000000000b2';
-      const assetIds = { 'a.jpg': assetId1, 'b.jpg': assetId2 };
-
       const plan = buildTourPlan(mockData, assetIds, cityId, catId);
       const nbHotspots = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.length, 0);
       expect(nbHotspots).toBeGreaterThanOrEqual(1);
-
-      const tourId = '00000000-0000-7000-8000-000000000001';
-      const realSceneId1 = '00000000-0000-7000-8000-000000000011';
-      const realSceneId2 = '00000000-0000-7000-8000-000000000012';
-
-      const mockTour = { id: tourId, title: { fr: 'T', en: 'T', ar: 'T' }, summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' }, description: { fr: 'Desc', en: 'Desc', ar: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: [catId], cityId, coverAssetId: assetId1, publicShare: false, sceneCount: 2, contentVersion: 1, shareToken: 'tok-xyz', startSceneId: null, publishedAt: null };
 
       mockFetch
         .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
@@ -703,6 +703,60 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       expect(allBodies).not.toContain(planSceneId2);
       expect(allBodies).toContain(realSceneId1);
       expect(allBodies).toContain(realSceneId2);
+    });
+
+    it('échoue sur la création de la scène 2', async () => {
+      vi.mocked(randomUUID)
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId1, tourId, title: { fr: 'S1', en: 'S1', ar: 'S1' }, info: { fr: 'I1', en: 'I1', ar: 'I1' }, panoramaAssetId: assetId1, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }))
+        .mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
+
+      await expect(createTour(mockData, assetIds, cityId, catId)).rejects.toThrowError(/\[scène 2\//);
+    });
+
+    it('échoue lors de la publication', async () => {
+      vi.mocked(randomUUID)
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+      const plan = buildTourPlan(mockData, assetIds, cityId, catId);
+      const nbHotspots = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.length, 0);
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId1, tourId, title: { fr: 'S1', en: 'S1', ar: 'S1' }, info: { fr: 'I1', en: 'I1', ar: 'I1' }, panoramaAssetId: assetId1, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId2, tourId, title: { fr: 'S2', en: 'S2', ar: 'S2' }, info: { fr: 'I2', en: 'I2', ar: 'I2' }, panoramaAssetId: assetId2, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 2, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }));
+
+      for (let i = 0; i < nbHotspots; i++) {
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 201 }));
+      }
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
+
+      await expect(createTour(mockData, assetIds, cityId, catId)).rejects.toThrowError(/\[publication\]/);
+
+      const publishCall = mockFetch.mock.calls.find((c) => c[0] === `${apiUrl}/api/v1/admin/tours/${tourId}/publish`);
+      expect(publishCall).toBeDefined();
+
+      const shareTokenCall = mockFetch.mock.calls.find((c) => c[0] === `${apiUrl}/api/v1/admin/tours/${tourId}/share-token`);
+      expect(shareTokenCall).toBeUndefined();
+    });
+
+    it('échoue lors de la création de la visite', async () => {
+      mockFetch.mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
+
+      await expect(createTour(mockData, assetIds, cityId, catId)).rejects.toThrowError(/\[création visite\]/);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
 
