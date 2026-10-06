@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 06/10/2026 — M4 F-20 (4/4, étape a) : expose le champ `derivatives` dans la réponse d'asset (reprendre `git show agent/20261006-201013-m4-f-20-4-4-dans-apps-admin-src-pages-… — Le champ derivatives est exposé avec un schéma Zod strict, les trois clés fr.json sont ajoutées, openapi est régénéré et lint, typecheck et test sont verts. (76dc19a)
 - 06/10/2026 — M4 F-20 (3/4, étape c) : écris apps/admin/src/components/SceneEditor360.test.tsx (Vitest + Testing Library, vi.mock('@xplor/viewer-core') avec un mountSceneEdit… — Le test SceneEditor360.test.tsx couvre les 7 cas demandés de façon fidèle au composant, sans autre fichier modifié, et lint, typecheck et tests sont verts. (460a738)
 - 06/10/2026 — M4 F-20 (3/4, étape b) : crée apps/admin/src/components/SceneEditor360.tsx (partir de git show agent/20261006-162703-m4-f-20-3-4-dans-apps-admin-ajoute-la-de:ap… — SceneEditor360 conforme à la tâche (montage/destroy, refs pour callbacks et initialView, setMarkers, Tailwind, clé i18n editor.sceneAriaLabel) ; lint, typecheck et tests au vert. (a8047a7)
 - 06/10/2026 — M4 F-20 (3/4, étape a) : dépendances et décisions. Dans apps/admin/package.json, ajoute la dépendance workspace @xplor/viewer-core (workspace:*) et @photo-spher… — Dépendances admin ajoutées en versions conformes et D-111 unique, UTF-8, au bon format; lint et typecheck verts, aucun autre fichier modifié. (0b13938)
