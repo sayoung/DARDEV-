@@ -245,13 +245,13 @@
       "unpublish": "Dépublier",
       "noIssues": "Aucun problème : la visite peut être publiée",
       "issuesTitle": "Problèmes à corriger avant publication",
-        "shareToken": "Jeton de partage",
-        "regenerateShareLink": "Régénérer le lien de partage",
-        "regenerateConfirm": "Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?",
-        "regenerateSuccess": "Lien de partage régénéré avec succès.",
-        "publicLink": "Lien public",
-        "qrCodeTitle": "QR code de la visite",
-        "downloadQrCode": "Télécharger le QR code"
+      "shareToken": "Jeton de partage",
+      "regenerateShareLink": "Régénérer le lien de partage",
+      "regenerateConfirm": "Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ?",
+      "regenerateSuccess": "Lien de partage régénéré avec succès.",
+      "publicLink": "Lien public",
+      "qrCodeTitle": "QR code de la visite",
+      "downloadQrCode": "Télécharger le QR code"
     },
     "issue": {
       "START_SCENE_MISSING": "Scène de départ manquante",
@@ -390,5 +390,8 @@
     "loadError": "Impossible de charger la visite. Réessayez plus tard.",
     "language": "Langue",
     "openMap": "Voir sur la carte"
+  },
+  "editor": {
+    "sceneAriaLabel": "Éditeur de panorama 360"
   }
 }
