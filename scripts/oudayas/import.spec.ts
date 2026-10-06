@@ -605,6 +605,26 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
     const mockTour = { id: tourId, title: { fr: 'T', en: 'T', ar: 'T' }, summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' }, description: { fr: 'Desc', en: 'Desc', ar: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: [catId], cityId, coverAssetId: assetId1, publicShare: false, sceneCount: 2, contentVersion: 1, shareToken: 'tok-xyz', startSceneId: null, publishedAt: null };
 
+    const mockSceneResponse = (id: string, titleStr: string, infoStr: string, assetId: string, weight: number) => {
+      return new Response(
+        JSON.stringify({
+          id,
+          tourId,
+          title: { fr: titleStr, en: titleStr, ar: titleStr },
+          info: { fr: infoStr, en: infoStr, ar: infoStr },
+          panoramaAssetId: assetId,
+          initialYaw: 0,
+          initialPitch: 0,
+          initialZoom: 50,
+          weight,
+          hotspotCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+        { status: 201 }
+      );
+    };
+
     it('crée une visite, ajoute des scènes et publie', async () => {
       vi.mocked(randomUUID)
         .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
@@ -621,8 +641,8 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
       mockFetch
         .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId1, tourId, title: { fr: 'S1', en: 'S1', ar: 'S1' }, info: { fr: 'I1', en: 'I1', ar: 'I1' }, panoramaAssetId: assetId1, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId2, tourId, title: { fr: 'S2', en: 'S2', ar: 'S2' }, info: { fr: 'I2', en: 'I2', ar: 'I2' }, panoramaAssetId: assetId2, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 2, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }));
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId1, 'S1', 'I1', assetId1, 1))
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId2, 'S2', 'I2', assetId2, 2));
 
       for (let i = 0; i < nbHotspots; i++) {
         mockFetch.mockResolvedValueOnce(new Response(null, { status: 201 }));
@@ -714,7 +734,7 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
       mockFetch
         .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId1, tourId, title: { fr: 'S1', en: 'S1', ar: 'S1' }, info: { fr: 'I1', en: 'I1', ar: 'I1' }, panoramaAssetId: assetId1, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }))
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId1, 'S1', 'I1', assetId1, 1))
         .mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
 
       await expect(createTour(mockData, assetIds, cityId, catId)).rejects.toThrowError(/\[scène 2\//);
@@ -732,8 +752,8 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
       mockFetch
         .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId1, tourId, title: { fr: 'S1', en: 'S1', ar: 'S1' }, info: { fr: 'I1', en: 'I1', ar: 'I1' }, panoramaAssetId: assetId1, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ id: realSceneId2, tourId, title: { fr: 'S2', en: 'S2', ar: 'S2' }, info: { fr: 'I2', en: 'I2', ar: 'I2' }, panoramaAssetId: assetId2, initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 2, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 }));
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId1, 'S1', 'I1', assetId1, 1))
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId2, 'S2', 'I2', assetId2, 2));
 
       for (let i = 0; i < nbHotspots; i++) {
         mockFetch.mockResolvedValueOnce(new Response(null, { status: 201 }));
@@ -759,5 +779,4 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
-
 });
