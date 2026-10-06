@@ -882,3 +882,8 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | @xplor/viewer-core | CSS de l'éditeur de scène F-20 et dépendance workspace viewer-core | MIT |
 | @photo-sphere-viewer/core | CSS de l'éditeur de scène F-20 et dépendance workspace viewer-core | MIT |
 | @photo-sphere-viewer/markers-plugin | CSS de l'éditeur de scène F-20 et dépendance workspace viewer-core | MIT |
+
+## D-112 — Annuler/Rétablir (M4 F-22)
+
+- **Date :** 06/10/2026
+- **Décision :** F-22 : annuler/rétablir couvre les déplacements de hotspots pendant la session d'édition ; la suppression est confirmée et non annulable (recréer un hotspot changerait son id) ; à valider : oui
