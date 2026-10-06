@@ -61,32 +61,25 @@ describe('editorMarkers', () => {
 });
 
 describe('editorPanorama', () => {
-  const validDerivatives = {
+  const validPanorama = {
     preview: 'preview.jpg',
     web: 'web.jpg',
-    thumb: 'thumb.jpg',
-    tilesPrefix: 'tiles/',
-    tileGrid: { cols: 4, rows: 2, size: 512 },
+    tiles: { width: 2048, cols: 4, rows: 2, baseUrl: 'https://example.com/tiles/{col}_{row}.jpg' },
   };
 
   it('construit la configuration de panorama correcte', () => {
-    const asset = { derivatives: validDerivatives };
+    const asset = { panorama: validPanorama };
     const config = editorPanorama(asset);
 
     expect(config.width).toBe(2048);
     expect(config.cols).toBe(4);
     expect(config.rows).toBe(2);
     expect(config.baseUrl).toBe('preview.jpg');
-    expect(config.tileUrl(1, 1)).toBe('tiles/1_1.jpg');
+    expect(config.tileUrl(3, 1)).toBe('https://example.com/tiles/3_1.jpg');
   });
 
-  it('lève une erreur avec un message explicite si l\'asset n\'a pas de dérivés', () => {
-    const asset = {};
-    expect(() => editorPanorama(asset)).toThrowError('Les dérivés du panorama sont manquants ou incomplets.');
-  });
-
-  it('lève une erreur avec un message explicite si les dérivés sont incomplets', () => {
-    const asset = { derivatives: { preview: 'preview.jpg' } };
+  it('lève une erreur avec un message explicite si le panorama est null', () => {
+    const asset = { panorama: null };
     expect(() => editorPanorama(asset)).toThrowError('Les dérivés du panorama sont manquants ou incomplets.');
   });
 });
