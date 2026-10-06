@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { toMarkers } from './scene-markers.js';
+import { toMarkers, hotspotKind } from './scene-markers.js';
 import { TourGraphScene, HotspotType, HotspotIcon, TourGraphSceneSchema } from '@xplor/shared';
+
+describe('hotspotKind', () => {
+  it('should map HotspotType to kind string correctly', () => {
+    expect(hotspotKind(HotspotType.TOUR_LINK)).toBe('tour-link');
+    expect(hotspotKind(HotspotType.INFO)).toBe('info');
+    expect(hotspotKind(HotspotType.MEDIA)).toBe('media');
+    expect(hotspotKind(HotspotType.URL)).toBe('url');
+    expect(hotspotKind(HotspotType.SCENE_LINK)).toBe('scene-link');
+  });
+});
 
 describe('scene-markers', () => {
   it('should exclude SCENE_LINK and convert other hotspot types correctly', () => {
