@@ -28,6 +28,7 @@ const mockReadyAsset: AssetResponse = {
   copyright: null,
   thumbnailUrl: null,
   derivatives: {},
+  panorama: null,
   createdAt: '2026-10-01T12:00:00Z',
 };
 
@@ -43,6 +44,7 @@ const mockErrorAsset: AssetResponse = {
   copyright: null,
   thumbnailUrl: null,
   derivatives: {},
+  panorama: null,
   createdAt: '2026-10-02T14:30:00Z',
 };
 

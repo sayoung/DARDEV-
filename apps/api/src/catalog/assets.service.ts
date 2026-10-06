@@ -408,6 +408,7 @@ function toAsset(row: Asset, mediaBase: string): AssetResponse {
     copyright: row.copyright,
     thumbnailUrl,
     derivatives: row.derivatives,
+    panorama: null,
     createdAt: row.createdAt.toISOString(),
   });
 }

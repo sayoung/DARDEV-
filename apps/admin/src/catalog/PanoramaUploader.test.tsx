@@ -53,6 +53,7 @@ describe('PanoramaUploader', () => {
           copyright: null,
           thumbnailUrl: null,
           derivatives: {},
+          panorama: null,
         });
       } else {
         return Promise.reject(new Error('Fichier trop volumineux'));

@@ -16,6 +16,7 @@ describe('needsPolling', () => {
     copyright: null,
     thumbnailUrl: null,
     derivatives: {},
+    panorama: null,
   });
 
   it('retourne false pour une liste vide', () => {

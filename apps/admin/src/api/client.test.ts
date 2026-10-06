@@ -282,6 +282,7 @@ describe('Assets API', () => {
       copyright: null,
       thumbnailUrl: null,
   derivatives: {},
+        panorama: null,
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));
@@ -302,6 +303,7 @@ describe('Assets API', () => {
       copyright: null,
       thumbnailUrl: null,
   derivatives: {},
+        panorama: null,
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));
@@ -337,6 +339,7 @@ describe('Assets API', () => {
       copyright: null,
       thumbnailUrl: null,
   derivatives: {},
+        panorama: null,
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));

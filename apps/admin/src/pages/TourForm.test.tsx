@@ -47,6 +47,7 @@ const mockAssets = {
       copyright: null,
       thumbnailUrl: null,
   derivatives: {},
+      panorama: null,
       createdAt: '2026-01-01T00:00:00.000Z'
     },
     {
@@ -61,6 +62,7 @@ const mockAssets = {
       copyright: null,
       thumbnailUrl: null,
   derivatives: {},
+      panorama: null,
       createdAt: '2026-01-02T00:00:00.000Z'
     },
     {
@@ -75,6 +77,7 @@ const mockAssets = {
       copyright: null,
       thumbnailUrl: null,
   derivatives: {},
+      panorama: null,
       createdAt: '2026-01-03T00:00:00.000Z'
     }
   ],

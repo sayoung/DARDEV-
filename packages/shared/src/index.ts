@@ -121,11 +121,13 @@ export {
   PANORAMA_GRID,
   PanoramaDerivativesSchema,
   PanoramaJobDataSchema,
+  PanoramaUrlsSchema,
   panoramaAssetPrefix,
   panoramaDerivativeKeys,
   panoramaTileKey,
   type PanoramaDerivatives,
   type PanoramaJobData,
+  type PanoramaUrls,
 } from './panorama-queue.js';
 export {
   TourGraphSchema,
