@@ -11,6 +11,21 @@ export type SceneMarker = {
   icon: HotspotIcon;
 };
 
+export function hotspotKind(type: HotspotType): 'tour-link' | 'info' | 'media' | 'url' | 'scene-link' {
+  switch (type) {
+    case HotspotType.TOUR_LINK:
+      return 'tour-link';
+    case HotspotType.INFO:
+      return 'info';
+    case HotspotType.MEDIA:
+      return 'media';
+    case HotspotType.URL:
+      return 'url';
+    case HotspotType.SCENE_LINK:
+      return 'scene-link';
+  }
+}
+
 export function toMarkers(scene: TourGraphScene): SceneMarker[] {
   const markers: SceneMarker[] = [];
 
@@ -19,20 +34,9 @@ export function toMarkers(scene: TourGraphScene): SceneMarker[] {
       continue;
     }
 
-    let kind: SceneMarker['kind'];
-    switch (hotspot.type) {
-      case HotspotType.TOUR_LINK:
-        kind = 'tour-link';
-        break;
-      case HotspotType.INFO:
-        kind = 'info';
-        break;
-      case HotspotType.MEDIA:
-        kind = 'media';
-        break;
-      case HotspotType.URL:
-        kind = 'url';
-        break;
+    const kind = hotspotKind(hotspot.type);
+    if (kind === 'scene-link') {
+      continue;
     }
 
     markers.push({
