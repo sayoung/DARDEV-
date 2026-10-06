@@ -113,6 +113,7 @@ export function mountSceneEditor(
   let handlePointerDown: ((e: PointerEvent) => void) | undefined;
   let handlePointerMove: ((e: PointerEvent) => void) | undefined;
   let handlePointerUp: ((e: PointerEvent) => void) | undefined;
+  let handlePointerCancel: ((e: PointerEvent) => void) | undefined;
 
   if (options.onMarkerMove) {
     const onMarkerMoveCb = options.onMarkerMove;
@@ -140,30 +141,26 @@ export function mountSceneEditor(
       }
       if (typeof id !== 'string') return;
 
+      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY }) as { yaw: number; pitch: number } | null;
+      if (!spherical) return;
+
       e.stopPropagation();
       draggedMarkerId = id;
       
-      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
-      try {
-        startYaw = spherical.yaw;
-        startPitch = spherical.pitch;
-        lastYaw = spherical.yaw;
-        lastPitch = spherical.pitch;
-      } catch {
-        return;
-      }
+      startYaw = spherical.yaw;
+      startPitch = spherical.pitch;
+      lastYaw = spherical.yaw;
+      lastPitch = spherical.pitch;
     };
 
     handlePointerMove = (e: PointerEvent) => {
       if (!draggedMarkerId) return;
       
-      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
-      try {
-        lastYaw = spherical.yaw;
-        lastPitch = spherical.pitch;
-      } catch {
-        return;
-      }
+      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY }) as { yaw: number; pitch: number } | null;
+      if (!spherical) return;
+      
+      lastYaw = spherical.yaw;
+      lastPitch = spherical.pitch;
       
       markersPlugin.updateMarker({
         id: draggedMarkerId,
@@ -187,9 +184,18 @@ export function mountSceneEditor(
       lastPitch = null;
     };
 
+    handlePointerCancel = () => {
+      draggedMarkerId = null;
+      startYaw = null;
+      startPitch = null;
+      lastYaw = null;
+      lastPitch = null;
+    };
+
     viewer.container.addEventListener('pointerdown', handlePointerDown);
     viewer.container.addEventListener('pointermove', handlePointerMove);
     viewer.container.addEventListener('pointerup', handlePointerUp);
+    viewer.container.addEventListener('pointercancel', handlePointerCancel);
   }
 
   return {
@@ -211,6 +217,7 @@ export function mountSceneEditor(
       if (handlePointerDown) viewer.container.removeEventListener('pointerdown', handlePointerDown);
       if (handlePointerMove) viewer.container.removeEventListener('pointermove', handlePointerMove);
       if (handlePointerUp) viewer.container.removeEventListener('pointerup', handlePointerUp);
+      if (handlePointerCancel) viewer.container.removeEventListener('pointercancel', handlePointerCancel);
       viewer.destroy();
     },
   };
