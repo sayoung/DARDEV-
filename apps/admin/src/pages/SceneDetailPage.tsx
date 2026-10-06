@@ -2,14 +2,96 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { SceneForm } from './SceneForm.js';
-import { getScene, updateScene, createScene, deleteScene, listScenes } from '../api/catalog.js';
+import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
-import { Role, type SceneResponse, type SceneCreate, z } from '@xplor/shared';
+import { Role, type SceneResponse, type SceneCreate, z, ProcessingStatus } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
 import { Alert } from '../components/ui/Alert.js';
 import { SceneCreateSchema, SceneUpdateSchema } from '@xplor/shared';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs.js';
+import { SceneEditor360 } from '../components/SceneEditor360.js';
+import { editorMarkers, editorPanorama, type EditorMarker, type EditorPanorama } from '@xplor/viewer-core';
+
+function normalizeLang(lang: string): 'fr' | 'ar' | 'en' {
+  if (lang === 'ar' || lang === 'en') {
+    return lang;
+  }
+  return 'fr';
+}
+
+function SceneEditorTab({ scene }: { scene: SceneResponse }) {
+  const { t, i18n } = useTranslation();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notReady, setNotReady] = useState(false);
+  const [panorama, setPanorama] = useState<EditorPanorama | null>(null);
+  const [hotspots, setHotspots] = useState<EditorMarker[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setNotReady(false);
+    setError(null);
+
+    Promise.all([
+      getAsset(scene.panoramaAssetId),
+      listHotspots(scene.id)
+    ]).then(([asset, hotspotsRes]) => {
+      if (!active) return;
+      if (asset.processingStatus !== ProcessingStatus.READY) {
+        setNotReady(true);
+        setLoading(false);
+        return;
+      }
+      try {
+        const pan = editorPanorama(asset);
+        const lang = normalizeLang(i18n.language);
+        const marks = editorMarkers(hotspotsRes, lang);
+        setPanorama(pan);
+        setHotspots(marks);
+      } catch {
+        setError('common.error.generic');
+      }
+      setLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setError('common.error.generic');
+      setLoading(false);
+    });
+
+    return () => { active = false; };
+  }, [scene.id, scene.panoramaAssetId, i18n.language]);
+
+  if (loading) {
+    return <p className="p-4">{t('common.loading')}</p>;
+  }
+
+  if (error) {
+    return <Alert variant="destructive">{t(error)}</Alert>;
+  }
+
+  if (notReady) {
+    return <Alert variant="destructive">{t('catalog.errors.panoramaNotReady')}</Alert>;
+  }
+
+  if (!panorama) return null;
+
+  return (
+    <SceneEditor360
+      panorama={panorama}
+      hotspots={hotspots}
+      initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}
+      onPanoramaClick={() => {
+        // Ignoré pour l'instant
+      }}
+      onMarkerSelect={() => {
+        // Ignoré pour l'instant
+      }}
+    />
+  );
+}
 
 export function SceneDetailPage() {
   const { t } = useTranslation();
@@ -156,17 +238,46 @@ export function SceneDetailPage() {
       />
       {actionError !== null && <Alert variant="destructive" role="alert">{t(actionError)}</Alert>}
       {successKey !== null && <Alert variant="default" role="status">{t(successKey)}</Alert>}
-      <Card>
-        <CardContent className="pt-6">
-          <SceneForm
-            initialData={scene}
-            onSubmit={handleSubmit}
-            onDelete={!isNew ? handleDelete : undefined}
-            isSubmitting={isSubmitting}
-            weight={weight}
-          />
-        </CardContent>
-      </Card>
+      
+      {isNew ? (
+        <Card>
+          <CardContent className="pt-6">
+            <SceneForm
+              initialData={scene}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              weight={weight}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="info">
+          <TabsList>
+            <TabsTrigger value="info">{t('catalog.scenes.tabs.info')}</TabsTrigger>
+            <TabsTrigger value="editor">{t('catalog.scenes.tabs.editor')}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="info">
+            <Card>
+              <CardContent className="pt-6">
+                <SceneForm
+                  initialData={scene}
+                  onSubmit={handleSubmit}
+                  onDelete={handleDelete}
+                  isSubmitting={isSubmitting}
+                  weight={weight}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="editor">
+            <Card>
+              <CardContent className="pt-6">
+                {scene && <SceneEditorTab scene={scene} />}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
