@@ -326,6 +326,9 @@ function applyPatch(tour: StoredTour, data: Record<string, unknown>): void {
   if ('practicalInfo' in data) {
     tour.practicalInfo = readJson(data.practicalInfo);
   }
+  if ('publicShare' in data && typeof data.publicShare === 'boolean') {
+    tour.publicShare = data.publicShare;
+  }
   if (data.deletedAt instanceof Date) {
     tour.deletedAt = data.deletedAt;
   }
@@ -546,6 +549,31 @@ describe('ToursService', () => {
     expect(updated.publicShare).toBe(false);
     expect(updated.status).toBe(TourStatus.DRAFT);
     expect(updated.createdById).toBe(USER_ID);
+  });
+
+  it('met à jour publicShare (à true)', async () => {
+    const { service } = harness();
+    const created = await service.create(kasbah, USER_ID);
+    const updated = await service.update(created.id, {
+      ...kasbah,
+      publicShare: true,
+    });
+    expect(updated.publicShare).toBe(true);
+  });
+
+  it('ne modifie pas publicShare si absent de la mise à jour', async () => {
+    const { service } = harness();
+    const created = await service.create(kasbah, USER_ID);
+    const update1 = await service.update(created.id, {
+      ...kasbah,
+      publicShare: true,
+    });
+    expect(update1.publicShare).toBe(true);
+    
+    const update2 = await service.update(created.id, {
+      ...kasbah,
+    });
+    expect(update2.publicShare).toBe(true);
   });
 
   it('répond 404 pour une visite absente ou déjà supprimée', async () => {

@@ -5877,6 +5877,9 @@
                     "required": [
                       "fr"
                     ]
+                  },
+                  "publicShare": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
