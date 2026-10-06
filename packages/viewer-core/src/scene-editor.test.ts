@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
-import { editorMarkers, editorPanorama } from './scene-editor.js';
+import { editorMarkers, editorPanorama, mountSceneEditor } from './scene-editor.js';
 
 describe('editorMarkers', () => {
   const baseHotspot: HotspotResponse = {
@@ -88,5 +88,178 @@ describe('editorPanorama', () => {
   it('lève une erreur avec un message explicite si les dérivés sont incomplets', () => {
     const asset = { derivatives: { preview: 'preview.jpg' } };
     expect(() => editorPanorama(asset)).toThrowError('Les dérivés du panorama sont manquants ou incomplets.');
+  });
+});
+
+import { Viewer } from '@photo-sphere-viewer/core';
+
+vi.mock('@photo-sphere-viewer/core', () => {
+  return {
+    Viewer: vi.fn().mockImplementation(() => {
+      return {
+        getPlugin: vi.fn(),
+        addEventListener: vi.fn(),
+        getPosition: vi.fn().mockReturnValue({ yaw: 1.2, pitch: 0.5 }),
+        getZoomLevel: vi.fn().mockReturnValue(60),
+        destroy: vi.fn(),
+      };
+    }),
+  };
+});
+
+vi.mock('@photo-sphere-viewer/markers-plugin', () => ({
+  MarkersPlugin: vi.fn(),
+}));
+
+vi.mock('@photo-sphere-viewer/equirectangular-tiles-adapter', () => ({
+  EquirectangularTilesAdapter: vi.fn(),
+}));
+
+describe('mountSceneEditor', () => {
+  const dummyPanorama = {
+    width: 2048,
+    cols: 4,
+    rows: 2,
+    baseUrl: 'preview.jpg',
+    tileUrl: (col: number, row: number) => `tiles/${String(col)}_${String(row)}.jpg`,
+  };
+
+  const dummyMarkers = [
+    { id: 'm1', position: { yaw: 1, pitch: 0 }, tooltip: 'M1', className: 'xplor-marker' },
+  ];
+
+  const defaultOptions = {
+    panorama: dummyPanorama,
+    markers: dummyMarkers,
+    initialView: { yaw: 0, pitch: 0, zoom: 50 },
+    onPanoramaClick: vi.fn(),
+    onMarkerSelect: vi.fn(),
+  };
+
+  it('un clic appelle onPanoramaClick avec les bonnes valeurs', () => {
+    const mockAddEventListener = vi.fn();
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+    };
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: mockAddEventListener,
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+    }) as unknown as Viewer);
+
+    const onPanoramaClick = vi.fn();
+    mountSceneEditor({} as HTMLElement, {
+      ...defaultOptions,
+      onPanoramaClick,
+    });
+
+    const clickCall = mockAddEventListener.mock.calls.find((call: unknown[]) => call[0] === 'click');
+    if (!clickCall) throw new Error('Événement click non branché');
+    const clickHandler = clickCall[1] as (e: { data: { rightclick: boolean, yaw: number, pitch: number, target: unknown } }) => void;
+
+    // Simule un clic normal
+    clickHandler({
+      data: {
+        rightclick: false,
+        yaw: 2.5,
+        pitch: -1.0,
+        target: { closest: () => null }, // Pas de .psv-marker
+      }
+    });
+
+    expect(onPanoramaClick).toHaveBeenCalledWith(2.5, -1.0);
+  });
+
+  it('un clic sur un marqueur n\'appelle pas onPanoramaClick', () => {
+    const mockAddEventListener = vi.fn();
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+    };
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: mockAddEventListener,
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+    }) as unknown as Viewer);
+
+    const onPanoramaClick = vi.fn();
+    mountSceneEditor({} as HTMLElement, {
+      ...defaultOptions,
+      onPanoramaClick,
+    });
+
+    const clickCall = mockAddEventListener.mock.calls.find((call: unknown[]) => call[0] === 'click');
+    if (!clickCall) throw new Error('Événement click non branché');
+    const clickHandler = clickCall[1] as (e: { data: { rightclick: boolean, yaw: number, pitch: number, target: unknown } }) => void;
+
+    // Simule un clic sur un marqueur
+    const childEl = {
+      closest: (selector: string) => selector === '.psv-marker' ? {} : null
+    } as unknown as HTMLElement;
+
+    clickHandler({
+      data: {
+        rightclick: false,
+        yaw: 2.5,
+        pitch: -1.0,
+        target: childEl, // À l'intérieur d'un marqueur
+      }
+    });
+
+    expect(onPanoramaClick).not.toHaveBeenCalled();
+  });
+
+  it('setMarkers remplace les marqueurs', () => {
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+    };
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: vi.fn(),
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+    }) as unknown as Viewer);
+
+    const instance = mountSceneEditor({} as HTMLElement, defaultOptions);
+    
+    // Le premier setMarkers est appelé lors de l'initialisation
+    expect(mockMarkersPlugin.setMarkers).toHaveBeenCalledTimes(1);
+
+    const newMarkers = [
+      { id: 'm2', position: { yaw: 2, pitch: 1 }, tooltip: 'M2', className: 'xplor-marker' },
+    ];
+    instance.setMarkers(newMarkers);
+
+    expect(mockMarkersPlugin.setMarkers).toHaveBeenCalledTimes(2);
+    expect(mockMarkersPlugin.setMarkers).toHaveBeenLastCalledWith([
+      { id: 'm2', position: { yaw: 2, pitch: 1 }, tooltip: 'M2', className: 'xplor-marker' }
+    ]);
+  });
+
+  it('destroy détruit le viewer', () => {
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+    };
+    const destroyMock = vi.fn();
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: vi.fn(),
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: destroyMock,
+    }) as unknown as Viewer);
+
+    const instance = mountSceneEditor({} as HTMLElement, defaultOptions);
+    instance.destroy();
+
+    expect(destroyMock).toHaveBeenCalled();
   });
 });
