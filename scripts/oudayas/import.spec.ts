@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 import { AssetKind, HotspotType, ProcessingStatus, z, HotspotCreateSchema } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,14 @@ import type { MockedFunction } from 'vitest';
 
 import { login, uploadFile, main, listTours, resolveReferences, ensureNoDuplicate, createTour, apiUrl } from './import.js';
 import { buildTourPlan } from './plan.js';
+
+vi.mock('node:crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:crypto')>();
+  return {
+    ...actual,
+    randomUUID: vi.fn(actual.randomUUID),
+  };
+});
 
 describe('Import Oudaïas (partie upload et authentification)', () => {
   let tmpDir: string;
@@ -575,6 +584,15 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
   describe('createTour', () => {
     it('crée une visite, ajoute des scènes et publie', async () => {
+      vi.mocked(randomUUID)
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+      const planSceneId1 = 'aaaaaaaa-aaaa-7aaa-8aaa-aaaaaaaaaaaa';
+      const planSceneId2 = 'bbbbbbbb-bbbb-7bbb-8bbb-bbbbbbbbbbbb';
+
       const mockData = {
         title: 'Tour',
         city: 'Rabat',
@@ -648,10 +666,11 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
         }
         currentRealSceneId = realSceneId2;
       }
-
+      
       expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/scenes/set-start`);
       expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
-      const setStartBody = z.object({ sceneId: z.string() }).parse(JSON.parse(z.string().parse(mockFetch.mock.calls[callIndex]?.[1]?.body)));
+      const setStartBodyStr = z.string().parse(mockFetch.mock.calls[callIndex]?.[1]?.body);
+      const setStartBody = z.object({ sceneId: z.string() }).parse(JSON.parse(setStartBodyStr));
       expect(setStartBody).toEqual({ sceneId: realSceneId1 });
       callIndex++;
 
@@ -674,6 +693,16 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
         expect(body.targetSceneId).toBeDefined();
         expect([realSceneId1, realSceneId2]).toContain(body.targetSceneId);
       }
+
+      const allBodies = [
+        ...hotspotCalls.map(c => z.string().parse(c?.[1]?.body)),
+        setStartBodyStr
+      ].join(' ');
+
+      expect(allBodies).not.toContain(planSceneId1);
+      expect(allBodies).not.toContain(planSceneId2);
+      expect(allBodies).toContain(realSceneId1);
+      expect(allBodies).toContain(realSceneId2);
     });
   });
 
