@@ -6,7 +6,7 @@ import { AssetKind, ProcessingStatus } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 
-import { login, uploadFile, main } from './import.js';
+import { login, uploadFile, main, listTours, resolveReferences } from './import.js';
 
 describe('Import Oudaïas (partie upload et authentification)', () => {
   let tmpDir: string;
@@ -233,5 +233,161 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     await main(['node', 'import.ts'], env);
 
     expect(maxUploads).toBe(3);
+  });
+});
+
+describe('Import Oudaïas (partie référentiels - listTours et resolveReferences)', () => {
+  let mockFetch: MockedFunction<typeof fetch>;
+
+  beforeEach(() => {
+    mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  describe('listTours', () => {
+    it('récupère la liste des visites paginée avec succès', async () => {
+      // Page 1: 1 item, total 2
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: '00000000-0000-7000-8000-000000000001',
+                title: { fr: 'Visite 1', en: 'Tour 1', ar: 'جولة 1' },
+                summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' },
+                description: { fr: 'Desc', en: 'Desc', ar: 'Desc' },
+                status: 'DRAFT',
+                createdById: '00000000-0000-7000-8000-000000000003',
+                categoryIds: ['00000000-0000-7000-8000-000000000004'],
+                cityId: '00000000-0000-7000-8000-000000000005',
+                coverAssetId: '00000000-0000-7000-8000-000000000006',
+                publicShare: true,
+                shareToken: 'tok-1',
+                sceneCount: 0,
+                contentVersion: 1,
+                startSceneId: '00000000-0000-7000-8000-000000000007',
+                publishedAt: new Date().toISOString(),
+              }
+            ],
+            page: 1,
+            pageSize: 1,
+            total: 2
+          }),
+          { status: 200 }
+        )
+      );
+
+      // Page 2: 1 item, total 2
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            items: [
+              {
+                id: '00000000-0000-7000-8000-000000000002',
+                title: { fr: 'Visite 2', en: 'Tour 2', ar: 'جولة 2' },
+                summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' },
+                description: { fr: 'Desc', en: 'Desc', ar: 'Desc' },
+                status: 'DRAFT',
+                createdById: '00000000-0000-7000-8000-000000000003',
+                categoryIds: ['00000000-0000-7000-8000-000000000004'],
+                cityId: '00000000-0000-7000-8000-000000000005',
+                coverAssetId: '00000000-0000-7000-8000-000000000006',
+                publicShare: true,
+                shareToken: 'tok-2',
+                sceneCount: 0,
+                contentVersion: 1,
+                startSceneId: '00000000-0000-7000-8000-000000000007',
+                publishedAt: new Date().toISOString(),
+              }
+            ],
+            page: 2,
+            pageSize: 1,
+            total: 2
+          }),
+          { status: 200 }
+        )
+      );
+
+      const result = await listTours();
+      expect(result).toHaveLength(2);
+      expect(result[0]?.id).toBe('00000000-0000-7000-8000-000000000001');
+      expect(result[1]?.id).toBe('00000000-0000-7000-8000-000000000002');
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch.mock.calls[0]?.[0]).toBe('http://localhost:3000/api/v1/admin/tours?page=1');
+      expect(mockFetch.mock.calls[1]?.[0]).toBe('http://localhost:3000/api/v1/admin/tours?page=2');
+    });
+
+    it('gère une liste vide', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            items: [],
+            page: 1,
+            pageSize: 20,
+            total: 0
+          }),
+          { status: 200 }
+        )
+      );
+
+      const result = await listTours();
+      expect(result).toHaveLength(0);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('lève une erreur préfixée si la réponse est en erreur', async () => {
+      mockFetch.mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
+
+      await expect(listTours()).rejects.toThrowError(/\[liste visites\] Erreur HTTP 500/);
+    });
+  });
+
+  describe('resolveReferences', () => {
+    const cityData = {
+      id: '00000000-0000-7000-8000-000000000005',
+      name: { fr: 'Rabat', en: 'Rabat', ar: 'الرباط' },
+      region: 'Rabat-Salé-Kénitra',
+      lat: 34.0208,
+      lng: -6.8416,
+    };
+    
+    const categoryData = {
+      id: '00000000-0000-7000-8000-000000000004',
+      name: { fr: 'Monument', en: 'Monument', ar: 'نصب' },
+      icon: 'monument',
+      color: '#000000',
+      weight: 1,
+    };
+
+    it('résout cityId et categoryId avec succès', async () => {
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify([cityData]), { status: 200 })) // Villes
+        .mockResolvedValueOnce(new Response(JSON.stringify([categoryData]), { status: 200 })); // Catégories
+
+      const result = await resolveReferences({ city: 'Rabat' });
+      expect(result).toEqual({ cityId: '00000000-0000-7000-8000-000000000005', categoryId: '00000000-0000-7000-8000-000000000004' });
+      
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch.mock.calls[0]?.[0]).toBe('http://localhost:3000/api/v1/admin/cities');
+      expect(mockFetch.mock.calls[1]?.[0]).toBe('http://localhost:3000/api/v1/admin/categories');
+    });
+
+    it('lève une erreur préfixée si la requête ville échoue', async () => {
+      mockFetch.mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
+
+      await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Erreur HTTP 404 sur les villes/);
+    });
+
+    it('lève une erreur préfixée si la requête catégorie échoue', async () => {
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify([cityData]), { status: 200 }))
+        .mockResolvedValueOnce(new Response('Forbidden', { status: 403 }));
+
+      await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Erreur HTTP 403 sur les catégories/);
+    });
   });
 });
