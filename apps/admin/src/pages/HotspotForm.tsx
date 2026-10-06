@@ -14,18 +14,20 @@ import { listTours, listScenes } from '../api/catalog.js';
 
 interface Props {
   initialData?: HotspotResponse | null;
+  defaultPosition?: { yaw: number; pitch: number };
   currentTourScenes: SceneResponse[];
   onSubmit: (data: HotspotCreate) => Promise<void>;
   onDelete?: () => Promise<void>;
+  onCancel?: () => void;
   isSubmitting: boolean;
 }
 
-export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete, isSubmitting }: Props) {
+export function HotspotForm({ initialData, defaultPosition, currentTourScenes, onSubmit, onDelete, onCancel, isSubmitting }: Props) {
   const { t } = useTranslation();
 
   const [type, setType] = useState<HotspotType>(initialData?.type ?? HotspotType.SCENE_LINK);
-  const [yaw, setYaw] = useState<number>(initialData?.yaw ?? 0);
-  const [pitch, setPitch] = useState<number>(initialData?.pitch ?? 0);
+  const [yaw, setYaw] = useState<number>(initialData?.yaw ?? defaultPosition?.yaw ?? 0);
+  const [pitch, setPitch] = useState<number>(initialData?.pitch ?? defaultPosition?.pitch ?? 0);
   const [label, setLabel] = useState<LocalizedText>(initialData?.label ?? { fr: '' });
   const [arrivalYaw, setArrivalYaw] = useState<number | ''>(initialData?.arrivalYaw ?? '');
   const [icon, setIcon] = useState<HotspotIcon>(initialData?.icon ?? HotspotIcon.ARROW);
@@ -237,6 +239,11 @@ export function HotspotForm({ initialData, currentTourScenes, onSubmit, onDelete
         <Button type="submit" data-testid="submit-hotspot-btn" disabled={isSubmitting}>
           {t('common.save')}
         </Button>
+        {onCancel && (
+          <Button variant="secondary" type="button" onClick={onCancel} disabled={isSubmitting}>
+            {t('common.actions.cancel')}
+          </Button>
+        )}
         {onDelete && (
           <Button variant="destructive" type="button" onClick={() => void onDelete()} disabled={isSubmitting}>
             {t('common.delete')}
