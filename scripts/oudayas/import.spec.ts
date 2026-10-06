@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { AssetKind } from '@xplor/shared';
+import { AssetKind, ProcessingStatus } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 
-import { login, uploadFile } from './import.js';
+import { login, uploadFile, main } from './import.js';
 
 describe('Import Oudaïas (partie upload et authentification)', () => {
   let tmpDir: string;
@@ -141,5 +141,97 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     mockFetch.mockResolvedValueOnce(new Response('Bad Request', { status: 400 }));
 
     await expect(uploadFile(fileName, tmpDir)).rejects.toThrowError(/upload-url échoué pour error\.jpg/);
+  });
+
+  it('main() respecte la limite de 3 envois simultanés', async () => {
+    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf-8')) as { scenes: { file: string }[] };
+    const files = rawData.scenes.map((s) => s.file);
+
+    expect(files.length).toBeGreaterThan(3);
+
+    for (const file of files) {
+      fs.writeFileSync(path.join(tmpDir, file), 'fake-data');
+    }
+
+    let inFlightUploads = 0;
+    let maxUploads = 0;
+    let assetCounter = 0;
+
+    mockFetch.mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method || 'GET';
+
+      if (url.includes('/api/v1/auth/login') && method === 'POST') {
+        const headers = new Headers();
+        headers.append('Set-Cookie', 'sid=abc; Path=/');
+        return new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200, headers });
+      }
+
+      if (url.includes('/api/v1/admin/assets/upload-url') && method === 'POST') {
+        const body = JSON.parse(init?.body as string) as { filename: string };
+        assetCounter++;
+        const hex = assetCounter.toString(16).padStart(12, '0');
+        const assetId = `00000000-0000-7000-8000-${hex}`;
+        return new Response(
+          JSON.stringify({
+            assetId,
+            uploadUrl: `http://s3.local/upload/${body.filename}`,
+            uploadMethod: 'PUT',
+            expiresInSeconds: 3600,
+          }),
+          { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
+        );
+      }
+
+      if (method === 'PUT' && url.startsWith('http://s3.local/upload/')) {
+        inFlightUploads++;
+        if (inFlightUploads > maxUploads) {
+          maxUploads = inFlightUploads;
+        }
+        await new Promise((r) => setTimeout(r, 5));
+        inFlightUploads--;
+        return new Response('', { status: 200 });
+      }
+
+      if (url.includes('/complete') && method === 'POST') {
+        return new Response('', { status: 200 });
+      }
+
+      if (url.includes('/api/v1/admin/assets/') && method === 'GET') {
+        const urlId = url.split('/').pop() || '';
+        const id = urlId.length > 30 ? urlId : '00000000-0000-7000-8000-000000000000';
+        return new Response(
+          JSON.stringify({
+            id,
+            kind: AssetKind.PANORAMA,
+            mimeType: 'image/jpeg',
+            sizeBytes: 9,
+            width: null,
+            height: null,
+            processingStatus: ProcessingStatus.READY,
+            processingLog: null,
+            copyright: null,
+            thumbnailUrl: null,
+            createdAt: new Date().toISOString(),
+          }),
+          { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
+        );
+      }
+
+      return new Response('Not Found', { status: 404 });
+    });
+
+    const env = {
+      ...process.env,
+      XPLOR_API_URL: 'http://localhost:3000',
+      XPLOR_ADMIN_EMAIL: 'admin@test.local',
+      XPLOR_ADMIN_PASSWORD: 'password',
+      XPLOR_OUDAYAS_DIR: tmpDir,
+    };
+
+    await main(['node', 'import.ts'], env);
+
+    expect(maxUploads).toBe(3);
   });
 });
