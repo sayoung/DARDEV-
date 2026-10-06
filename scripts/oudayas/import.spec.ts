@@ -18,6 +18,84 @@ vi.mock('node:crypto', async (importOriginal) => {
   };
 });
 
+function installMainFetch(mockFetch: MockedFunction<typeof fetch>, options: { assetStatus: string }) {
+  let assetCounter = 0;
+  mockFetch.mockImplementation(async (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const method = init?.method || 'GET';
+
+    if (url.includes('/api/v1/admin/tours') && method === 'GET') {
+      return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
+    }
+    if (url.includes('/api/v1/admin/cities') && method === 'GET') {
+      return new Response(JSON.stringify([{ id: '00000000-0000-7000-8000-000000000008', name: { fr: 'Rabat', en: 'Rabat', ar: 'Rabat' }, region: 'x', lat: 0, lng: 0 }]), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
+    }
+    if (url.includes('/api/v1/admin/categories') && method === 'GET') {
+      return new Response(JSON.stringify([{ id: '00000000-0000-7000-8000-000000000009', name: { fr: 'Monument', en: 'Monument', ar: 'Monument' }, icon: 'x', color: '#000000', weight: 1 }]), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
+    }
+    if (url.includes('/api/v1/auth/login') && method === 'POST') {
+      const headers = new Headers();
+      headers.append('Set-Cookie', 'sid=abc; Path=/');
+      return new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200, headers });
+    }
+    if (url.includes('/api/v1/admin/assets/upload-url') && method === 'POST') {
+      const body = JSON.parse(init?.body as string) as { filename: string };
+      assetCounter++;
+      const hex = assetCounter.toString(16).padStart(12, '0');
+      const assetId = `00000000-0000-7000-8000-${hex}`;
+      return new Response(
+        JSON.stringify({
+          assetId,
+          uploadUrl: `http://s3.local/upload/${body.filename}`,
+          uploadMethod: 'PUT',
+          expiresInSeconds: 3600,
+        }),
+        { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
+      );
+    }
+    if (method === 'PUT' && url.startsWith('http://s3.local/upload/')) {
+      await new Promise((r) => setTimeout(r, 5));
+      return new Response('', { status: 200 });
+    }
+    if (url.includes('/complete') && method === 'POST') {
+      return new Response('', { status: 200 });
+    }
+    if (url.includes('/api/v1/admin/assets/') && method === 'GET') {
+      const urlId = url.split('/').pop() || '';
+      const id = urlId.length > 30 ? urlId : '00000000-0000-7000-8000-000000000000';
+      return new Response(
+        JSON.stringify({
+          id,
+          kind: AssetKind.PANORAMA,
+          mimeType: 'image/jpeg',
+          sizeBytes: 9,
+          width: null,
+          height: null,
+          processingStatus: options.assetStatus,
+          processingLog: null,
+          copyright: null,
+          thumbnailUrl: null,
+          createdAt: new Date().toISOString(),
+        }),
+        { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
+      );
+    }
+    if (url.includes('/api/v1/admin/tours') && method === 'POST') {
+      const mockTour = { id: '00000000-0000-7000-8000-000000000012', title: { fr: 'T' }, summary: { fr: 'Sum' }, description: { fr: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: ['00000000-0000-7000-8000-000000000009'], cityId: '00000000-0000-7000-8000-000000000008', coverAssetId: '00000000-0000-7000-8000-000000000010', publicShare: false, sceneCount: 1, contentVersion: 1, shareToken: 'tok-main', startSceneId: null, publishedAt: null };
+      if (url.includes('/scenes/set-start')) return new Response(null, { status: 200 });
+      if (url.includes('/publish')) return new Response(null, { status: 200 });
+      if (url.includes('/share-token')) return new Response(JSON.stringify(mockTour), { status: 200 });
+      if (url.includes('/scenes')) return new Response(JSON.stringify({ id: '00000000-0000-7000-8000-000000000013', tourId: '00000000-0000-7000-8000-000000000012', title: { fr: 'S' }, info: { fr: 'I' }, panoramaAssetId: '00000000-0000-7000-8000-000000000010', initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 });
+      return new Response(JSON.stringify(mockTour), { status: 201 });
+    }
+    if (url.includes('/hotspots') && method === 'POST') {
+      return new Response(null, { status: 201 });
+    }
+
+    return new Response('Not Found', { status: 404 });
+  });
+}
+
 describe('Import Oudaïas (partie upload et authentification)', () => {
   let tmpDir: string;
   let mockFetch: MockedFunction<typeof fetch>;
@@ -166,7 +244,10 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
 
     let inFlightUploads = 0;
     let maxUploads = 0;
-    let assetCounter = 0;
+
+    installMainFetch(mockFetch, { assetStatus: ProcessingStatus.READY });
+    const baseMock = mockFetch.getMockImplementation();
+    if (!baseMock) throw new Error('Mock non défini');
 
     const callsOrder: string[] = [];
     mockFetch.mockImplementation(async (input, init) => {
@@ -176,85 +257,22 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
       if (url.includes('/api/v1/admin/assets/upload-url')) callsOrder.push('upload');
 
       const method = init?.method || 'GET';
-      if (url.includes('/api/v1/admin/tours') && method === 'GET') {
-        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
-      }
-      if (url.includes('/api/v1/admin/cities') && method === 'GET') {
-        return new Response(JSON.stringify([{ id: '00000000-0000-7000-8000-000000000008', name: { fr: 'Rabat', en: 'Rabat', ar: 'Rabat' }, region: 'x', lat: 0, lng: 0 }]), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
-      }
-      if (url.includes('/api/v1/admin/categories') && method === 'GET') {
-        return new Response(JSON.stringify([{ id: '00000000-0000-7000-8000-000000000009', name: { fr: 'Monument', en: 'Monument', ar: 'Monument' }, icon: 'x', color: '#000000', weight: 1 }]), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
-      }
-      if (url.includes('/api/v1/auth/login') && method === 'POST') {
-        const headers = new Headers();
-        headers.append('Set-Cookie', 'sid=abc; Path=/');
-        return new Response(JSON.stringify({ csrfToken: 'tok' }), { status: 200, headers });
-      }
-
-      if (url.includes('/api/v1/admin/assets/upload-url') && method === 'POST') {
-        const body = JSON.parse(init?.body as string) as { filename: string };
-        assetCounter++;
-        const hex = assetCounter.toString(16).padStart(12, '0');
-        const assetId = `00000000-0000-7000-8000-${hex}`;
-        return new Response(
-          JSON.stringify({
-            assetId,
-            uploadUrl: `http://s3.local/upload/${body.filename}`,
-            uploadMethod: 'PUT',
-            expiresInSeconds: 3600,
-          }),
-          { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
-        );
-      }
-
-      if (method === 'PUT' && url.startsWith('http://s3.local/upload/')) {
+      const isUpload = method === 'PUT' && url.startsWith('http://s3.local/upload/');
+      
+      if (isUpload) {
         inFlightUploads++;
         if (inFlightUploads > maxUploads) {
           maxUploads = inFlightUploads;
         }
-        await new Promise((r) => setTimeout(r, 5));
+      }
+
+      const response = await baseMock(input, init);
+
+      if (isUpload) {
         inFlightUploads--;
-        return new Response('', { status: 200 });
       }
 
-      if (url.includes('/complete') && method === 'POST') {
-        return new Response('', { status: 200 });
-      }
-
-      if (url.includes('/api/v1/admin/assets/') && method === 'GET') {
-        const urlId = url.split('/').pop() || '';
-        const id = urlId.length > 30 ? urlId : '00000000-0000-7000-8000-000000000000';
-        return new Response(
-          JSON.stringify({
-            id,
-            kind: AssetKind.PANORAMA,
-            mimeType: 'image/jpeg',
-            sizeBytes: 9,
-            width: null,
-            height: null,
-            processingStatus: ProcessingStatus.READY,
-            processingLog: null,
-            copyright: null,
-            thumbnailUrl: null,
-            createdAt: new Date().toISOString(),
-          }),
-          { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
-        );
-      }
-
-      if (url.includes('/api/v1/admin/tours') && method === 'POST') {
-        const mockTour = { id: '00000000-0000-7000-8000-000000000012', title: { fr: 'T' }, summary: { fr: 'Sum' }, description: { fr: 'Desc' }, status: 'DRAFT', createdById: '00000000-0000-7000-8000-000000000001', categoryIds: ['00000000-0000-7000-8000-000000000009'], cityId: '00000000-0000-7000-8000-000000000008', coverAssetId: '00000000-0000-7000-8000-000000000010', publicShare: false, sceneCount: 1, contentVersion: 1, shareToken: 'tok-main', startSceneId: null, publishedAt: null };
-        if (url.includes('/scenes/set-start')) return new Response(null, { status: 200 });
-        if (url.includes('/publish')) return new Response(null, { status: 200 });
-        if (url.includes('/share-token')) return new Response(JSON.stringify(mockTour), { status: 200 });
-        if (url.includes('/scenes')) return new Response(JSON.stringify({ id: '00000000-0000-7000-8000-000000000013', tourId: '00000000-0000-7000-8000-000000000012', title: { fr: 'S' }, info: { fr: 'I' }, panoramaAssetId: '00000000-0000-7000-8000-000000000010', initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }), { status: 201 });
-        return new Response(JSON.stringify(mockTour), { status: 201 });
-      }
-      if (url.includes('/hotspots') && method === 'POST') {
-        return new Response(null, { status: 201 });
-      }
-
-      return new Response('Not Found', { status: 404 });
+      return response;
     });
 
     const env = {
