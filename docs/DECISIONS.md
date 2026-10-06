@@ -868,3 +868,17 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Raison :** `bullmq` v6 a `ioredis` en dépendance optionnelle, ce qui fait que `pnpm deploy --prod` ne l'embarque pas dans le worker, provoquant des redémarrages en boucle en production.
 - **Alternatives :** Aucune.
 - **À valider :** non
+
+## D-111 — Dépendances éditeur de scène (M4 F-20)
+
+- **Date :** 06/10/2026
+- **Décision :** Ajout de la dépendance workspace `@xplor/viewer-core` et des paquets `@photo-sphere-viewer/core` et `@photo-sphere-viewer/markers-plugin` en 5.15.1 exacte à `apps/admin`.
+- **Raison :** CSS de l'éditeur de scène F-20 et dépendance workspace viewer-core.
+- **Alternatives :** Aucune.
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| @xplor/viewer-core | CSS de l'éditeur de scène F-20 et dépendance workspace viewer-core | MIT |
+| @photo-sphere-viewer/core | CSS de l'éditeur de scène F-20 et dépendance workspace viewer-core | MIT |
+| @photo-sphere-viewer/markers-plugin | CSS de l'éditeur de scène F-20 et dépendance workspace viewer-core | MIT |
