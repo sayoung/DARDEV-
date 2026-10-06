@@ -316,4 +316,73 @@ describe('mountSceneEditor', () => {
     expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointermove', expect.any(Function));
     expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointerup', expect.any(Function));
   });
+
+  it('avec onMarkerMove, gère le drag and drop et appelle onMarkerMove', () => {
+    let handlePointerDown: (e: { target: unknown; clientX: number; clientY: number; stopPropagation: () => void }) => void = () => {};
+    let handlePointerMove: (e: { clientX: number; clientY: number }) => void = () => {};
+    let handlePointerUp: (e: object) => void = () => {};
+
+    const mockContainer = {
+      addEventListener: vi.fn().mockImplementation((event: string, cb: unknown) => {
+        if (event === 'pointerdown' && typeof cb === 'function') handlePointerDown = cb as typeof handlePointerDown;
+        if (event === 'pointermove' && typeof cb === 'function') handlePointerMove = cb as typeof handlePointerMove;
+        if (event === 'pointerup' && typeof cb === 'function') handlePointerUp = cb as typeof handlePointerUp;
+      }),
+      removeEventListener: vi.fn(),
+    };
+    
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
+      getMarkers: vi.fn().mockReturnValue([]),
+    };
+
+    const mockDataHelper = {
+      viewerCoordsToSphericalCoords: vi.fn(),
+    };
+
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: vi.fn(),
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+      container: mockContainer,
+      dataHelper: mockDataHelper,
+    }) as unknown as Viewer);
+
+    const onMarkerMove = vi.fn();
+    mountSceneEditor({} as unknown as HTMLElement, { ...defaultOptions, onMarkerMove });
+
+    const stopPropagation = vi.fn();
+    
+    class FakeElement {
+      dataset = { psvMarker: 'm1' };
+      closest(sel: string) {
+        return sel === '.psv-marker' ? this : null;
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (globalThis as unknown as { Element: unknown }).Element = FakeElement;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (globalThis as unknown as { HTMLElement: unknown }).HTMLElement = FakeElement;
+
+    const target = new FakeElement();
+
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.1, pitch: 0.1 });
+    handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
+    
+    expect(stopPropagation).toHaveBeenCalled();
+
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.2, pitch: 0.2 });
+    handlePointerMove({ clientX: 20, clientY: 20 });
+    
+    expect(mockMarkersPlugin.updateMarker).toHaveBeenCalledWith({ id: 'm1', position: { yaw: 0.2, pitch: 0.2 } });
+
+    handlePointerUp({});
+    expect(onMarkerMove).toHaveBeenCalledWith('m1', 0.2, 0.2);
+  });
 });
+
+
