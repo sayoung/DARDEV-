@@ -28,5 +28,6 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 06/10/2026 — M4 F-20 (1/4, étape b, tests d'abord) : crée packages/viewer-core/src/scene-editor.ts et scene-editor.test.ts, et exporte `./scene-editor.js` depuis packages/vi… — editorMarkers est correctement implémenté en réutilisant hotspotKind et localize, les tests couvrent les cas demandés, et lint/typecheck/test passent. (7862bc9)
 - 06/10/2026 — M4 F-20 (1/4, étape a) : dans packages/viewer-core/src/scene-markers.ts, extrais et exporte une aide `hotspotKind(type: HotspotType)` qui renvoie 'tour-link' |… — hotspotKind extraite et exportée avec un switch exhaustif, toMarkers l'utilise sans changer son comportement, test ajouté, lint, typecheck et tests au vert, périmètre respecté. (7805092)
 - 06/10/2026 — M4 bilan d'ouverture : copie le contenu actuel de docs/PROGRESS.md dans docs/archive/PROGRESS-M3b.md, en suivant le modèle de docs/archive/PROGRESS-M3.md. Puis,… — Archive PROGRESS-M3b.md créée et PROGRESS.md réinitialisé pour M4 conformément à la demande, sans autre fichier modifié ; lint, typecheck et test au vert. (972c8ac)
