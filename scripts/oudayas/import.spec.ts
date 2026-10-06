@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-import { AssetKind, HotspotType, ProcessingStatus, z, HotspotCreateSchema } from '@xplor/shared';
+import { AssetKind, HotspotType, ProcessingStatus, z, HotspotCreateSchema, TourUpdateSchema } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 
@@ -90,6 +90,13 @@ function installMainFetch(mockFetch: MockedFunction<typeof fetch>, options: { as
     }
     if (url.includes('/hotspots') && method === 'POST') {
       return new Response(null, { status: 201 });
+    }
+
+    if (url.includes('/api/v1/admin/tours') && method === 'PATCH') {
+      return new Response(null, { status: 200 });
+    }
+    if (url.includes('/api/v1/public/tours/') && method === 'GET') {
+      return new Response(null, { status: 200 });
     }
 
     return new Response('Not Found', { status: 404 });
@@ -784,12 +791,14 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       mockFetch
         .mockResolvedValueOnce(new Response(null, { status: 200 }))
         .mockResolvedValueOnce(new Response(null, { status: 200 }))
-        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 200 }));
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 200 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }));
 
       const token = await createTour(mockData, assetIds, cityId, catId);
       expect(token).toBe('tok-xyz');
 
-      expect(mockFetch).toHaveBeenCalledTimes(1 + 2 + nbHotspots + 3);
+      expect(mockFetch).toHaveBeenCalledTimes(1 + 2 + nbHotspots + 5);
 
       let callIndex = 0;
 
@@ -833,6 +842,21 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
       expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}/share-token`);
       expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('POST');
+      callIndex++;
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/admin/tours/${tourId}`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBe('PATCH');
+      const patchBodyStr = z.string().parse(mockFetch.mock.calls[callIndex]?.[1]?.body);
+      const parsedPatch = TourUpdateSchema.safeParse(JSON.parse(patchBodyStr));
+      expect(parsedPatch.success).toBe(true);
+      if (parsedPatch.success) {
+        expect(parsedPatch.data.publicShare).toBe(true);
+      }
+      callIndex++;
+
+      expect(mockFetch.mock.calls[callIndex]?.[0]).toBe(`${apiUrl}/api/v1/public/tours/tok-xyz`);
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.method).toBeUndefined();
+      expect(mockFetch.mock.calls[callIndex]?.[1]?.headers).toBeUndefined();
       callIndex++;
 
       const expectedSceneLinkCount = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.filter((h) => h.type === HotspotType.SCENE_LINK).length, 0);
@@ -910,6 +934,63 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
       await expect(createTour(mockData, assetIds, cityId, catId)).rejects.toThrowError(/\[création visite\]/);
       expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('échoue lors de l\'activation du partage public', async () => {
+      vi.mocked(randomUUID)
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+      const plan = buildTourPlan(mockData, assetIds, cityId, catId);
+      const nbHotspots = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.length, 0);
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId1, 'S1', 'I1', assetId1, 1))
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId2, 'S2', 'I2', assetId2, 2));
+
+      for (let i = 0; i < nbHotspots; i++) {
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 201 }));
+      }
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 200 }))
+        .mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
+
+      await expect(createTour(mockData, assetIds, cityId, catId)).rejects.toThrowError(/\[partage public\] HTTP 500/);
+    });
+
+    it('échoue lors de la vérification publique et l\'URL n\'est pas affichée', async () => {
+      vi.mocked(randomUUID)
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+        .mockReturnValueOnce('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+        .mockReturnValueOnce('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+      const plan = buildTourPlan(mockData, assetIds, cityId, catId);
+      const nbHotspots = plan.scenes.reduce((sum, scene) => sum + scene.hotspots.length, 0);
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 201 }))
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId1, 'S1', 'I1', assetId1, 1))
+        .mockResolvedValueOnce(mockSceneResponse(realSceneId2, 'S2', 'I2', assetId2, 2));
+
+      for (let i = 0; i < nbHotspots; i++) {
+        mockFetch.mockResolvedValueOnce(new Response(null, { status: 201 }));
+      }
+
+      mockFetch
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify(mockTour), { status: 200 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }))
+        .mockResolvedValueOnce(new Response('Not Found', { status: 404 }));
+
+      await expect(createTour(mockData, assetIds, cityId, catId)).rejects.toThrowError(/\[vérification publique\] HTTP 404/);
     });
   });
 });
@@ -1024,7 +1105,7 @@ describe('main() — scénarios import et dry-run', () => {
     expect(firstGetAssetIdx).toBeGreaterThan(firstCompleteIdx);
 
     // (2) tous les appels dont l'URL commence par http://localhost:3000 sauf le POST de login ont un Cookie contenant 'sid=abc'
-    const appelsApiHorsLogin = calls.filter((c) => c.url.startsWith('http://localhost:3000') && !(c.url.includes('/api/v1/auth/login') && c.method === 'POST'));
+    const appelsApiHorsLogin = calls.filter((c) => c.url.startsWith('http://localhost:3000') && !(c.url.includes('/api/v1/auth/login') && c.method === 'POST') && !c.url.includes('/api/v1/public/tours'));
     expect(appelsApiHorsLogin.length).toBeGreaterThan(0);
     expect(appelsApiHorsLogin.every((c) => c.headers.get('Cookie')?.includes('sid=abc'))).toBe(true);
 
