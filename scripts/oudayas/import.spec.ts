@@ -835,7 +835,7 @@ describe('main() — scénarios import et dry-run', () => {
     const dataPath = path.resolve('scripts/oudayas/tour-data.json');
     const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf-8')) as { scenes: { file: string }[] };
     const omitFile = rawData.scenes[0]?.file;
-    
+
     writeSceneFiles(tmpDir, omitFile);
 
     const env = {
