@@ -75,6 +75,7 @@ function installMainFetch(mockFetch: MockedFunction<typeof fetch>, options: { as
           processingLog: null,
           copyright: null,
           thumbnailUrl: null,
+  derivatives: {},
           createdAt: new Date().toISOString(),
         }),
         { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }
@@ -409,6 +410,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
               processingLog: 'image invalide',
               copyright: null,
               thumbnailUrl: null,
+  derivatives: {},
               createdAt: new Date().toISOString(),
             }),
             { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) }

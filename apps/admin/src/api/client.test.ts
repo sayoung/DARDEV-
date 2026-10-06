@@ -281,6 +281,7 @@ describe('Assets API', () => {
       processingLog: null,
       copyright: null,
       thumbnailUrl: null,
+  derivatives: {},
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));
@@ -300,6 +301,7 @@ describe('Assets API', () => {
       processingLog: null,
       copyright: null,
       thumbnailUrl: null,
+  derivatives: {},
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));
@@ -334,6 +336,7 @@ describe('Assets API', () => {
       processingLog: null,
       copyright: null,
       thumbnailUrl: null,
+  derivatives: {},
       createdAt: '2023-01-01T00:00:00.000Z',
       issues: [],
     }));

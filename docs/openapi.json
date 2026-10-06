@@ -3114,6 +3114,7 @@
                           "processingLog",
                           "copyright",
                           "thumbnailUrl",
+                          "derivatives",
                           "createdAt"
                         ]
                       }
@@ -3395,6 +3396,7 @@
                     "processingLog",
                     "copyright",
                     "thumbnailUrl",
+                    "derivatives",
                     "createdAt"
                   ]
                 }
@@ -4081,6 +4083,7 @@
                     "processingLog",
                     "copyright",
                     "thumbnailUrl",
+                    "derivatives",
                     "createdAt"
                   ]
                 }
@@ -4437,6 +4440,7 @@
                     "processingLog",
                     "copyright",
                     "thumbnailUrl",
+                    "derivatives",
                     "createdAt"
                   ]
                 }
