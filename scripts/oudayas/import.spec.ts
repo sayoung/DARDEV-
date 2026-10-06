@@ -158,7 +158,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     let maxUploads = 0;
     let assetCounter = 0;
 
-        const callsOrder = [];
+    const callsOrder: string[] = [];
     mockFetch.mockImplementation(async (input, init) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
       if (url.includes('/api/v1/auth/login')) callsOrder.push('login');
