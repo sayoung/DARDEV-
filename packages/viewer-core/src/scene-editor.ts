@@ -144,19 +144,26 @@ export function mountSceneEditor(
       draggedMarkerId = id;
       
       const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
-      startYaw = spherical.yaw;
-      startPitch = spherical.pitch;
-      lastYaw = spherical.yaw;
-      lastPitch = spherical.pitch;
+      try {
+        startYaw = spherical.yaw;
+        startPitch = spherical.pitch;
+        lastYaw = spherical.yaw;
+        lastPitch = spherical.pitch;
+      } catch {
+        return;
+      }
     };
 
     handlePointerMove = (e: PointerEvent) => {
       if (!draggedMarkerId) return;
       
       const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
-      
-      lastYaw = spherical.yaw;
-      lastPitch = spherical.pitch;
+      try {
+        lastYaw = spherical.yaw;
+        lastPitch = spherical.pitch;
+      } catch {
+        return;
+      }
       
       markersPlugin.updateMarker({
         id: draggedMarkerId,

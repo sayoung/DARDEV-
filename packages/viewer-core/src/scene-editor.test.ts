@@ -363,9 +363,7 @@ describe('mountSceneEditor', () => {
         return sel === '.psv-marker' ? this : null;
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     (globalThis as unknown as { Element: unknown }).Element = FakeElement;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     (globalThis as unknown as { HTMLElement: unknown }).HTMLElement = FakeElement;
 
     const target = new FakeElement();
