@@ -13,10 +13,12 @@ import {
   PaginatedTourResponseSchema,
   CityListResponseSchema,
   CategoryListResponseSchema,
+  TourResponseSchema,
+  SceneResponseSchema,
 } from '@xplor/shared';
 
-import { parseArgs, runPool, countPlannedHotspots, fetchAllPages, matchCity, matchCategory, findExistingTour } from './import-lib.js';
-import { buildTourPlan, generateId } from './plan.js';
+import { parseArgs, runPool, countPlannedHotspots, fetchAllPages, matchCity, matchCategory, findExistingTour, remapHotspotTargets, publicUrl } from './import-lib.js';
+import { buildTourPlan, generateId, type TourData } from './plan.js';
 export let csrfToken: string | undefined;
 export let cookieHeader = '';
 export let apiUrl = 'http://localhost:3000';
@@ -64,10 +66,97 @@ export async function login(email?: string, password?: string): Promise<void> {
   }
 }
 
-// TODO: implémenter la création de visite en partie C
-export async function createTour(_assetIds: Record<string, string>): Promise<void> {
-  await Promise.resolve(_assetIds);
-  // Vide pour le moment
+export async function createTour(
+  data: TourData,
+  assetIds: Record<string, string>,
+  cityId: string,
+  categoryId: string
+): Promise<string> {
+  const plan = buildTourPlan(data, assetIds, cityId, categoryId);
+
+  // 1. POST /api/v1/admin/tours
+  const tourRes = await apiFetch('/api/v1/admin/tours', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(plan.tour),
+  });
+  if (!tourRes.ok) {
+    throw new Error(`[création visite] HTTP ${String(tourRes.status)}`);
+  }
+  const tourDataRes: unknown = await tourRes.json();
+  const tourCreated = TourResponseSchema.parse(tourDataRes);
+  const tourId = tourCreated.id;
+
+  // 2. POST /api/v1/admin/tours/:tourId/scenes
+  const idMap: Record<string, string> = {};
+  let sceneIndex = 1;
+  for (const scene of plan.scenes) {
+    const sceneRes = await apiFetch(`/api/v1/admin/tours/${tourId}/scenes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(scene.payload),
+    });
+    if (!sceneRes.ok) {
+      throw new Error(`[scène ${String(sceneIndex)}/${String(plan.scenes.length)} « ${scene.payload.title.fr} »] HTTP ${String(sceneRes.status)}`);
+    }
+    const sceneDataRes: unknown = await sceneRes.json();
+    const sceneCreated = SceneResponseSchema.parse(sceneDataRes);
+    idMap[scene.id] = sceneCreated.id;
+    sceneIndex++;
+  }
+
+  // 3. POST /api/v1/admin/scenes/:sceneId/hotspots
+  for (const scene of plan.scenes) {
+    const realSceneId = idMap[scene.id];
+    if (!realSceneId) throw new Error(`[hotspot] ID de scène manquant`);
+    const remappedHotspots = remapHotspotTargets(scene.hotspots, idMap);
+    for (const hotspot of remappedHotspots) {
+      const hsRes = await apiFetch(`/api/v1/admin/scenes/${realSceneId}/hotspots`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(hotspot),
+      });
+      if (!hsRes.ok) {
+        throw new Error(`[hotspot] HTTP ${String(hsRes.status)}`);
+      }
+    }
+  }
+
+  // 4. POST /api/v1/admin/tours/:tourId/scenes/set-start
+  const firstScenePlan = plan.scenes[0];
+  if (!firstScenePlan) throw new Error(`[set-start] Aucune scène planifiée`);
+  const firstSceneId = idMap[firstScenePlan.id];
+  if (!firstSceneId) throw new Error(`[set-start] ID de première scène introuvable`);
+  const setStartRes = await apiFetch(`/api/v1/admin/tours/${tourId}/scenes/set-start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sceneId: firstSceneId }),
+  });
+  if (!setStartRes.ok) {
+    throw new Error(`[set-start] HTTP ${String(setStartRes.status)}`);
+  }
+
+  // 5. POST /api/v1/admin/tours/:tourId/publish
+  const publishRes = await apiFetch(`/api/v1/admin/tours/${tourId}/publish`, {
+    method: 'POST',
+  });
+  if (!publishRes.ok) {
+    throw new Error(`[publication] HTTP ${String(publishRes.status)}`);
+  }
+
+  // 6. POST /api/v1/admin/tours/:tourId/share-token
+  const tokenRes = await apiFetch(`/api/v1/admin/tours/${tourId}/share-token`, {
+    method: 'POST',
+  });
+  if (!tokenRes.ok) {
+    throw new Error(`[jeton] HTTP ${String(tokenRes.status)}`);
+  }
+  const tokenDataRes: unknown = await tokenRes.json();
+  const tokenCreated = TourResponseSchema.parse(tokenDataRes);
+  const token = tokenCreated.shareToken;
+  if (!token) throw new Error(`[jeton] Jeton introuvable dans la réponse`);
+
+  return token;
 }
 
 export async function listTours(): Promise<TourResponse[]> {
@@ -255,7 +344,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
   console.log('Connexion réussie.');
 
   await ensureNoDuplicate(data.title, args.replace);
-  await resolveReferences({ city: data.city });
+  const { cityId, categoryId } = await resolveReferences({ city: data.city });
 
   for (const file of files) {
     const fullPath = path.join(args.dir, file);
@@ -313,8 +402,9 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
     assetIds[r.file] = r.assetId;
   }
 
-  await createTour(assetIds);
+  const token = await createTour(data, assetIds, cityId, categoryId);
   console.log('Importation terminée avec succès.');
+  console.log(`URL publique : ${publicUrl(token)}`);
 }
 
 // @ts-expect-error: TS1470 - file is run with tsx which supports import.meta
