@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 06/10/2026 — M3b Démo 1 (import Oudayas, activer le partage public) — script : dans `scripts/oudayas/import.ts`, fonction `createTour`, après la publication (étape 5) et la… — Étapes 7 (PATCH complet avec publicShare) et 8 (vérification publique sans cookie) correctement implémentées, tests ajoutés et contrôles verts. (096afea)
 - 06/10/2026 — M3b Démo 1 (import Oudayas, activer le partage public) — finir le test d'intégration PATCH publicShare existant dans apps/api/test/tours.int.test.ts (test « mod… — Le test PATCH publicShare crée maintenant une scène de départ et un asset READY avec dérivés valides (grille 8×4 comme les autres tests) ; pas de débogage, périmètre respecté, lint et typecheck verts.… (ccf6357)
 - 06/10/2026 — Récupération du travail non commité — Test d'intégration cohérent avec le schéma et le service (PATCH complet requis, publicShare préservé s'il est omis, catégories conservées) ; lint/typecheck/test OK, aucun autre fichier touché. (f1db38f)
 - 06/10/2026 — M3b Démo 1 (import Oudayas, activer le partage public) — côté API : sur develop, `TourUpdateSchema` (packages/shared/src/catalog.ts) n'a pas `publicShare`. Repr… — TourUpdateSchema accepte publicShare optionnel, le service ne l'écrit que s'il est fourni, avec les tests et l'OpenAPI demandés ; lint, typecheck et tests sont au vert. (2f94fba)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 05/10/2026 — M3b F-90 (2/2, tests + nettoyage de l'URL). Prérequis : la sous-tâche 1/2 est fusionnée (client.ts émet 'session-expired' et pousse `?notice=expired`, LoginPage… — Nettoyage de `notice=expired` après connexion et tests de la redirection 401 (unique, sans boucle) conformes à la demande, contrôles au vert. (3970de4)
 - 05/10/2026 — M3b F-90 (1/2, noyau : 401 → retour à la connexion). Reprends sur develop le travail partiel de la branche agent/20261005-124243-m3b-f-90-back-office-session-pe… — Noyau 401 → retour à la connexion implémenté conformément à la consigne (redirection unique, événement session-expired, notice expired, types Notice préservés, i18n fr avec repli), lint/typecheck/test… (22bc46a)
 - 05/10/2026 — M3b F-01 (3/3, apps/admin/src/pages/TourForm.tsx et son test) : dans TourForm, remplace `kind={AssetKind.IMAGE}` (ligne ~202) par `kinds={COVER_ASSET_KINDS}` où… — TourForm utilise kinds={COVER_ASSET_KINDS} (constante de module), impose une vignette avec un message i18n fr et les trois tests demandés couvrent les cas ; lint, typecheck et tests sont verts. (62965be)
-- 05/10/2026 — M3b F-01 (2/3, apps/admin/src/catalog/AssetPicker.tsx et AssetPicker.test.tsx uniquement) : reprends l'idée de la branche agent/20261005-111526-m3b-f-01-back-of… — AssetPicker converti en grille radiogroup avec miniatures, multi-kinds, effet stable sur kindsDep, filtrage READY et tests conformes ; seuls des défauts mineurs (traductions en/ar copiées en français,… (c3dcc17)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
