@@ -15,7 +15,7 @@ import {
   CategoryListResponseSchema,
 } from '@xplor/shared';
 
-import { parseArgs, runPool, countPlannedHotspots, fetchAllPages, matchCity, matchCategory } from './import-lib.js';
+import { parseArgs, runPool, countPlannedHotspots, fetchAllPages, matchCity, matchCategory, findExistingTour } from './import-lib.js';
 import { buildTourPlan, generateId } from './plan.js';
 export let csrfToken: string | undefined;
 export let cookieHeader = '';
@@ -87,6 +87,20 @@ export async function listTours(): Promise<TourResponse[]> {
       throw new Error(`[liste visites] Réponse invalide : ${e instanceof Error ? e.message : String(e)}`);
     }
   });
+}
+
+export async function ensureNoDuplicate(title: string, replace: boolean): Promise<void> {
+  const tours = await listTours();
+  const existing = findExistingTour(tours, title);
+  if (existing) {
+    if (!replace) {
+      throw new Error(`[liste visites] La visite « ${title} » existe déjà (id ${existing.id}). Relancez avec --replace.`);
+    }
+    const res = await apiFetch(`/api/v1/admin/tours/${existing.id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      throw new Error(`[suppression] Échec de la suppression de la visite ${existing.id} (HTTP ${String(res.status)})`);
+    }
+  }
 }
 
 export async function resolveReferences(tourData: { city: string }): Promise<{ cityId: string; categoryId: string }> {
@@ -239,6 +253,9 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
 
   await login(args.email, args.password);
   console.log('Connexion réussie.');
+
+  await ensureNoDuplicate(data.title, args.replace);
+  await resolveReferences({ city: data.city });
 
   for (const file of files) {
     const fullPath = path.join(args.dir, file);

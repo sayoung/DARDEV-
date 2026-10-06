@@ -6,7 +6,7 @@ import { AssetKind, ProcessingStatus } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 
-import { login, uploadFile, main, listTours, resolveReferences } from './import.js';
+import { login, uploadFile, main, listTours, resolveReferences, ensureNoDuplicate } from './import.js';
 
 describe('Import Oudaïas (partie upload et authentification)', () => {
   let tmpDir: string;
@@ -158,10 +158,23 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     let maxUploads = 0;
     let assetCounter = 0;
 
+        const callsOrder = [];
     mockFetch.mockImplementation(async (input, init) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-      const method = init?.method || 'GET';
+      if (url.includes('/api/v1/auth/login')) callsOrder.push('login');
+      if (url.includes('/api/v1/admin/tours')) callsOrder.push('tours');
+      if (url.includes('/api/v1/admin/assets/upload-url')) callsOrder.push('upload');
 
+      const method = init?.method || 'GET';
+      if (url.includes('/api/v1/admin/tours') && method === 'GET') {
+        return new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
+      }
+      if (url.includes('/api/v1/admin/cities') && method === 'GET') {
+        return new Response(JSON.stringify([{ id: '00000000-0000-7000-8000-000000000008', name: { fr: 'Rabat', en: 'Rabat', ar: 'Rabat' }, region: 'x', lat: 0, lng: 0 }]), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
+      }
+      if (url.includes('/api/v1/admin/categories') && method === 'GET') {
+        return new Response(JSON.stringify([{ id: '00000000-0000-7000-8000-000000000009', name: { fr: 'Monument', en: 'Monument', ar: 'Monument' }, icon: 'x', color: '#000000', weight: 1 }]), { status: 200, headers: new Headers({ 'Content-Type': 'application/json' }) });
+      }
       if (url.includes('/api/v1/auth/login') && method === 'POST') {
         const headers = new Headers();
         headers.append('Set-Cookie', 'sid=abc; Path=/');
@@ -233,6 +246,9 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
     await main(['node', 'import.ts'], env);
 
     expect(maxUploads).toBe(3);
+    const firstTourIdx = callsOrder.indexOf('tours');
+    const firstUploadIdx = callsOrder.indexOf('upload');
+    expect(firstTourIdx).toBeLessThan(firstUploadIdx);
   });
 });
 
@@ -423,4 +439,66 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
       await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Réponse invalide \(catégories\) :/);
     });
   });
+
+  describe('ensureNoDuplicate', () => {
+    it('réussit si la visite est absente', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ items: [], page: 1, pageSize: 20, total: 0 }), { status: 200 })
+      );
+      await expect(ensureNoDuplicate('Nouvelle visite', false)).resolves.toBeUndefined();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('lève une erreur avec le message exact si la visite est présente et replace est faux', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ items: [{
+  id: '00000000-0000-7000-8000-000000000001',
+  title: { fr: 'Visite Test', en: 'Tour', ar: 'جولة' },
+  summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' },
+  description: { fr: 'Desc', en: 'Desc', ar: 'Desc' },
+  status: 'DRAFT',
+  createdById: '00000000-0000-7000-8000-000000000003',
+  categoryIds: ['00000000-0000-7000-8000-000000000004'],
+  cityId: '00000000-0000-7000-8000-000000000005',
+  coverAssetId: '00000000-0000-7000-8000-000000000006',
+  publicShare: true,
+  shareToken: 'tok-1',
+  sceneCount: 0,
+  contentVersion: 1,
+  startSceneId: '00000000-0000-7000-8000-000000000007',
+  publishedAt: new Date().toISOString()
+}], page: 1, pageSize: 20, total: 1 }), { status: 200 })
+      );
+      await expect(ensureNoDuplicate('Visite Test', false)).rejects.toThrowError('[liste visites] La visite « Visite Test » existe déjà (id 00000000-0000-7000-8000-000000000001). Relancez avec --replace.');
+    });
+
+    it('lève une erreur préfixée [suppression] si res.ok est faux lors du DELETE', async () => {
+      mockFetch
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ items: [{
+  id: '00000000-0000-7000-8000-000000000001',
+  title: { fr: 'Visite Test', en: 'Tour', ar: 'جولة' },
+  summary: { fr: 'Sum', en: 'Sum', ar: 'Sum' },
+  description: { fr: 'Desc', en: 'Desc', ar: 'Desc' },
+  status: 'DRAFT',
+  createdById: '00000000-0000-7000-8000-000000000003',
+  categoryIds: ['00000000-0000-7000-8000-000000000004'],
+  cityId: '00000000-0000-7000-8000-000000000005',
+  coverAssetId: '00000000-0000-7000-8000-000000000006',
+  publicShare: true,
+  shareToken: 'tok-1',
+  sceneCount: 0,
+  contentVersion: 1,
+  startSceneId: '00000000-0000-7000-8000-000000000007',
+  publishedAt: new Date().toISOString()
+}], page: 1, pageSize: 20, total: 1 }), { status: 200 })
+        )
+        .mockResolvedValueOnce(new Response('Internal Server Error', { status: 500 }));
+        
+      await expect(ensureNoDuplicate('Visite Test', true)).rejects.toThrowError('[suppression] Échec de la suppression de la visite 00000000-0000-7000-8000-000000000001 (HTTP 500)');
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch.mock.calls[1]?.[1]?.method).toBe('DELETE');
+    });
+  });
+
 });
