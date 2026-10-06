@@ -377,19 +377,24 @@ describe('mountSceneEditor', () => {
     
     expect(stopPropagation).toHaveBeenCalled();
 
-    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.2, pitch: 0.2 });
+    // (a) pointerdown sur un élément .psv-marker puis pointermove avec viewerCoordsToSphericalCoords renvoyant un yaw hors plage (ex. 4)
+    // → updateMarker appelé avec l'id et la position, puis pointerup → onMarkerMove appelé avec normalizeYaw(4) et le pitch.
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 4, pitch: 0.2 });
     handlePointerMove({ clientX: 20, clientY: 20 });
     
-    expect(mockMarkersPlugin.updateMarker).toHaveBeenCalledWith({ id: 'm1', position: { yaw: 0.2, pitch: 0.2 } });
+    expect(mockMarkersPlugin.updateMarker).toHaveBeenCalledWith({ id: 'm1', position: { yaw: 4, pitch: 0.2 } });
 
     handlePointerUp({});
-    expect(onMarkerMove).toHaveBeenCalledWith('m1', 0.2, 0.2);
     
-    // Test: clic sans déplacement n'appelle pas onMarkerMove
+    // On doit importer normalizeYaw pour tester
+    expect(onMarkerMove).toHaveBeenCalledWith('m1', normalizeYaw(4), 0.2);
+    
+    // (b) pointerdown puis pointerup sans pointermove → onMarkerMove non appelé.
+    onMarkerMove.mockClear();
     mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.3, pitch: 0.3 });
     handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
     handlePointerUp({});
-    expect(onMarkerMove).toHaveBeenCalledTimes(1);
+    expect(onMarkerMove).not.toHaveBeenCalled();
     
     // Test: conversion null ignorée
     mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce(null);
