@@ -1,16 +1,4 @@
-import { z } from 'zod';
-
-export const PanoramaDerivativesSchema = z.object({
-  preview: z.string(),
-  web: z.string(),
-  thumb: z.string(),
-  tilesPrefix: z.string(),
-  tileGrid: z.object({
-    cols: z.number().int().positive(),
-    rows: z.number().int().positive(),
-    size: z.number().int().positive(),
-  }),
-});
+import { PanoramaDerivativesSchema } from '@xplor/shared';
 
 export function mediaUrl(base: string, key: string): string {
   const cleanBase = base.replace(/\/+$/, '');

@@ -119,10 +119,12 @@ export {
   PANORAMA_QUEUE_NAME,
   PANORAMA_WORKER_CONCURRENCY,
   PANORAMA_GRID,
+  PanoramaDerivativesSchema,
   PanoramaJobDataSchema,
   panoramaAssetPrefix,
   panoramaDerivativeKeys,
   panoramaTileKey,
+  type PanoramaDerivatives,
   type PanoramaJobData,
 } from './panorama-queue.js';
 export {
