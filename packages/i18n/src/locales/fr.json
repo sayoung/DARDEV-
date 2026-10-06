@@ -211,7 +211,13 @@
         "newTitle": "Nouveau hotspot",
         "hint": "Cliquez sur le panorama pour placer un hotspot.",
         "delete": "Supprimer",
-        "confirmDelete": "Supprimer ce hotspot ?"
+        "confirmDelete": "Supprimer ce hotspot ?",
+        "status": {
+          "pending": "Modifications en attente…",
+          "saving": "Enregistrement…",
+          "saved": "Enregistré",
+          "error": "Échec de l'enregistrement"
+        }
       },
       "columns": {
         "type": "Type",
