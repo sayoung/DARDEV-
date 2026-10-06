@@ -344,6 +344,11 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
 
       await expect(listTours()).rejects.toThrowError(/\[liste visites\] Erreur HTTP 500/);
     });
+
+    it('lève une erreur préfixée si le JSON est invalide', async () => {
+      mockFetch.mockResolvedValueOnce(new Response('{ invalid json', { status: 200 }));
+      await expect(listTours()).rejects.toThrowError(/\[liste visites\] Réponse invalide :/);
+    });
   });
 
   describe('resolveReferences', () => {
@@ -388,6 +393,34 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
         .mockResolvedValueOnce(new Response('Forbidden', { status: 403 }));
 
       await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Erreur HTTP 403 sur les catégories/);
+    });
+
+    it('lève une erreur préfixée si la liste des villes est vide', async () => {
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify([categoryData]), { status: 200 }));
+
+      await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Aucune ville trouvée/);
+    });
+
+    it('lève une erreur préfixée si la liste des catégories est vide', async () => {
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify([cityData]), { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+
+      await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Aucune catégorie trouvée/);
+    });
+
+    it('lève une erreur préfixée si le JSON des villes est invalide', async () => {
+      mockFetch.mockResolvedValueOnce(new Response('{ invalid json', { status: 200 }));
+      await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Réponse invalide \(villes\) :/);
+    });
+
+    it('lève une erreur préfixée si le JSON des catégories est invalide', async () => {
+      mockFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify([cityData]), { status: 200 }))
+        .mockResolvedValueOnce(new Response('{ invalid json', { status: 200 }));
+      await expect(resolveReferences({ city: 'Rabat' })).rejects.toThrowError(/\[référentiel\] Réponse invalide \(catégories\) :/);
     });
   });
 });

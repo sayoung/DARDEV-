@@ -9,7 +9,7 @@ import {
   AssetUploadResponseSchema,
   ProcessingStatus,
   z,
-  TourResponse,
+  type TourResponse,
   PaginatedTourResponseSchema,
   CityListResponseSchema,
   CategoryListResponseSchema,
@@ -76,12 +76,16 @@ export async function listTours(): Promise<TourResponse[]> {
     if (!res.ok) {
       throw new Error(`[liste visites] Erreur HTTP ${String(res.status)}`);
     }
-    const data: unknown = await res.json();
-    const paginatedRes = PaginatedTourResponseSchema.parse(data);
-    return {
-      data: paginatedRes.items,
-      hasMore: paginatedRes.page * paginatedRes.pageSize < paginatedRes.total,
-    };
+    try {
+      const data: unknown = await res.json();
+      const paginatedRes = PaginatedTourResponseSchema.parse(data);
+      return {
+        data: paginatedRes.items,
+        hasMore: paginatedRes.page * paginatedRes.pageSize < paginatedRes.total,
+      };
+    } catch (e) {
+      throw new Error(`[liste visites] Réponse invalide : ${e instanceof Error ? e.message : String(e)}`);
+    }
   });
 }
 
@@ -90,15 +94,25 @@ export async function resolveReferences(tourData: { city: string }): Promise<{ c
   if (!citiesRes.ok) {
     throw new Error(`[référentiel] Erreur HTTP ${String(citiesRes.status)} sur les villes`);
   }
-  const citiesData: unknown = await citiesRes.json();
-  const cities = CityListResponseSchema.parse(citiesData);
+  let cities;
+  try {
+    const citiesData: unknown = await citiesRes.json();
+    cities = CityListResponseSchema.parse(citiesData);
+  } catch (e) {
+    throw new Error(`[référentiel] Réponse invalide (villes) : ${e instanceof Error ? e.message : String(e)}`);
+  }
 
   const categoriesRes = await apiFetch('/api/v1/admin/categories');
   if (!categoriesRes.ok) {
     throw new Error(`[référentiel] Erreur HTTP ${String(categoriesRes.status)} sur les catégories`);
   }
-  const categoriesData: unknown = await categoriesRes.json();
-  const categories = CategoryListResponseSchema.parse(categoriesData);
+  let categories;
+  try {
+    const categoriesData: unknown = await categoriesRes.json();
+    categories = CategoryListResponseSchema.parse(categoriesData);
+  } catch (e) {
+    throw new Error(`[référentiel] Réponse invalide (catégories) : ${e instanceof Error ? e.message : String(e)}`);
+  }
 
   const matchedCity = matchCity(cities, tourData.city);
   const matchedCategory = matchCategory(categories);
