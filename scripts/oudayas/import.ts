@@ -156,6 +156,24 @@ export async function createTour(
   const token = tokenCreated.shareToken;
   if (!token) throw new Error(`[jeton] Jeton introuvable dans la réponse`);
 
+  // 7. PATCH /api/v1/admin/tours/:tourId
+  const patchBody = { ...plan.tour, publicShare: true };
+
+  const patchRes = await apiFetch(`/api/v1/admin/tours/${tourId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patchBody),
+  });
+  if (!patchRes.ok) {
+    throw new Error(`[partage public] HTTP ${String(patchRes.status)}`);
+  }
+
+  // 8. GET /api/v1/public/tours/:token (sans cookie)
+  const verifyRes = await fetch(`${apiUrl}/api/v1/public/tours/${token}`);
+  if (!verifyRes.ok) {
+    throw new Error(`[vérification publique] HTTP ${String(verifyRes.status)}`);
+  }
+
   return token;
 }
 
