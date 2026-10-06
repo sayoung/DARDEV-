@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
-import { editorMarkers } from './scene-editor.js';
+import { editorMarkers, editorPanorama } from './scene-editor.js';
 
 describe('editorMarkers', () => {
   const baseHotspot: HotspotResponse = {
@@ -57,5 +57,36 @@ describe('editorMarkers', () => {
     expect(markers[2]?.className).toBe('xplor-marker xplor-marker-info');
     expect(markers[3]?.className).toBe('xplor-marker xplor-marker-media');
     expect(markers[4]?.className).toBe('xplor-marker xplor-marker-url');
+  });
+});
+
+describe('editorPanorama', () => {
+  const validDerivatives = {
+    preview: 'preview.jpg',
+    web: 'web.jpg',
+    thumb: 'thumb.jpg',
+    tilesPrefix: 'tiles/',
+    tileGrid: { cols: 4, rows: 2, size: 512 },
+  };
+
+  it('construit la configuration de panorama correcte', () => {
+    const asset = { derivatives: validDerivatives };
+    const config = editorPanorama(asset);
+
+    expect(config.width).toBe(2048);
+    expect(config.cols).toBe(4);
+    expect(config.rows).toBe(2);
+    expect(config.baseUrl).toBe('preview.jpg');
+    expect(config.tileUrl(1, 1)).toBe('tiles/1_1.jpg');
+  });
+
+  it('lève une erreur avec un message explicite si l\'asset n\'a pas de dérivés', () => {
+    const asset = {};
+    expect(() => editorPanorama(asset)).toThrowError('Les dérivés du panorama sont manquants ou incomplets.');
+  });
+
+  it('lève une erreur avec un message explicite si les dérivés sont incomplets', () => {
+    const asset = { derivatives: { preview: 'preview.jpg' } };
+    expect(() => editorPanorama(asset)).toThrowError('Les dérivés du panorama sont manquants ou incomplets.');
   });
 });

@@ -1,6 +1,14 @@
 import { TourGraph, HotspotType } from '@xplor/shared';
 import type { VirtualTourNode } from '@photo-sphere-viewer/virtual-tour-plugin';
 
+export type EditorPanorama = {
+  width: number;
+  cols: number;
+  rows: number;
+  baseUrl: string;
+  tileUrl: (col: number, row: number) => string;
+};
+
 export function toTourNodes(graph: TourGraph): VirtualTourNode[] {
   const sceneIds = new Set(graph.scenes.map((s) => s.id));
 
