@@ -28,6 +28,7 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie C3a : createTour, implémentation). Dans scripts/oudayas/import.ts, remplace le stub createTour(_assetIds) par createTour(… — createTour implémenté conformément aux routes réelles, erreurs préfixées, main mis à jour, test nominal ajouté, contrôles verts. (96d4701)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie C2, étape 3 : ensureNoDuplicate et branchement dans main). Dans scripts/oudayas/import.ts, ajoute la fonction exportée en… — ensureNoDuplicate est implémentée et branchée dans main après login et avant les envois, avec des tests conformes et des contrôles verts ; seule réserve, la vérification des fichiers locaux se fait ap… (382c822)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie C2, étape 2 : listTours et resolveReferences). Dans scripts/oudayas/import.ts, ajoute les fonctions exportées listTours()… — listTours et resolveReferences sont implémentées avec les schémas Zod partagés, des erreurs préfixées et des tests couvrant succès, erreur HTTP, JSON invalide et listes vides ; lint, typecheck et test… (2c54ab0)
 - 06/10/2026 — M3b Démo 1 (import Oudayas 2/3, partie C2, étape 1 : fonctions pures du référentiel et de la pagination). Dans scripts/oudayas/import-lib.ts, ajoute les fonctio… — matchCity, matchCategory et fetchAllPages sont implémentés conformément à la demande (boucle for(;;) sans erreur de lint), avec tous les tests demandés, et lint, typecheck et test sont verts. (1825413)
@@ -67,7 +68,6 @@ Jalon précédent : M3 validé par le porteur ; détail dans docs/archive/PROGRE
 - 05/10/2026 — M3b NF-01 (trustProxy, test d'abord) : dans apps/api/src/config/env.ts, ajoute la variable `API_TRUST_PROXY` (booléen lu depuis la chaîne 'true'/'false', défaut… — API_TRUST_PROXY ajouté au schéma d'env (booléen, défaut false) avec test, transmis à FastifyAdapter et documenté dans apps/api/.env.example ; lint, typecheck et tests passent. (a5dbe8d)
 - 05/10/2026 — M3b NF-10 (docs/DEPLOY.md, partie 2) : complète `docs/DEPLOY.md` : mises à jour (`git pull` puis `deploy/deploy.sh`), sauvegarde quotidienne (ligne crontab d'ex… — docs/DEPLOY.md complété (mises à jour, backup/cron, restauration, rollback, dépannage, démo QR, note agents/VPS) conformément aux scripts et au compose existants. (ccc9f90)
 - 05/10/2026 — M3b NF-10 (docs/DEPLOY.md, partie 1) : crée `docs/DEPLOY.md` en français : prérequis du VPS (Docker, utilisateur xplor, DNS A déjà en place pour api, admin, v,… — docs/DEPLOY.md couvre tous les points demandés, est cohérent avec deploy.sh, .env.production.example, le Caddyfile et le seed, sans secret réel. (6c41365)
-- 05/10/2026 — M3b NF-10 (deploy/restore.sh) : crée `deploy/restore.sh <dossier-de-sauvegarde>` (bash, `set -euo pipefail`) : refuse de tourner sans argument ou si db.dump est… — restore.sh et test-scripts.sh conformes à la tâche, cohérents avec backup.sh et le compose de prod, sans usage de docker ni secret. (f3b8d3a)
 
 ### Bloqué
 - M1 critère 2, CI distante non confirmée (run GitHub Actions à fournir par le porteur)
