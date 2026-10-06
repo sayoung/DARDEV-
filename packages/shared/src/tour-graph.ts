@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { HotspotType, HotspotIcon } from './catalog.js';
 import { LANGS } from './lang.js';
+import { PanoramaUrlsSchema } from './panorama-queue.js';
 
 export const TourGraphHotspotSchema = z.discriminatedUnion('type', [
   z.object({
@@ -63,16 +64,7 @@ export const TourGraphSceneSchema = z.object({
   id: z.string(),
   title: z.string(),
   caption: z.string().nullable(),
-  panorama: z.object({
-    preview: z.string(),
-    web: z.string(),
-    tiles: z.object({
-      width: z.number(),
-      cols: z.number(),
-      rows: z.number(),
-      baseUrl: z.string(),
-    }),
-  }),
+  panorama: PanoramaUrlsSchema,
   initialView: z.object({
     yaw: z.number(),
     pitch: z.number(),

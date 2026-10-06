@@ -18,6 +18,18 @@ export const PanoramaDerivativesSchema = z.object({
 });
 export type PanoramaDerivatives = z.infer<typeof PanoramaDerivativesSchema>;
 
+export const PanoramaUrlsSchema = z.object({
+  preview: z.string(),
+  web: z.string(),
+  tiles: z.object({
+    width: z.number(),
+    cols: z.number(),
+    rows: z.number(),
+    baseUrl: z.string(),
+  }),
+});
+export type PanoramaUrls = z.infer<typeof PanoramaUrlsSchema>;
+
 export const PanoramaJobDataSchema = z.object({
   assetId: z.uuid(),
 });

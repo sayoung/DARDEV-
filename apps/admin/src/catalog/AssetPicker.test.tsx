@@ -29,6 +29,7 @@ describe('AssetPicker', () => {
           copyright: null,
           thumbnailUrl: 'http://example.com/thumb.jpg',
   derivatives: {},
+          panorama: null,
           createdAt: new Date().toISOString()
         }
       ],

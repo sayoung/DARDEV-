@@ -3098,6 +3098,48 @@
                               }
                             ]
                           },
+                          "panorama": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "preview": {
+                                "type": "string"
+                              },
+                              "web": {
+                                "type": "string"
+                              },
+                              "tiles": {
+                                "type": "object",
+                                "properties": {
+                                  "width": {
+                                    "type": "number"
+                                  },
+                                  "cols": {
+                                    "type": "number"
+                                  },
+                                  "rows": {
+                                    "type": "number"
+                                  },
+                                  "baseUrl": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "width",
+                                  "cols",
+                                  "rows",
+                                  "baseUrl"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "preview",
+                              "web",
+                              "tiles"
+                            ]
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -3115,6 +3157,7 @@
                           "copyright",
                           "thumbnailUrl",
                           "derivatives",
+                          "panorama",
                           "createdAt"
                         ]
                       }
@@ -3380,6 +3423,48 @@
                         }
                       ]
                     },
+                    "panorama": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "preview": {
+                          "type": "string"
+                        },
+                        "web": {
+                          "type": "string"
+                        },
+                        "tiles": {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "number"
+                            },
+                            "cols": {
+                              "type": "number"
+                            },
+                            "rows": {
+                              "type": "number"
+                            },
+                            "baseUrl": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "cols",
+                            "rows",
+                            "baseUrl"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "preview",
+                        "web",
+                        "tiles"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -3397,6 +3482,7 @@
                     "copyright",
                     "thumbnailUrl",
                     "derivatives",
+                    "panorama",
                     "createdAt"
                   ]
                 }
@@ -4067,6 +4153,48 @@
                         }
                       ]
                     },
+                    "panorama": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "preview": {
+                          "type": "string"
+                        },
+                        "web": {
+                          "type": "string"
+                        },
+                        "tiles": {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "number"
+                            },
+                            "cols": {
+                              "type": "number"
+                            },
+                            "rows": {
+                              "type": "number"
+                            },
+                            "baseUrl": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "cols",
+                            "rows",
+                            "baseUrl"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "preview",
+                        "web",
+                        "tiles"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -4084,6 +4212,7 @@
                     "copyright",
                     "thumbnailUrl",
                     "derivatives",
+                    "panorama",
                     "createdAt"
                   ]
                 }
@@ -4424,6 +4553,48 @@
                         }
                       ]
                     },
+                    "panorama": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "preview": {
+                          "type": "string"
+                        },
+                        "web": {
+                          "type": "string"
+                        },
+                        "tiles": {
+                          "type": "object",
+                          "properties": {
+                            "width": {
+                              "type": "number"
+                            },
+                            "cols": {
+                              "type": "number"
+                            },
+                            "rows": {
+                              "type": "number"
+                            },
+                            "baseUrl": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "width",
+                            "cols",
+                            "rows",
+                            "baseUrl"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "preview",
+                        "web",
+                        "tiles"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -4441,6 +4612,7 @@
                     "copyright",
                     "thumbnailUrl",
                     "derivatives",
+                    "panorama",
                     "createdAt"
                   ]
                 }

@@ -715,7 +715,7 @@ describe('AssetResponseSchema', () => {
     processingStatus: ProcessingStatus.READY,
     processingLog: null,
     copyright: 'Libre de droits', thumbnailUrl: null,
-  derivatives: {},
+  derivatives: {}, panorama: null,
     createdAt,
   };
 
@@ -768,7 +768,7 @@ describe('PaginatedAssetResponseSchema', () => {
           processingStatus: ProcessingStatus.PENDING,
           processingLog: null,
           copyright: null, thumbnailUrl: null,
-  derivatives: {},
+  derivatives: {}, panorama: null,
           createdAt: '2026-09-29T12:00:00.000Z',
         },
       ],

@@ -220,6 +220,7 @@ describe('SceneDetailPage', () => {
         tilesPrefix: 'mock/',
         tileGrid: { cols: 4, rows: 2, size: 512 },
       },
+      panorama: null,
       createdAt: new Date().toISOString(),
     };
     vi.mocked(getAsset).mockResolvedValue(mockAsset);
@@ -240,6 +241,7 @@ describe('SceneDetailPage', () => {
         arrivalYaw: null,
         mediaAssetIds: [],
         icon: HotspotIcon.INFO,
+        
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -306,6 +308,7 @@ describe('SceneDetailPage', () => {
       copyright: null,
       thumbnailUrl: null,
       derivatives: {},
+      panorama: null,
       createdAt: new Date().toISOString(),
     };
     vi.mocked(getAsset).mockResolvedValue(mockAsset);
