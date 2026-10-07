@@ -20,6 +20,7 @@ import {
   type TourResponse,
   type TourValidationResponse,
   type PreviewTokenResponse,
+  type TourLinkMap,
 } from '@xplor/shared';
 
 import { ENV } from '../config/config.module.js';
@@ -59,6 +60,12 @@ export class ToursController {
   get(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
     requireContentManager(request);
     return this.tours.get(parseResourceId(id));
+  }
+
+  @Get(':id/graph')
+  graph(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourLinkMap> {
+    requireContentManager(request);
+    return this.tours.getLinkMap(parseResourceId(id));
   }
 
   @Post(':id/validate')

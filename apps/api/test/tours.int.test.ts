@@ -16,6 +16,7 @@ import {
   MeResponseSchema,
   PaginatedTourResponseSchema,
   PreviewTokenResponseSchema,
+  TourLinkMapSchema,
   TourResponseSchema,
   TourStatus,
   type CategoryCreate,
@@ -431,6 +432,119 @@ describe('visites HTTP', () => {
       const parsed = PreviewTokenResponseSchema.parse(parseJson(response.body));
       expect(parsed.token.length).toBeGreaterThan(0);
       expect(parsed.expiresAt).toBeGreaterThan(Date.now());
+    });
+  });
+
+  describe('GET /admin/tours/:id/graph', () => {
+    it('répond 401 sans session', async () => {
+      const response = await application().inject({
+        method: 'GET',
+        url: '/api/v1/admin/tours/01990000-0000-7000-8000-0000000000aa/graph',
+      });
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('refuse la lecture à PARTNER et HOTEL_MANAGER', async () => {
+      const partner = await login(PARTNER_EMAIL);
+      const manager = await login(MANAGER_EMAIL);
+      const tourId = '01990000-0000-7000-8000-0000000000aa';
+
+      const partnerRes = await application().inject({
+        method: 'GET',
+        url: `/api/v1/admin/tours/${tourId}/graph`,
+        headers: { cookie: sessionCookie(partner.sessionId) },
+      });
+      const managerRes = await application().inject({
+        method: 'GET',
+        url: `/api/v1/admin/tours/${tourId}/graph`,
+        headers: { cookie: sessionCookie(manager.sessionId) },
+      });
+
+      expect(partnerRes.statusCode).toBe(403);
+      expect(managerRes.statusCode).toBe(403);
+    });
+
+    it('répond 404 si la visite est inconnue', async () => {
+      const editor = await login(EDITOR_EMAIL);
+      const response = await application().inject({
+        method: 'GET',
+        url: '/api/v1/admin/tours/01990000-0000-7000-8000-0000000000aa/graph',
+        headers: { cookie: sessionCookie(editor.sessionId) },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('retourne le graphe valide pour EDITOR avec des scènes liées et orphelines', async () => {
+      const editor = await login(EDITOR_EMAIL);
+      const refs = await prepare(editor);
+      const created = await createTour(editor, {
+        title: { fr: 'Visite test' },
+        summary: { fr: 'Résumé' },
+        cityId: refs.city.id,
+        categoryIds: [refs.category.id],
+        coverAssetId: refs.coverAssetId,
+      });
+
+      const scene1 = await prisma.scene.create({
+        data: {
+          tourId: created.id,
+          title: { fr: 'Scène 1' },
+          panoramaAssetId: refs.coverAssetId,
+          weight: 0,
+          createdById: editor.userId,
+        },
+      });
+      const scene2 = await prisma.scene.create({
+        data: {
+          tourId: created.id,
+          title: { fr: 'Scène 2' },
+          panoramaAssetId: refs.coverAssetId,
+          weight: 1,
+          createdById: editor.userId,
+        },
+      });
+      const scene3 = await prisma.scene.create({
+        data: {
+          tourId: created.id,
+          title: { fr: 'Scène 3' },
+          panoramaAssetId: refs.coverAssetId,
+          weight: 2,
+          createdById: editor.userId,
+        },
+      });
+
+      await prisma.hotspot.create({
+        data: {
+          sceneId: scene1.id,
+          type: 'SCENE_LINK',
+          yaw: 0,
+          pitch: 0,
+          label: { fr: 'Vers scène 2' },
+          icon: 'ARROW',
+          targetSceneId: scene2.id,
+          createdById: editor.userId,
+        },
+      });
+
+      const response = await application().inject({
+        method: 'GET',
+        url: `/api/v1/admin/tours/${created.id}/graph`,
+        headers: { cookie: sessionCookie(editor.sessionId) },
+      });
+
+      expect(response.statusCode).toBe(200);
+
+      const parsed = TourLinkMapSchema.parse(parseJson(response.body));
+      expect(parsed.nodes).toHaveLength(3);
+      expect(parsed.nodes.some(n => n.id === scene3.id)).toBe(true);
+      expect(parsed.edges).toHaveLength(1);
+      
+      const edge = parsed.edges[0];
+      if (!edge) {
+        throw new Error('edge manquant');
+      }
+      expect(edge.source).toBe(scene1.id);
+      expect(edge.target).toBe(scene2.id);
     });
   });
 });
