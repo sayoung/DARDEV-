@@ -310,4 +310,66 @@ describe('ViewerService', () => {
       expect(tourFindManyMock).not.toHaveBeenCalled();
     });
   });
+
+  describe('getPreviewGraph', () => {
+    it('should throw NotFoundException if tour is not found or deleted', async () => {
+      findFirstMock.mockResolvedValue(null);
+
+      await expect(viewerService.getPreviewGraph('fake-id', 'fr')).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(findFirstMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: 'fake-id',
+            deletedAt: null,
+          },
+        }),
+      );
+    });
+
+    it('should return a DRAFT tour in preview', async () => {
+      const fakeDraftTour = {
+        ...baseFakeTour,
+        status: 'DRAFT',
+      };
+      
+      findFirstMock.mockResolvedValue(fakeDraftTour);
+
+      const graph = await viewerService.getPreviewGraph('some-tour-id', 'fr');
+
+      expect(findFirstMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: 'some-tour-id',
+            deletedAt: null,
+          },
+        }),
+      );
+      
+      expect(graph).toBeDefined();
+      expect(graph.id).toBe('some-tour-id');
+    });
+
+    it('should reject a DRAFT tour in getPublicGraph with NotFoundException', async () => {
+      // Mock for getPublicGraph
+      findFirstMock.mockResolvedValue(null);
+
+      await expect(viewerService.getPublicGraph('fake-token', 'fr')).rejects.toThrow(
+        NotFoundException,
+      );
+      
+      expect(findFirstMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            shareToken: 'fake-token',
+            publicShare: true,
+            status: 'PUBLISHED',
+            deletedAt: null,
+          },
+        }),
+      );
+    });
+  });
 });

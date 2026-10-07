@@ -55,6 +55,22 @@ export class ViewerService {
     return tour;
   }
 
+  public async getPreviewGraph(tourId: string, lang: Lang): Promise<TourGraph> {
+    const tour = await this.prisma.tour.findFirst({
+      where: {
+        id: tourId,
+        deletedAt: null,
+      },
+      include: TOUR_INCLUDE,
+    });
+
+    if (!tour) {
+      throw new NotFoundException();
+    }
+
+    return this.buildGraph(tour, lang);
+  }
+
   public async getPublicGraph(shareToken: string, lang: Lang): Promise<TourGraph> {
     const tour = await this.loadPublicTour(shareToken);
     return this.buildGraph(tour, lang);
