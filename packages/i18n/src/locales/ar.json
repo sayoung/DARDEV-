@@ -272,6 +272,9 @@
     "saveSuccess": "تم حفظ الجولة."
   },
   "viewer": {
+    "preview": {
+      "badge": "Aperçu – visite non publiée"
+    },
     "goTo": "Aller vers : {{title}}",
     "confirm": "Y aller",
     "cancel": "Annuler",

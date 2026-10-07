@@ -7,6 +7,7 @@ import { startViewer } from './app.js';
 
 describe('startViewer', () => {
   let mockLoad: Mock<(shareToken: string, lang: Lang) => Promise<TourGraph>>;
+  let mockLoadPreview: Mock<(previewToken: string, lang: Lang) => Promise<TourGraph>>;
   let mockMount: Mock<(
     container: HTMLElement,
     graph: TourGraph,
@@ -53,6 +54,7 @@ describe('startViewer', () => {
 
   beforeEach(() => {
     mockLoad = vi.fn();
+    mockLoadPreview = vi.fn();
     mockMount = vi.fn().mockReturnValue({
       goToScene: vi.fn().mockResolvedValue(undefined),
       destroy: vi.fn(),
@@ -67,7 +69,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/invalid', search: '' },
-      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
     );
 
     expect(mockLoad).not.toHaveBeenCalled();
@@ -81,7 +83,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/12345', search: '' },
-      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
     );
 
     const status = doc.getElementById('status');
@@ -95,7 +97,7 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/12345', search: '?lang=en' },
-      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
     );
 
     const status = doc.getElementById('status');
@@ -109,13 +111,14 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/validToken', search: '' },
-      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
     );
 
     expect(doc.title).toBe('Test Tour');
     const status = doc.getElementById('status');
     expect(status?.textContent).toBe('');
     expect(status?.hidden).toBe(true);
+    expect(doc.getElementById('preview-badge')).toBeNull();
 
     const viewer = doc.getElementById('viewer');
     expect(mockMount).toHaveBeenCalledTimes(1);
@@ -138,11 +141,45 @@ describe('startViewer', () => {
     await startViewer(
       doc,
       { pathname: '/v/validToken', search: '' },
-      { load: mockLoad, mount: mockMount, navigate: mockNavigate }
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
     );
 
     const status = doc.getElementById('status');
     expect(status?.textContent).toBe(resources.fr.viewer.loadError);
     expect(status?.hidden).toBe(false);
+  });
+
+  it('preview: appelle loadPreview et affiche le bandeau', async () => {
+    mockLoadPreview.mockResolvedValue(mockGraph);
+
+    await startViewer(
+      doc,
+      { pathname: '/v/preview/abc.def', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    expect(mockLoadPreview).toHaveBeenCalledWith('abc.def', 'fr');
+    expect(mockLoad).not.toHaveBeenCalled();
+
+    const badge = doc.getElementById('preview-badge');
+    expect(badge).not.toBeNull();
+    expect(badge?.textContent).toBe(resources.fr.viewer.preview.badge);
+
+    expect(mockMount).toHaveBeenCalledTimes(1);
+  });
+
+  it('preview: loadPreview rejeté avec TourNotFoundError affiche notFound', async () => {
+    mockLoadPreview.mockRejectedValue(new TourNotFoundError());
+
+    await startViewer(
+      doc,
+      { pathname: '/v/preview/abc.def', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    expect(mockLoadPreview).toHaveBeenCalled();
+    const status = doc.getElementById('status');
+    expect(status?.textContent).toBe(resources.fr.viewer.notFound);
+    expect(mockMount).not.toHaveBeenCalled();
   });
 });

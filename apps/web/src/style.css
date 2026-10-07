@@ -299,3 +299,17 @@ body {
   outline: 2px solid #6958a5;
   outline-offset: 2px;
 }
+
+/* preview-badge */
+#preview-badge {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  background-color: #6958a5;
+  color: #ffffff;
+  text-align: center;
+  padding-block: 0.5rem;
+  padding-inline: 1rem;
+  z-index: 1000;
+  font-weight: bold;
+}
