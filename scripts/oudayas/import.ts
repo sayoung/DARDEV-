@@ -312,7 +312,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
   const args = parseArgs(argv.slice(2), env);
   apiUrl = args.apiUrl;
 
-  const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+  const dataPath = path.resolve(args.data);
   const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
   
   const TourDataSchema = z.object({
@@ -323,7 +323,7 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
       file: z.string(),
       name: z.string(),
       info: z.string(),
-    })),
+    })).max(500, 'La visite ne peut pas contenir plus de 500 scènes.'),
   });
   
   const data = TourDataSchema.parse(rawData);
@@ -341,17 +341,21 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
     const plan = buildTourPlan(data, fakeAssetIds);
     console.log(`- Hotspots prévus : ${String(countPlannedHotspots(plan))}`);
 
+    let totalSize = 0;
     console.log(`- Fichiers à importer :`);
     let hasError = false;
     for (const file of files) {
       const fullPath = path.join(args.dir, file);
       if (fs.existsSync(fullPath)) {
+        const stats = fs.statSync(fullPath);
+        totalSize += stats.size;
         console.log(`  - ${file} (OK)`);
       } else {
         console.log(`  - ${file} (MANQUANT: ${fullPath})`);
         hasError = true;
       }
     }
+    console.log(`- Taille totale des fichiers : ${(totalSize / 1024 / 1024).toFixed(2)} Mo`);
     if (hasError) {
       process.exitCode = 1;
     }

@@ -174,9 +174,9 @@ Contrôlez que `ACME_EMAIL` est correct dans `.env.production`, que vos enregist
 
 **Limitation de débit :** si tous les utilisateurs sont bloqués ensemble, vérifier `API_TRUST_PROXY=true`.
 
-## 12. Importer la visite des Oudayas
+## 12. Importer une visite
 
-Pour préparer la Démo 1, vous devez importer la visite des Oudayas en utilisant un script depuis votre PC.
+Pour préparer la Démo 1 (ou importer une autre visite générique), vous devez exécuter un script d'import depuis votre PC.
 
 **Prérequis :**
 - La médiathèque doit être fonctionnelle en production.
@@ -217,6 +217,12 @@ pnpm import:oudayas
 Pour réimporter ou mettre à jour la visite, utilisez l'option `--replace` :
 ```powershell
 pnpm import:oudayas --replace
+```
+
+**Importer une autre visite (données génériques) :**
+Vous pouvez fournir votre propre fichier JSON et votre dossier de panoramas via les options `--data` et `--dir` :
+```powershell
+pnpm import:oudayas --data "C:\chemin\vers\mon-tour.json" --dir "C:\chemin\vers\panoramas"
 ```
 
 ## 13. Démo 1 : Scan QR Code des Oudayas

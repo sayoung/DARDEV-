@@ -6,6 +6,7 @@ export interface ImportOptions {
   email?: string;
   password?: string;
   dir: string;
+  data: string;
   replace: boolean;
   dryRun: boolean;
   timeoutSec: number;
@@ -18,6 +19,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv): ImportOptions
   let timeoutSec = 600;
   let concurrency = 3;
   let customDir: string | undefined;
+  let customData: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -45,6 +47,12 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv): ImportOptions
         throw new Error('Option --dir requires a value.');
       }
       customDir = val;
+    } else if (arg === '--data') {
+      const val = argv[++i];
+      if (val === undefined) {
+        throw new Error('Option --data requires a value.');
+      }
+      customData = val;
     } else if (arg.startsWith('-')) {
       throw new Error(`Unknown option: ${arg}`);
     }
@@ -68,12 +76,14 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv): ImportOptions
   }
 
   const dir = customDir ?? env.XPLOR_OUDAYAS_DIR ?? 'D:/DARDEV/local/xplor-panoramas-test/visite-oudayas/pano';
+  const data = customData ?? 'scripts/oudayas/tour-data.json';
 
   const schema = z.object({
     apiUrl: z.string().min(1, 'XPLOR_API_URL must not be empty.'),
     email: z.string().min(1, 'XPLOR_ADMIN_EMAIL must not be empty.').optional(),
     password: z.string().min(1, 'XPLOR_ADMIN_PASSWORD must not be empty.').optional(),
     dir: z.string().min(1, 'Directory must not be empty.'),
+    data: z.string().min(1, 'Data must not be empty.'),
     replace: z.boolean(),
     dryRun: z.boolean(),
     timeoutSec: z.number().int().min(1, 'Timeout must be positive.'),
@@ -85,6 +95,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv): ImportOptions
     email,
     password,
     dir,
+    data,
     replace,
     dryRun,
     timeoutSec,
