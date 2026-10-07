@@ -44,6 +44,7 @@ import {
   TourValidationResponseSchema,
   ValidationIssueSchema,
   TourGraphSchema,
+  TourLinkMapSchema,
   PreviewTokenResponseSchema,
   LANGS,
 } from '@xplor/shared';
@@ -408,6 +409,7 @@ registerTourCrud();
 registerTourValidate();
 registerTourPublish();
 registerTourDuplicate();
+registerTourGraph();
 registerSceneCrud();
 registerHotspotList();
 registerHotspotItem();
@@ -840,6 +842,24 @@ function registerTourDuplicate(): void {
       '401': jsonResponse('Session absente.', unauthorizedError),
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
       '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+    },
+  });
+}
+
+function registerTourGraph(): void {
+  registry.registerPath({
+    method: 'get',
+    path: '/api/v1/admin/tours/{id}/graph',
+    summary: 'Lire le graphe d’une visite',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: z.object({ id: z.uuidv7() }) },
+    responses: {
+      '200': jsonResponse('Graphe de la visite.', TourLinkMapSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', notFoundError),
     },
   });
 }
