@@ -21,6 +21,7 @@
     "@xplor/i18n": "workspace:*",
     "@xplor/shared": "workspace:*",
     "@xplor/viewer-core": "workspace:*",
+    "@xyflow/react": "^12.12.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "i18next": "^26.4.2",

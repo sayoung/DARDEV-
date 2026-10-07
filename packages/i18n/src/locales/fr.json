@@ -92,7 +92,8 @@
         "title": "Carte des liens",
         "refresh": "Actualiser",
         "orphans": "Scènes inaccessibles depuis la scène de départ :",
-        "noOrphans": "Toutes les scènes sont accessibles."
+        "noOrphans": "Toutes les scènes sont accessibles.",
+        "start": "Départ :"
       }
     },
     "asset": {
