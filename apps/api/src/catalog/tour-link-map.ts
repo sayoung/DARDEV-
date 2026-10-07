@@ -53,6 +53,8 @@ export function buildTourLinkMap(input: {
   }));
 
   const edges: TourLinkMap['edges'] = [];
+  const externalNodesMap = new Map<string, { label: string; hasTitle: boolean }>();
+
   for (const scene of activeScenes) {
     for (const hotspot of scene.hotspots) {
       if (
@@ -66,8 +68,40 @@ export function buildTourLinkMap(input: {
           target: hotspot.targetSceneId,
           kind: 'scene_link',
         });
+      } else if (
+        hotspot.type === HotspotType.TOUR_LINK &&
+        hotspot.targetTourId != null
+      ) {
+        const targetId = hotspot.targetTourId;
+        let info = externalNodesMap.get(targetId);
+        if (!info) {
+          info = { label: targetId, hasTitle: false };
+          externalNodesMap.set(targetId, info);
+        }
+
+        if (!info.hasTitle && hotspot.targetTourTitle) {
+          info.label = hotspot.targetTourTitle;
+          info.hasTitle = true;
+        }
+
+        edges.push({
+          id: hotspot.id,
+          source: scene.id,
+          target: targetId,
+          kind: 'tour_link',
+        });
       }
     }
+  }
+
+  for (const [tourId, info] of externalNodesMap) {
+    nodes.push({
+      id: tourId,
+      kind: 'external',
+      label: info.label,
+      isStart: false,
+      orphan: false,
+    });
   }
 
   return { nodes, edges };
