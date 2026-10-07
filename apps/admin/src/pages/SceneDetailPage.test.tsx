@@ -737,12 +737,12 @@ describe('SceneDetailPage', () => {
     expect(updateHotspot).not.toHaveBeenCalled();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(999);
     });
     expect(updateHotspot).not.toHaveBeenCalled();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(1);
     });
     
     await waitFor(() => {

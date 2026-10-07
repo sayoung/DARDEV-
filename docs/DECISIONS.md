@@ -891,13 +891,6 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 ## D-113 — Jeton d'aperçu (M4 F-24)
 
 - **Date :** 07/10/2026
-- **Décision :** Jeton d'aperçu HMAC avec SESSION_SECRET, TTL 1 h, sans stockage.
-- **Alternatives :** JWT (rejeté, pas de dépendance), table en base.
-- **À valider :** oui
-
-
-## D-113 — Jeton d'aperçu
-- **Date :** 07/10/2026
 - **Décision :** jeton d'aperçu HMAC avec SESSION_SECRET, TTL 1 h, sans stockage (Node pur, `node:crypto`). Format `base64url(tourId.expSeconds) + '.' + base64url(HMAC-SHA256(payload))`.
 - **Alternatives :** JWT (rejeté, pas de dépendance), table en base.
 - **À valider :** oui
