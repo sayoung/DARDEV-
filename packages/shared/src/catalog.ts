@@ -473,3 +473,14 @@ export const AssetCleanupResponseSchema = z.union([
   AssetCleanupResultSchema,
 ]);
 export type AssetCleanupResponse = z.infer<typeof AssetCleanupResponseSchema>;
+
+
+/**
+ * Réponse d'un jeton de prévisualisation (M4 F-24).
+ */
+export const PreviewTokenResponseSchema = z.object({
+  token: z.string().min(1),
+  expiresAt: z.number().int().positive(),
+});
+export type PreviewTokenResponse = z.infer<typeof PreviewTokenResponseSchema>;
+

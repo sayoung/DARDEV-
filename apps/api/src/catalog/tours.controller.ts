@@ -19,8 +19,11 @@ import {
   type Paginated,
   type TourResponse,
   type TourValidationResponse,
+  type PreviewTokenResponse,
 } from '@xplor/shared';
 
+import { ENV } from '../config/config.module.js';
+import type { Env } from '../config/env.js';
 import { CsrfGuard } from '../auth/csrf.guard.js';
 import type { SessionRequest } from '../auth/session-request.js';
 import { SessionGuard } from '../auth/session.guard.js';
@@ -32,6 +35,7 @@ import {
 } from './catalog-http.js';
 import { TourPublicationService } from './tour-publication.service.js';
 import { ToursService } from './tours.service.js';
+import { signPreviewToken } from './preview-token.js';
 
 @Controller('admin/tours')
 @UseGuards(SessionGuard, CsrfGuard)
@@ -39,6 +43,7 @@ export class ToursController {
   constructor(
     @Inject(ToursService) private readonly tours: ToursService,
     @Inject(TourPublicationService) private readonly publication: TourPublicationService,
+    @Inject(ENV) private readonly env: Env,
   ) {}
 
   @Get()
@@ -64,6 +69,19 @@ export class ToursController {
   ): Promise<TourValidationResponse> {
     requireContentManager(request);
     return this.publication.validate(parseResourceId(id));
+  }
+
+  @Post(':id/preview-token')
+  @HttpCode(HttpStatus.OK)
+  async previewToken(
+    @Req() request: SessionRequest,
+    @Param('id') id: string,
+  ): Promise<PreviewTokenResponse> {
+    requireContentManager(request);
+    const tourId = parseResourceId(id);
+    // Vérifie que la visite existe, 404 sinon.
+    await this.tours.get(tourId);
+    return signPreviewToken(tourId, this.env.SESSION_SECRET, Date.now());
   }
 
   @Post(':id/publish')
