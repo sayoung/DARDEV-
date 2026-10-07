@@ -894,3 +894,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** jeton d'aperçu HMAC avec SESSION_SECRET, TTL 1 h, sans stockage (Node pur, `node:crypto`). Format `base64url(tourId.expSeconds) + '.' + base64url(HMAC-SHA256(payload))`.
 - **Alternatives :** JWT (rejeté, pas de dépendance), table en base.
 - **À valider :** oui
+
+## D-114 — Dépendance @xyflow/react
+
+- **Date :** 07/10/2026
+- **Décision :** dépendance `@xyflow/react` (React Flow, licence MIT, bibliothèque autorisée par F-25, utilisée uniquement dans apps/admin).
+- **Alternatives :** Aucune.
+- **À valider :** non
+
