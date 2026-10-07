@@ -161,10 +161,12 @@ describe('médias HTTP', () => {
     expect(jsonKeys(body)).toEqual([
       'copyright',
       'createdAt',
+      'derivatives',
       'height',
       'id',
       'kind',
       'mimeType',
+      'panorama',
       'processingLog',
       'processingStatus',
       'sizeBytes',
