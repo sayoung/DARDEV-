@@ -15,7 +15,7 @@ import { Alert } from '../components/ui/Alert.js';
 import { Button } from '../components/ui/Button.js';
 import { SceneCreateSchema, SceneUpdateSchema } from '@xplor/shared';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs.js';
-import { SceneEditor360 } from '../components/SceneEditor360.js';
+import { SceneEditor360, type SceneEditor360Handle } from '../components/SceneEditor360.js';
 import { editorMarkers, editorPanorama, type EditorMarker, type EditorPanorama } from '@xplor/viewer-core';
 
 function normalizeLang(lang: string): 'fr' | 'ar' | 'en' {
@@ -60,6 +60,9 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const [currentTourScenes, setCurrentTourScenes] = useState<SceneResponse[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  const handleRef = useRef<SceneEditor360Handle>(null);
 
   const [rawHotspots, setRawHotspots] = useState<HotspotResponse[]>([]);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -224,6 +227,32 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
     }
   };
 
+  const handleSetInitialView = async () => {
+    if (!handleRef.current) return;
+    setIsSubmitting(true);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const view = handleRef.current.getView();
+      await updateScene(scene.id, {
+        title: scene.title,
+        panoramaAssetId: scene.panoramaAssetId,
+        weight: scene.weight,
+        caption: scene.caption ?? undefined,
+        narration: scene.narration ?? undefined,
+        ambientAssetId: scene.ambientAssetId ?? undefined,
+        initialYaw: view.yaw,
+        initialPitch: view.pitch,
+        initialZoom: view.zoom,
+      });
+      setActionSuccess('catalog.hotspots.editor.initialViewSaved');
+    } catch {
+      setActionError('common.error.generic');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <p className="p-4">{t('common.loading')}</p>;
   }
@@ -259,6 +288,14 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
             >
               {t('catalog.hotspots.editor.redo')}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleSetInitialView()}
+              disabled={isSubmitting}
+            >
+              {t('catalog.hotspots.editor.setInitialView')}
+            </Button>
           </div>
           {saveStatus !== 'idle' && (
             <div aria-live="polite" className="text-sm font-medium text-muted-foreground">
@@ -266,7 +303,10 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
             </div>
           )}
         </div>
+        {actionSuccess && <Alert variant="default" className="mb-4">{t(actionSuccess)}</Alert>}
+        {actionError && !draftPosition && !selectedHotspotId && <Alert variant="destructive" className="mb-4">{t(actionError)}</Alert>}
         <SceneEditor360
+          handleRef={handleRef}
           panorama={panorama}
           hotspots={hotspots}
           initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}

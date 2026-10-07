@@ -4,7 +4,7 @@ import { i18n } from '../i18n.js';
 import { SceneDetailPage } from './SceneDetailPage.js';
 import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { getScene, createScene, listScenes, getAsset, listHotspots, createHotspot, updateHotspot, deleteHotspot } from '../api/catalog.js';
+import { getScene, createScene, updateScene, listScenes, getAsset, listHotspots, createHotspot, updateHotspot, deleteHotspot } from '../api/catalog.js';
 import { Role, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus, type HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
 import { SceneEditor360 } from '../components/SceneEditor360.js';
 
@@ -32,28 +32,37 @@ vi.mock('../api/catalog.js', () => ({
 }));
 
 vi.mock('../components/SceneEditor360.js', () => ({
-  SceneEditor360: vi.fn(({ onPanoramaClick, onMarkerSelect, onMarkerMove }: { onPanoramaClick?: (yaw: number, pitch: number) => void, onMarkerSelect?: (id: string) => void, onMarkerMove?: (id: string, yaw: number, pitch: number) => void }) => (
-    <div data-testid="mock-scene-editor">
-      <button 
-        data-testid="mock-panorama-click" 
-        onClick={() => onPanoramaClick?.(0.5, 0.1)}
-      >
-        Simulate click
-      </button>
-      <button 
-        data-testid="mock-marker-select" 
-        onClick={() => onMarkerSelect?.('h-1')}
-      >
-        Simulate marker select
-      </button>
-      <button 
-        data-testid="mock-marker-move" 
-        onClick={() => onMarkerMove?.('h-1', 1.2, 0.3)}
-      >
-        Simulate marker move
-      </button>
-    </div>
-  )),
+  SceneEditor360: vi.fn(({ onPanoramaClick, onMarkerSelect, onMarkerMove, handleRef }: { onPanoramaClick?: (yaw: number, pitch: number) => void, onMarkerSelect?: (id: string) => void, onMarkerMove?: (id: string, yaw: number, pitch: number) => void, handleRef?: React.Ref<{ getView: () => { yaw: number, pitch: number, zoom: number } }> }) => {
+    if (handleRef) {
+      if (typeof handleRef === 'function') {
+        handleRef({ getView: () => ({ yaw: 0.5, pitch: -0.2, zoom: 40 }) });
+      } else if ('current' in handleRef) {
+        (handleRef as React.RefObject<{ getView: () => { yaw: number, pitch: number, zoom: number } }>).current = { getView: () => ({ yaw: 0.5, pitch: -0.2, zoom: 40 }) };
+      }
+    }
+    return (
+      <div data-testid="mock-scene-editor">
+        <button 
+          data-testid="mock-panorama-click" 
+          onClick={() => onPanoramaClick?.(0.5, 0.1)}
+        >
+          Simulate click
+        </button>
+        <button 
+          data-testid="mock-marker-select" 
+          onClick={() => onMarkerSelect?.('h-1')}
+        >
+          Simulate marker select
+        </button>
+        <button 
+          data-testid="mock-marker-move" 
+          onClick={() => onMarkerMove?.('h-1', 1.2, 0.3)}
+        >
+          Simulate marker move
+        </button>
+      </div>
+    );
+  }),
 }));
 
 interface MockAssetPickerProps {
@@ -847,6 +856,57 @@ describe('SceneDetailPage', () => {
       // Mock move uses (1.2, 0.3)
       expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 1.2, pitch: 0.3 }));
     });
+  });
+
+  it('sets current view as initial view', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1', tourId: 't-1', title: { fr: 'Titre' }, panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 0, hotspotCount: 0,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    vi.mocked(listScenes).mockResolvedValue([]);
+    const mockAsset: AssetResponse = {
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
+      thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
+      createdAt: new Date().toISOString(),
+    };
+    vi.mocked(getAsset).mockResolvedValue(mockAsset);
+    vi.mocked(listHotspots).mockResolvedValue([]);
+    vi.mocked(updateScene).mockResolvedValue({ ...mockSceneResponse, initialYaw: 0.5, initialPitch: -0.2, initialZoom: 40 });
+
+    render(<SceneDetailPage />);
+
+    const editorTab = await screen.findByText('Éditeur 360');
+    fireEvent.mouseDown(editorTab);
+    fireEvent.click(editorTab);
+
+    const btn = await screen.findByRole('button', { name: 'Définir la vue actuelle comme vue initiale' });
+    fireEvent.click(btn);
+
+    await waitFor(() => {
+      expect(updateScene).toHaveBeenCalledWith('s-1', {
+        title: { fr: 'Titre' },
+        panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+        weight: 0,
+        caption: undefined,
+        narration: undefined,
+        ambientAssetId: undefined,
+        initialYaw: 0.5,
+        initialPitch: -0.2,
+        initialZoom: 40,
+      });
+    });
+
+    expect(await screen.findByText('Vue initiale enregistrée')).toBeDefined();
   });
 
 });

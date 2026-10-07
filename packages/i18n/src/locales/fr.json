@@ -214,6 +214,8 @@
         "confirmDelete": "Supprimer ce hotspot ?",
         "undo": "Annuler",
         "redo": "Rétablir",
+        "setInitialView": "Définir la vue actuelle comme vue initiale",
+        "initialViewSaved": "Vue initiale enregistrée",
         "status": {
           "pending": "Modifications en attente…",
           "saving": "Enregistrement…",
