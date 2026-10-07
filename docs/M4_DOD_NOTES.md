@@ -13,3 +13,59 @@
 
 - Les routes `POST /api/v1/admin/tours/:id/preview-token` et `GET /api/v1/admin/tours/:id/graph` dans `apps/api/src/catalog/tours.controller.ts` sont réservées aux rôles `EDITOR` et supérieurs (403 pour PARTNER et HOTEL_MANAGER), donc sans filtre par hôtel ; le test « gestionnaire de l'hôtel A / hôtel B » est sans objet.
 - Les tests (401, 403, 404, nominal) existent dans `apps/api/test/tours.int.test.ts` pour ces deux routes.
+
+## Sorties des commandes
+
+### pnpm test
+**Commande :** `CI=1 timeout 480 pnpm test > /tmp/test.log 2>&1; echo EXIT=$?`
+**Code de sortie :** 0
+**Résumé Vitest :** 133 fichiers réussis, 0 en échec. 1000 tests réussis, 0 en échec.
+
+**Dernières lignes :**
+```text
+ ✓  @xplor/api  src/health/health.service.test.ts (3 tests) 8ms
+ ✓  @xplor/api  src/auth/prisma-user.repository.test.ts (8 tests) 11ms
+ ✓  @xplor/viewer-core  src/tour-nodes.test.ts (1 test) 6ms
+ ✓  @xplor/api  src/viewer/tour-graph-refs.test.ts (6 tests) 6ms
+ ✓  @xplor/api  src/auth/lockout.test.ts (4 tests) 5ms
+ ✓  scripts  demo-m2-lib.spec.ts (8 tests) 6ms
+ ✓  @xplor/api  src/auth/unit-of-work.test.ts (2 tests) 5ms
+ ✓  @xplor/worker  src/derivatives/content-hash.test.ts (3 tests) 5ms
+ ✓  @xplor/viewer-core  src/hotspot-action.test.ts (6 tests) 5ms
+ ✓  @xplor/viewer-core  src/tour-config.test.ts (5 tests) 6ms
+ ✓  @xplor/api  src/catalog/tour-duplicate.test.ts (5 tests) 6ms
+ ✓  @xplor/api  src/auth/session.guard.test.ts (10 tests) 10ms
+ ✓  @xplor/api  src/viewer/share-html.test.ts (3 tests) 4ms
+ ✓  @xplor/api  src/mail/fake-mailer.test.ts (1 test) 4ms
+ ✓  @xplor/viewer-core  src/tour-link.test.ts (5 tests) 5ms
+ ✓  @xplor/api  src/mail/render-mail.test.ts (2 tests) 4ms
+ ✓  @xplor/api  src/seed/seed-users.test.ts (4 tests) 8ms
+ ✓  @xplor/shared  src/password.test.ts (1 test) 3ms
+ ✓  @xplor/api  src/prisma/role.test.ts (1 test) 4ms
+ ✓  @xplor/api  src/mail/smtp-mailer.test.ts (1 test) 3ms
+ ✓  @xplor/api  src/cli/format-error.test.ts (4 tests) 4ms
+ ✓  @xplor/api  src/auth/prisma-user.lookup.test.ts (2 tests) 4ms
+ ✓  @xplor/web  src/controls.test.ts (4 tests) 14ms
+ ✓  @xplor/web  src/info-panel.test.ts (9 tests) 24ms
+ ✓  @xplor/web  src/media-overlay.test.ts (11 tests) 29ms
+ ✓  @xplor/web  src/confirm-dialog.test.ts (7 tests) 17ms
+ ✓  @xplor/web  src/text-html.test.ts (6 tests) 4ms
+ ✓  @xplor/web  src/route.test.ts (15 tests) 5ms
+ ✓  @xplor/web  src/lang-switcher.test.ts (3 tests) 11ms
+ ✓  @xplor/kiosk  src/mount.test.ts (2 tests) 4ms
+ ✓  @xplor/web  src/scene-audio-player.test.ts (7 tests) 13ms
+ ✓  @xplor/web  src/hotspot-ui.test.ts (7 tests) 18ms
+ ✓  @xplor/web  src/viewer-controller.test.ts (13 tests) 43ms
+ ✓  @xplor/web  src/app.test.ts (7 tests) 18ms
+
+ Test Files  133 passed (133)
+      Tests  1000 passed (1000)
+   Start at  14:00:32
+   Duration  16.75s (transform 7.18s, setup 0ms, collect 92.65s, tests 21.39s, environment 127.10s, prepare 25.40s)
+```
+
+### pnpm lint
+**Code de sortie :** 0
+
+### pnpm typecheck
+**Code de sortie :** 0
