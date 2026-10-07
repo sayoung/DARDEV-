@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { AssetCleanupRequestSchema, AssetUploadRequestSchema, type AssetCleanupResponse, type AssetResponse, type AssetUploadResponse, type Paginated } from '@xplor/shared';
+import { AssetCleanupRequestSchema, AssetFoldersQuerySchema, AssetUploadRequestSchema, type AssetCleanupResponse, type AssetFoldersResponse, type AssetResponse, type AssetUploadResponse, type Paginated } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
 import type { SessionRequest } from '../auth/session-request.js';
@@ -34,6 +34,16 @@ export class AssetsController {
     } else {
       return this.assets.cleanup(false);
     }
+  }
+
+  @Get('folders')
+  getFolders(
+    @Req() request: SessionRequest,
+    @Query() query: Record<string, unknown>,
+  ): Promise<AssetFoldersResponse> {
+    const principal = requireContentManager(request);
+    const parsed = AssetFoldersQuerySchema.parse(query);
+    return this.assets.getFolders(principal, parsed);
   }
 
   @Get(':id')

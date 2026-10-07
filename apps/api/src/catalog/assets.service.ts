@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, HttpException, Inject, Injectable, Logger } from '@nestjs/common';
 import { AssetKind as PrismaAssetKind, ProcessingStatus, Prisma, type Asset } from '@prisma/client';
 import {
   AssetKind,
@@ -17,7 +17,12 @@ import {
   type AssetCleanupResult,
   type AssetCleanupResponse,
   AssetCleanupDryRunResponseSchema,
+  type AssetFoldersResponse,
+  type Principal,
+  LocalizedTextSchema,
 } from '@xplor/shared';
+
+import { canManageContent } from '../auth/access-policy.js';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PanoramaQueueService } from '../queue/panorama-queue.service.js';
@@ -393,6 +398,60 @@ export class AssetsService {
         this.logger.error(`Erreur lors de la suppression des dérivés du panorama ${id}`, error);
       }
     }
+  }
+
+  async getFolders(actor: Principal, query: Pick<AssetListQuery, 'kind'>): Promise<AssetFoldersResponse> {
+    if (!canManageContent(actor)) {
+      throw new ForbiddenException();
+    }
+
+    const usage = await this.usageIndex();
+    const whereKind = kindWhere(query.kind);
+
+    const total = await this.prisma.asset.count({ where: whereKind });
+
+    const usedAssetIdsOfAllKinds = Array.from(usage.keys());
+    const usedAssets = await this.prisma.asset.findMany({
+      where: {
+        id: { in: usedAssetIdsOfAllKinds },
+        ...whereKind,
+      },
+      select: { id: true },
+    });
+
+    const usedAssetIdsOfRequestedKind = new Set(usedAssets.map((a) => a.id));
+    const unusedCount = total - usedAssetIdsOfRequestedKind.size;
+
+    const toursCountMap = new Map<string, number>();
+
+    for (const assetId of usedAssetIdsOfRequestedKind) {
+      const tourIds = usage.get(assetId);
+      if (tourIds !== undefined) {
+        for (const tourId of tourIds) {
+          toursCountMap.set(tourId, (toursCountMap.get(tourId) ?? 0) + 1);
+        }
+      }
+    }
+
+    const tours = await this.prisma.tour.findMany({
+      where: { deletedAt: null },
+      select: { id: true, title: true },
+    });
+
+    const tourFolders = tours.map((tour) => {
+      // Les visites sans média apparaissent avec count 0
+      return {
+        id: tour.id,
+        title: LocalizedTextSchema.parse(tour.title),
+        count: toursCountMap.get(tour.id) ?? 0,
+      };
+    });
+
+    return {
+      total,
+      unusedCount,
+      tours: tourFolders,
+    };
   }
 
   async reprocessAllPanoramas(): Promise<number> {
