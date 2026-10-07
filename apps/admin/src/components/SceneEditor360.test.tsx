@@ -3,9 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SceneEditor360 } from './SceneEditor360';
 import { mountSceneEditor } from '@xplor/viewer-core';
 
-vi.mock('@xplor/viewer-core', () => ({
-  mountSceneEditor: vi.fn(),
-}));
+vi.mock('@xplor/viewer-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@xplor/viewer-core')>();
+  return {
+    ...actual,
+    mountSceneEditor: vi.fn(),
+  };
+});
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -172,5 +176,24 @@ describe('SceneEditor360', () => {
     const editorNode = getByRole('application');
     
     expect(editorNode.getAttribute('aria-label')).toBe('translated_editor.sceneAriaLabel');
+  });
+
+  it('expose getView via handleRef qui normalise yaw et arrondit zoom', () => {
+    vi.mocked(mountSceneEditor).mockReturnValue({
+      destroy: vi.fn(),
+      setMarkers: vi.fn(),
+      getView: vi.fn().mockReturnValue({ yaw: 4, pitch: 0.1, zoom: 42.6 }),
+    });
+
+    const handleRef = { current: null as import('./SceneEditor360').SceneEditor360Handle | null };
+    render(<SceneEditor360 {...defaultProps} handleRef={handleRef} />);
+
+    expect(handleRef.current).not.toBeNull();
+    if (!handleRef.current) return;
+    
+    const view = handleRef.current.getView();
+    expect(view.yaw).toBeCloseTo(4 - 2 * Math.PI, 9);
+    expect(view.pitch).toBe(0.1);
+    expect(view.zoom).toBe(43);
   });
 });
