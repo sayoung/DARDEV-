@@ -11,6 +11,7 @@ import {
   TourStatus,
   type Paginated,
   type TourCreate,
+  type TourLinkMap,
   type TourListQuery,
   type TourResponse,
   type TourUpdate,
@@ -34,6 +35,7 @@ import {
 import { localizedToJson } from './localized-json.js';
 import { createShareToken } from './share-token.js';
 import { duplicateFrenchTitle, remapDuplicateLinks } from './tour-duplicate.js';
+import { buildTourLinkMap } from './tour-link-map.js';
 
 const tourInclude = {
   categories: {
@@ -90,6 +92,38 @@ export class ToursService {
 
   async get(id: string): Promise<TourResponse> {
     return toTour(await this.loadActive(id));
+  }
+
+  async getLinkMap(id: string): Promise<TourLinkMap> {
+    const tour = await this.loadActive(id);
+    const dbScenes = await this.prisma.scene.findMany({
+      where: { tourId: id },
+      include: {
+        hotspots: {
+          where: { type: { in: [PrismaHotspotType.SCENE_LINK, PrismaHotspotType.TOUR_LINK] } },
+          include: { targetTour: { select: { title: true, deletedAt: true } } },
+        },
+      },
+    });
+
+    return buildTourLinkMap({
+      startSceneId: tour.startSceneId,
+      scenes: dbScenes.map((scene) => ({
+        id: scene.id,
+        title: LocalizedTextSchema.parse(scene.title).fr,
+        deleted: scene.deletedAt !== null,
+        hotspots: scene.hotspots.map((h) => ({
+          id: h.id,
+          type: toHotspotType(h.type),
+          targetSceneId: h.targetSceneId,
+          targetTourId: h.targetTourId,
+          targetTourTitle:
+            h.targetTour === null || h.targetTour.deletedAt !== null
+              ? null
+              : LocalizedTextSchema.parse(h.targetTour.title).fr,
+        })),
+      })),
+    });
   }
 
   async create(input: TourCreate, createdById: string): Promise<TourResponse> {
