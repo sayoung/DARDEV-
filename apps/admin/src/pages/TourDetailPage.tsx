@@ -4,20 +4,22 @@ import { useAuth } from '../auth/AuthProvider.js';
 import { TourForm } from './TourForm.js';
 import { TourScenesSection } from './TourScenesSection.js';
 import { TourPublicationPanel } from './TourPublicationPanel.js';
-import { getTour, updateTour, deleteTour } from '../api/catalog.js';
+import { getTour, updateTour, deleteTour, createPreviewToken } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Role, type TourResponse, type TourUpdate } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
 import { Alert } from '../components/ui/Alert.js';
+import { Button } from '../components/ui/Button.js';
+import { previewUrl } from '../lib/tour-qr.js';
 
 function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0;
 }
 
 export function TourDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const auth = useAuth();
   const { route } = useAppLocation();
   const id = route.name === 'tour-detail' ? route.id : '';
@@ -123,12 +125,35 @@ export function TourDetailPage() {
     }
   };
 
+  const handlePreview = async () => {
+    setIsSubmitting(true);
+    setActionError(null);
+    setSuccessKey(null);
+    try {
+      const res = await createPreviewToken(id);
+      const webBase = typeof import.meta.env.VITE_PUBLIC_WEB_URL === 'string'
+        ? import.meta.env.VITE_PUBLIC_WEB_URL
+        : window.location.origin;
+      const url = previewUrl(webBase, res.token, i18n.language);
+      window.open(url, '_blank', 'noopener');
+    } catch {
+      setActionError('common.error.generic');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const statusText = t(`catalog.tour.status.${tour.status}`);
 
   return (
     <div className="space-y-6 pb-8">
       <PageHeader 
         title={t('page.tourDetail.title')} 
+        actions={
+          <Button onClick={() => { void handlePreview(); }} disabled={isSubmitting}>
+            {t('catalog.tours.preview.open')}
+          </Button>
+        }
       />
       <TourPublicationPanel tour={tour} onTourUpdated={setTour} />
       {actionError !== null && <Alert variant="destructive" role="alert">{t(actionError)}</Alert>}

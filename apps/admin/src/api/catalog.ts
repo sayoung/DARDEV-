@@ -37,6 +37,8 @@ import {
   type HotspotResponse,
   type HotspotCreate,
   type HotspotUpdate,
+  PreviewTokenResponseSchema,
+  type PreviewTokenResponse,
   z
 } from '@xplor/shared';
 import { requestJson } from './client.js';
@@ -241,3 +243,10 @@ export async function regenerateShareToken(id: string): Promise<TourResponse> {
     method: 'POST',
   });
 }
+
+export async function createPreviewToken(id: string): Promise<PreviewTokenResponse> {
+  return requestJson(`/api/v1/admin/tours/${id}/preview-token`, PreviewTokenResponseSchema, {
+    method: 'POST',
+  });
+}
+

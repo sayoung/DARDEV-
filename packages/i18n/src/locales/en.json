@@ -77,6 +77,11 @@
     }
   },
   "catalog": {
+    "tours": {
+      "preview": {
+        "open": "Test the tour"
+      }
+    },
     "asset": {
       "empty": "No media found.",
       "error": "Failed to load media.",

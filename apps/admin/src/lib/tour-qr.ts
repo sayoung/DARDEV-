@@ -16,3 +16,11 @@ export function shareUrl(webBaseUrl: string, shareToken: string, params?: Record
 export async function tourQrSvg(url: string): Promise<string> {
   return QRCode.toString(url, { type: 'svg', margin: 2 });
 }
+
+export function previewUrl(webBaseUrl: string, token: string, lang: string): string {
+  const base = webBaseUrl.replace(/\/+$/, '');
+  const url = new URL(`${base}/v/preview/${token}`);
+  url.searchParams.append('lang', lang);
+  return url.toString();
+}
+
