@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { SceneForm } from './SceneForm.js';
 import { HotspotForm } from './HotspotForm.js';
-import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot, deleteHotspot } from '../api/catalog.js';
+import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot, deleteHotspot, updateHotspot } from '../api/catalog.js';
+import { createDebouncedSaver, type SaveStatus } from '../editor/debouncedSaver.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
-import { Role, type SceneResponse, type SceneCreate, type HotspotCreate, z, ProcessingStatus } from '@xplor/shared';
+import { Role, type SceneResponse, type SceneCreate, type HotspotCreate, z, ProcessingStatus, type HotspotResponse, type HotspotUpdate, HotspotType } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
@@ -23,6 +24,28 @@ function normalizeLang(lang: string): 'fr' | 'ar' | 'en' {
   return 'fr';
 }
 
+function getHotspotUpdate(h: HotspotResponse, yaw: number, pitch: number): HotspotUpdate {
+  const base = {
+    yaw,
+    pitch,
+    label: h.label,
+    icon: h.icon,
+    arrivalYaw: h.arrivalYaw ?? undefined,
+  };
+  switch (h.type) {
+    case HotspotType.SCENE_LINK:
+      return { ...base, type: h.type, targetSceneId: h.targetSceneId ?? '' };
+    case HotspotType.TOUR_LINK:
+      return { ...base, type: h.type, targetTourId: h.targetTourId ?? '', targetTourSceneId: h.targetTourSceneId ?? undefined };
+    case HotspotType.INFO:
+      return { ...base, type: h.type, body: h.body ?? { fr: '' } };
+    case HotspotType.MEDIA:
+      return { ...base, type: h.type, mediaAssetIds: h.mediaAssetIds };
+    case HotspotType.URL:
+      return { ...base, type: h.type, url: h.url ?? '' };
+  }
+}
+
 function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -37,6 +60,23 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const [rawHotspots, setRawHotspots] = useState<HotspotResponse[]>([]);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const saverRef = useRef<ReturnType<typeof createDebouncedSaver<HotspotUpdate>> | null>(null);
+
+  useEffect(() => {
+    saverRef.current = createDebouncedSaver<HotspotUpdate>(
+      async (id, data) => { await updateHotspot(id, data); },
+      setSaveStatus,
+      1000
+    );
+    return () => {
+      if (saverRef.current) {
+        void saverRef.current.flush();
+      }
+    };
+  }, []);
+
   useEffect(() => {
     let active = true;
     listScenes(scene.tourId).then((res) => {
@@ -48,6 +88,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const loadHotspots = () => {
     listHotspots(scene.id).then((hotspotsRes) => {
       const lang = normalizeLang(i18n.language);
+      setRawHotspots(hotspotsRes);
       setHotspots(editorMarkers(hotspotsRes, lang));
     }).catch(() => {
       setActionError('common.error.generic');
@@ -75,6 +116,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
         const lang = normalizeLang(i18n.language);
         const marks = editorMarkers(hotspotsRes, lang);
         setPanorama(pan);
+        setRawHotspots(hotspotsRes);
         setHotspots(marks);
       } catch {
         setError('common.error.generic');
@@ -124,6 +166,11 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 min-h-[500px]">
+        {saveStatus !== 'idle' && (
+          <div aria-live="polite" className="mb-4 text-sm font-medium text-muted-foreground">
+            {t(`catalog.hotspots.editor.status.${saveStatus}`)}
+          </div>
+        )}
         <SceneEditor360
           panorama={panorama}
           hotspots={hotspots}
@@ -137,6 +184,15 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
             setSelectedHotspotId(id);
             setDraftPosition(null);
             setActionError(null);
+          }}
+          onMarkerMove={(id, yaw, pitch) => {
+            setHotspots((prev) => prev.map((h) => (h.id === id ? { ...h, position: { yaw, pitch } } : h)));
+            if (saverRef.current) {
+              const raw = rawHotspots.find((r) => r.id === id);
+              if (raw) {
+                saverRef.current.schedule(id, getHotspotUpdate(raw, yaw, pitch));
+              }
+            }
           }}
         />
       </div>
