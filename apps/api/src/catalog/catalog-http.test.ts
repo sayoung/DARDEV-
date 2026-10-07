@@ -113,6 +113,20 @@ describe('parseAssetListQuery', () => {
     });
   });
 
+  it('transmet tourId et unused', () => {
+    expect(
+      parseAssetListQuery({
+        tourId: CITY_ID,
+        unused: 'true',
+      }),
+    ).toEqual({
+      page: 1,
+      pageSize: 20,
+      tourId: CITY_ID,
+      unused: 'true',
+    });
+  });
+
   it('refuse un kind inconnu', () => {
     expect(() => parseAssetListQuery({ kind: 'GIF' })).toThrow(BadRequestException);
   });

@@ -17,8 +17,8 @@ export class AssetsController {
     @Req() request: SessionRequest,
     @Query() query: Record<string, unknown>,
   ): Promise<Paginated<AssetResponse>> {
-    requireContentManager(request);
-    return this.assets.list(parseAssetListQuery(query));
+    const principal = requireContentManager(request);
+    return this.assets.list(principal, parseAssetListQuery(query));
   }
 
   @Post('cleanup')
