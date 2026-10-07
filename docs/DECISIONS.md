@@ -887,3 +887,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 
 - **Date :** 06/10/2026
 - **Décision :** F-22 : annuler/rétablir couvre les déplacements de hotspots pendant la session d'édition ; la suppression est confirmée et non annulable (recréer un hotspot changerait son id) ; à valider : oui
+
+## D-113 — Jeton d'aperçu (M4 F-24)
+
+- **Date :** 07/10/2026
+- **Décision :** Jeton d'aperçu HMAC avec SESSION_SECRET, TTL 1 h, sans stockage.
+- **Alternatives :** JWT (rejeté, pas de dépendance), table en base.
+- **À valider :** oui
+
