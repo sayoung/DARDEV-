@@ -40,7 +40,7 @@ export class AssetsService {
   ) {}
 
   async list(query: AssetListQuery): Promise<Paginated<AssetResponse>> {
-    const where = listWhere(query);
+    const where = kindWhere(query.kind);
     const [total, rows] = await Promise.all([
       this.prisma.asset.count({ where }),
       this.prisma.asset.findMany({
@@ -273,6 +273,57 @@ export class AssetsService {
     }
   }
 
+  private async usageIndex(): Promise<Map<string, Set<string>>> {
+    const tours = await this.prisma.tour.findMany({
+      where: { deletedAt: null },
+      select: {
+        id: true,
+        coverAssetId: true,
+        scenes: {
+          where: { deletedAt: null },
+          select: {
+            panoramaAssetId: true,
+            ambientAssetId: true,
+            hotspots: {
+              select: {
+                mediaAssetIds: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const map = new Map<string, Set<string>>();
+
+    const addUsage = (assetId: string, tourId: string) => {
+      let tourIds = map.get(assetId);
+      if (tourIds === undefined) {
+        tourIds = new Set<string>();
+        map.set(assetId, tourIds);
+      }
+      tourIds.add(tourId);
+    };
+
+    for (const tour of tours) {
+      addUsage(tour.coverAssetId, tour.id);
+
+      for (const scene of tour.scenes) {
+        addUsage(scene.panoramaAssetId, tour.id);
+        if (scene.ambientAssetId !== null) {
+          addUsage(scene.ambientAssetId, tour.id);
+        }
+        for (const hotspot of scene.hotspots) {
+          for (const mediaId of hotspot.mediaAssetIds) {
+            addUsage(mediaId, tour.id);
+          }
+        }
+      }
+    }
+
+    return map;
+  }
+
   private async getHotspotMediaAssetIds(): Promise<Set<string>> {
     const hotspots = await this.prisma.hotspot.findMany({
       select: { mediaAssetIds: true },
@@ -365,14 +416,14 @@ export class AssetsService {
   }
 }
 
-function listWhere(query: AssetListQuery): Prisma.AssetWhereInput {
-  if (query.kind === undefined) {
+export function kindWhere(kind?: AssetKind): Prisma.AssetWhereInput {
+  if (kind === undefined) {
     return {};
   }
-  return { kind: toPrismaKind(query.kind) };
+  return { kind: toPrismaKind(kind) };
 }
 
-function toPrismaKind(kind: AssetKind): PrismaAssetKind {
+export function toPrismaKind(kind: AssetKind): PrismaAssetKind {
   switch (kind) {
     case AssetKind.PANORAMA:
       return PrismaAssetKind.PANORAMA;
