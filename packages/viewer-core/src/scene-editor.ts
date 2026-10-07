@@ -57,6 +57,17 @@ export function editorPanorama(asset: { panorama: PanoramaUrls | null }): Editor
   };
 }
 
+export function toEditorMarkerConfig(m: EditorMarker): MarkerConfig {
+  return {
+    id: m.id,
+    position: m.position,
+    tooltip: m.tooltip,
+    className: m.className,
+    html: '<div class="editor-marker"></div>',
+    anchor: 'center center',
+  };
+}
+
 export function mountSceneEditor(
   container: HTMLElement,
   options: {
@@ -86,12 +97,7 @@ export function mountSceneEditor(
 
   const markersPlugin = viewer.getPlugin<MarkersPlugin>(MarkersPlugin);
 
-  const markerConfigs: MarkerConfig[] = options.markers.map((m) => ({
-    id: m.id,
-    position: m.position,
-    tooltip: m.tooltip,
-    className: m.className,
-  }));
+  const markerConfigs: MarkerConfig[] = options.markers.map(toEditorMarkerConfig);
   markersPlugin.setMarkers(markerConfigs);
 
   viewer.addEventListener('click', (e) => {
@@ -200,12 +206,7 @@ export function mountSceneEditor(
 
   return {
     setMarkers: (markers: EditorMarker[]) => {
-      const configs: MarkerConfig[] = markers.map((m) => ({
-        id: m.id,
-        position: m.position,
-        tooltip: m.tooltip,
-        className: m.className,
-      }));
+      const configs: MarkerConfig[] = markers.map(toEditorMarkerConfig);
       markersPlugin.setMarkers(configs);
     },
     getView: () => {
