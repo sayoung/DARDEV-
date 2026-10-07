@@ -21,6 +21,35 @@ DoD M4 remplie : non
 
 Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGRESS-M3b.md
 
+## Session en cours
+
+### Bilan de vérification DoD M4
+
+| Critère | Statut | Fichiers et tests cités |
+|---|---|---|
+| **F-20** Éditeur 360 dans l'onglet de la scène | OK | `SceneDetailPage.tsx`, `SceneEditor360.tsx`<br>**Tests :** `SceneDetailPage.test.tsx`, `SceneEditor360.test.tsx` |
+| **F-21** Création de hotspot au clic avec panneau latéral | OK | `SceneDetailPage.tsx`, `HotspotForm.tsx`<br>**Tests :** `SceneDetailPage.test.tsx` |
+| **F-22** Glisser-déposer, suppression, annuler/rétablir, sauvegarde | Écart | `SceneDetailPage.tsx`, `editHistory.ts`, `debouncedSaver.ts`<br>**Tests :** `editHistory.test.ts`, `debouncedSaver.test.ts`, `SceneDetailPage.test.tsx` (debounce instable) |
+| **F-23** Vue initiale et orientation d'arrivée | OK | `SceneDetailPage.tsx`, `ArrivalOrientationDialog.tsx`<br>**Tests :** `SceneDetailPage.test.tsx`, `ArrivalOrientationDialog.test.tsx` |
+| **F-24** Bouton « Tester la visite », jeton d'aperçu | OK | `TourDetailPage.tsx`, `tours.controller.ts`, `preview-token.ts`, `route.ts`, `app.ts`<br>**Tests :** `TourDetailPage.test.tsx`, `tours.int.test.ts`, `preview-token.test.ts`, `route.test.ts`, `app.test.ts` |
+| **F-25** Carte des liens avec orphelins | OK | `TourLinkMapPanel.tsx`, `LinkMapGraph.tsx`, `linkMapLayout.ts`, `tour-graph.ts`<br>**Tests :** `TourLinkMapPanel.test.tsx`, `LinkMapGraph.test.tsx`, `linkMapLayout.test.ts`, `tour-graph.test.ts`, `tours.int.test.ts` |
+| **Contrôle d'accès** | OK | Routes `preview-token` et `graph` réservées `EDITOR`+ (403 PARTNER). Tests (401, 403, 404, nominal) dans `tours.int.test.ts`. |
+| **3 langues / RTL** | Reporté | exception à D-03 (décision du porteur du 30/09/2026). |
+
+**Sorties des contrôles :** lint, typecheck, test OK ; test:int non exécuté (fichiers int.exit / int.log introuvables).
+
+### Scénario de démo pas à pas
+1. Créer une visite.
+2. Y ajouter 3 scènes.
+3. Placer des liens entre les scènes via l'éditeur 360 (hotspots).
+4. Définir la vue initiale d'une scène et l'orientation d'arrivée depuis les liens.
+5. Tester l'aperçu de la visite via le bouton « Tester la visite ».
+6. Lire la carte des liens (graphe) avec les orphelins.
+
+### Écarts réels (à traiter comme petites tâches M4)
+- **F-22** : Le debounce de la sauvegarde est instable dans les tests (`SceneDetailPage.test.tsx`).
+- **test:int** : Non exécuté car les fichiers de résultat des sous-tâches précédentes sont introuvables.
+
 ## État des tâches
 
 ### En cours
