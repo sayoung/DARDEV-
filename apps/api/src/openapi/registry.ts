@@ -44,6 +44,7 @@ import {
   TourValidationResponseSchema,
   ValidationIssueSchema,
   TourGraphSchema,
+  PreviewTokenResponseSchema,
   LANGS,
 } from '@xplor/shared';
 import { z, type ZodType } from 'zod';
@@ -411,6 +412,8 @@ registerSceneCrud();
 registerHotspotList();
 registerHotspotItem();
 registerPublicTour();
+registerTourPreviewToken();
+registerPublicPreview();
 
 function registerCatalogCrud(resource: {
   collection: string;
@@ -1147,6 +1150,42 @@ function registerPublicTour(): void {
       },
       '400': jsonResponse('Paramètre shareToken ou lang refusé.', badRequestError),
       '404': jsonResponse('Visite introuvable, non publiée ou inactive.', notFoundError),
+    },
+  });
+}
+
+function registerTourPreviewToken(): void {
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/admin/tours/{id}/preview-token',
+    summary: 'Générer un jeton de prévisualisation',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: z.object({ id: z.uuidv7() }) },
+    responses: {
+      '200': jsonResponse('Jeton généré.', PreviewTokenResponseSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '404': jsonResponse('Visite introuvable ou supprimée.', tourMissingError),
+    },
+  });
+}
+
+function registerPublicPreview(): void {
+  registry.registerPath({
+    method: 'get',
+    path: '/api/v1/public/preview/{token}',
+    summary: 'Obtenir le graphe de la visite pour la prévisualisation',
+    tags: ['Viewer'],
+    request: {
+      params: z.object({ token: z.string().min(1) }),
+      query: z.object({ lang: z.enum(LANGS).optional().default('fr') }),
+    },
+    responses: {
+      '200': jsonResponse('Graphe de la visite.', TourGraphSchema),
+      '400': jsonResponse('Langue refusée.', badRequestError),
+      '404': jsonResponse('Jeton invalide/expiré ou visite introuvable.', notFoundError),
     },
   });
 }
