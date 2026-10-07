@@ -689,8 +689,6 @@ describe('SceneDetailPage', () => {
   });
 
   it('updates hotspot position on marker move with debounce', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
       route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
@@ -730,6 +728,7 @@ describe('SceneDetailPage', () => {
 
     await screen.findByText('Cliquez sur le panorama pour placer un hotspot.');
 
+    vi.useFakeTimers();
     const moveBtn = screen.getByTestId('mock-marker-move');
     fireEvent.click(moveBtn);
 
@@ -745,15 +744,11 @@ describe('SceneDetailPage', () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     
-    await waitFor(() => {
-      expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 1.2, pitch: 0.3 }));
-    });
-
-    expect(await screen.findByText('Enregistré')).toBeDefined();
+    expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 1.2, pitch: 0.3 }));
+    expect(screen.getByText('Enregistré')).toBeDefined();
   });
 
   it('handles undo after marker move', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
       route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
@@ -791,12 +786,13 @@ describe('SceneDetailPage', () => {
     fireEvent.click(editorTab);
     await screen.findByText('Cliquez sur le panorama pour placer un hotspot.');
 
+    vi.useFakeTimers();
     const moveBtn = screen.getByTestId('mock-marker-move');
     fireEvent.click(moveBtn);
 
     expect(screen.getByText(/Modifications en attente/)).toBeDefined();
 
-    const undoBtn = await screen.findByText('Annuler');
+    const undoBtn = screen.getByText('Annuler');
     expect(undoBtn.hasAttribute('disabled')).toBe(false);
     
     // Simulate Ctrl+Z
@@ -807,13 +803,10 @@ describe('SceneDetailPage', () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    await waitFor(() => {
-      expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 0, pitch: 0 }));
-    });
+    expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 0, pitch: 0 }));
   });
 
   it('handles redo after undo', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
       route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
@@ -851,6 +844,7 @@ describe('SceneDetailPage', () => {
     fireEvent.click(editorTab);
     await screen.findByText('Cliquez sur le panorama pour placer un hotspot.');
 
+    vi.useFakeTimers();
     const moveBtn = screen.getByTestId('mock-marker-move');
     fireEvent.click(moveBtn);
 
@@ -864,10 +858,8 @@ describe('SceneDetailPage', () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    await waitFor(() => {
-      // Mock move uses (1.2, 0.3)
-      expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 1.2, pitch: 0.3 }));
-    });
+    // Mock move uses (1.2, 0.3)
+    expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 1.2, pitch: 0.3 }));
   });
 
   it('sets current view as initial view', async () => {
