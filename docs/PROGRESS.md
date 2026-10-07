@@ -37,6 +37,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 | **3 langues / RTL** | Reporté | exception à D-03 (décision du porteur du 30/09/2026). |
 
 **Sorties des contrôles :** lint, typecheck, test OK ; test:int code 124 (crash Vitest ERR_IPC_CHANNEL_CLOSED, pas de résumé Test Files / Tests).
+- test:int lot 1 (assets, auth, catalog, migrations) : code 0, Test Files  4 passed (4), Tests  24 passed (24)
 
 ### Scénario de démo pas à pas
 1. Créer une visite.
