@@ -221,7 +221,8 @@
           "saving": "Enregistrement…",
           "saved": "Enregistré",
           "error": "Échec de l'enregistrement"
-        }
+        },
+        "useThisDirection": "Utiliser cette direction"
       },
       "columns": {
         "type": "Type",
@@ -291,6 +292,9 @@
       "tabs": {
         "info": "Informations",
         "editor": "Éditeur 360"
+      },
+      "editor": {
+        "panoramaNotReady": "Le panorama de la scène cible n'est pas prêt."
       }
     }
   },
