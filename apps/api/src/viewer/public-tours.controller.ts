@@ -17,6 +17,7 @@ import type { Env } from '../config/env.js';
 
 import { renderShareHtml } from './share-html.js';
 import { ViewerService } from './viewer.service.js';
+import { verifyPreviewToken } from '../catalog/preview-token.js';
 
 const shareTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{1,22}$/);
 const langSchema = z.enum(LANGS).optional().default('fr');
@@ -87,3 +88,29 @@ export class PublicShareController {
     });
   }
 }
+
+@Controller('public/preview')
+export class PublicPreviewController {
+  constructor(
+    @Inject(ViewerService) private readonly viewer: ViewerService,
+    @Inject(ENV) private readonly env: Pick<Env, 'SESSION_SECRET'>,
+  ) {}
+
+  @Get(':token')
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(ThrottlerGuard)
+  async get(
+    @Param('token') token: string,
+    @Query('lang') rawLang: unknown,
+  ): Promise<TourGraph> {
+    const lang = parseLangQuery(rawLang);
+    const verification = verifyPreviewToken(token, this.env.SESSION_SECRET, Date.now());
+
+    if (!verification) {
+      throw new NotFoundException();
+    }
+
+    return this.viewer.getPreviewGraph(verification.tourId, lang);
+  }
+}
+
