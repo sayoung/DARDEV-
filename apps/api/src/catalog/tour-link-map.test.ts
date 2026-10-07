@@ -1,4 +1,4 @@
-import { HotspotType } from '@xplor/shared';
+import { HotspotType, TourLinkMapSchema } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import { buildTourLinkMap } from './tour-link-map.js';
@@ -189,5 +189,66 @@ describe('buildTourLinkMap', () => {
 
     expect(map.nodes.filter((n) => n.id !== 'scene-deleted')).toHaveLength(2);
     expect(map.nodes.every((n) => n.orphan)).toBe(true);
+  });
+
+  it('gère les hotspots TOUR_LINK correctement', () => {
+    const map = buildTourLinkMap({
+      startSceneId: 'scene-a',
+      scenes: [
+        {
+          id: 'scene-a',
+          title: 'Scène A',
+          deleted: false,
+          hotspots: [
+            { id: 'h-a-ext1', type: HotspotType.TOUR_LINK, targetTourId: 'tour-ext', targetTourTitle: 'Visite Externe' },
+            { id: 'h-a-ext2', type: HotspotType.TOUR_LINK, targetTourId: 'tour-ext' },
+            { id: 'h-a-ext3', type: HotspotType.TOUR_LINK, targetTourId: 'tour-other' },
+            { id: 'h-a-bad', type: HotspotType.TOUR_LINK },
+          ],
+        },
+        {
+          id: 'scene-del',
+          title: 'Scène Del',
+          deleted: true,
+          hotspots: [{ id: 'h-del-ext', type: HotspotType.TOUR_LINK, targetTourId: 'tour-ext' }],
+        },
+        {
+          id: 'scene-b',
+          title: 'Scène B',
+          deleted: false,
+          hotspots: [],
+        },
+      ],
+    });
+
+    TourLinkMapSchema.parse(map);
+
+    expect(map.nodes).toHaveLength(4);
+
+    expect(map.nodes[2]).toEqual({
+      id: 'tour-ext',
+      kind: 'external',
+      label: 'Visite Externe',
+      isStart: false,
+      orphan: false,
+    });
+    expect(map.nodes[3]).toEqual({
+      id: 'tour-other',
+      kind: 'external',
+      label: 'tour-other',
+      isStart: false,
+      orphan: false,
+    });
+
+    expect(map.nodes.find(n => n.id === 'scene-b')?.orphan).toBe(true);
+
+    expect(map.edges).toHaveLength(3);
+    expect(map.edges).toEqual(
+      expect.arrayContaining([
+        { id: 'h-a-ext1', source: 'scene-a', target: 'tour-ext', kind: 'tour_link' },
+        { id: 'h-a-ext2', source: 'scene-a', target: 'tour-ext', kind: 'tour_link' },
+        { id: 'h-a-ext3', source: 'scene-a', target: 'tour-other', kind: 'tour_link' },
+      ])
+    );
   });
 });
