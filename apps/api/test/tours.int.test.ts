@@ -15,6 +15,7 @@ import {
   CityResponseSchema,
   MeResponseSchema,
   PaginatedTourResponseSchema,
+  PreviewTokenResponseSchema,
   TourResponseSchema,
   TourStatus,
   type CategoryCreate,
@@ -384,6 +385,53 @@ describe('visites HTTP', () => {
     expect(patchWithoutShare.statusCode).toBe(200);
     const updatedAgain = TourResponseSchema.parse(parseJson(patchWithoutShare.body));
     expect(updatedAgain.publicShare).toBe(true);
+  });
+
+  describe('POST /admin/tours/:id/preview-token', () => {
+    it('répond 401 sans session', async () => {
+      const response = await application().inject({
+        method: 'POST',
+        url: '/api/v1/admin/tours/01990000-0000-7000-8000-0000000000aa/preview-token',
+      });
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('refuse la génération à PARTNER et HOTEL_MANAGER', async () => {
+      const partner = await login(PARTNER_EMAIL);
+      const manager = await login(MANAGER_EMAIL);
+      const tourId = '01990000-0000-7000-8000-0000000000aa';
+
+      const partnerRes = await send('POST', `/api/v1/admin/tours/${tourId}/preview-token`, partner);
+      const managerRes = await send('POST', `/api/v1/admin/tours/${tourId}/preview-token`, manager);
+
+      expect(partnerRes.statusCode).toBe(403);
+      expect(managerRes.statusCode).toBe(403);
+    });
+
+    it('répond 404 si la visite est inconnue', async () => {
+      const editor = await login(EDITOR_EMAIL);
+      const response = await send('POST', '/api/v1/admin/tours/01990000-0000-7000-8000-0000000000aa/preview-token', editor);
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('génère un jeton valide pour EDITOR', async () => {
+      const editor = await login(EDITOR_EMAIL);
+      const refs = await prepare(editor);
+      const created = await createTour(editor, {
+        title: { fr: 'Visite test' },
+        summary: { fr: 'Résumé' },
+        cityId: refs.city.id,
+        categoryIds: [refs.category.id],
+        coverAssetId: refs.coverAssetId,
+      });
+
+      const response = await send('POST', `/api/v1/admin/tours/${created.id}/preview-token`, editor);
+      expect(response.statusCode).toBe(200);
+
+      const parsed = PreviewTokenResponseSchema.parse(parseJson(response.body));
+      expect(parsed.token.length).toBeGreaterThan(0);
+      expect(parsed.expiresAt).toBeGreaterThan(Date.now());
+    });
   });
 });
 
