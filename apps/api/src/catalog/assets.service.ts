@@ -280,6 +280,7 @@ export class AssetsService {
         id: true,
         coverAssetId: true,
         scenes: {
+          where: { deletedAt: null },
           select: {
             panoramaAssetId: true,
             ambientAssetId: true,
