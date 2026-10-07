@@ -718,33 +718,37 @@ describe('ToursService', () => {
 
     const map = await service.getLinkMap(tour1.id);
 
-    const sceneNodes = map.nodes.filter((n) => n.kind === 'scene');
-    const externalNodes = map.nodes.filter((n) => n.kind === 'external');
-    
-    expect(sceneNodes).toHaveLength(2);
-    expect(externalNodes).toHaveLength(1);
-    
-    const nodeB = map.nodes.find((n) => n.id === sceneB);
-    expect(nodeB).toBeDefined();
-    if (nodeB && nodeB.kind === 'scene') {
-      expect(nodeB.orphan).toBe(false);
-    }
-
-    const externalNode = externalNodes[0];
-    expect(externalNode?.label).toBe('Plage de Mehdia');
-    expect(externalNode?.id).toBe(tour2.id);
+    expect(map.nodes).toHaveLength(3);
+    expect(map.nodes).toContainEqual(expect.objectContaining({
+      id: sceneA,
+      kind: 'scene',
+      label: 'Scène A',
+      isStart: true,
+      orphan: false,
+    }));
+    expect(map.nodes).toContainEqual(expect.objectContaining({
+      id: sceneB,
+      kind: 'scene',
+      label: 'Scène B',
+      orphan: false,
+    }));
+    expect(map.nodes).toContainEqual(expect.objectContaining({
+      id: tour2.id,
+      kind: 'external',
+      label: 'Plage de Mehdia',
+    }));
 
     expect(map.edges).toHaveLength(2);
-    const sceneLink = map.edges.find((e) => e.kind === 'scene_link');
-    const tourLink = map.edges.find((e) => e.kind === 'tour_link');
-    
-    expect(sceneLink).toBeDefined();
-    expect(sceneLink?.source).toBe(sceneA);
-    expect(sceneLink?.target).toBe(sceneB);
-
-    expect(tourLink).toBeDefined();
-    expect(tourLink?.source).toBe(sceneA);
-    expect(tourLink?.target).toBe(tour2.id);
+    expect(map.edges).toContainEqual(expect.objectContaining({
+      source: sceneA,
+      target: sceneB,
+      kind: 'scene_link',
+    }));
+    expect(map.edges).toContainEqual(expect.objectContaining({
+      source: sceneA,
+      target: tour2.id,
+      kind: 'tour_link',
+    }));
   });
 
   it('génère la carte des liens : TOUR_LINK vers une visite supprimée a pour label l\'id de la cible', async () => {
@@ -758,23 +762,27 @@ describe('ToursService', () => {
 
     const map = await service.getLinkMap(tour1.id);
     
-    const externalNodes = map.nodes.filter((n) => n.kind === 'external');
-    expect(externalNodes).toHaveLength(1);
-    expect(externalNodes[0]?.label).toBe(tour2.id);
+    expect(map.nodes).toContainEqual(expect.objectContaining({
+      id: tour2.id,
+      kind: 'external',
+      label: tour2.id,
+    }));
   });
 
   it('génère la carte des liens : une scène supprimée n\'apparaît pas dans les nœuds', async () => {
     const { service, addScene } = harness();
     const tour1 = await service.create(kasbah, USER_ID);
 
-    addScene(tour1.id, { title: { fr: 'Scène active' } });
-    addScene(tour1.id, { title: { fr: 'Scène supprimée' }, deletedAt: new Date() });
+    const activeId = addScene(tour1.id, { title: { fr: 'Scène active' } });
+    const deletedId = addScene(tour1.id, { title: { fr: 'Scène supprimée' }, deletedAt: new Date() });
 
     const map = await service.getLinkMap(tour1.id);
     
-    const sceneNodes = map.nodes.filter((n) => n.kind === 'scene');
-    expect(sceneNodes).toHaveLength(1);
-    expect(sceneNodes[0]?.label).toBe('Scène active');
+    expect(map.nodes).toHaveLength(1);
+    expect(map.nodes).toContainEqual(expect.objectContaining({ id: activeId }));
+    
+    const deletedNode = map.nodes.find(n => n.id === deletedId);
+    expect(deletedNode).toBeUndefined();
   });
 });
 
