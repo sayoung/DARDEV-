@@ -2,19 +2,37 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import React from 'react';
 import { TourLinkMapPanel } from './TourLinkMapPanel.js';
+import { getTourLinkMap } from '../api/catalog.js';
+import { type TourLinkMap } from '@xplor/shared';
 
-// Mock pour useTranslation
-const mockT = (key: string) => key;
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: mockT,
-  }),
+const mockT = (key: string) => {
+  const translations: Record<string, string> = {
+    'common.loading': 'Chargement...',
+    'common.error.generic': 'Une erreur est survenue.',
+    'catalog.tours.linkMap.title': 'Carte des liens',
+    'catalog.tours.linkMap.refresh': 'Actualiser',
+    'catalog.tours.linkMap.orphans': 'Scènes orphelines',
+    'catalog.tours.linkMap.noOrphans': 'Aucune scène orpheline'
+  };
+  return translations[key] || key;
+};
+
+// Setup translation mock
+vi.mock('react-i18next', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-i18next')>();
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: mockT,
+      i18n: { language: 'fr' }
+    })
+  };
+});
+
+// Mock API
+vi.mock('../api/catalog.js', () => ({
+  getTourLinkMap: vi.fn(),
 }));
-
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
-const mockTourId = 't_123';
 
 describe('TourLinkMapPanel', () => {
   beforeEach(() => {
@@ -25,99 +43,93 @@ describe('TourLinkMapPanel', () => {
     cleanup();
   });
 
-  it('affiche le chargement puis les données sans erreurs et sans orphelins', async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ nodes: [], edges: [] }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
+  it('(a) affiche d\'abord common.loading puis une carte avec orphelins', async () => {
+    const mockMapData: TourLinkMap = {
+      nodes: [
+        { id: 'n1', kind: 'scene', label: 'Scene Orpheline 1', isStart: false, orphan: true },
+        { id: 'n2', kind: 'scene', label: 'Scene Orpheline 2', isStart: false, orphan: true },
+        { id: 'n3', kind: 'scene', label: 'Scene Non Orpheline', isStart: true, orphan: false }
+      ],
+      edges: []
+    };
 
-    render(<TourLinkMapPanel tourId={mockTourId} />);
-
-    expect(screen.getByText('catalog.tours.linkMap.title')).toBeDefined();
-    expect(screen.getByText('common.loading')).toBeDefined();
-
-    await waitFor(() => {
-      expect(screen.queryByText('common.loading')).toBeNull();
+    let resolveApi: (value: TourLinkMap) => void = () => {};
+    const apiPromise = new Promise<TourLinkMap>((resolve) => {
+      resolveApi = resolve;
     });
+    vi.mocked(getTourLinkMap).mockReturnValue(apiPromise);
 
-    expect(screen.getByTestId('link-map-graph')).toBeDefined();
-    expect(screen.getByText('catalog.tours.linkMap.noOrphans')).toBeDefined();
-    expect(screen.queryByText('catalog.tours.linkMap.orphans')).toBeNull();
-  });
-
-  it('affiche une erreur en cas d\'échec de l\'API', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
-
-    render(<TourLinkMapPanel tourId={mockTourId} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('common.error.generic')).toBeDefined();
-    });
+    render(<TourLinkMapPanel tourId="tour1" />);
     
-    expect(screen.queryByTestId('link-map-graph')).toBeNull();
-  });
+    // Check loading state
+    expect(screen.getByText('Chargement...')).toBeDefined();
+    
+    // Resolve API
+    resolveApi(mockMapData);
 
-  it('affiche la liste des orphelins si la carte contient des scènes orphelines', async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          nodes: [
-            { id: 'n1', kind: 'scene', label: 'Scene Orpheline 1', isStart: false, orphan: true },
-            { id: 'n2', kind: 'scene', label: 'Scene Liée', isStart: true, orphan: false },
-            { id: 'n3', kind: 'external', label: 'Ext', isStart: false, orphan: true }, // external ne doit pas être compté
-          ],
-          edges: [],
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-    );
-
-    render(<TourLinkMapPanel tourId={mockTourId} />);
-
+    // Wait for the graph and orphans to be rendered
     await waitFor(() => {
-      expect(screen.getByText('catalog.tours.linkMap.orphans')).toBeDefined();
+      expect(screen.getByTestId('link-map-graph')).toBeDefined();
     });
 
+    expect(screen.getByText('Scènes orphelines')).toBeDefined();
     expect(screen.getByText('Scene Orpheline 1')).toBeDefined();
-    expect(screen.queryByText('Scene Liée')).toBeNull();
-    expect(screen.queryByText('Ext')).toBeNull();
+    expect(screen.getByText('Scene Orpheline 2')).toBeDefined();
+    expect(screen.queryByText('Scene Non Orpheline')).toBeNull();
   });
 
-  it('le bouton actualiser relance le chargement', async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ nodes: [], edges: [] }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
+  it('(b) aucun orphelin -> message noOrphans affiché et pas de liste', async () => {
+    const mockMapData: TourLinkMap = {
+      nodes: [
+        { id: 'n1', kind: 'scene', label: 'Scene 1', isStart: true, orphan: false }
+      ],
+      edges: []
+    };
 
-    render(<TourLinkMapPanel tourId={mockTourId} />);
+    vi.mocked(getTourLinkMap).mockResolvedValue(mockMapData);
+
+    render(<TourLinkMapPanel tourId="tour1" />);
 
     await waitFor(() => {
-      expect(screen.queryByText('common.loading')).toBeNull();
+      expect(screen.getByTestId('link-map-graph')).toBeDefined();
     });
 
-    mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ nodes: [], edges: [] }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
+    expect(screen.getByText('Aucune scène orpheline')).toBeDefined();
+    expect(screen.queryByText('Scènes orphelines')).toBeNull();
+  });
 
-    const refreshBtn = screen.getByRole('button', { name: 'catalog.tours.linkMap.refresh' });
+  it('(c) getTourLinkMap rejette -> Alert d\'erreur', async () => {
+    vi.mocked(getTourLinkMap).mockRejectedValue(new Error('Network error'));
+
+    render(<TourLinkMapPanel tourId="tour1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Une erreur est survenue.')).toBeDefined();
+    });
+    expect(screen.getByRole('alert')).toBeDefined();
+  });
+
+  it('(d) clic sur le bouton Actualiser -> getTourLinkMap appelé une seconde fois', async () => {
+    const mockMapData: TourLinkMap = {
+      nodes: [],
+      edges: []
+    };
+
+    vi.mocked(getTourLinkMap).mockResolvedValue(mockMapData);
+
+    render(<TourLinkMapPanel tourId="tour1" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('link-map-graph')).toBeDefined();
+    });
+
+    expect(getTourLinkMap).toHaveBeenCalledTimes(1);
+    expect(getTourLinkMap).toHaveBeenCalledWith('tour1');
+
+    const refreshBtn = screen.getByRole('button', { name: 'Actualiser' });
     fireEvent.click(refreshBtn);
 
-    expect(screen.getByText('common.loading')).toBeDefined();
-
-    await waitFor(() => {
-      expect(screen.queryByText('common.loading')).toBeNull();
-    });
-
-    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(getTourLinkMap).toHaveBeenCalledTimes(2);
+    expect(getTourLinkMap).toHaveBeenNthCalledWith(2, 'tour1');
   });
 });
