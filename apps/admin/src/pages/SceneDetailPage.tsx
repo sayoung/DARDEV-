@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { SceneForm } from './SceneForm.js';
 import { HotspotForm } from './HotspotForm.js';
+import { ArrivalOrientationDialog } from './ArrivalOrientationDialog.js';
 import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot, deleteHotspot, updateHotspot } from '../api/catalog.js';
 import { createDebouncedSaver, type SaveStatus } from '../editor/debouncedSaver.js';
 import { createEditHistory } from '../editor/editHistory.js';
@@ -61,6 +62,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [arrivalOrientationTargetId, setArrivalOrientationTargetId] = useState<string | null>(null);
 
   const handleRef = useRef<SceneEditor360Handle>(null);
 
@@ -353,11 +355,23 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
         ) : selectedHotspotId ? (
           (() => {
             const hotspot = hotspots.find(h => h.id === selectedHotspotId);
-            if (!hotspot) return null;
+            const rawHotspot = rawHotspots.find(h => h.id === selectedHotspotId);
+            if (!hotspot || !rawHotspot) return null;
             return (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">{hotspot.tooltip}</h3>
                 {actionError && <Alert variant="destructive">{t(actionError)}</Alert>}
+                {rawHotspot.type === HotspotType.SCENE_LINK && rawHotspot.targetSceneId && (
+                  <div className="mb-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setArrivalOrientationTargetId(rawHotspot.targetSceneId ?? null); }}
+                      disabled={isSubmitting}
+                    >
+                      {t('catalog.hotspots.editor.setArrival')}
+                    </Button>
+                  </div>
+                )}
                 <div className="flex space-x-4">
                   <Button
                     variant="destructive"
@@ -398,6 +412,34 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
             {t('catalog.hotspots.editor.hint')}
           </div>
         )}
+        <ArrivalOrientationDialog
+          open={arrivalOrientationTargetId !== null}
+          targetSceneId={arrivalOrientationTargetId || ''}
+          language={i18n.language}
+          onClose={() => { setArrivalOrientationTargetId(null); }}
+          onConfirm={(arrivalYaw) => {
+            if (!selectedHotspotId) return;
+            const rawHotspot = rawHotspots.find(h => h.id === selectedHotspotId);
+            if (!rawHotspot) return;
+            setIsSubmitting(true);
+            setActionError(null);
+            setActionSuccess(null);
+            const payload = getHotspotUpdate(rawHotspot, rawHotspot.yaw, rawHotspot.pitch);
+            payload.arrivalYaw = arrivalYaw;
+            updateHotspot(selectedHotspotId, payload)
+              .then(() => {
+                setArrivalOrientationTargetId(null);
+                setActionSuccess('catalog.hotspots.editor.arrivalSaved');
+                loadHotspots();
+              })
+              .catch(() => {
+                setActionError('common.error.generic');
+              })
+              .finally(() => {
+                setIsSubmitting(false);
+              });
+          }}
+        />
       </div>
     </div>
   );
