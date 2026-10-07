@@ -5,6 +5,7 @@ import { SceneForm } from './SceneForm.js';
 import { HotspotForm } from './HotspotForm.js';
 import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot, deleteHotspot, updateHotspot } from '../api/catalog.js';
 import { createDebouncedSaver, type SaveStatus } from '../editor/debouncedSaver.js';
+import { createEditHistory } from '../editor/editHistory.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Role, type SceneResponse, type SceneCreate, type HotspotCreate, z, ProcessingStatus, type HotspotResponse, type HotspotUpdate, HotspotType } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
@@ -63,6 +64,80 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const [rawHotspots, setRawHotspots] = useState<HotspotResponse[]>([]);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const saverRef = useRef<ReturnType<typeof createDebouncedSaver<HotspotUpdate>> | null>(null);
+
+  const historyRef = useRef<ReturnType<typeof createEditHistory> | null>(null);
+  const rawHotspotsRef = useRef(rawHotspots);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  if (!historyRef.current) {
+    historyRef.current = createEditHistory();
+  }
+
+  useEffect(() => {
+    rawHotspotsRef.current = rawHotspots;
+  }, [rawHotspots]);
+
+  const updateHistoryState = () => {
+    if (historyRef.current) {
+      setCanUndo(historyRef.current.canUndo());
+      setCanRedo(historyRef.current.canRedo());
+    }
+  };
+
+  const undo = () => {
+    if (!historyRef.current) return;
+    const cmd = historyRef.current.undo();
+    if (cmd) {
+      setHotspots((prev) => prev.map((h) => (h.id === cmd.hotspotId ? { ...h, position: cmd.from } : h)));
+      if (saverRef.current) {
+        const raw = rawHotspotsRef.current.find((r) => r.id === cmd.hotspotId);
+        if (raw) {
+          saverRef.current.schedule(cmd.hotspotId, getHotspotUpdate(raw, cmd.from.yaw, cmd.from.pitch));
+        }
+      }
+      updateHistoryState();
+    }
+  };
+
+  const redo = () => {
+    if (!historyRef.current) return;
+    const cmd = historyRef.current.redo();
+    if (cmd) {
+      setHotspots((prev) => prev.map((h) => (h.id === cmd.hotspotId ? { ...h, position: cmd.to } : h)));
+      if (saverRef.current) {
+        const raw = rawHotspotsRef.current.find((r) => r.id === cmd.hotspotId);
+        if (raw) {
+          saverRef.current.schedule(cmd.hotspotId, getHotspotUpdate(raw, cmd.to.yaw, cmd.to.pitch));
+        }
+      }
+      updateHistoryState();
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl) {
+        const tag = activeEl.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+          return;
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => { window.removeEventListener('keydown', handleKeyDown); };
+  }, []);
 
   useEffect(() => {
     saverRef.current = createDebouncedSaver<HotspotUpdate>(
@@ -166,11 +241,31 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 min-h-[500px]">
-        {saveStatus !== 'idle' && (
-          <div aria-live="polite" className="mb-4 text-sm font-medium text-muted-foreground">
-            {t(`catalog.hotspots.editor.status.${saveStatus}`)}
+        <div className="flex items-center justify-between mb-4">
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={undo}
+              disabled={!canUndo}
+            >
+              {t('catalog.hotspots.editor.undo')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={redo}
+              disabled={!canRedo}
+            >
+              {t('catalog.hotspots.editor.redo')}
+            </Button>
           </div>
-        )}
+          {saveStatus !== 'idle' && (
+            <div aria-live="polite" className="text-sm font-medium text-muted-foreground">
+              {t(`catalog.hotspots.editor.status.${saveStatus}`)}
+            </div>
+          )}
+        </div>
         <SceneEditor360
           panorama={panorama}
           hotspots={hotspots}
@@ -186,6 +281,11 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
             setActionError(null);
           }}
           onMarkerMove={(id, yaw, pitch) => {
+            const old = hotspots.find(h => h.id === id);
+            if (old && historyRef.current) {
+              historyRef.current.push({ kind: 'move', hotspotId: id, from: old.position, to: { yaw, pitch } });
+              updateHistoryState();
+            }
             setHotspots((prev) => prev.map((h) => (h.id === id ? { ...h, position: { yaw, pitch } } : h)));
             if (saverRef.current) {
               const raw = rawHotspots.find((r) => r.id === id);

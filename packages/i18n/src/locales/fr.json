@@ -212,6 +212,8 @@
         "hint": "Cliquez sur le panorama pour placer un hotspot.",
         "delete": "Supprimer",
         "confirmDelete": "Supprimer ce hotspot ?",
+        "undo": "Annuler",
+        "redo": "Rétablir",
         "status": {
           "pending": "Modifications en attente…",
           "saving": "Enregistrement…",
