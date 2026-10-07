@@ -38,6 +38,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 **Sorties des contrôles :** lint, typecheck, test OK ; test:int code 124 (crash Vitest ERR_IPC_CHANNEL_CLOSED, pas de résumé Test Files / Tests).
 - test:int lot 1 (assets, auth, catalog, migrations) : code 0, Test Files  4 passed (4), Tests  24 passed (24)
+- test:int lot 2 (hotspots, public-tours, scenes, seed) : code 0, Test Files  4 passed (4), Tests  31 passed (31)
 
 ### Scénario de démo pas à pas
 1. Créer une visite.
