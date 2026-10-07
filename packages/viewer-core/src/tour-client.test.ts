@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fetchTourGraph, TourNotFoundError, TourLoadError } from './tour-client.js';
+import { fetchTourGraph, fetchPreviewGraph, TourNotFoundError, TourLoadError } from './tour-client.js';
 
 describe('fetchTourGraph', () => {
   const validGraph = {
@@ -130,5 +130,78 @@ describe('fetchTourGraph', () => {
       .rejects.toThrow(TourLoadError);
     await expect(fetchTourGraph('http://api.test', 'tok_123', 'fr', mockFetch))
       .rejects.toThrow(/Invalid tour data/);
+  });
+});
+
+describe('fetchPreviewGraph', () => {
+  const validGraph = {
+    id: 't_123',
+    contentVersion: 1,
+    lang: 'fr',
+    title: 'Tour',
+    summary: 'Summary',
+    city: 'City',
+    categories: [],
+    coverUrl: null,
+    practicalInfo: null,
+    location: null,
+    startSceneId: 's_1',
+    scenes: [
+      {
+        id: 's_1',
+        title: 'Scene 1',
+        caption: null,
+        panorama: {
+          preview: 'http://test/preview.jpg',
+          web: 'http://test/web.jpg',
+          tiles: {
+            width: 512,
+            cols: 4,
+            rows: 2,
+            baseUrl: 'http://test/tiles/',
+          },
+        },
+        initialView: { yaw: 0, pitch: 0, zoom: 1 },
+        narrationUrl: null,
+        ambientUrl: null,
+        thumb: 'http://test/thumb.jpg',
+        hotspots: [],
+      }
+    ],
+    linkedTours: [],
+  };
+
+  it('should fetch and parse a valid preview graph', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve(validGraph),
+    });
+
+    const result = await fetchPreviewGraph('http://api.test', 'prev_123', 'fr', mockFetch);
+    
+    expect(mockFetch).toHaveBeenCalledWith('http://api.test/public/preview/prev_123?lang=fr');
+    expect(result.id).toBe('t_123');
+  });
+
+  it('should throw TourNotFoundError on 404', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 404,
+      ok: false,
+    });
+
+    await expect(fetchPreviewGraph('http://api.test', 'prev_123', 'fr', mockFetch))
+      .rejects.toThrow(TourNotFoundError);
+  });
+
+  it('should throw TourLoadError on 500', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      status: 500,
+      ok: false,
+      statusText: 'Internal Server Error',
+    });
+
+    await expect(fetchPreviewGraph('http://api.test', 'prev_123', 'fr', mockFetch))
+      .rejects.toThrow(TourLoadError);
   });
 });

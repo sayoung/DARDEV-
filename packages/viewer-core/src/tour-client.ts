@@ -14,15 +14,7 @@ export class TourLoadError extends Error {
   }
 }
 
-export async function fetchTourGraph(
-  baseUrl: string,
-  shareToken: string,
-  lang: Lang,
-  fetchImpl: typeof fetch = fetch
-): Promise<TourGraph> {
-  const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const url = `${base}/public/tours/${encodeURIComponent(shareToken)}?lang=${lang}`;
-
+async function fetchGraph(url: string, fetchImpl: typeof fetch): Promise<TourGraph> {
   let response: Response;
   try {
     response = await fetchImpl(url);
@@ -51,4 +43,26 @@ export async function fetchTourGraph(
   }
 
   return result.data;
+}
+
+export async function fetchTourGraph(
+  baseUrl: string,
+  shareToken: string,
+  lang: Lang,
+  fetchImpl: typeof fetch = fetch
+): Promise<TourGraph> {
+  const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const url = `${base}/public/tours/${encodeURIComponent(shareToken)}?lang=${lang}`;
+  return fetchGraph(url, fetchImpl);
+}
+
+export async function fetchPreviewGraph(
+  baseUrl: string,
+  previewToken: string,
+  lang: Lang,
+  fetchImpl: typeof fetch = fetch
+): Promise<TourGraph> {
+  const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const url = `${base}/public/preview/${encodeURIComponent(previewToken)}?lang=${lang}`;
+  return fetchGraph(url, fetchImpl);
 }
