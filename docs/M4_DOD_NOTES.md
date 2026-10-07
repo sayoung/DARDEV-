@@ -9,6 +9,12 @@
 | **F-24** Bouton « Tester la visite », jeton d'aperçu | OK | **Fichiers :** `apps/admin/src/pages/TourDetailPage.tsx` (bouton), `apps/api/src/catalog/tours.controller.ts` (route POST preview-token), `apps/api/src/catalog/preview-token.ts`, `apps/web/src/route.ts`, `apps/web/src/app.ts`<br>**Tests :** `apps/admin/src/pages/TourDetailPage.test.tsx`, `apps/api/test/tours.int.test.ts` (tests de la route), `apps/api/src/catalog/preview-token.test.ts`, `apps/web/src/route.test.ts`, `apps/web/src/app.test.ts` |
 | **F-25** Carte des liens avec orphelins | OK | **Fichiers :** `apps/admin/src/pages/TourLinkMapPanel.tsx`, `apps/admin/src/editor/LinkMapGraph.tsx`, `apps/admin/src/editor/linkMapLayout.ts`, `packages/shared/src/tour-graph.ts`<br>**Tests :** `apps/admin/src/pages/TourLinkMapPanel.test.tsx`, `apps/admin/src/editor/LinkMapGraph.test.tsx`, `apps/admin/src/editor/linkMapLayout.test.ts`, `packages/shared/src/tour-graph.test.ts`, `apps/api/test/tours.int.test.ts` (cas graphe avec orphelins) |
 
+## Écarts
+
+| Critère | Écart | Cause |
+|---|---|---|
+| Tests d'intégration | Non exécuté | Les fichiers `/tmp/int.exit` et `/tmp/int.log` complets (produits des sous-tâches précédentes) sont introuvables sur l'environnement. |
+
 ## Contrôle d'accès
 
 - Les routes `POST /api/v1/admin/tours/:id/preview-token` et `GET /api/v1/admin/tours/:id/graph` dans `apps/api/src/catalog/tours.controller.ts` sont réservées aux rôles `EDITOR` et supérieurs (403 pour PARTNER et HOTEL_MANAGER), donc sans filtre par hôtel ; le test « gestionnaire de l'hôtel A / hôtel B » est sans objet.
@@ -62,6 +68,16 @@
       Tests  1000 passed (1000)
    Start at  14:00:32
    Duration  16.75s (transform 7.18s, setup 0ms, collect 92.65s, tests 21.39s, environment 127.10s, prepare 25.40s)
+```
+
+### pnpm test:int
+**Commande :** `CI=1 timeout 480 pnpm test:int > /tmp/int.log 2>&1; echo EXIT=$?`
+**Code de sortie :** non exécuté
+**Résumé Vitest :** non exécuté
+
+**Erreur :**
+```text
+Non exécuté : les fichiers /tmp/int.exit et /tmp/int.log (produits des sous-tâches précédentes) sont introuvables ou incomplets sur l'environnement.
 ```
 
 ### pnpm lint
