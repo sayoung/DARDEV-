@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   validateTour,
+  reachableFrom,
   type FindTargetTour,
   type TargetTourSnapshot,
   type TourHotspotSnapshot,
@@ -401,5 +402,38 @@ describe('TOUR_LINK', () => {
       ]),
     ]);
     expect(validateTour(tour, none)).toEqual([]);
+  });
+});
+
+describe('reachableFrom', () => {
+  it('trouve tous les nœuds dans une chaîne A→B→C', () => {
+    const neighbours = new Map<string, readonly string[]>([
+      ['A', ['B']],
+      ['B', ['C']],
+      ['C', []],
+    ]);
+    expect(reachableFrom('A', neighbours)).toEqual(new Set(['A', 'B', 'C']));
+  });
+
+  it('gère correctement un cycle A→B→A', () => {
+    const neighbours = new Map<string, readonly string[]>([
+      ['A', ['B']],
+      ['B', ['A']],
+    ]);
+    expect(reachableFrom('A', neighbours)).toEqual(new Set(['A', 'B']));
+  });
+
+  it('ne trouve pas un nœud isolé non atteint', () => {
+    const neighbours = new Map<string, readonly string[]>([
+      ['A', ['B']],
+      ['B', []],
+      ['C', []],
+    ]);
+    expect(reachableFrom('A', neighbours)).toEqual(new Set(['A', 'B']));
+  });
+
+  it('renvoie seulement le départ s’il n’a pas d’entrée dans la Map', () => {
+    const neighbours = new Map<string, readonly string[]>();
+    expect(reachableFrom('A', neighbours)).toEqual(new Set(['A']));
   });
 });
