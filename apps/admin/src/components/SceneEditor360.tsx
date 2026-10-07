@@ -1,8 +1,12 @@
-import { useEffect, useRef } from 'react';
-import { EditorPanorama, mountSceneEditor, EditorMarker } from '@xplor/viewer-core';
+import { useEffect, useRef, useImperativeHandle, Ref } from 'react';
+import { EditorPanorama, mountSceneEditor, EditorMarker, normalizeYaw } from '@xplor/viewer-core';
 import '@photo-sphere-viewer/core/index.css';
 import '@photo-sphere-viewer/markers-plugin/index.css';
 import { useTranslation } from 'react-i18next';
+
+export type SceneEditor360Handle = {
+  getView: () => { yaw: number; pitch: number; zoom: number };
+};
 
 export interface SceneEditor360Props {
   panorama: EditorPanorama;
@@ -11,6 +15,7 @@ export interface SceneEditor360Props {
   onPanoramaClick: (yaw: number, pitch: number) => void;
   onMarkerSelect: (id: string) => void;
   onMarkerMove?: (id: string, yaw: number, pitch: number) => void;
+  handleRef?: Ref<SceneEditor360Handle>;
 }
 
 export function SceneEditor360({
@@ -20,10 +25,25 @@ export function SceneEditor360({
   onPanoramaClick,
   onMarkerSelect,
   onMarkerMove,
+  handleRef,
 }: SceneEditor360Props) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<ReturnType<typeof mountSceneEditor> | null>(null);
+
+  useImperativeHandle(handleRef, () => ({
+    getView: () => {
+      if (!editorRef.current) {
+        return initialView;
+      }
+      const view = editorRef.current.getView();
+      return {
+        yaw: normalizeYaw(view.yaw),
+        pitch: view.pitch,
+        zoom: Math.round(view.zoom),
+      };
+    },
+  }));
 
   // References to callbacks and hotspots to avoid stale closures or unnecessary remounts
   const callbacksRef = useRef({ onPanoramaClick, onMarkerSelect, onMarkerMove });
