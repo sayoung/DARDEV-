@@ -99,6 +99,18 @@ const mockAuth = (role = Role.ADMIN) => {
   });
 };
 
+vi.mock('./ArrivalOrientationDialog.js', () => ({
+  ArrivalOrientationDialog: vi.fn(({ open, onConfirm, onClose }: { open: boolean, onConfirm: (y: number) => void, onClose: () => void }) => {
+    if (!open) return null;
+    return (
+      <div data-testid="mock-arrival-dialog">
+        <button onClick={() => { onConfirm(1.25); }}>Confirm mock arrival</button>
+        <button onClick={onClose}>Close</button>
+      </div>
+    );
+  })
+}));
+
 describe('SceneDetailPage', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -907,6 +919,191 @@ describe('SceneDetailPage', () => {
     });
 
     expect(await screen.findByText('Vue initiale enregistrée')).toBeDefined();
+  });
+
+  it('shows and handles arrival orientation button for SCENE_LINK hotspots', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1',
+      tourId: 't-1',
+      title: { fr: 'Scene 1' },
+      panoramaAssetId: 'asset-1',
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      weight: 0,
+      hotspotCount: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    const mockAsset: AssetResponse = {
+      id: 'asset-1',
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1000,
+      width: 4000,
+      height: 2000,
+      processingStatus: ProcessingStatus.READY,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: {
+        preview: 'mock.jpg',
+        web: 'mock.jpg',
+        tiles: { width: 2048, cols: 4, rows: 2, baseUrl: 'mock/tiles/{col}_{row}.jpg' },
+      },
+      createdAt: new Date().toISOString(),
+    };
+
+    const sceneLinkHotspot: HotspotResponse = {
+      id: 'h-1',
+      sceneId: 's-1',
+      type: HotspotType.SCENE_LINK,
+      icon: HotspotIcon.ARROW,
+      label: { fr: 'Link' },
+      yaw: 1,
+      pitch: 0,
+      targetSceneId: 's-target',
+      targetTourId: null,
+      targetTourSceneId: null,
+      body: { fr: '' },
+      url: null,
+      mediaAssetIds: [],
+      arrivalYaw: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    vi.mocked(getAsset).mockResolvedValue(mockAsset);
+    vi.mocked(listScenes).mockResolvedValue([mockSceneResponse]);
+    vi.mocked(listHotspots).mockResolvedValue([sceneLinkHotspot]);
+    vi.mocked(updateHotspot).mockResolvedValue({ ...sceneLinkHotspot, arrivalYaw: 1.25 });
+
+    render(<SceneDetailPage />);
+    
+    // Switch to editor tab
+    const editorTab = await screen.findByRole('tab', { name: 'Éditeur 360' });
+    fireEvent.mouseDown(editorTab);
+    fireEvent.click(editorTab);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-scene-editor')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('mock-marker-select'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Définir l\'orientation d\'arrivée')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: "Définir l'orientation d'arrivée" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-arrival-dialog')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByText('Confirm mock arrival'));
+
+    await waitFor(() => {
+      expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ arrivalYaw: 1.25, yaw: 1, pitch: 0 }));
+      expect(screen.getByText("Orientation d'arrivée enregistrée")).toBeDefined();
+      expect(screen.queryByTestId('mock-arrival-dialog')).toBeNull();
+    });
+  });
+
+  it('does not show arrival orientation button for INFO hotspots', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1',
+      tourId: 't-1',
+      title: { fr: 'Scene 1' },
+      panoramaAssetId: 'asset-1',
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      weight: 0,
+      hotspotCount: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    const mockAsset: AssetResponse = {
+      id: 'asset-1',
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 1000,
+      width: 4000,
+      height: 2000,
+      processingStatus: ProcessingStatus.READY,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: {
+        preview: 'mock.jpg',
+        web: 'mock.jpg',
+        tiles: { width: 2048, cols: 4, rows: 2, baseUrl: 'mock/tiles/{col}_{row}.jpg' },
+      },
+      createdAt: new Date().toISOString(),
+    };
+
+    const infoHotspot: HotspotResponse = {
+      id: 'h-1',
+      sceneId: 's-1',
+      type: HotspotType.INFO,
+      icon: HotspotIcon.INFO,
+      label: { fr: 'Info' },
+      yaw: 0,
+      pitch: 0,
+      body: { fr: 'Text' },
+      targetSceneId: null,
+      targetTourId: null,
+      targetTourSceneId: null,
+      url: null,
+      mediaAssetIds: [],
+      arrivalYaw: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    vi.mocked(getAsset).mockResolvedValue(mockAsset);
+    vi.mocked(listScenes).mockResolvedValue([mockSceneResponse]);
+    vi.mocked(listHotspots).mockResolvedValue([infoHotspot]);
+
+    render(<SceneDetailPage />);
+    
+    // Switch to editor tab
+    const editorTab = await screen.findByRole('tab', { name: 'Éditeur 360' });
+    fireEvent.mouseDown(editorTab);
+    fireEvent.click(editorTab);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-scene-editor')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByTestId('mock-marker-select'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Info')).toBeDefined();
+    });
+
+    expect(screen.queryByText("Définir l'orientation d'arrivée")).toBeNull();
   });
 
 });

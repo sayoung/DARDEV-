@@ -216,6 +216,8 @@
         "redo": "Rétablir",
         "setInitialView": "Définir la vue actuelle comme vue initiale",
         "initialViewSaved": "Vue initiale enregistrée",
+        "setArrival": "Définir l'orientation d'arrivée",
+        "arrivalSaved": "Orientation d'arrivée enregistrée",
         "status": {
           "pending": "Modifications en attente…",
           "saving": "Enregistrement…",
