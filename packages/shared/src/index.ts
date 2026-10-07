@@ -18,6 +18,8 @@ export {
 export {
   AssetKind,
   AssetListQuerySchema,
+  AssetFoldersQuerySchema,
+  AssetFoldersResponseSchema,
   AssetResponseSchema,
   AssetUploadRequestSchema,
   AssetUploadResponseSchema,
@@ -61,6 +63,8 @@ export {
   ValidationIssueSchema,
   paginated,
   type AssetListQuery,
+  type AssetFoldersQuery,
+  type AssetFoldersResponse,
   type AssetResponse,
   type AssetUploadRequest,
   type AssetUploadResponse,
