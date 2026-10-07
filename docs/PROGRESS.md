@@ -36,7 +36,9 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 | **Contrôle d'accès** | OK | Routes `preview-token` et `graph` réservées `EDITOR`+ (403 PARTNER). Tests (401, 403, 404, nominal) dans `tours.int.test.ts`. |
 | **3 langues / RTL** | Reporté | exception à D-03 (décision du porteur du 30/09/2026). |
 
-**Sorties des contrôles :** lint, typecheck, test OK ; test:int code 124 (crash Vitest ERR_IPC_CHANNEL_CLOSED, pas de résumé Test Files / Tests).
+DoD M4 vérifiée : prête pour la démo
+
+**Sorties des contrôles :** lint, typecheck, test OK ; test:int OK en 3 lots (voir ci-dessous).
 - test:int lot 1 (assets, auth, catalog, migrations) : code 0, Test Files  4 passed (4), Tests  24 passed (24)
 - test:int lot 2 (hotspots, public-tours, scenes, seed) : code 0, Test Files  4 passed (4), Tests  31 passed (31)
 - test:int lot 3 (tours-duplicate, tours-publication, tours) : code 0, Test Files  3 passed (3), Tests  29 passed (29)
@@ -50,7 +52,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 6. Lire la carte des liens (graphe) avec les orphelins.
 
 ### Écarts réels (à traiter comme petites tâches M4)
-- **test:int** : `test/assets.int.test.ts` (médias HTTP > filtre par kind...) échoue avec `expected [...] to deeply equal [...]` suivi d'un crash Vitest `ERR_IPC_CHANNEL_CLOSED`.
+Aucun écart réel.
 
 ## État des tâches
 
