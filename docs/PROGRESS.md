@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 07/10/2026 — M4 F-24 (1/5, tests d'abord) : crée apps/api/src/catalog/preview-token.ts et preview-token.test.ts (Node pur, node:crypto, aucune dépendance). Exporte `PREVIEW_… — Jeton d'aperçu HMAC conforme à la spécification, tests couvrant les cinq cas demandés, D-113 ajoutée, contrôles au vert. (9ccc3da)
 - 07/10/2026 — M4 F-23 (4/4) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), quand le hotspot sélectionné est de type SCENE_LINK avec un targetSceneId, affic… — Bouton d'orientation d'arrivée pour hotspots SCENE_LINK, dialogue, mise à jour, message de succès/erreur, clés fr et 2 tests conformes ; contrôles verts. (49461ec)
 - 07/10/2026 — M4 F-23 (3/4) : crée apps/admin/src/pages/ArrivalOrientationDialog.tsx avec ArrivalOrientationDialog.test.tsx. Props : `open: boolean`, `targetSceneId: string`,… — ArrivalOrientationDialog et ses deux tests respectent la spec (chargement scène/asset, SceneEditor360 ou alerte, onConfirm avec le yaw, clés fr uniquement) et lint/typecheck/test passent. (f37ab87)
 - 07/10/2026 — M4 F-23 (2/4) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), crée une ref SceneEditor360Handle passée en `handleRef` à SceneEditor360. Ajoute… — Bouton « Définir la vue actuelle comme vue initiale » avec ref SceneEditor360Handle, appel updateScene (corps complet, requis par le schéma PUT), message de succès/erreur, clés fr et test ajoutés ; co… (80e91a5)
