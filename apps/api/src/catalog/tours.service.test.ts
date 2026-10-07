@@ -468,7 +468,7 @@ function readStatus(value: unknown): PrismaTourStatus {
 }
 
 function frenchTitle(title: Prisma.InputJsonValue): string {
-  const snapshot = JSON.parse(JSON.stringify(title)) as unknown;
+  const snapshot: unknown = JSON.parse(JSON.stringify(title));
   if (typeof snapshot !== 'object' || snapshot === null || !('fr' in snapshot)) {
     return '';
   }
