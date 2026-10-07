@@ -484,3 +484,23 @@ export const PreviewTokenResponseSchema = z.object({
 });
 export type PreviewTokenResponse = z.infer<typeof PreviewTokenResponseSchema>;
 
+/**
+ * Carte des liaisons d'une visite (M4 F-25).
+ */
+export const TourLinkMapSchema = z.object({
+  nodes: z.array(z.object({
+    id: z.string(),
+    kind: z.enum(['scene', 'external']),
+    label: z.string(),
+    isStart: z.boolean(),
+    orphan: z.boolean(),
+  })),
+  edges: z.array(z.object({
+    id: z.string(),
+    source: z.string(),
+    target: z.string(),
+    kind: z.enum(['scene_link', 'tour_link']),
+  })),
+});
+export type TourLinkMap = z.infer<typeof TourLinkMapSchema>;
+
