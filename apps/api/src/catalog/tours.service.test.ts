@@ -47,6 +47,22 @@ interface Link {
   categoryId: string;
 }
 
+interface StoredHotspot {
+  id: string;
+  type: string;
+  targetSceneId: string | null;
+  targetTourId: string | null;
+  targetTour: { title: Prisma.InputJsonValue; deletedAt: Date | null } | null;
+}
+
+interface StoredScene {
+  id: string;
+  tourId: string;
+  title: Prisma.InputJsonValue;
+  deletedAt: Date | null;
+  hotspots: StoredHotspot[];
+}
+
 interface StoredTour {
   id: string;
   title: Prisma.InputJsonValue;
@@ -82,12 +98,22 @@ interface ListWhere {
 function harness(): {
   service: ToursService;
   tours: Map<string, StoredTour>;
+  scenes: StoredScene[];
   cities: Set<string>;
   failNextCreate: (error: Error, beforeReject?: () => void) => void;
   sceneCount: (id: string, count: number) => void;
   markPublished: (id: string) => void;
+  addScene: (
+    tourId: string,
+    data: { title: Prisma.InputJsonValue; deletedAt?: Date | null },
+  ) => string;
+  addHotspot: (
+    sceneId: string,
+    data: { type: string; targetSceneId?: string | null; targetTourId?: string | null },
+  ) => void;
 } {
   const tours = new Map<string, StoredTour>();
+  const scenes: StoredScene[] = [];
   const cities = new Set<string>([CITY_ID, CITY_B]);
   const categories = new Set<string>([CATEGORY_ID, CATEGORY_B]);
   const assets = new Set<string>([COVER_ID]);
@@ -163,6 +189,23 @@ function harness(): {
     asset: {
       findUnique: ({ where }: { where: { id: string } }): Promise<{ id: string } | null> =>
         Promise.resolve(assets.has(where.id) ? { id: where.id } : null),
+    },
+    scene: {
+      findMany: ({
+        where,
+      }: {
+        where: { tourId: string; [key: string]: unknown };
+      }): Promise<unknown> => {
+        const tourScenes = scenes.filter((s) => s.tourId === where.tourId);
+        return Promise.resolve(
+          tourScenes.map((s) => ({
+            ...s,
+            hotspots: s.hotspots.filter(
+              (h) => h.type === 'SCENE_LINK' || h.type === 'TOUR_LINK',
+            ),
+          })),
+        );
+      },
     },
     tourCategory: {
       create: ({
@@ -276,6 +319,7 @@ function harness(): {
   return {
     service: new ToursService(prisma as unknown as PrismaService),
     tours,
+    scenes,
     cities,
     failNextCreate: (error: Error, beforeReject?: () => void) => {
       createError = error;
@@ -294,6 +338,40 @@ function harness(): {
         throw new Error('visite absente');
       }
       tour.status = PrismaTourStatus.PUBLISHED;
+    },
+    addScene: (tourId, data) => {
+      const id = nextId();
+      scenes.push({
+        id,
+        tourId,
+        title: data.title,
+        deletedAt: data.deletedAt ?? null,
+        hotspots: [],
+      });
+      return id;
+    },
+    addHotspot: (sceneId, data) => {
+      const scene = scenes.find((s) => s.id === sceneId);
+      if (scene === undefined) {
+        throw new Error('scène absente');
+      }
+      const hotspot: StoredHotspot = {
+        id: nextId(),
+        type: data.type,
+        targetSceneId: data.targetSceneId ?? null,
+        targetTourId: data.targetTourId ?? null,
+        targetTour: null,
+      };
+      if (data.type === 'TOUR_LINK' && typeof data.targetTourId === 'string') {
+        const targetTour = tours.get(data.targetTourId);
+        if (targetTour !== undefined) {
+          hotspot.targetTour = {
+            title: targetTour.title,
+            deletedAt: targetTour.deletedAt,
+          };
+        }
+      }
+      scene.hotspots.push(hotspot);
     },
   };
 }
@@ -390,7 +468,7 @@ function readStatus(value: unknown): PrismaTourStatus {
 }
 
 function frenchTitle(title: Prisma.InputJsonValue): string {
-  const snapshot = JSON.parse(JSON.stringify(title)) as unknown;
+  const snapshot: unknown = JSON.parse(JSON.stringify(title));
   if (typeof snapshot !== 'object' || snapshot === null || !('fr' in snapshot)) {
     return '';
   }
