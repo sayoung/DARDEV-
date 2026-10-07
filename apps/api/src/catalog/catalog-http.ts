@@ -67,6 +67,8 @@ export function parseAssetListQuery(query: Record<string, unknown>): AssetListQu
     raw.pageSize = pageSize;
   }
   assignString(raw, 'kind', query.kind);
+  assignString(raw, 'tourId', query.tourId);
+  assignString(raw, 'unused', query.unused);
   return parseBody(AssetListQuerySchema, raw);
 }
 

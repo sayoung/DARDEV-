@@ -1,4 +1,4 @@
-import { HttpException } from '@nestjs/common';
+import { HttpException, ForbiddenException } from '@nestjs/common';
 import { AssetKind, ProcessingStatus, type AssetListQuery, AssetCleanupDryRunResponseSchema, AssetCleanupResultSchema, Role } from '@xplor/shared';
 import { type Prisma } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
@@ -40,6 +40,7 @@ interface ListArgs {
   where?: {
     AND?: ListArgs['where'][];
     kind?: AssetKind;
+    id?: { in?: string[]; notIn?: string[] };
     processingStatus?: { in?: ProcessingStatus[] };
     coverOf?: { none: Record<string, never> };
     panoramas?: { none: Record<string, never> };
@@ -83,10 +84,15 @@ function harness(rows: AssetRow[]) {
   const updates: Prisma.AssetUpdateArgs[] = [];
   const deletes: Prisma.AssetDeleteArgs[] = [];
   const hotspotFindMany = vi.fn().mockResolvedValue([]);
+  
+  const tourFindMany = vi.fn().mockResolvedValue([]);
 
   const prisma = {
     hotspot: {
       findMany: hotspotFindMany,
+    },
+    tour: {
+      findMany: tourFindMany,
     },
     asset: {
       count: ({ where }: { where: ListArgs['where'] }): Promise<number> =>
@@ -149,7 +155,7 @@ function harness(rows: AssetRow[]) {
 
   const env = { MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor' };
 
-  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue, hotspotFindMany };
+  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue, hotspotFindMany, tourFindMany };
 }
 
 function matches(item: AssetRow, where: ListArgs['where']): boolean {
@@ -162,6 +168,12 @@ function matches(item: AssetRow, where: ListArgs['where']): boolean {
   }
   if (where.kind !== undefined && item.kind !== where.kind) {
     return false;
+  }
+  if (where.id?.in !== undefined) {
+    if (!where.id.in.includes(item.id)) return false;
+  }
+  if (where.id?.notIn !== undefined) {
+    if (where.id.notIn.includes(item.id)) return false;
   }
   if (where.processingStatus?.in !== undefined) {
     if (!where.processingStatus.in.includes(item.processingStatus)) {
@@ -265,6 +277,64 @@ describe('AssetsService', () => {
     expect(lists[1]).toMatchObject({ where: { AND: [{}] } });
     expect(all.items.map((item) => item.id)).toEqual([NEWER_ID, MIDDLE_ID, OLDER_ID]);
     expect(all.total).toBe(3);
+  });
+
+  it('refuse un non-gestionnaire avec ForbiddenException', async () => {
+    const { service } = harness(sample);
+    const error = await service.list({ userId: 'u1', role: Role.PARTNER, hotelIds: [] }, listAll).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+    expect(error).toBeInstanceOf(ForbiddenException);
+  });
+
+  it('n\'appelle pas usageIndex si ni tourId ni unused ne sont fournis', async () => {
+    const { service, tourFindMany } = harness(sample);
+    await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, listAll);
+    expect(tourFindMany).not.toHaveBeenCalled();
+  });
+
+  it('unused ajoute id: { notIn }', async () => {
+    const { service, lists, tourFindMany } = harness(sample);
+    tourFindMany.mockResolvedValue([
+      {
+        id: 'tour-1',
+        coverAssetId: OLDER_ID,
+        scenes: [],
+      }
+    ]);
+    await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, { ...listAll, unused: 'true' });
+    expect(tourFindMany).toHaveBeenCalled();
+    expect(lists[0]?.where?.AND).toContainEqual({ id: { notIn: [OLDER_ID] } });
+  });
+
+  it('tourId ajoute id: { in }', async () => {
+    const { service, lists, tourFindMany } = harness(sample);
+    tourFindMany.mockResolvedValue([
+      {
+        id: 'tour-1',
+        coverAssetId: OLDER_ID,
+        scenes: [
+          {
+            panoramaAssetId: MIDDLE_ID,
+            ambientAssetId: null,
+            hotspots: [],
+          }
+        ],
+      }
+    ]);
+    await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, { ...listAll, tourId: 'tour-1' });
+    expect(tourFindMany).toHaveBeenCalled();
+    const idInCondition = lists[0]?.where?.AND?.find((c) => c !== undefined && c.id?.in !== undefined);
+    expect(idInCondition?.id?.in).toEqual(expect.arrayContaining([OLDER_ID, MIDDLE_ID]));
+  });
+
+  it('tourId + unused court-circuite avec une page vide sans appeler Prisma', async () => {
+    const { service, lists, tourFindMany } = harness(sample);
+    const result = await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, { ...listAll, tourId: 'tour-1', unused: 'true' });
+    expect(tourFindMany).not.toHaveBeenCalled();
+    expect(lists).toHaveLength(0);
+    expect(result).toEqual({ items: [], page: 1, pageSize: 20, total: 0 });
   });
 
   it('relit un média par identifiant', async () => {
