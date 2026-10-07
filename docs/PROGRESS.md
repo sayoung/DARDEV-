@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 07/10/2026 — M4 F-24 (3/5, tests d'abord) : dans apps/api/src/viewer/viewer.service.ts, ajoute `getPreviewGraph(tourId: string, lang: Lang): Promise<TourGraph>` qui charge l… — getPreviewGraph ajouté conformément à la demande (sans filtre de statut ni publicShare, NotFoundException si absente ou supprimée) avec des tests adaptés au style de mock existant ; lint, typecheck et… (c3cced4)
 - 07/10/2026 — M4 F-24 (2/5) : dans apps/api/src/viewer/viewer.service.ts uniquement, refactorise sans changer le comportement. Extrais `const TOUR_INCLUDE = {...} as const sa… — Refactor fidèle : TOUR_INCLUDE extrait, buildGraph privée typée via TourGetPayload sans cast, un seul fichier modifié, lint/typecheck/test verts. (0bb2cd8)
 - 07/10/2026 — M4 F-24 (1/5, tests d'abord) : crée apps/api/src/catalog/preview-token.ts et preview-token.test.ts (Node pur, node:crypto, aucune dépendance). Exporte `PREVIEW_… — Jeton d'aperçu HMAC conforme à la spécification, tests couvrant les cinq cas demandés, D-113 ajoutée, contrôles au vert. (9ccc3da)
 - 07/10/2026 — M4 F-23 (4/4) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), quand le hotspot sélectionné est de type SCENE_LINK avec un targetSceneId, affic… — Bouton d'orientation d'arrivée pour hotspots SCENE_LINK, dialogue, mise à jour, message de succès/erreur, clés fr et 2 tests conformes ; contrôles verts. (49461ec)
