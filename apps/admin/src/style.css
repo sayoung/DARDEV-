@@ -54,3 +54,17 @@
   --font-comfortaa: 'Comfortaa', sans-serif;
 }
 
+/* Pastille des marqueurs de l'editeur de scene */
+.editor-marker {
+  width: 24px;
+  height: 24px;
+  background-color: hsl(var(--primary));
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+.editor-marker:active {
+  cursor: grabbing;
+}
+

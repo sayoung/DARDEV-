@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
-import { editorMarkers, editorPanorama, mountSceneEditor, normalizeYaw } from './scene-editor.js';
+import { editorMarkers, editorPanorama, mountSceneEditor, normalizeYaw, toEditorMarkerConfig } from './scene-editor.js';
 
 describe('editorMarkers', () => {
   const baseHotspot: HotspotResponse = {
@@ -57,6 +57,27 @@ describe('editorMarkers', () => {
     expect(markers[2]?.className).toBe('xplor-marker xplor-marker-info');
     expect(markers[3]?.className).toBe('xplor-marker xplor-marker-media');
     expect(markers[4]?.className).toBe('xplor-marker xplor-marker-url');
+  });
+});
+
+describe('toEditorMarkerConfig', () => {
+  it('convertit un EditorMarker en MarkerConfig avec contenu html non vide', () => {
+    const editorMarker = {
+      id: 'm1',
+      position: { yaw: 1, pitch: -1 },
+      tooltip: 'Test',
+      className: 'xplor-marker'
+    };
+    
+    const config = toEditorMarkerConfig(editorMarker);
+    
+    expect(config.id).toBe('m1');
+    expect(config.position).toEqual({ yaw: 1, pitch: -1 });
+    expect(config.tooltip).toBe('Test');
+    expect(config.className).toBe('xplor-marker');
+    expect(config.html).not.toBe('');
+    expect(config.html).toBe('<div class="editor-marker"></div>');
+    expect(config.anchor).toBe('center center');
   });
 });
 
@@ -265,7 +286,7 @@ describe('mountSceneEditor', () => {
 
     expect(mockMarkersPlugin.setMarkers).toHaveBeenCalledTimes(2);
     expect(mockMarkersPlugin.setMarkers).toHaveBeenLastCalledWith([
-      { id: 'm2', position: { yaw: 2, pitch: 1 }, tooltip: 'M2', className: 'xplor-marker' }
+      { id: 'm2', position: { yaw: 2, pitch: 1 }, tooltip: 'M2', className: 'xplor-marker', html: '<div class="editor-marker"></div>', anchor: 'center center' }
     ]);
   });
 
