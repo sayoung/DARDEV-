@@ -1,0 +1,1 @@
+cd /d/DARDEV/local/xplor_smit && rm -f /d/DARDEV/local/xplor-test-runs/int.exit && (nohup bash -c 'pnpm test:int > /d/DARDEV/local/xplor-test-runs/int.log 2>&1; echo $? > /d/DARDEV/local/xplor-test-runs/int.exit' >/dev/null 2>&1 &)
