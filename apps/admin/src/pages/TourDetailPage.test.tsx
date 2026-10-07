@@ -69,7 +69,10 @@ describe('TourDetailPage', () => {
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
       if (url.includes(`/admin/tours/${mockTour.id}/scenes`)) return Promise.resolve(jsonResponse(200, []));
       
-      if (url.includes(`/admin/tours/${mockTour.id}`) && !url.includes('scenes') && !url.includes('preview-token') && method === 'GET') {
+      if (url.includes(`/admin/tours/${mockTour.id}/graph`)) {
+        return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] }));
+      }
+      if (url.includes(`/admin/tours/${mockTour.id}`) && !url.includes('scenes') && !url.includes('preview-token') && !url.includes('graph') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
       if (url.includes(`/admin/tours/${mockTour.id}/preview-token`) && method === 'POST') {
@@ -97,6 +100,32 @@ describe('TourDetailPage', () => {
       expect(target).toBe('_blank');
       expect(features).toBe('noopener');
     }
+  });
+
+  it('affiche le titre Carte des liens dans le panel TourLinkMap', async () => {
+    window.history.replaceState(null, '', `/tours/${mockTour.id}`);
+
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, []));
+      if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, []));
+      if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
+      if (url.includes(`/admin/tours/${mockTour.id}/scenes`)) return Promise.resolve(jsonResponse(200, []));
+      if (url.includes(`/admin/tours/${mockTour.id}/graph`)) return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] }));
+      
+      if (url.includes(`/admin/tours/${mockTour.id}`) && !url.includes('scenes') && !url.includes('preview-token') && !url.includes('graph') && method === 'GET') {
+        return Promise.resolve(jsonResponse(200, mockTour));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+
+    const title = await screen.findByText(resources.fr.catalog.tours.linkMap.title);
+    expect(title).toBeDefined();
   });
   
   function isRequestInit(value: unknown): value is RequestInit {

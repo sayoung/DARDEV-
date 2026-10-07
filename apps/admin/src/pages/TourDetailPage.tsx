@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider.js';
 import { TourForm } from './TourForm.js';
 import { TourScenesSection } from './TourScenesSection.js';
+import { TourLinkMapPanel } from './TourLinkMapPanel.js';
 import { TourPublicationPanel } from './TourPublicationPanel.js';
 import { getTour, updateTour, deleteTour, createPreviewToken } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
@@ -172,6 +173,11 @@ export function TourDetailPage() {
       <Card>
         <CardContent className="pt-6">
           <TourScenesSection tour={tour} onTourUpdated={setTour} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <TourLinkMapPanel tourId={id} refreshKey={String(tour.contentVersion)} />
         </CardContent>
       </Card>
     </div>

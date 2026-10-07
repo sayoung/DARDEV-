@@ -93,7 +93,8 @@
         "refresh": "Actualiser",
         "orphans": "Scènes inaccessibles depuis la scène de départ :",
         "noOrphans": "Toutes les scènes sont accessibles.",
-        "start": "Départ :"
+        "start": "Départ :",
+        "empty": "Aucune scène dans cette visite."
       }
     },
     "asset": {

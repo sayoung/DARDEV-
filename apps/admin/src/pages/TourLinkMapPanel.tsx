@@ -4,6 +4,7 @@ import { type TourLinkMap } from '@xplor/shared';
 import { getTourLinkMap } from '../api/catalog.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
+import { LinkMapGraph } from '../editor/LinkMapGraph.js';
 
 export interface TourLinkMapPanelProps {
   tourId: string;
@@ -77,9 +78,15 @@ export function TourLinkMapPanel({ tourId, refreshKey }: TourLinkMapPanelProps) 
 
       {mapData && !loading && !errorMsg && (
         <div className="space-y-4">
-          <div data-testid="link-map-graph" className="min-h-[200px] border rounded bg-muted/30 p-4">
-            {/* Future graph here */}
-          </div>
+          {mapData.nodes.length > 0 ? (
+            <div className="border rounded bg-muted/30">
+              <LinkMapGraph map={mapData} />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              {t('catalog.tours.linkMap.empty')}
+            </p>
+          )}
 
           {orphans.length > 0 ? (
             <Alert variant="default">

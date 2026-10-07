@@ -258,7 +258,8 @@ describe('TourForm Pages', () => {
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
-      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'GET') {
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'PATCH') {
@@ -303,7 +304,8 @@ describe('TourForm Pages', () => {
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
-      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'GET') {
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'DELETE') {
@@ -356,7 +358,8 @@ describe('TourForm Pages', () => {
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
-      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'GET') {
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'PATCH') {
@@ -392,7 +395,8 @@ describe('TourForm Pages', () => {
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
-      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'GET') {
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && method === 'DELETE') {
