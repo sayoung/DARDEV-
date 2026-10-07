@@ -1,5 +1,5 @@
 import { HttpException } from '@nestjs/common';
-import { AssetKind, ProcessingStatus, type AssetListQuery, AssetCleanupDryRunResponseSchema, AssetCleanupResultSchema } from '@xplor/shared';
+import { AssetKind, ProcessingStatus, type AssetListQuery, AssetCleanupDryRunResponseSchema, AssetCleanupResultSchema, Role } from '@xplor/shared';
 import { type Prisma } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
@@ -38,6 +38,7 @@ interface OrderKey {
 
 interface ListArgs {
   where?: {
+    AND?: ListArgs['where'][];
     kind?: AssetKind;
     processingStatus?: { in?: ProcessingStatus[] };
     coverOf?: { none: Record<string, never> };
@@ -153,6 +154,12 @@ function harness(rows: AssetRow[]) {
 
 function matches(item: AssetRow, where: ListArgs['where']): boolean {
   if (!where) return true;
+  if (where.AND !== undefined && Array.isArray(where.AND)) {
+    for (const condition of where.AND) {
+      if (!matches(item, condition)) return false;
+    }
+    return true;
+  }
   if (where.kind !== undefined && item.kind !== where.kind) {
     return false;
   }
@@ -203,7 +210,7 @@ describe('AssetsService', () => {
     const tiedEarly = row(OLDER_ID, AssetKind.IMAGE, '2026-09-02T00:00:00.000Z');
     const tiedLate = row(NEWER_ID, AssetKind.VIDEO, '2026-09-02T00:00:00.000Z');
     const { service, lists } = harness([tiedLate, tiedEarly]);
-    const page = await service.list({ page: 1, pageSize: 1 });
+    const page = await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, { page: 1, pageSize: 1 });
     expect(lists[0]).toMatchObject({
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     });
@@ -227,15 +234,15 @@ describe('AssetsService', () => {
       pageSize: 1,
       total: 2,
     });
-    const next = await service.list({ page: 2, pageSize: 1 });
+    const next = await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, { page: 2, pageSize: 1 });
     expect(next.items.map((item) => item.id)).toEqual([NEWER_ID]);
     expect(next.total).toBe(2);
   });
 
   it('filtre sur kind et n’expose pas la clé de stockage', async () => {
     const { service, lists } = harness(sample);
-    const images = await service.list({ ...listAll, kind: AssetKind.IMAGE });
-    expect(lists[0]).toMatchObject({ where: { kind: AssetKind.IMAGE } });
+    const images = await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, { ...listAll, kind: AssetKind.IMAGE });
+    expect(lists[0]).toMatchObject({ where: { AND: [{ kind: AssetKind.IMAGE }] } });
     expect(images.total).toBe(1);
     expect(images.items).toEqual([
       {
@@ -254,8 +261,8 @@ describe('AssetsService', () => {
     ]);
     expect(images.items[0]).not.toHaveProperty('originalKey');
 
-    const all = await service.list(listAll);
-    expect(lists[1]).toMatchObject({ where: {} });
+    const all = await service.list({ userId: 'u1', role: Role.ADMIN, hotelIds: [] }, listAll);
+    expect(lists[1]).toMatchObject({ where: { AND: [{}] } });
     expect(all.items.map((item) => item.id)).toEqual([NEWER_ID, MIDDLE_ID, OLDER_ID]);
     expect(all.total).toBe(3);
   });

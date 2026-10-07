@@ -44,8 +44,36 @@ export class AssetsService {
     @Inject(ENV) private readonly env: Pick<Env, 'MEDIA_PUBLIC_URL'>,
   ) {}
 
-  async list(query: AssetListQuery): Promise<Paginated<AssetResponse>> {
-    const where = kindWhere(query.kind);
+  async list(actor: Principal, query: AssetListQuery): Promise<Paginated<AssetResponse>> {
+    if (!canManageContent(actor)) {
+      throw new ForbiddenException();
+    }
+
+    if (query.tourId !== undefined && query.unused === 'true') {
+      // Un média non utilisé n'appartient à aucune visite
+      return { items: [], page: query.page, pageSize: query.pageSize, total: 0 };
+    }
+
+    const conditions: Prisma.AssetWhereInput[] = [kindWhere(query.kind)];
+
+    if (query.tourId !== undefined || query.unused === 'true') {
+      const usage = await this.usageIndex();
+
+      if (query.unused === 'true') {
+        conditions.push({ id: { notIn: Array.from(usage.keys()) } });
+      } else if (query.tourId !== undefined) {
+        const ids: string[] = [];
+        for (const [assetId, tourIds] of usage.entries()) {
+          if (tourIds.has(query.tourId)) {
+            ids.push(assetId);
+          }
+        }
+        conditions.push({ id: { in: ids } });
+      }
+    }
+
+    const where = { AND: conditions };
+
     const [total, rows] = await Promise.all([
       this.prisma.asset.count({ where }),
       this.prisma.asset.findMany({
