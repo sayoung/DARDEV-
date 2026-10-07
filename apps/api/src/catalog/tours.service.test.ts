@@ -665,6 +665,42 @@ describe('ToursService', () => {
     await expect(service.remove(created.id)).rejects.toBeInstanceOf(NotFoundException);
     expect(tours.has(created.id)).toBe(true);
   });
+
+  it('rejette NotFoundException pour une visite inconnue lors de getLinkMap', async () => {
+    const { service } = harness();
+    await expect(service.getLinkMap(UNKNOWN_ID)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('génère la carte des liens (scène isolée a orphan true)', async () => {
+    const { service, addScene, addHotspot, tours } = harness();
+    const created = await service.create(kasbah, USER_ID);
+
+    const scene1 = addScene(created.id, { title: { fr: 'Scène 1' } });
+    const scene2 = addScene(created.id, { title: { fr: 'Scène isolée' } });
+    
+    // Test avec startSceneId null
+    const mapWithoutStart = await service.getLinkMap(created.id);
+    expect(mapWithoutStart.nodes).toContainEqual(expect.objectContaining({ id: scene1, orphan: true }));
+    expect(mapWithoutStart.nodes).toContainEqual(expect.objectContaining({ id: scene2, orphan: true }));
+
+    // Test avec startSceneId pointant sur scene1
+    const tourObj = tours.get(created.id);
+    if (tourObj) tourObj.startSceneId = scene1;
+    const mapWithStart = await service.getLinkMap(created.id);
+    expect(mapWithStart.nodes).toContainEqual(expect.objectContaining({ id: scene1, orphan: false, isStart: true }));
+    expect(mapWithStart.nodes).toContainEqual(expect.objectContaining({ id: scene2, orphan: true, isStart: false }));
+    
+    // Ajout d'un lien vers une autre visite
+    const secondTour = await service.create(mehdia, USER_ID);
+    addHotspot(scene1, { type: 'TOUR_LINK', targetTourId: secondTour.id });
+    
+    const mapWithExternal = await service.getLinkMap(created.id);
+    expect(mapWithExternal.nodes).toContainEqual(expect.objectContaining({
+      id: secondTour.id,
+      kind: 'external',
+      label: 'Plage de Mehdia'
+    }));
+  });
 });
 
 async function readReference(
