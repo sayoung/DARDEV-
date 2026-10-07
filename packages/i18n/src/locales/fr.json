@@ -84,6 +84,11 @@
     }
   },
   "catalog": {
+    "tours": {
+      "preview": {
+        "open": "Tester la visite"
+      }
+    },
     "asset": {
       "empty": "Aucun média trouvé.",
       "error": "Impossible de charger les médias.",

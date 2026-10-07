@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { shareUrl, tourQrSvg } from './tour-qr';
+import { shareUrl, tourQrSvg, previewUrl } from './tour-qr';
 
 describe('tour-qr', () => {
   describe('shareUrl', () => {
@@ -26,6 +26,16 @@ describe('tour-qr', () => {
 
     it('rejette avec une erreur si la génération échoue (ex: texte vide)', async () => {
       await expect(tourQrSvg('')).rejects.toThrow();
+    });
+  });
+
+  describe('previewUrl', () => {
+    it('construit l\'URL de prévisualisation', () => {
+      expect(previewUrl('http://localhost:5174', 'token123', 'fr')).toBe('http://localhost:5174/v/preview/token123?lang=fr');
+    });
+
+    it('gère les URL de base avec un slash final', () => {
+      expect(previewUrl('https://xplor.ma/', 'token123', 'ar')).toBe('https://xplor.ma/v/preview/token123?lang=ar');
     });
   });
 });
