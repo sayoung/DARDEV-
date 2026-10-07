@@ -21,10 +21,10 @@ async function readPost(
 test.describe('M4 F-20 à F-25 : Éditeur (Carte des liens et Éditeur 360)', () => {
   test('Affiche la carte des liens avec les scènes et l\'éditeur 360', async ({ page }) => {
     test.setTimeout(120000);
-    
+
     // 1. Connexion admin
     await page.goto('http://localhost:5173/');
-    
+
     const email = 'admin@xplor.local';
     const password = process.env.SEED_DEFAULT_PASSWORD || 'xplor-seed-dev-2026';
 
@@ -49,17 +49,17 @@ test.describe('M4 F-20 à F-25 : Éditeur (Carte des liens et Éditeur 360)', ()
     await page.getByLabel(resources.fr.tour.form.coverAssetId).selectOption({ index: 1 });
     await page.getByTestId('submit-tour-btn').click();
     await expect(page.getByRole('heading', { name: resources.fr.page.tourDetail.title })).toBeVisible();
-    
-    const tourUrl = page.url(); 
+
+    const tourUrl = page.url();
 
     // 4. Ajouter 2 scènes
     for (let i = 1; i <= 2; i++) {
       await page.getByRole('button', { name: resources.fr.catalog.scene.actions.add }).click();
       await page.getByRole('textbox', { name: resources.fr.catalog.scene.fields.title }).fill(`Scène M4 - ${String(i)}`);
-      
+
       const panoramaSelect = page.getByLabel(resources.fr.catalog.scene.fields.panorama);
       await expect(panoramaSelect).toBeVisible();
-      
+
       // Attendre que des options "Prêt" soient disponibles
       await expect.poll(async () => {
         const texts = await panoramaSelect.locator('option').allInnerTexts();
@@ -72,29 +72,28 @@ test.describe('M4 F-20 à F-25 : Éditeur (Carte des liens et Éditeur 360)', ()
         .filter(({ text }) => text.trim().endsWith(resources.fr.catalog.asset.status.READY))
         .map(({ index }) => index);
 
-      // On sélectionne le premier panorama prêt pour la scène 1, et le deuxième pour la scène 2 si possible
-      await panoramaSelect.selectOption({ index: readyIndices[i > 1 ? 1 : 0] || readyIndices[0] });
+      // 4) Simplifier la sélection du panorama
+      await panoramaSelect.selectOption({ index: readyIndices[i - 1] ?? readyIndices[0] });
 
       await readPost(page, /\/api\/v1\/admin\/tours\/[a-f0-9-]+\/scenes$/, async () => {
         await page.getByTestId('submit-scene-btn').click();
       });
-      
+
       await expect(page.getByRole('heading', { name: resources.fr.catalog.edit })).toBeVisible();
       await page.goto(tourUrl);
       await expect(page.getByRole('heading', { name: resources.fr.page.tourDetail.title })).toBeVisible();
     }
 
-    // Définir la première scène comme départ si non fait automatiquement
+    // 2) Remplacer la chaîne en dur 'départ' par resources.fr.catalog.scene.actions.setStart
+    // 3) Le bouton setStart est toujours affiché : cliquer sans condition sur la ligne 1
     const row1 = page.locator('tr').filter({ hasText: `Scène M4 - 1` });
-    if (await row1.locator('button').filter({ hasText: 'départ' }).isVisible()) {
-      await row1.locator('button').filter({ hasText: 'départ' }).click();
-      await expect(row1.getByText(resources.fr.catalog.scene.startBadge)).toBeVisible();
-    }
+    await row1.locator('button').filter({ hasText: resources.fr.catalog.scene.actions.setStart }).click();
+    await expect(row1.getByText(resources.fr.catalog.scene.startBadge)).toBeVisible();
 
     // 5. Vérifier la page de détail
     // Titre "Carte des liens"
     await expect(page.getByText(resources.fr.catalog.tours.linkMap.title)).toBeVisible();
-    
+
     // Graphe contient 2 nœuds
     await expect(page.locator('.react-flow__node')).toHaveCount(2);
 
@@ -108,7 +107,8 @@ test.describe('M4 F-20 à F-25 : Éditeur (Carte des liens et Éditeur 360)', ()
     await expect(testTourBtn).toBeVisible();
 
     // 6. Ouvrir une scène
-    await page.getByRole('link', { name: resources.fr.catalog.edit }).first().click();
+    // 1) Remplacer getByRole('link', {name: catalog.edit}) par getByRole('button', ...), limité à la ligne 'Scène M4 - 1'
+    await row1.getByRole('button', { name: resources.fr.catalog.edit }).click();
 
     // Cliquer sur l'onglet "Éditeur 360"
     await page.getByRole('tab', { name: resources.fr.catalog.scenes.tabs.editor }).click();
