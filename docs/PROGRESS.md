@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 07/10/2026 — M4 F-22 (6c/7) : ajoute 1 test dans apps/admin/src/pages/SceneDetailPage.test.tsx pour le déplacement de marqueur de SceneEditorTab. Étends le mock existant de… — Le test de déplacement de marqueur avec debounce de 1000 ms est conforme à la consigne (999 ms puis 1000 ms, timers restaurés), seul le fichier de test est modifié, et lint, typecheck et test passent. (6791ca1)
 - 07/10/2026 — M4 F-22 (6b/7) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), câble le déplacement des marqueurs vers la sauvegarde. Contexte : `createDeboun… — Câblage du déplacement des marqueurs vers la sauvegarde différée conforme à la demande, contrôles au vert, clés i18n présentes. (53c1311)
 - 06/10/2026 — M4 F-22 (6a/7) : ajoute dans packages/i18n/src/locales/fr.json, sous `catalog.hotspots.editor` (à côté de `confirmDelete`), un objet `status` avec `pending` « M… — Ajout correct de catalog.hotspots.editor.status (4 libellés fr) dans fr.json uniquement, contrôles au vert. (3506122)
 - 06/10/2026 — M4 F-22 (5/7) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), onMarkerSelect enregistre `selectedHotspotId` (et vide draftPosition). Si un hot… — Sélection de hotspot, suppression avec confirmation, bouton Fermer, clés fr et 2 tests conformes à la demande ; lint, typecheck et test au vert. (03a8fbe)
