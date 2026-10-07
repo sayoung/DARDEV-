@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import type { Lang, TourGraph } from '@xplor/shared';
 
 import { ENV } from '../config/config.module.js';
@@ -8,6 +9,25 @@ import { StorageService, STORAGE_SERVICE } from '../storage/storage.service.js';
 import { collectAssetIds, collectTargetTourIds } from './tour-graph-refs.js';
 import type { SceneSource } from './tour-graph-scene.js';
 import { toTourGraph, type TourSource } from './tour-graph.js';
+
+export const TOUR_INCLUDE = {
+  city: true,
+  categories: {
+    include: {
+      category: true,
+    },
+  },
+  coverAsset: true,
+  scenes: {
+    where: { deletedAt: null },
+    orderBy: { weight: 'asc' },
+    include: {
+      panoramaAsset: true,
+      ambientAsset: true,
+      hotspots: true,
+    },
+  },
+} as const satisfies Prisma.TourInclude;
 
 @Injectable()
 export class ViewerService {
@@ -25,24 +45,7 @@ export class ViewerService {
         status: 'PUBLISHED',
         deletedAt: null,
       },
-      include: {
-        city: true,
-        categories: {
-          include: {
-            category: true,
-          },
-        },
-        coverAsset: true,
-        scenes: {
-          where: { deletedAt: null },
-          orderBy: { weight: 'asc' },
-          include: {
-            panoramaAsset: true,
-            ambientAsset: true,
-            hotspots: true,
-          },
-        },
-      },
+      include: TOUR_INCLUDE,
     });
 
     if (!tour) {
@@ -54,7 +57,13 @@ export class ViewerService {
 
   public async getPublicGraph(shareToken: string, lang: Lang): Promise<TourGraph> {
     const tour = await this.loadPublicTour(shareToken);
+    return this.buildGraph(tour, lang);
+  }
 
+  private async buildGraph(
+    tour: Prisma.TourGetPayload<{ include: typeof TOUR_INCLUDE }>,
+    lang: Lang,
+  ): Promise<TourGraph> {
     const scenes: SceneSource[] = tour.scenes.map((s) => ({
       id: s.id,
       title: s.title,
