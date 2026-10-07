@@ -4,7 +4,7 @@ import { ArrivalOrientationDialog } from './ArrivalOrientationDialog.js';
 import { getScene, getAsset } from '../api/catalog.js';
 import { type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus } from '@xplor/shared';
 import React from 'react';
-import type { SceneEditor360Props, SceneEditor360Handle } from '../components/SceneEditor360.js';
+import type { SceneEditor360Props } from '../components/SceneEditor360.js';
 
 vi.mock('../api/catalog.js', () => ({
   getScene: vi.fn(),
@@ -18,8 +18,8 @@ vi.mock('../components/SceneEditor360.js', () => ({
         handleRef({
           getView: () => ({ yaw: 1.23, pitch: 0, zoom: 50 })
         });
-      } else {
-        (handleRef as { current: SceneEditor360Handle | null }).current = {
+      } else if ('current' in handleRef) {
+        handleRef.current = {
           getView: () => ({ yaw: 1.23, pitch: 0, zoom: 50 })
         };
       }

@@ -29,10 +29,9 @@ export function ArrivalOrientationDialog({
   const [asset, setAsset] = useState<AssetResponse | null>(null);
   const [scene, setScene] = useState<SceneResponse | null>(null);
   const editorRef = useRef<SceneEditor360Handle>(null);
-  const mountedRef = useRef(true);
-
   useEffect(() => {
-    mountedRef.current = true;
+    let mounted = true;
+
     if (!open) {
       setScene(null);
       setAsset(null);
@@ -46,25 +45,26 @@ export function ArrivalOrientationDialog({
     async function load() {
       try {
         const sceneData = await getScene(targetSceneId);
-         
-        if (!mountedRef.current) return;
-        setScene(sceneData);
-
         const assetData = await getAsset(sceneData.panoramaAssetId);
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!mountedRef.current) return;
-        setAsset(assetData);
+        
+        if (mounted) {
+          setScene(sceneData);
+          setAsset(assetData);
+        }
       } catch {
-         
-        if (!mountedRef.current) return;
-        setError(t('common.error.generic'));
+        if (mounted) {
+          setError(t('common.error.generic'));
+        }
       } finally {
-         
-        if (mountedRef.current) setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
     void load();
-    return () => { mountedRef.current = false; };
+    return () => {
+      mounted = false;
+    };
   }, [open, targetSceneId, t]);
 
   const handleConfirm = () => {
