@@ -93,7 +93,14 @@ export function validateTour(
   }
 
   if (start !== undefined) {
-    const reachable = reachableIds(start);
+    const neighbours = new Map<string, readonly string[]>();
+    for (const node of nodes.values()) {
+      neighbours.set(
+        node.id,
+        node.next.map((n) => n.id),
+      );
+    }
+    const reachable = reachableFrom(start.id, neighbours);
     for (const node of nodes.values()) {
       if (!node.deleted && !reachable.has(node.id)) {
         issues.push(problem(ValidationIssueCode.SCENE_UNREACHABLE, node.id));
@@ -210,16 +217,25 @@ function tourLink(
   }
 }
 
-/** Parcours en largeur. Un nœud déjà vu (second chemin ou cycle) est ignoré. */
-function reachableIds(start: GraphNode): Set<string> {
+/**
+ * Parcours en largeur. Un nœud déjà vu (second chemin ou cycle) est ignoré.
+ * Un identifiant absent de `neighbours` n'a pas de voisins.
+ */
+export function reachableFrom(
+  startId: string,
+  neighbours: ReadonlyMap<string, readonly string[]>,
+): Set<string> {
   const reachable = new Set<string>();
-  const queue: GraphNode[] = [start];
+  const queue: string[] = [startId];
   let current = queue.shift();
   while (current !== undefined) {
-    if (!reachable.has(current.id)) {
-      reachable.add(current.id);
-      for (const next of current.next) {
-        queue.push(next);
+    if (!reachable.has(current)) {
+      reachable.add(current);
+      const nexts = neighbours.get(current);
+      if (nexts !== undefined) {
+        for (const next of nexts) {
+          queue.push(next);
+        }
       }
     }
     current = queue.shift();
