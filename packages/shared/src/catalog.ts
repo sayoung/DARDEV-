@@ -345,8 +345,32 @@ export type TourListQuery = z.infer<typeof TourListQuerySchema>;
 export const AssetListQuerySchema = PaginationQuerySchema.extend({
   page: z.number().int().min(1).default(1),
   kind: z.enum(AssetKind).optional(),
+  tourId: idSchema.optional(),
+  unused: z.literal('true').optional(),
 });
 export type AssetListQuery = z.infer<typeof AssetListQuerySchema>;
+
+/**
+ * Filtres pour la liste des dossiers de la médiathèque (M4 F-12).
+ */
+export const AssetFoldersQuerySchema = z.object({
+  kind: z.enum(AssetKind).optional(),
+});
+export type AssetFoldersQuery = z.infer<typeof AssetFoldersQuerySchema>;
+
+/**
+ * Dossiers de la médiathèque (M4 F-12).
+ */
+export const AssetFoldersResponseSchema = z.object({
+  total: z.number().int().min(0),
+  unusedCount: z.number().int().min(0),
+  tours: z.array(z.object({
+    id: idSchema,
+    title: LocalizedTextSchema,
+    count: z.number().int().min(0),
+  })),
+});
+export type AssetFoldersResponse = z.infer<typeof AssetFoldersResponseSchema>;
 
 /** Schéma d'une page dont chaque élément suit `itemSchema`. */
 export function paginated<Item extends z.ZodType>(itemSchema: Item) {

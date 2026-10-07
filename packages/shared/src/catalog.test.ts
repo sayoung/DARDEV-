@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   AssetKind,
   AssetListQuerySchema,
+  AssetFoldersQuerySchema,
+  AssetFoldersResponseSchema,
   AssetResponseSchema,
   AssetUploadRequestSchema,
   AssetUploadResponseSchema,
@@ -752,6 +754,46 @@ describe('AssetListQuerySchema', () => {
       kind: AssetKind.PANORAMA,
     });
     expect(AssetListQuerySchema.safeParse({ page: 1, kind: 'GIF' }).success).toBe(false);
+  });
+
+  it('accepte unused=true et refuse unused=false', () => {
+    expect(AssetListQuerySchema.parse({ unused: 'true' })).toMatchObject({ unused: 'true' });
+    expect(AssetListQuerySchema.safeParse({ unused: 'false' }).success).toBe(false);
+  });
+
+  it('accepte un tourId UUID', () => {
+    expect(AssetListQuerySchema.parse({ tourId: id.tour })).toMatchObject({ tourId: id.tour });
+    expect(AssetListQuerySchema.safeParse({ tourId: 'not-a-uuid' }).success).toBe(false);
+  });
+});
+
+describe('AssetFoldersQuerySchema', () => {
+  it('accepte un kind', () => {
+    expect(AssetFoldersQuerySchema.parse({ kind: AssetKind.IMAGE })).toEqual({ kind: AssetKind.IMAGE });
+    expect(AssetFoldersQuerySchema.safeParse({ kind: 'GIF' }).success).toBe(false);
+  });
+});
+
+describe('AssetFoldersResponseSchema', () => {
+  it('valide une liste de dossiers de visites', () => {
+    const res = {
+      total: 15,
+      unusedCount: 3,
+      tours: [
+        {
+          id: id.tour,
+          title: { fr: 'Visite 1' },
+          count: 12,
+        },
+      ],
+    };
+    expect(AssetFoldersResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it('contrôle les clés total, unusedCount et tours', () => {
+    expect(AssetFoldersResponseSchema.safeParse({ unusedCount: 3, tours: [] }).success).toBe(false);
+    expect(AssetFoldersResponseSchema.safeParse({ total: 3, tours: [] }).success).toBe(false);
+    expect(AssetFoldersResponseSchema.safeParse({ total: 3, unusedCount: 3 }).success).toBe(false);
   });
 });
 

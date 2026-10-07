@@ -2966,6 +2966,26 @@
             "required": false,
             "name": "kind",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "tourId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true"
+              ]
+            },
+            "required": false,
+            "name": "unused",
+            "in": "query"
           }
         ],
         "responses": {
