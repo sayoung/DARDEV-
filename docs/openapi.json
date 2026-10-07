@@ -13092,6 +13092,774 @@
           }
         }
       }
+    },
+    "/api/v1/admin/tours/{id}/preview-token": {
+      "post": {
+        "summary": "Générer un jeton de prévisualisation",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Jeton généré.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expiresAt": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "expiresAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Visite introuvable ou supprimée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "TOUR_NOT_FOUND"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/preview/{token}": {
+      "get": {
+        "summary": "Obtenir le graphe de la visite pour la prévisualisation",
+        "tags": [
+          "Viewer"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "fr",
+                "ar",
+                "en"
+              ],
+              "default": "fr"
+            },
+            "required": false,
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Graphe de la visite.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "contentVersion": {
+                      "type": "number"
+                    },
+                    "lang": {
+                      "type": "string",
+                      "enum": [
+                        "fr",
+                        "ar",
+                        "en"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": "string"
+                    },
+                    "city": {
+                      "type": "string"
+                    },
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coverUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "practicalInfo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "location": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng"
+                      ]
+                    },
+                    "startSceneId": {
+                      "type": "string"
+                    },
+                    "scenes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "caption": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "panorama": {
+                            "type": "object",
+                            "properties": {
+                              "preview": {
+                                "type": "string"
+                              },
+                              "web": {
+                                "type": "string"
+                              },
+                              "tiles": {
+                                "type": "object",
+                                "properties": {
+                                  "width": {
+                                    "type": "number"
+                                  },
+                                  "cols": {
+                                    "type": "number"
+                                  },
+                                  "rows": {
+                                    "type": "number"
+                                  },
+                                  "baseUrl": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "width",
+                                  "cols",
+                                  "rows",
+                                  "baseUrl"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "preview",
+                              "web",
+                              "tiles"
+                            ]
+                          },
+                          "initialView": {
+                            "type": "object",
+                            "properties": {
+                              "yaw": {
+                                "type": "number"
+                              },
+                              "pitch": {
+                                "type": "number"
+                              },
+                              "zoom": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "yaw",
+                              "pitch",
+                              "zoom"
+                            ]
+                          },
+                          "narrationUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "ambientUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "thumb": {
+                            "type": "string"
+                          },
+                          "hotspots": {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "SCENE_LINK"
+                                      ]
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "yaw": {
+                                      "type": "number"
+                                    },
+                                    "pitch": {
+                                      "type": "number"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "icon": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ARROW",
+                                        "INFO",
+                                        "PHOTO",
+                                        "PLAY",
+                                        "PORTAL"
+                                      ]
+                                    },
+                                    "targetSceneId": {
+                                      "type": "string"
+                                    },
+                                    "arrivalYaw": {
+                                      "type": [
+                                        "number",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "yaw",
+                                    "pitch",
+                                    "label",
+                                    "icon",
+                                    "targetSceneId"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "TOUR_LINK"
+                                      ]
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "yaw": {
+                                      "type": "number"
+                                    },
+                                    "pitch": {
+                                      "type": "number"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "icon": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ARROW",
+                                        "INFO",
+                                        "PHOTO",
+                                        "PLAY",
+                                        "PORTAL"
+                                      ]
+                                    },
+                                    "targetTourId": {
+                                      "type": "string"
+                                    },
+                                    "targetSceneId": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "arrivalYaw": {
+                                      "type": [
+                                        "number",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "yaw",
+                                    "pitch",
+                                    "label",
+                                    "icon",
+                                    "targetTourId"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "INFO"
+                                      ]
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "yaw": {
+                                      "type": "number"
+                                    },
+                                    "pitch": {
+                                      "type": "number"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "icon": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ARROW",
+                                        "INFO",
+                                        "PHOTO",
+                                        "PLAY",
+                                        "PORTAL"
+                                      ]
+                                    },
+                                    "bodyHtml": {
+                                      "type": "string"
+                                    },
+                                    "images": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "yaw",
+                                    "pitch",
+                                    "label",
+                                    "icon",
+                                    "bodyHtml",
+                                    "images"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "MEDIA"
+                                      ]
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "yaw": {
+                                      "type": "number"
+                                    },
+                                    "pitch": {
+                                      "type": "number"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "icon": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ARROW",
+                                        "INFO",
+                                        "PHOTO",
+                                        "PLAY",
+                                        "PORTAL"
+                                      ]
+                                    },
+                                    "media": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "url": {
+                                            "type": "string"
+                                          },
+                                          "mimeType": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "url",
+                                          "mimeType"
+                                        ]
+                                      },
+                                      "minItems": 1
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "yaw",
+                                    "pitch",
+                                    "label",
+                                    "icon",
+                                    "media"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "URL"
+                                      ]
+                                    },
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "yaw": {
+                                      "type": "number"
+                                    },
+                                    "pitch": {
+                                      "type": "number"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "icon": {
+                                      "type": "string",
+                                      "enum": [
+                                        "ARROW",
+                                        "INFO",
+                                        "PHOTO",
+                                        "PLAY",
+                                        "PORTAL"
+                                      ]
+                                    },
+                                    "url": {
+                                      "type": "string",
+                                      "format": "uri"
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "id",
+                                    "yaw",
+                                    "pitch",
+                                    "label",
+                                    "icon",
+                                    "url"
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "caption",
+                          "panorama",
+                          "initialView",
+                          "narrationUrl",
+                          "ambientUrl",
+                          "thumb",
+                          "hotspots"
+                        ]
+                      },
+                      "minItems": 1
+                    },
+                    "linkedTours": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "coverUrl": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "availableOffline": {
+                            "type": "boolean"
+                          },
+                          "shareToken": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "coverUrl",
+                          "availableOffline",
+                          "shareToken"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "contentVersion",
+                    "lang",
+                    "title",
+                    "summary",
+                    "city",
+                    "categories",
+                    "coverUrl",
+                    "practicalInfo",
+                    "location",
+                    "startSceneId",
+                    "scenes",
+                    "linkedTours"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Langue refusée.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Jeton invalide/expiré ou visite introuvable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}
