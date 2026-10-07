@@ -28,6 +28,7 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 ### Fait
 
+- 07/10/2026 — M4 F-23 (1/4) : dans apps/admin/src/components/SceneEditor360.tsx, ajoute une prop facultative `handleRef?: React.Ref<SceneEditor360Handle>` et exporte `type Sc… — handleRef/SceneEditor360Handle ajoutés avec getView normalisé (yaw via normalizeYaw, zoom arrondi, repli sur la vue initiale), test conforme, deux fichiers seulement, lint/typecheck/test verts. (8dda7e7)
 - 07/10/2026 — M4 F-22 (7/7) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), branche createEditHistory (apps/admin/src/editor/editHistory.ts, via useRef). Ch… — Annuler/Rétablir des déplacements de marqueurs via createEditHistory, raccourcis clavier, boutons, clé fr et 2 tests ajoutés ; lint, typecheck et test au vert. (c794051)
 - 07/10/2026 — M4 F-22 (6c/7) : ajoute 1 test dans apps/admin/src/pages/SceneDetailPage.test.tsx pour le déplacement de marqueur de SceneEditorTab. Étends le mock existant de… — Le test de déplacement de marqueur avec debounce de 1000 ms est conforme à la consigne (999 ms puis 1000 ms, timers restaurés), seul le fichier de test est modifié, et lint, typecheck et test passent. (6791ca1)
 - 07/10/2026 — M4 F-22 (6b/7) : dans apps/admin/src/pages/SceneDetailPage.tsx (SceneEditorTab), câble le déplacement des marqueurs vers la sauvegarde. Contexte : `createDeboun… — Câblage du déplacement des marqueurs vers la sauvegarde différée conforme à la demande, contrôles au vert, clés i18n présentes. (53c1311)
