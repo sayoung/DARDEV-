@@ -105,3 +105,52 @@ describe('PublicShareController', () => {
     await expect(controller.get('validToken123', 'es')).rejects.toThrow(BadRequestException);
   });
 });
+
+describe('PublicPreviewController', () => {
+  const getPreviewGraphMock = vi.fn();
+  let controller: import('./public-tours.controller.js').PublicPreviewController;
+  
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    const viewerServiceMock = {
+      getPreviewGraph: getPreviewGraphMock,
+    } as unknown as ViewerService;
+    const { PublicPreviewController } = await import('./public-tours.controller.js');
+    controller = new PublicPreviewController(viewerServiceMock, { SESSION_SECRET: 'test-secret' });
+  });
+
+  it('devrait rejeter un jeton invalide avec une 404', async () => {
+    await expect(controller.get('invalid-token', 'fr')).rejects.toThrow(NotFoundException);
+  });
+
+  it('devrait rejeter une langue invalide avec une 400', async () => {
+    const { signPreviewToken } = await import('../catalog/preview-token.js');
+    const validToken = signPreviewToken('tour-id', 'test-secret', Date.now()).token;
+    await expect(controller.get(validToken, 'es')).rejects.toThrow(BadRequestException);
+  });
+
+  it('devrait retourner le graphe pour un jeton valide', async () => {
+    const { signPreviewToken } = await import('../catalog/preview-token.js');
+    const validToken = signPreviewToken('tour-123', 'test-secret', Date.now()).token;
+    const mockGraph: Partial<TourGraph> = { id: 'preview-graph' };
+    getPreviewGraphMock.mockResolvedValue(mockGraph);
+
+    const result = await controller.get(validToken, 'fr');
+    expect(result).toBe(mockGraph);
+    expect(getPreviewGraphMock).toHaveBeenCalledWith('tour-123', 'fr');
+  });
+
+  it('devrait être protégé par ThrottlerGuard et Cache-Control no-store', async () => {
+    const { PublicPreviewController } = await import('./public-tours.controller.js');
+    const descriptor = Object.getOwnPropertyDescriptor(PublicPreviewController.prototype, 'get');
+    const val: unknown = descriptor?.value;
+    if (typeof val !== 'function') throw new Error('Method not found');
+    const getMethod: object = val;
+
+    expect(Reflect.getMetadata(GUARDS_METADATA, getMethod)).toEqual([ThrottlerGuard]);
+    expect(Reflect.getMetadata(HEADERS_METADATA, getMethod)).toEqual([
+      { name: 'Cache-Control', value: 'no-store' },
+    ]);
+  });
+});
+

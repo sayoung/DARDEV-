@@ -35,6 +35,7 @@ import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-c
 import { loadEnv, type Env } from '../src/config/env.js';
 import { REDIS } from '../src/redis/redis.module.js';
 import { buildSeedUsers } from '../src/seed/seed-users.js';
+import { signPreviewToken } from '../src/catalog/preview-token.js';
 import { readDatabaseUrlTest, resetDb } from './global-setup.js';
 
 const MISSING_SEED_PASSWORD =
@@ -290,6 +291,62 @@ describe('public tours API', () => {
   });
 });
 
+describe('public preview API', () => {
+  it('GET /public/preview/:token?lang=fr -> 200, DRAFT tour graph, Cache-Control no-store', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+    const porte = await createScene(editor, ready.tour.id, 'Porte', ready.panoramaAssetId, 0);
+
+    const env = integrationEnv();
+    const tokenData = signPreviewToken(ready.tour.id, env.SESSION_SECRET, Date.now());
+
+    const response = await application().inject({
+      method: 'GET',
+      url: `/api/v1/public/preview/${tokenData.token}?lang=fr`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['cache-control']).toBe('no-store');
+
+    const graph = TourGraphSchema.parse(parseJson(response.body));
+    expect(graph.scenes).toHaveLength(1);
+    expect(graph.scenes[0]?.id).toBe(porte.id);
+  });
+
+  it('GET /public/preview/:token -> 404 if expired token', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+
+    const env = integrationEnv();
+    // Simulate expired token by passing a time from the past (> 1 hour ago)
+    const tokenData = signPreviewToken(ready.tour.id, env.SESSION_SECRET, Date.now() - 3601 * 1000);
+
+    const response = await application().inject({
+      method: 'GET',
+      url: `/api/v1/public/preview/${tokenData.token}?lang=fr`,
+    });
+
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('GET /public/preview/:token -> 404 if tampered token', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const ready = await prepare(editor);
+
+    const env = integrationEnv();
+    const tokenData = signPreviewToken(ready.tour.id, env.SESSION_SECRET, Date.now());
+    
+    const tamperedToken = tokenData.token + 'x';
+
+    const response = await application().inject({
+      method: 'GET',
+      url: `/api/v1/public/preview/${tamperedToken}?lang=fr`,
+    });
+
+    expect(response.statusCode).toBe(404);
+  });
+});
+
 interface Session {
   sessionId: string;
   csrfToken: string;
@@ -383,7 +440,7 @@ async function startApplication(): Promise<NestFastifyApplication> {
     .compile();
 
   const application = moduleRef.createNestApplication<NestFastifyApplication>(
-    new FastifyAdapter(),
+    new FastifyAdapter({ maxParamLength: 1000 }),
     { logger: false },
   );
   await application.register(fastifyCookie);
