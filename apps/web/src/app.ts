@@ -2,7 +2,7 @@ import { dir, resources } from '@xplor/i18n';
 import type { Lang, TourGraph } from '@xplor/shared';
 import { TourNotFoundError } from '@xplor/viewer-core';
 
-import { parseShareToken, resolveLang } from './route.js';
+import { parseViewerRoute, resolveLang } from './route.js';
 import { createLangSwitcher } from './lang-switcher.js';
 import { createViewerController } from './viewer-controller.js';
 
@@ -11,6 +11,7 @@ export async function startViewer(
   location: { pathname: string; search: string },
   deps: {
     load: (shareToken: string, lang: Lang) => Promise<TourGraph>;
+    loadPreview: (previewToken: string, lang: Lang) => Promise<TourGraph>;
     mount: (
       container: HTMLElement,
       graph: TourGraph,
@@ -51,14 +52,25 @@ export async function startViewer(
   status.textContent = labels.loading;
   status.hidden = false;
 
-  const token = parseShareToken(location.pathname);
-  if (!token) {
+  const route = parseViewerRoute(location.pathname);
+  if (!route) {
     status.textContent = labels.notFound;
     return;
   }
 
+  const isPreview = route.kind === 'preview';
+  const token = route.token;
+
+  if (isPreview) {
+    const badge = doc.createElement('div');
+    badge.id = 'preview-badge';
+    badge.setAttribute('role', 'note');
+    badge.textContent = labels.preview.badge;
+    doc.body.prepend(badge);
+  }
+
   try {
-    const graph = await deps.load(token, lang);
+    const graph = await (isPreview ? deps.loadPreview(token, lang) : deps.load(token, lang));
     doc.title = graph.title;
 
     let initialLoad = true;
