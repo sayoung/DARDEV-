@@ -84,7 +84,7 @@ function harness(rows: AssetRow[]) {
   const updates: Prisma.AssetUpdateArgs[] = [];
   const deletes: Prisma.AssetDeleteArgs[] = [];
   const hotspotFindMany = vi.fn().mockResolvedValue([]);
-  
+
   const tourFindMany = vi.fn().mockResolvedValue([]);
 
   const prisma = {
