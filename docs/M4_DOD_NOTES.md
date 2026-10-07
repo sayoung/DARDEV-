@@ -1,0 +1,8 @@
+# Notes de vérification DoD M4 (F-20 à F-23)
+
+| Critère | Statut | Fichiers et tests cités |
+|---|---|---|
+| **F-20** Éditeur 360 dans l'onglet de la scène | OK | **Fichiers :** `apps/admin/src/pages/SceneDetailPage.tsx` (TabsContent "editor"), `apps/admin/src/components/SceneEditor360.tsx`<br>**Tests :** `apps/admin/src/pages/SceneDetailPage.test.tsx` (vérifie l'onglet Éditeur 360), `apps/admin/src/components/SceneEditor360.test.tsx` |
+| **F-21** Création de hotspot au clic avec panneau latéral | OK | **Fichiers :** `apps/admin/src/pages/SceneDetailPage.tsx` (gestion de `onPanoramaClick`), `apps/admin/src/pages/HotspotForm.tsx`<br>**Tests :** `apps/admin/src/pages/SceneDetailPage.test.tsx` (simule le clic sur le mock du panorama et vérifie l'apparition du panneau de création) |
+| **F-22** Glisser-déposer, suppression, annuler/rétablir (Ctrl+Z/Y), sauvegarde (debounce 1s) | OK | **Fichiers :** `apps/admin/src/pages/SceneDetailPage.tsx` (écoute des événements `keydown` pour Z/Y, utilisation du debounce), `apps/admin/src/editor/editHistory.ts`, `apps/admin/src/editor/debouncedSaver.ts`<br>**Tests :** `apps/admin/src/editor/editHistory.test.ts`, `apps/admin/src/editor/debouncedSaver.test.ts`, `apps/admin/src/pages/SceneDetailPage.test.tsx` |
+| **F-23** Vue initiale et orientation d'arrivée | OK | **Fichiers :** `apps/admin/src/pages/SceneDetailPage.tsx` (`handleSetInitialView`), `apps/admin/src/pages/ArrivalOrientationDialog.tsx`<br>**Tests :** `apps/admin/src/pages/SceneDetailPage.test.tsx` (boutons "Définir la vue actuelle..." et "Définir l'orientation..."), `apps/admin/src/pages/ArrivalOrientationDialog.test.tsx` |
