@@ -22,6 +22,7 @@ describe('import-lib', () => {
         timeoutSec: 600,
         concurrency: 3,
         dir: 'D:/DARDEV/local/xplor-panoramas-test/visite-oudayas/pano',
+        data: 'scripts/oudayas/tour-data.json',
       });
     });
 
@@ -53,6 +54,15 @@ describe('import-lib', () => {
 
     it('should throw an error if an unknown option is provided', () => {
       expect(() => parseArgs(['--invalid'], validEnv)).toThrowError('Unknown option: --invalid');
+    });
+
+    it('should parse data option correctly', () => {
+      const result = parseArgs(['--data', 'custom-data.json'], validEnv);
+      expect(result.data).toBe('custom-data.json');
+    });
+
+    it('should throw an error if --data is provided without value', () => {
+      expect(() => parseArgs(['--data'], validEnv)).toThrowError('Option --data requires a value.');
     });
 
     it('should enforce concurrency max limit', () => {
