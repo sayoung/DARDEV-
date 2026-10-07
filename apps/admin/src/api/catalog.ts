@@ -39,6 +39,8 @@ import {
   type HotspotUpdate,
   PreviewTokenResponseSchema,
   type PreviewTokenResponse,
+  TourLinkMapSchema,
+  type TourLinkMap,
   z
 } from '@xplor/shared';
 import { requestJson } from './client.js';
@@ -250,3 +252,7 @@ export async function createPreviewToken(id: string): Promise<PreviewTokenRespon
   });
 }
 
+
+export async function getTourLinkMap(tourId: string): Promise<TourLinkMap> {
+  return requestJson(`/api/v1/admin/tours/${tourId}/graph`, TourLinkMapSchema);
+}

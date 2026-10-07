@@ -1,5 +1,6 @@
 import { Role, type MeResponse, z , AssetKind } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getTourLinkMap } from './catalog.js';
 
 import {
   requestAssetUploadUrl,
@@ -426,3 +427,35 @@ describe('session expiration', () => {
     expect(pushStateSpy).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('catalog API', () => {
+  beforeEach(() => {
+    clearCsrfToken();
+    fetchMock.mockReset();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('getTourLinkMap parse une réponse valide', async () => {
+    const validMap = {
+      nodes: [{ id: 's1', kind: 'scene', label: 'S1', isStart: true, orphan: false }],
+      edges: [{ id: 'e1', source: 's1', target: 's2', kind: 'scene_link' }]
+    };
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, validMap));
+    const result = await getTourLinkMap('tour-1');
+    expect(result).toEqual(validMap);
+  });
+
+  it('getTourLinkMap rejette une réponse invalide', async () => {
+    const invalidMap = {
+      nodes: [{ id: 's1' }], // Missing kind, label, etc.
+      edges: []
+    };
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, invalidMap));
+    await expect(getTourLinkMap('tour-1')).rejects.toThrow();
+  });
+});
+
