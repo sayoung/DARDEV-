@@ -36,6 +36,7 @@ import {
   ValidationIssueCode,
   ValidationIssueSchema,
   paginated,
+  TourLinkMapSchema,
   type CityResponse,
   type Paginated,
 } from './catalog.js';
@@ -929,5 +930,42 @@ describe('AssetUploadResponseSchema', () => {
       expiresInSeconds: 3600,
     };
     expect(AssetUploadResponseSchema.safeParse(res).success).toBe(false);
+  });
+});
+
+describe('TourLinkMapSchema', () => {
+  it('accepte une carte valide', () => {
+    const map = {
+      nodes: [
+        { id: id.scene, kind: 'scene' as const, label: 'Entrée', isStart: true, orphan: false },
+        { id: `tour:${id.tour}`, kind: 'external' as const, label: 'Autre visite', isStart: false, orphan: false }
+      ],
+      edges: [
+        { id: id.hotspot, source: id.scene, target: `tour:${id.tour}`, kind: 'tour_link' as const }
+      ]
+    };
+    expect(TourLinkMapSchema.parse(map)).toEqual(map);
+  });
+
+  it('refuse un kind de nœud invalide', () => {
+    const map = {
+      nodes: [
+        { id: id.scene, kind: 'invalid', label: 'Entrée', isStart: true, orphan: false },
+      ],
+      edges: []
+    };
+    expect(TourLinkMapSchema.safeParse(map).success).toBe(false);
+  });
+
+  it('refuse un kind d\'arête invalide', () => {
+    const map = {
+      nodes: [
+        { id: id.scene, kind: 'scene' as const, label: 'Entrée', isStart: true, orphan: false },
+      ],
+      edges: [
+        { id: id.hotspot, source: id.scene, target: id.scene, kind: 'invalid' }
+      ]
+    };
+    expect(TourLinkMapSchema.safeParse(map).success).toBe(false);
   });
 });
