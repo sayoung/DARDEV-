@@ -12,7 +12,8 @@ const mockT = (key: string) => {
     'catalog.tours.linkMap.title': 'Carte des liens',
     'catalog.tours.linkMap.refresh': 'Actualiser',
     'catalog.tours.linkMap.orphans': 'Scènes orphelines',
-    'catalog.tours.linkMap.noOrphans': 'Aucune scène orpheline'
+    'catalog.tours.linkMap.noOrphans': 'Aucune scène orpheline',
+    'catalog.tours.linkMap.empty': 'Aucune scène dans cette visite.'
   };
   return translations[key] || key;
 };
@@ -32,6 +33,15 @@ vi.mock('react-i18next', async (importOriginal) => {
 // Mock API
 vi.mock('../api/catalog.js', () => ({
   getTourLinkMap: vi.fn(),
+}));
+
+// Mock LinkMapGraph
+vi.mock('../editor/LinkMapGraph.js', () => ({
+  LinkMapGraph: vi.fn(({ map }) => (
+    <div data-testid="link-map-graph" data-map={JSON.stringify(map)}>
+      Mock Graph
+    </div>
+  ))
 }));
 
 describe('TourLinkMapPanel', () => {
@@ -72,6 +82,8 @@ describe('TourLinkMapPanel', () => {
       expect(screen.getByTestId('link-map-graph')).toBeDefined();
     });
 
+    expect(screen.getByTestId('link-map-graph').getAttribute('data-map')).toBe(JSON.stringify(mockMapData));
+
     expect(screen.getByText('Scènes orphelines')).toBeDefined();
     expect(screen.getByText('Scene Orpheline 1')).toBeDefined();
     expect(screen.getByText('Scene Orpheline 2')).toBeDefined();
@@ -111,7 +123,7 @@ describe('TourLinkMapPanel', () => {
 
   it('(d) clic sur le bouton Actualiser -> getTourLinkMap appelé une seconde fois', async () => {
     const mockMapData: TourLinkMap = {
-      nodes: [],
+      nodes: [{ id: 'n1', kind: 'scene', label: 'Scene 1', isStart: true, orphan: false }],
       edges: []
     };
 
@@ -131,5 +143,22 @@ describe('TourLinkMapPanel', () => {
 
     expect(getTourLinkMap).toHaveBeenCalledTimes(2);
     expect(getTourLinkMap).toHaveBeenNthCalledWith(2, 'tour1');
+  });
+
+  it('(e) affiche le message empty si la carte n\'a aucun noeud', async () => {
+    const mockMapData: TourLinkMap = {
+      nodes: [],
+      edges: []
+    };
+
+    vi.mocked(getTourLinkMap).mockResolvedValue(mockMapData);
+
+    render(<TourLinkMapPanel tourId="tour1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Aucune scène dans cette visite.')).toBeDefined();
+    });
+
+    expect(screen.queryByTestId('link-map-graph')).toBeNull();
   });
 });
