@@ -9,6 +9,8 @@ import {
 } from '@asteasolutions/zod-to-openapi';
 import {
   AcceptInviteRequestSchema,
+  AssetFoldersQuerySchema,
+  AssetFoldersResponseSchema,
   AssetListQuerySchema,
   AssetResponseSchema,
   AssetUploadRequestSchema,
@@ -504,8 +506,23 @@ function registerCatalogCrud(resource: {
 
 function registerAssetReads(): void {
   const collection = '/api/v1/admin/assets';
+  const folders = `${collection}/folders`;
   const item = `${collection}/{id}`;
   const roleDenied = 'Rôle autre que ADMIN ou EDITOR.';
+  registry.registerPath({
+    method: 'get',
+    path: folders,
+    summary: 'Lister les dossiers de la médiathèque',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { query: AssetFoldersQuerySchema },
+    responses: {
+      '200': jsonResponse('Dossiers de la médiathèque.', AssetFoldersResponseSchema),
+      '400': jsonResponse('Paramètres de liste refusés.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(roleDenied, forbiddenError),
+    },
+  });
   registry.registerPath({
     method: 'get',
     path: collection,

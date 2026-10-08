@@ -1,7 +1,9 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import {
+  AssetFoldersQuerySchema,
   AssetListQuerySchema,
   TourListQuerySchema,
+  type AssetFoldersQuery,
   type AssetListQuery,
   type Principal,
   type TourListQuery,
@@ -70,6 +72,15 @@ export function parseAssetListQuery(query: Record<string, unknown>): AssetListQu
   assignString(raw, 'tourId', query.tourId);
   assignString(raw, 'unused', query.unused);
   return parseBody(AssetListQuerySchema, raw);
+}
+
+/**
+ * Query string de `GET /admin/assets/folders` (M4 F-12).
+ */
+export function parseAssetFoldersQuery(query: Record<string, unknown>): AssetFoldersQuery {
+  const raw: Record<string, unknown> = {};
+  assignString(raw, 'kind', query.kind);
+  return parseBody(AssetFoldersQuerySchema, raw);
 }
 
 /** Même mécanisme que l'auth : `safeParse`, puis 400 sans détail de champ. */

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { SessionRequest } from '../auth/session-request.js';
 import {
+  parseAssetFoldersQuery,
   parseAssetListQuery,
   parseBody,
   parseResourceId,
@@ -129,6 +130,20 @@ describe('parseAssetListQuery', () => {
 
   it('refuse un kind inconnu', () => {
     expect(() => parseAssetListQuery({ kind: 'GIF' })).toThrow(BadRequestException);
+  });
+});
+
+describe('parseAssetFoldersQuery', () => {
+  it('accepte une query vide', () => {
+    expect(parseAssetFoldersQuery({})).toEqual({});
+  });
+
+  it('transmet le kind', () => {
+    expect(parseAssetFoldersQuery({ kind: AssetKind.IMAGE })).toEqual({ kind: AssetKind.IMAGE });
+  });
+
+  it('refuse un kind inconnu', () => {
+    expect(() => parseAssetFoldersQuery({ kind: 'GIF' })).toThrow(BadRequestException);
   });
 });
 
