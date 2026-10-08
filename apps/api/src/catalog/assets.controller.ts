@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { AssetCleanupRequestSchema, AssetFoldersQuerySchema, AssetUploadRequestSchema, type AssetCleanupResponse, type AssetFoldersResponse, type AssetResponse, type AssetUploadResponse, type Paginated } from '@xplor/shared';
+import { AssetCleanupRequestSchema, AssetUploadRequestSchema, type AssetCleanupResponse, type AssetFoldersResponse, type AssetResponse, type AssetUploadResponse, type Paginated } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
 import type { SessionRequest } from '../auth/session-request.js';
 import { SessionGuard } from '../auth/session.guard.js';
 import { AssetsService } from './assets.service.js';
-import { parseAssetListQuery, parseResourceId, requireContentManager } from './catalog-http.js';
+import { parseAssetFoldersQuery, parseAssetListQuery, parseResourceId, requireContentManager } from './catalog-http.js';
 
 @Controller('admin/assets')
 @UseGuards(SessionGuard, CsrfGuard)
@@ -42,8 +42,7 @@ export class AssetsController {
     @Query() query: Record<string, unknown>,
   ): Promise<AssetFoldersResponse> {
     const principal = requireContentManager(request);
-    const parsed = AssetFoldersQuerySchema.parse(query);
-    return this.assets.getFolders(principal, parsed);
+    return this.assets.getFolders(principal, parseAssetFoldersQuery(query));
   }
 
   @Get(':id')
