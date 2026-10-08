@@ -244,6 +244,7 @@ describe('AssetsService', () => {
           processingLog: null,
           copyright: null, thumbnailUrl: null,
   derivatives: {}, panorama: null,
+          filename: OLDER_ID,
           createdAt: '2026-09-02T00:00:00.000Z',
         },
       ],
@@ -274,6 +275,7 @@ describe('AssetsService', () => {
         processingLog: null,
         copyright: 'Libre', thumbnailUrl: 'http://localhost:9000/xplor/panoramas/01990000-0000-7000-8000-000000000001/testhash/thumb.jpg',
   derivatives: {}, panorama: null,
+        filename: OLDER_ID,
         createdAt: '2026-09-01T00:00:00.000Z',
       },
     ]);
