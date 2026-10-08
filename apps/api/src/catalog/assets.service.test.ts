@@ -729,7 +729,7 @@ describe('AssetsService', () => {
         _count: { coverOf: 0, panoramas: 0, ambientOf: 0, hotelLogos: 0 },
       };
       const { service, storage, deletes } = harness([asset]);
-
+      
       const deleteByPrefixSpy = vi.spyOn(storage, 'deleteByPrefix').mockImplementation((prefix) => {
         if (prefix.startsWith('uploads/')) {
           return Promise.reject(new Error('Uploads failure'));
@@ -826,10 +826,12 @@ describe('AssetsService', () => {
     });
 
     it('applique le filtre kind au total, à unusedCount et à la liste', async () => {
-      const imageAsset = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
-      const panoAsset = row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z');
+      const imageAssetUsed = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+      const panoAssetUsed = row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z');
+      const imageAssetUnused = row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
+      const panoAssetUnused = row('01990000-0000-7000-8000-000000000004', AssetKind.PANORAMA, '2026-10-04T00:00:00.000Z');
 
-      const { service, tourFindMany } = harness([imageAsset, panoAsset]);
+      const { service, tourFindMany } = harness([imageAssetUsed, panoAssetUsed, imageAssetUnused, panoAssetUnused]);
 
       tourFindMany.mockResolvedValue([
         {
@@ -847,15 +849,15 @@ describe('AssetsService', () => {
       ]);
 
       const resultImage = await service.getFolders(admin, { kind: AssetKind.IMAGE });
-      expect(resultImage.total).toBe(1);
-      expect(resultImage.unusedCount).toBe(0);
+      expect(resultImage.total).toBe(2);
+      expect(resultImage.unusedCount).toBe(1);
       expect(resultImage.tours).toEqual([
         { id: 'tour1', title: { fr: 'Visite 1' }, count: 1 },
       ]);
 
       const resultPano = await service.getFolders(admin, { kind: AssetKind.PANORAMA });
-      expect(resultPano.total).toBe(1);
-      expect(resultPano.unusedCount).toBe(0);
+      expect(resultPano.total).toBe(2);
+      expect(resultPano.unusedCount).toBe(1);
       expect(resultPano.tours).toEqual([
         { id: 'tour1', title: { fr: 'Visite 1' }, count: 1 },
       ]);
@@ -984,19 +986,19 @@ describe('AssetsService', () => {
       const o1 = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
       const o2 = row(MIDDLE_ID, AssetKind.IMAGE, '2026-10-02T00:00:00.000Z');
       const o3 = row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
-
+      
       const { service, hotspotFindMany } = harness([o1, o2, o3]);
       hotspotFindMany.mockResolvedValue([]);
-
+      
       const removeSpy = vi.spyOn(service, 'remove').mockImplementation((id) => {
         if (id === MIDDLE_ID) {
           return Promise.reject(new Error('Erreur de suppression simulée'));
         }
         return Promise.resolve();
       });
-
+      
       const result = await service.cleanup(false);
-
+      
       expect(result).toEqual({ deleted: 2, failed: 1 });
       expect(removeSpy).toHaveBeenCalledTimes(3);
       expect(() => AssetCleanupResultSchema.parse(result)).not.toThrow();
