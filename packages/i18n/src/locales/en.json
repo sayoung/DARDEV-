@@ -218,11 +218,16 @@
       "ERROR": "Error"
     },
     "upload": {
-      "submit": "Envoyer",
-      "uploading": "En cours",
-      "done": "Envoyé",
-      "error": "Erreur",
-      "select_files": "Sélectionner des fichiers"
+      "submit": "Upload",
+      "uploading": "Uploading",
+      "done": "Done",
+      "scene_created": "Done (Scene created)",
+      "scene_create_error": "Error while creating scene",
+      "asset_not_ready": "Panorama is not ready yet",
+      "error": "Error",
+      "select_files": "Select files",
+      "create_scenes": "Create scenes in this tour",
+      "creating_scenes": "Creating..."
     },
     "actions": {
       "reprocess": "Reprocess",

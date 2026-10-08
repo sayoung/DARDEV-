@@ -218,11 +218,16 @@
       "ERROR": "خطأ"
     },
     "upload": {
-      "submit": "Envoyer",
-      "uploading": "En cours",
-      "done": "Envoyé",
-      "error": "Erreur",
-      "select_files": "Sélectionner des fichiers"
+      "submit": "إرسال",
+      "uploading": "جاري الرفع",
+      "done": "تم",
+      "scene_created": "تم (تم إنشاء المشهد)",
+      "scene_create_error": "خطأ أثناء إنشاء المشهد",
+      "asset_not_ready": "البانوراما ليست جاهزة بعد",
+      "error": "خطأ",
+      "select_files": "اختر الملفات",
+      "create_scenes": "إنشاء المشاهد في هذه الجولة",
+      "creating_scenes": "جاري الإنشاء..."
     },
     "actions": {
       "reprocess": "إعادة معالجة",
