@@ -772,6 +772,7 @@ describe('dossiers médiathèque HTTP', () => {
   let coverAssetB = { id: '' };
   let beforeTotal = 0;
   let beforeUnused = 0;
+  let unusedVideoAsset = { id: '' };
 
   async function insertTour(coverAssetId: string, title: string) {
     return prisma.tour.create({
@@ -839,6 +840,8 @@ describe('dossiers médiathèque HTTP', () => {
       await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
     if (coverAssetA.id !== '')
       await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
+    if (unusedVideoAsset.id !== '')
+      await prisma.asset.delete({ where: { id: unusedVideoAsset.id } }).catch(() => {});
   });
 
   it('GET /api/v1/admin/assets/folders renvoie count=2 pour tourA (cover + 1 scène avec un second asset) et count=1 pour tourB (cover dédiée)', async () => {
@@ -856,6 +859,37 @@ describe('dossiers médiathèque HTTP', () => {
     const tourBAfter = after.tours.find((t) => t.id === tourB.id);
     expect(tourBAfter).toBeDefined();
     expect(tourBAfter?.count).toBe(1);
+  });
+
+  it('GET /api/v1/admin/assets/folders?kind=VIDEO : tourB, dont la cover est une image, apparaît avec count 0, tourA aussi', async () => {
+    const beforeRes = await read('/api/v1/admin/assets/folders?kind=VIDEO', editor);
+    expect(beforeRes.statusCode).toBe(200);
+    const before = AssetFoldersResponseSchema.parse(parseJson(beforeRes.body));
+
+    const tourABefore = before.tours.find((t) => t.id === tourA.id);
+    expect(tourABefore).toBeDefined();
+    expect(tourABefore?.count).toBe(0);
+
+    const tourBBefore = before.tours.find((t) => t.id === tourB.id);
+    expect(tourBBefore).toBeDefined();
+    expect(tourBBefore?.count).toBe(0);
+
+    unusedVideoAsset = await insertAsset(AssetKind.VIDEO, '2026-10-08T00:00:03.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+
+    const afterRes = await read('/api/v1/admin/assets/folders?kind=VIDEO', editor);
+    expect(afterRes.statusCode).toBe(200);
+    const after = AssetFoldersResponseSchema.parse(parseJson(afterRes.body));
+
+    expect(after.total).toBe(before.total + 1);
+    expect(after.unusedCount).toBe(before.unusedCount + 1);
+  });
+
+  it("GET /api/v1/admin/assets/folders renvoie 403 pour un gestionnaire d'hôtel", async () => {
+    const manager = await login(MANAGER_EMAIL);
+    const res = await read('/api/v1/admin/assets/folders', manager);
+    expect(res.statusCode).toBe(403);
   });
 });
 
