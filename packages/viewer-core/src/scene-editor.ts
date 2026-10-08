@@ -15,6 +15,9 @@ export function normalizeYaw(yaw: number): number {
   return y;
 }
 
+export function isSphericalPosition(pos: unknown): pos is { yaw: number; pitch: number } {
+  return typeof pos === 'object' && pos !== null && 'yaw' in pos && 'pitch' in pos && typeof pos.yaw === 'number' && typeof pos.pitch === 'number';
+}
 export type EditorMarker = {
   id: string;
   position: {
@@ -138,7 +141,7 @@ export function mountSceneEditor(
       const tag = activeEl.tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
     }
-    
+
     let yawOffset = 0;
     let pitchOffset = 0;
     const step = e.shiftKey ? 5 * Math.PI / 180 : 1 * Math.PI / 180;
@@ -151,9 +154,8 @@ export function mountSceneEditor(
     if (yawOffset !== 0 || pitchOffset !== 0) {
       e.preventDefault();
       const marker = markersPlugin.getMarker(currentSelectedMarkerId);
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (marker && marker.config.position) {
-        const pos = marker.config.position as { yaw: number; pitch: number };
+      if (isSphericalPosition(marker.config.position)) {
+        const pos = marker.config.position;
         const newYaw = normalizeYaw(pos.yaw + yawOffset);
         const newPitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pos.pitch + pitchOffset));
         markersPlugin.updateMarker({ id: marker.id, position: { yaw: newYaw, pitch: newPitch } });
@@ -215,8 +217,8 @@ export function mountSceneEditor(
         }
       }
 
-      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY }) as { yaw: number; pitch: number } | null;
-      if (!spherical) return;
+      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
+      if (!isSphericalPosition(spherical)) return;
       
       markersPlugin.updateMarker({
         id: draggedMarkerId,
@@ -230,8 +232,8 @@ export function mountSceneEditor(
       viewer.container.releasePointerCapture(e.pointerId);
       
       if (isDragging) {
-        const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY }) as { yaw: number; pitch: number } | null;
-        if (spherical) {
+        const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
+        if (isSphericalPosition(spherical)) {
           onMarkerMoveCb(draggedMarkerId, normalizeYaw(spherical.yaw), spherical.pitch);
         }
         viewer.setOption('mousemove', true);
