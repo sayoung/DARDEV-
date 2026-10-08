@@ -19,6 +19,7 @@ interface FileUploadState {
   errorMessage?: string;
   assetId?: string;
   sceneCreated?: boolean;
+  sceneError?: string;
 }
 
 export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) {
@@ -113,6 +114,14 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
       if (!fileState || fileState.status !== 'done' || !fileState.assetId || fileState.sceneCreated) continue;
 
       try {
+        setFiles(prev => {
+          const current = prev[i];
+          if (!current) return prev;
+          const next = [...prev];
+          next[i] = { ...current, sceneError: undefined };
+          return next;
+        });
+
         let asset = await getAsset(fileState.assetId);
         let attempts = 0;
         
@@ -154,8 +163,7 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
           const next = [...prev];
           next[i] = { 
             ...current, 
-            status: 'error',
-            errorMessage: err instanceof Error ? err.message : String(err)
+            sceneError: err instanceof Error ? err.message : String(err)
           };
           return next;
         });
@@ -224,6 +232,12 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
               {fileState.status === 'error' && fileState.errorMessage ? (
                 <div className="text-sm text-destructive" role="alert">
                   {fileState.errorMessage}
+                </div>
+              ) : null}
+              
+              {fileState.sceneError ? (
+                <div className="text-sm text-destructive" role="alert">
+                  {fileState.sceneError}
                 </div>
               ) : null}
               

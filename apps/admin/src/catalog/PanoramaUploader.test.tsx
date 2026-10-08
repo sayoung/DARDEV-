@@ -247,7 +247,7 @@ describe('PanoramaUploader', () => {
     expect(catalog.createScene).not.toHaveBeenCalled();
   });
 
-  it('shows error if createScene fails', async () => {
+  it('shows error if createScene fails, keeps button, allows retry', async () => {
     const onUploaded = vi.fn();
     render(<PanoramaUploader onUploaded={onUploaded} tourId="test-tour" />);
 
@@ -295,12 +295,40 @@ describe('PanoramaUploader', () => {
       panorama: null,
     });
 
-    vi.mocked(catalog.createScene).mockRejectedValue(new Error('Network Error'));
+    vi.mocked(catalog.createScene).mockRejectedValueOnce(new Error('Network Error'));
 
     fireEvent.click(screen.getByRole('button', { name: 'media.upload.create_scenes' }));
 
     await waitFor(() => {
       expect(screen.getByText('Network Error')).toBeDefined();
     });
+    
+    // Status should still be done
+    expect(screen.getByText('media.upload.done')).toBeDefined();
+    // Button should still be visible
+    const createScenesBtn = screen.getByRole('button', { name: 'media.upload.create_scenes' });
+    expect(createScenesBtn).toBeDefined();
+
+    // Second click succeeds
+    vi.mocked(catalog.createScene).mockResolvedValueOnce({
+      id: 'scene-id',
+      title: { fr: 'file1', ar: '', en: '' },
+      tourId: 'test-tour',
+      panoramaAssetId: 'asset-id-1',
+      weight: 0,
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      hotspotCount: 0
+    });
+
+    fireEvent.click(createScenesBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('media.upload.scene_created')).toBeDefined();
+    });
+    expect(screen.queryByText('Network Error')).toBeNull();
   });
 });
