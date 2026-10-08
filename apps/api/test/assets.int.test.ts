@@ -814,9 +814,11 @@ describe('dossiers médiathèque HTTP', () => {
     coverAssetA = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:00.000Z', {
       processingStatus: ProcessingStatus.READY,
     });
+
     sceneAssetA = await insertAsset(AssetKind.PANORAMA, '2026-10-08T00:00:01.000Z', {
       processingStatus: ProcessingStatus.READY,
     });
+
     coverAssetB = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:02.000Z', {
       processingStatus: ProcessingStatus.READY,
     });
