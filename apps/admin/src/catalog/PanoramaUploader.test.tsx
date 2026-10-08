@@ -155,4 +155,152 @@ describe('PanoramaUploader', () => {
       });
     });
   });
+
+  it('does not show create scenes button if tourId is missing', async () => {
+    const onUploaded = vi.fn();
+    render(<PanoramaUploader onUploaded={onUploaded} />); // no tourId
+
+    const input = screen.getByLabelText('media.upload.select_files');
+    const file1 = new File(['dummy1'], 'file1.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file1] } });
+
+    vi.mocked(client.uploadPanorama).mockResolvedValue({
+      id: 'asset-id-1',
+      createdAt: new Date().toISOString(),
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 100,
+      width: 8000,
+      height: 4000,
+      processingStatus: ProcessingStatus.READY,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: null,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'media.upload.submit' }));
+
+    // Wait for the upload to finish
+    await waitFor(() => {
+      expect(screen.getByText('media.upload.done')).toBeDefined();
+    });
+
+    // Verify button is not present
+    expect(screen.queryByRole('button', { name: 'media.upload.create_scenes' })).toBeNull();
+  });
+
+  it('shows error if asset is not READY when trying to create scene', async () => {
+    const onUploaded = vi.fn();
+    render(<PanoramaUploader onUploaded={onUploaded} tourId="test-tour" />);
+
+    const input = screen.getByLabelText('media.upload.select_files');
+    const file1 = new File(['dummy1'], 'file1.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file1] } });
+
+    vi.mocked(client.uploadPanorama).mockResolvedValue({
+      id: 'asset-id-1',
+      createdAt: new Date().toISOString(),
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 100,
+      width: 8000,
+      height: 4000,
+      processingStatus: ProcessingStatus.PENDING,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: null,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'media.upload.submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('media.upload.create_scenes')).toBeDefined();
+    });
+
+    const catalog = await import('../api/catalog.js');
+    
+    vi.mocked(catalog.getAsset).mockResolvedValue({
+      id: 'asset-id-1',
+      createdAt: new Date().toISOString(),
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 100,
+      width: 8000,
+      height: 4000,
+      processingStatus: ProcessingStatus.ERROR, // Simulate ERROR status
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: null,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'media.upload.create_scenes' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('media.upload.scene_create_error')).toBeDefined();
+    });
+    expect(catalog.createScene).not.toHaveBeenCalled();
+  });
+
+  it('shows error if createScene fails', async () => {
+    const onUploaded = vi.fn();
+    render(<PanoramaUploader onUploaded={onUploaded} tourId="test-tour" />);
+
+    const input = screen.getByLabelText('media.upload.select_files');
+    const file1 = new File(['dummy1'], 'file1.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file1] } });
+
+    vi.mocked(client.uploadPanorama).mockResolvedValue({
+      id: 'asset-id-1',
+      createdAt: new Date().toISOString(),
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 100,
+      width: 8000,
+      height: 4000,
+      processingStatus: ProcessingStatus.READY,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: null,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'media.upload.submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('media.upload.create_scenes')).toBeDefined();
+    });
+
+    const catalog = await import('../api/catalog.js');
+    
+    vi.mocked(catalog.getAsset).mockResolvedValue({
+      id: 'asset-id-1',
+      createdAt: new Date().toISOString(),
+      kind: AssetKind.PANORAMA,
+      mimeType: 'image/jpeg',
+      sizeBytes: 100,
+      width: 8000,
+      height: 4000,
+      processingStatus: ProcessingStatus.READY,
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: null,
+    });
+
+    vi.mocked(catalog.createScene).mockRejectedValue(new Error('Network Error'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'media.upload.create_scenes' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Network Error')).toBeDefined();
+    });
+  });
 });

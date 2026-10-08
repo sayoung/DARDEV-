@@ -64,7 +64,6 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
         const fileStateToUpload = files[i];
         if (!fileStateToUpload) continue;
 
-        let uploadedAssetId = '';
         const assetResponse = await uploadPanorama(fileStateToUpload.file, (progress) => {
           setFiles(prev => {
             const fileState = prev[i];
@@ -74,13 +73,12 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
             return next;
           });
         });
-        uploadedAssetId = assetResponse.id;
 
         setFiles(prev => {
           const fileState = prev[i];
           if (!fileState) return prev;
           const next = [...prev];
-          next[i] = { ...fileState, status: 'done', progress: 100, assetId: uploadedAssetId };
+          next[i] = { ...fileState, status: 'done', progress: 100, assetId: assetResponse.id };
           return next;
         });
 
@@ -115,7 +113,18 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
       if (!fileState || fileState.status !== 'done' || !fileState.assetId || fileState.sceneCreated) continue;
 
       try {
-        const asset = await getAsset(fileState.assetId);
+        let asset = await getAsset(fileState.assetId);
+        let attempts = 0;
+        
+        while (asset.processingStatus !== ProcessingStatus.READY && attempts < 15) {
+          if (asset.processingStatus === ProcessingStatus.ERROR) {
+             throw new Error(t('media.upload.scene_create_error'));
+          }
+          await new Promise(r => setTimeout(r, 2000));
+          asset = await getAsset(fileState.assetId);
+          attempts++;
+        }
+
         if (asset.processingStatus === ProcessingStatus.READY) {
           const filenameNoExt = fileState.file.name.replace(/\.[^/.]+$/, "");
           await createScene(tourId, {
@@ -135,10 +144,21 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
             return next;
           });
           onUploaded();
+        } else {
+          throw new Error(t('media.upload.asset_not_ready'));
         }
       } catch (err: unknown) {
-        // Log the error but keep trying others
-        console.error('Failed to create scene for', fileState.file.name, err);
+        setFiles(prev => {
+          const current = prev[i];
+          if (!current) return prev;
+          const next = [...prev];
+          next[i] = { 
+            ...current, 
+            status: 'error',
+            errorMessage: err instanceof Error ? err.message : String(err)
+          };
+          return next;
+        });
       }
     }
     
@@ -193,7 +213,7 @@ export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) 
                   {fileState.status === 'uploading' ? t('media.upload.uploading') : null}
                   {fileState.status === 'done' ? (
                     <span className="text-primary font-medium">
-                      {fileState.sceneCreated ? t('media.upload.done') + ' (Scène créée)' : t('media.upload.done')}
+                      {fileState.sceneCreated ? t('media.upload.scene_created') : t('media.upload.done')}
                     </span>
                   ) : null}
                   {fileState.status === 'error' ? <span className="text-destructive font-medium">{t('media.upload.error')}</span> : null}
