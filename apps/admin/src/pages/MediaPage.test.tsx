@@ -67,6 +67,7 @@ describe('MediaPage', () => {
     window.history.replaceState(null, '', '/media');
     await i18n.changeLanguage('fr');
     fetchMock.mockReset();
+    vi.clearAllMocks();
     vi.stubGlobal('fetch', fetchMock);
     
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
@@ -397,11 +398,13 @@ describe('MediaPage', () => {
       render(<App />);
 
       const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (2)' });
+      
+      vi.mocked(listAssets).mockClear();
       fireEvent.click(unusedBtn);
 
       expect(window.location.search).toContain('dossier=unused');
       
-      expect(vi.mocked(listAssets)).toHaveBeenLastCalledWith(
+      expect(vi.mocked(listAssets)).toHaveBeenCalledWith(
         expect.objectContaining({ unused: 'true' })
       );
     });
@@ -435,7 +438,7 @@ describe('MediaPage', () => {
       const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (2)' });
       expect(unusedBtn.getAttribute('aria-current')).toBe('page');
 
-      expect(vi.mocked(listAssets)).toHaveBeenCalledWith(
+      expect(vi.mocked(listAssets)).toHaveBeenNthCalledWith(1, 
         expect.objectContaining({ unused: 'true' })
       );
     });
