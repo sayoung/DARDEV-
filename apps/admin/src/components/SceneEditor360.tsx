@@ -11,6 +11,7 @@ export type SceneEditor360Handle = {
 export interface SceneEditor360Props {
   panorama: EditorPanorama;
   hotspots: EditorMarker[];
+  selectedHotspotId?: string | null;
   initialView: { yaw: number; pitch: number; zoom: number };
   onPanoramaClick: (yaw: number, pitch: number) => void;
   onMarkerSelect: (id: string) => void;
@@ -21,6 +22,7 @@ export interface SceneEditor360Props {
 export function SceneEditor360({
   panorama,
   hotspots,
+  selectedHotspotId,
   initialView,
   onPanoramaClick,
   onMarkerSelect,
@@ -75,7 +77,12 @@ export function SceneEditor360({
 
   useEffect(() => {
     editorRef.current?.setMarkers(hotspots);
+    editorRef.current?.setSelectedMarker(selectedHotspotId || null);
   }, [hotspots]);
+
+  useEffect(() => {
+    editorRef.current?.setSelectedMarker(selectedHotspotId || null);
+  }, [selectedHotspotId]);
 
   return (
     <div

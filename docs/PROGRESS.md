@@ -61,6 +61,7 @@ Aucun écart réel.
 
 ### Fait
 
+- 08/10/2026 — M4 F-20 (amélioration de l'éditeur 360) : glisser-déposer (seuil 4px), mode "Déplacer ici", flèches directionnelles. Tests `scene-editor.test.ts` mis à jour. (lint, typecheck, tests unitaires verts).
 - 08/10/2026 — M4 F-12 (médiathèque par visite, envoi dans un dossier) : quand un dossier de visite est ouvert dans la Médiathèque, les panoramas envoyés (PanoramaUploader) so… — Le bouton « Créer les scènes dans cette visite » est ajouté, branché sur MediaPage et couvert par 4 tests Vitest, avec lint/typecheck/tests verts. (c77fad9)
 - 08/10/2026 — M4 F-12 (tests Vitest MediaPage) : dans apps/admin/src/pages/MediaPage.test.tsx, ajouter de vrais tests (mocks de listAssets et listAssetFolders) : (1) affichag… — Les tests MediaPage vérifient désormais les appels à listAssets/listAssetFolders pour les 5 cas demandés, sans changement de code de production, avec lint/typecheck/tests verts. (1c47d81)
 - 08/10/2026 — M4 F-12 (UI dossiers 4/4, tests) : dans apps/admin/src/pages/MediaPage.test.tsx, ajouter des tests du panneau Dossiers : libellés avec compteurs, clic sur une v… — Les tests du panneau Dossiers couvrent libellés/compteurs, clic visite (tourId + page 1), Non utilisés (unused=true), dossier initial via ?dossier= et aria-current, avec assertions inconditionnelles e… (942c232)

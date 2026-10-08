@@ -39,6 +39,7 @@ describe('SceneEditor360', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: destroyMock,
       setMarkers: vi.fn(),
+      setSelectedMarker: vi.fn(),
       getView: vi.fn(),
     });
 
@@ -64,6 +65,7 @@ describe('SceneEditor360', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: vi.fn(),
       setMarkers: setMarkersMock,
+      setSelectedMarker: vi.fn(),
       getView: vi.fn(),
     });
 
@@ -83,6 +85,7 @@ describe('SceneEditor360', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: destroyMock,
       setMarkers: vi.fn(),
+      setSelectedMarker: vi.fn(),
       getView: vi.fn(),
     });
 
@@ -106,6 +109,7 @@ describe('SceneEditor360', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: vi.fn(),
       setMarkers: vi.fn(),
+      setSelectedMarker: vi.fn(),
       getView: vi.fn(),
     });
 
@@ -122,6 +126,7 @@ describe('SceneEditor360', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: vi.fn(),
       setMarkers: vi.fn(),
+      setSelectedMarker: vi.fn(),
       getView: vi.fn(),
     });
 
@@ -182,6 +187,7 @@ describe('SceneEditor360', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: vi.fn(),
       setMarkers: vi.fn(),
+      setSelectedMarker: vi.fn(),
       getView: vi.fn().mockReturnValue({ yaw: 4, pitch: 0.1, zoom: 42.6 }),
     });
 

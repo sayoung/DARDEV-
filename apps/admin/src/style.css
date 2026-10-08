@@ -56,15 +56,21 @@
 
 /* Pastille des marqueurs de l'editeur de scene */
 .editor-marker {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   background-color: hsl(var(--primary));
-  border: 2px solid white;
+  border: 3px solid white;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
   cursor: grab;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 .editor-marker:active {
   cursor: grabbing;
+}
+.xplor-marker-selected .editor-marker {
+  background-color: hsl(var(--success));
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px hsl(var(--success)), 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
