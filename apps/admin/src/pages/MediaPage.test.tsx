@@ -1,4 +1,4 @@
-﻿import { cleanup, render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { AssetKind, ProcessingStatus, Role, type AssetResponse, type MeResponse, type PaginatedAssetResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -420,7 +420,7 @@ describe('MediaPage', () => {
           return Promise.resolve(jsonResponse(200, { count: 12, totalBytes: 340 * 1024 * 1024, items: [] }));
         }
         if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
-        if (url.includes('/admin/assets/folders')) { 
+        if (url.includes('/admin/assets/folders')) {
           return Promise.resolve(jsonResponse(200, {
             total: 0,
             unusedCount: 0,
@@ -466,7 +466,7 @@ describe('MediaPage', () => {
           }
         }
         if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
-        if (url.includes('/admin/assets/folders')) { 
+        if (url.includes('/admin/assets/folders')) {
           return Promise.resolve(jsonResponse(200, {
             total: 0,
             unusedCount: 0,

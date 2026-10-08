@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssetKind, ProcessingStatus, z, type PaginatedAssetResponse, type AssetFoldersResponse } from '@xplor/shared';
 import { listAssets, listAssetFolders } from '../api/catalog.js';
@@ -46,7 +46,7 @@ export function MediaPage() {
     try {
       setFetchError(null);
       if (!silent) setLoading(true);
-      
+
       const [data, folders] = await Promise.all([
         listAssets({
           kind: AssetKind.PANORAMA,
