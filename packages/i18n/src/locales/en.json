@@ -190,6 +190,12 @@
         "moveDown": "Move down",
         "setStart": "Set as start"
       }
+    },
+    "hotspots": {
+      "editor": {
+        "relocate": "Déplacer ici",
+        "relocateHint": "Cliquez sur la photo ou appuyez sur Échap pour annuler."
+      }
     }
   },
   "nav": {

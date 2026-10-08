@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
 import { HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
 import { editorMarkers, editorPanorama, mountSceneEditor, normalizeYaw, toEditorMarkerConfig } from './scene-editor.js';
 
@@ -150,6 +150,11 @@ vi.mock('@photo-sphere-viewer/equirectangular-tiles-adapter', () => ({
 }));
 
 describe('mountSceneEditor', () => {
+  beforeEach(() => {
+    vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    vi.stubGlobal('document', { activeElement: null });
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -342,18 +347,20 @@ describe('mountSceneEditor', () => {
     expect(mockContainer.addEventListener).not.toHaveBeenCalledWith('pointerup', expect.any(Function));
   });
 
-  it('avec onMarkerMove, gère le drag and drop et appelle onMarkerMove', () => {
-    let handlePointerDown: (e: { target: unknown; clientX: number; clientY: number; stopPropagation: () => void }) => void = () => {};
+  it('avec onMarkerMove, gère le drag and drop avec un seuil de 4px', () => {
+    let handlePointerDown: (e: { target: unknown; clientX: number; clientY: number; pointerId: number; stopPropagation: () => void; preventDefault: () => void }) => void = () => {};
     let handlePointerMove: (e: { clientX: number; clientY: number }) => void = () => {};
-    let handlePointerUp: (e: object) => void = () => {};
+    let handlePointerUp: (e: { pointerId: number; clientX: number; clientY: number }) => void = () => {};
 
     const mockContainer = {
       addEventListener: vi.fn().mockImplementation((event: string, cb: unknown) => {
-        if (event === 'pointerdown' && typeof cb === 'function') handlePointerDown = cb as typeof handlePointerDown;
-        if (event === 'pointermove' && typeof cb === 'function') handlePointerMove = cb as typeof handlePointerMove;
-        if (event === 'pointerup' && typeof cb === 'function') handlePointerUp = cb as typeof handlePointerUp;
+        if (event === 'pointerdown') handlePointerDown = cb as typeof handlePointerDown;
+        if (event === 'pointermove') handlePointerMove = cb as typeof handlePointerMove;
+        if (event === 'pointerup') handlePointerUp = cb as typeof handlePointerUp;
       }),
       removeEventListener: vi.fn(),
+      setPointerCapture: vi.fn(),
+      releasePointerCapture: vi.fn(),
     };
     
     const mockMarkersPlugin = {
@@ -367,12 +374,15 @@ describe('mountSceneEditor', () => {
       viewerCoordsToSphericalCoords: vi.fn(),
     };
 
+    const setOptionMock = vi.fn();
+
     vi.mocked(Viewer).mockImplementationOnce(() => ({
       getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
       addEventListener: vi.fn(),
       getPosition: vi.fn(),
       getZoomLevel: vi.fn(),
       destroy: vi.fn(),
+      setOption: setOptionMock,
       container: mockContainer,
       dataHelper: mockDataHelper,
     }) as unknown as Viewer);
@@ -381,51 +391,90 @@ describe('mountSceneEditor', () => {
     mountSceneEditor({} as unknown as HTMLElement, { ...defaultOptions, onMarkerMove });
 
     const stopPropagation = vi.fn();
+    const preventDefault = vi.fn();
     
     class FakeElement {
       dataset = { psvMarker: 'm1' };
-      closest(sel: string) {
-        return sel === '.psv-marker' ? this : null;
-      }
+      closest(sel: string) { return sel === '.psv-marker' ? this : null; }
     }
     vi.stubGlobal('Element', FakeElement);
     vi.stubGlobal('HTMLElement', FakeElement);
 
     const target = new FakeElement();
 
-    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.1, pitch: 0.1 });
-    handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
+    // Démarrage du glisser (startX: 10, startY: 10)
+    handlePointerDown({ target, clientX: 10, clientY: 10, pointerId: 42, stopPropagation, preventDefault });
     
     expect(stopPropagation).toHaveBeenCalled();
+    expect(preventDefault).toHaveBeenCalled();
+    expect(mockContainer.setPointerCapture).toHaveBeenCalledWith(42);
 
-    // (a) pointerdown sur un élément .psv-marker puis pointermove avec viewerCoordsToSphericalCoords renvoyant un yaw hors plage (ex. 4)
-    // → updateMarker appelé avec l'id et la position, puis pointerup → onMarkerMove appelé avec normalizeYaw(4) et le pitch.
+    // Mouvement < 4px (ex: 12, 12, distance carré = 8 < 16)
+    handlePointerMove({ clientX: 12, clientY: 12 });
+    expect(setOptionMock).not.toHaveBeenCalled(); // Pas encore de seuil franchi
+    expect(mockMarkersPlugin.updateMarker).not.toHaveBeenCalled();
+
+    // Mouvement >= 4px (ex: 14, 14, distance carré = 32 >= 16)
     mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 4, pitch: 0.2 });
-    handlePointerMove({ clientX: 20, clientY: 20 });
-    
+    handlePointerMove({ clientX: 14, clientY: 14 });
+    expect(setOptionMock).toHaveBeenCalledWith('mousemove', false);
     expect(mockMarkersPlugin.updateMarker).toHaveBeenCalledWith({ id: 'm1', position: { yaw: 4, pitch: 0.2 } });
 
-    handlePointerUp({});
+    // Fin du glisser
+    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 4.1, pitch: 0.25 });
+    handlePointerUp({ pointerId: 42, clientX: 15, clientY: 15 });
     
-    // On doit importer normalizeYaw pour tester
-    expect(onMarkerMove).toHaveBeenCalledWith('m1', normalizeYaw(4), 0.2);
-    
-    // (b) pointerdown puis pointerup sans pointermove → onMarkerMove non appelé.
-    onMarkerMove.mockClear();
-    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.3, pitch: 0.3 });
-    handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
-    handlePointerUp({});
-    expect(onMarkerMove).not.toHaveBeenCalled();
-    
-    // Test: conversion null ignorée
-    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce(null);
-    handlePointerDown({ target, clientX: 10, clientY: 10, stopPropagation });
-    mockDataHelper.viewerCoordsToSphericalCoords.mockReturnValueOnce({ yaw: 0.4, pitch: 0.4 });
-    handlePointerMove({ clientX: 20, clientY: 20 });
-    expect(mockMarkersPlugin.updateMarker).not.toHaveBeenCalledWith(expect.objectContaining({ position: { yaw: 0.4, pitch: 0.4 } }));
+    expect(mockContainer.releasePointerCapture).toHaveBeenCalledWith(42);
+    expect(setOptionMock).toHaveBeenCalledWith('mousemove', true);
+    expect(onMarkerMove).toHaveBeenCalledWith('m1', normalizeYaw(4.1), 0.25);
   });
 
-  it('avec onMarkerMove, destroy retire les quatre écouteurs ajoutés', () => {
+  it('gère les flèches du clavier pour déplacer le marqueur sélectionné', () => {
+    let handleKeyDown: (e: { key: string; shiftKey: boolean; preventDefault: () => void }) => void = () => {};
+    vi.spyOn(window, 'addEventListener').mockImplementation((event, cb) => {
+      if (event === 'keydown') handleKeyDown = cb as unknown as typeof handleKeyDown;
+    });
+
+    const mockMarkersPlugin = {
+      setMarkers: vi.fn(),
+      addEventListener: vi.fn(),
+      updateMarker: vi.fn(),
+      getMarkers: vi.fn().mockReturnValue([]),
+      getMarker: vi.fn().mockReturnValue({ id: 'm1', config: { position: { yaw: 0, pitch: 0 } } }),
+    };
+
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: vi.fn(),
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+      container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
+    }) as unknown as Viewer);
+
+    const onMarkerMove = vi.fn();
+    const instance = mountSceneEditor({} as HTMLElement, { ...defaultOptions, onMarkerMove });
+    
+    // Simuler la sélection d'un marqueur
+    instance.setSelectedMarker('m1');
+
+    const preventDefault = vi.fn();
+
+    // Flèche droite sans shift (1°)
+    handleKeyDown({ key: 'ArrowRight', shiftKey: false, preventDefault });
+    expect(preventDefault).toHaveBeenCalled();
+    expect(mockMarkersPlugin.updateMarker).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }));
+    expect(onMarkerMove).toHaveBeenCalledWith('m1', Math.PI / 180, 0);
+
+    // Flèche gauche avec shift (5°)
+    onMarkerMove.mockClear();
+    mockMarkersPlugin.getMarker.mockReturnValue({ id: 'm1', config: { position: { yaw: 0, pitch: 0 } } });
+    handleKeyDown({ key: 'ArrowLeft', shiftKey: true, preventDefault });
+    expect(onMarkerMove).toHaveBeenCalledWith('m1', normalizeYaw(-5 * Math.PI / 180), 0);
+  });
+
+  it('avec onMarkerMove, destroy retire les écouteurs ajoutés', () => {
     const mockContainer = {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -441,12 +490,15 @@ describe('mountSceneEditor', () => {
       dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
     }) as unknown as Viewer);
 
+    const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+
     const instance = mountSceneEditor({} as unknown as HTMLElement, { ...defaultOptions, onMarkerMove: vi.fn() });
     instance.destroy();
 
-    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointerdown', expect.any(Function));
-    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointermove', expect.any(Function));
-    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointerup', expect.any(Function));
-    expect(mockContainer.removeEventListener).toHaveBeenCalledWith('pointercancel', expect.any(Function));
+    expect(vi.mocked(mockContainer.removeEventListener)).toHaveBeenCalledWith('pointerdown', expect.any(Function), true);
+    expect(vi.mocked(mockContainer.removeEventListener)).toHaveBeenCalledWith('pointermove', expect.any(Function), true);
+    expect(vi.mocked(mockContainer.removeEventListener)).toHaveBeenCalledWith('pointerup', expect.any(Function), true);
+    expect(vi.mocked(mockContainer.removeEventListener)).toHaveBeenCalledWith('pointercancel', expect.any(Function), true);
+    expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
   });
 });

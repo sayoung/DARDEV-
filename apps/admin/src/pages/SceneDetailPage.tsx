@@ -57,6 +57,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
   const [hotspots, setHotspots] = useState<EditorMarker[]>([]);
 
   const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
+  const [isRelocating, setIsRelocating] = useState(false);
   const [draftPosition, setDraftPosition] = useState<{ yaw: number; pitch: number } | null>(null);
   const [currentTourScenes, setCurrentTourScenes] = useState<SceneResponse[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,6 +129,9 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
         if (tag === 'input' || tag === 'textarea' || tag === 'select') {
           return;
         }
+      }
+      if (e.key === 'Escape') {
+        setIsRelocating(false);
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -311,8 +315,26 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
           handleRef={handleRef}
           panorama={panorama}
           hotspots={hotspots}
+          selectedHotspotId={selectedHotspotId}
           initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}
           onPanoramaClick={(yaw, pitch) => {
+            if (isRelocating && selectedHotspotId) {
+              const id = selectedHotspotId;
+              const old = hotspots.find(h => h.id === id);
+              if (old && historyRef.current) {
+                historyRef.current.push({ kind: 'move', hotspotId: id, from: old.position, to: { yaw, pitch } });
+                updateHistoryState();
+              }
+              setHotspots((prev) => prev.map((h) => (h.id === id ? { ...h, position: { yaw, pitch } } : h)));
+              if (saverRef.current) {
+                const raw = rawHotspots.find((r) => r.id === id);
+                if (raw) {
+                  saverRef.current.schedule(id, getHotspotUpdate(raw, yaw, pitch));
+                }
+              }
+              setIsRelocating(false);
+              return;
+            }
             setDraftPosition({ yaw, pitch });
             setSelectedHotspotId(null);
             setActionError(null);
@@ -320,6 +342,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
           onMarkerSelect={(id) => {
             setSelectedHotspotId(id);
             setDraftPosition(null);
+            setIsRelocating(false);
             setActionError(null);
           }}
           onMarkerMove={(id, yaw, pitch) => {
@@ -373,36 +396,51 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
                   </div>
                 )}
                 <div className="flex space-x-4">
-                  <Button
-                    variant="destructive"
-                    onClick={() => {
-                      if (window.confirm(t('catalog.hotspots.editor.confirmDelete'))) {
-                        setIsSubmitting(true);
-                        setActionError(null);
-                        deleteHotspot(selectedHotspotId)
-                          .then(() => {
-                            setSelectedHotspotId(null);
-                            loadHotspots();
-                          })
-                          .catch(() => {
-                            setActionError('common.error.generic');
-                          })
-                          .finally(() => {
-                            setIsSubmitting(false);
-                          });
-                      }
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    {t('catalog.hotspots.editor.delete')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => { setSelectedHotspotId(null); }}
-                    disabled={isSubmitting}
-                  >
-                    {t('common.actions.cancel')}
-                  </Button>
+                  {isRelocating ? (
+                    <span className="text-sm text-muted-foreground flex items-center">
+                      {t('catalog.hotspots.editor.relocateHint')}
+                    </span>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => { setIsRelocating(true); }}
+                        disabled={isSubmitting}
+                      >
+                        {t('catalog.hotspots.editor.relocate')}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          if (window.confirm(t('catalog.hotspots.editor.confirmDelete'))) {
+                            setIsSubmitting(true);
+                            setActionError(null);
+                            deleteHotspot(selectedHotspotId)
+                              .then(() => {
+                                setSelectedHotspotId(null);
+                                loadHotspots();
+                              })
+                              .catch(() => {
+                                setActionError('common.error.generic');
+                              })
+                              .finally(() => {
+                                setIsSubmitting(false);
+                              });
+                          }
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        {t('catalog.hotspots.editor.delete')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => { setSelectedHotspotId(null); }}
+                        disabled={isSubmitting}
+                      >
+                        {t('common.actions.cancel')}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             );

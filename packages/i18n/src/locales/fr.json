@@ -233,6 +233,8 @@
         "initialViewSaved": "Vue initiale enregistrée",
         "setArrival": "Définir l'orientation d'arrivée",
         "arrivalSaved": "Orientation d'arrivée enregistrée",
+        "relocate": "Déplacer ici",
+        "relocateHint": "Cliquez sur la photo ou appuyez sur Échap pour annuler.",
         "status": {
           "pending": "Modifications en attente…",
           "saving": "Enregistrement…",
