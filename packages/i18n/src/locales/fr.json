@@ -343,7 +343,9 @@
       "uploading": "En cours",
       "done": "Envoyé",
       "error": "Erreur",
-      "select_files": "Sélectionner des fichiers"
+      "select_files": "Sélectionner des fichiers",
+      "create_scenes": "Créer les scènes dans cette visite",
+      "creating_scenes": "Création..."
     },
     "actions": {
       "reprocess": "Retraiter",

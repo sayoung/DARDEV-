@@ -277,7 +277,7 @@ export function MediaPage() {
         <div className="space-y-8 min-w-0 flex-1">
           <Card>
             <CardContent className="pt-6">
-              <PanoramaUploader onUploaded={handleUploaded} />
+              <PanoramaUploader onUploaded={handleUploaded} tourId={dossier && dossier !== 'all' && dossier !== 'unused' ? dossier : undefined} />
             </CardContent>
           </Card>
 

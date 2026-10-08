@@ -1,12 +1,15 @@
 import { useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ProcessingStatus } from '@xplor/shared';
 import { uploadPanorama } from '../api/client.js';
+import { getAsset, createScene } from '../api/catalog.js';
 import { Button } from '../components/ui/Button.js';
 import { Input } from '../components/ui/Input.js';
 import { Label } from '../components/ui/Label.js';
 
 interface PanoramaUploaderProps {
   onUploaded: () => void;
+  tourId?: string | null;
 }
 
 interface FileUploadState {
@@ -14,14 +17,17 @@ interface FileUploadState {
   progress: number;
   status: 'pending' | 'uploading' | 'done' | 'error';
   errorMessage?: string;
+  assetId?: string;
+  sceneCreated?: boolean;
 }
 
-export function PanoramaUploader({ onUploaded }: PanoramaUploaderProps) {
+export function PanoramaUploader({ onUploaded, tourId }: PanoramaUploaderProps) {
   const { t } = useTranslation();
   const fileInputId = useId();
   
   const [files, setFiles] = useState<FileUploadState[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCreatingScenes, setIsCreatingScenes] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +64,8 @@ export function PanoramaUploader({ onUploaded }: PanoramaUploaderProps) {
         const fileStateToUpload = files[i];
         if (!fileStateToUpload) continue;
 
-        await uploadPanorama(fileStateToUpload.file, (progress) => {
+        let uploadedAssetId = '';
+        const assetResponse = await uploadPanorama(fileStateToUpload.file, (progress) => {
           setFiles(prev => {
             const fileState = prev[i];
             if (!fileState) return prev;
@@ -67,12 +74,13 @@ export function PanoramaUploader({ onUploaded }: PanoramaUploaderProps) {
             return next;
           });
         });
+        uploadedAssetId = assetResponse.id;
 
         setFiles(prev => {
           const fileState = prev[i];
           if (!fileState) return prev;
           const next = [...prev];
-          next[i] = { ...fileState, status: 'done', progress: 100 };
+          next[i] = { ...fileState, status: 'done', progress: 100, assetId: uploadedAssetId };
           return next;
         });
 
@@ -98,11 +106,52 @@ export function PanoramaUploader({ onUploaded }: PanoramaUploaderProps) {
     }
   };
 
+  const handleCreateScenes = async () => {
+    if (!tourId || isCreatingScenes) return;
+    setIsCreatingScenes(true);
+
+    for (let i = 0; i < files.length; i++) {
+      const fileState = files[i];
+      if (!fileState || fileState.status !== 'done' || !fileState.assetId || fileState.sceneCreated) continue;
+
+      try {
+        const asset = await getAsset(fileState.assetId);
+        if (asset.processingStatus === ProcessingStatus.READY) {
+          const filenameNoExt = fileState.file.name.replace(/\.[^/.]+$/, "");
+          await createScene(tourId, {
+            title: { fr: filenameNoExt, ar: '', en: '' },
+            panoramaAssetId: asset.id,
+            weight: 0,
+            initialYaw: 0,
+            initialPitch: 0,
+            initialZoom: 50,
+          });
+
+          setFiles(prev => {
+            const current = prev[i];
+            if (!current) return prev;
+            const next = [...prev];
+            next[i] = { ...current, sceneCreated: true };
+            return next;
+          });
+          onUploaded();
+        }
+      } catch (err: unknown) {
+        // Log the error but keep trying others
+        console.error('Failed to create scene for', fileState.file.name, err);
+      }
+    }
+    
+    setIsCreatingScenes(false);
+  };
+
+  const hasDoneFiles = files.some(f => f.status === 'done' && !f.sceneCreated);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor={fileInputId}>{t('media.upload.select_files')}</Label>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap gap-4 items-center">
           <Input 
             id={fileInputId}
             ref={fileInputRef}
@@ -110,8 +159,9 @@ export function PanoramaUploader({ onUploaded }: PanoramaUploaderProps) {
             accept="image/jpeg" 
             multiple 
             onChange={handleFileChange} 
-            disabled={isUploading}
-            aria-disabled={isUploading}
+            disabled={isUploading || isCreatingScenes}
+            aria-disabled={isUploading || isCreatingScenes}
+            className="w-auto"
           />
           <Button 
             onClick={() => void handleUpload()} 
@@ -120,6 +170,16 @@ export function PanoramaUploader({ onUploaded }: PanoramaUploaderProps) {
           >
             {t('media.upload.submit')}
           </Button>
+
+          {tourId && hasDoneFiles && (
+            <Button
+              variant="outline"
+              onClick={() => void handleCreateScenes()}
+              disabled={isUploading || isCreatingScenes}
+            >
+              {isCreatingScenes ? t('media.upload.creating_scenes') : t('media.upload.create_scenes')}
+            </Button>
+          )}
         </div>
       </div>
       
@@ -131,7 +191,11 @@ export function PanoramaUploader({ onUploaded }: PanoramaUploaderProps) {
                 <span className="font-medium text-sm truncate">{fileState.file.name}</span>
                 <span className="text-sm">
                   {fileState.status === 'uploading' ? t('media.upload.uploading') : null}
-                  {fileState.status === 'done' ? <span className="text-primary font-medium">{t('media.upload.done')}</span> : null}
+                  {fileState.status === 'done' ? (
+                    <span className="text-primary font-medium">
+                      {fileState.sceneCreated ? t('media.upload.done') + ' (Scène créée)' : t('media.upload.done')}
+                    </span>
+                  ) : null}
                   {fileState.status === 'error' ? <span className="text-destructive font-medium">{t('media.upload.error')}</span> : null}
                   {fileState.status === 'pending' ? <span className="text-muted-foreground">{t('media.status.PENDING')}</span> : null}
                 </span>

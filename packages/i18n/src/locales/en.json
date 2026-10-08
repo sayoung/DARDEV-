@@ -218,11 +218,13 @@
       "ERROR": "Error"
     },
     "upload": {
-      "submit": "Envoyer",
-      "uploading": "En cours",
-      "done": "Envoyé",
-      "error": "Erreur",
-      "select_files": "Sélectionner des fichiers"
+      "submit": "Upload",
+      "uploading": "Uploading",
+      "done": "Done",
+      "error": "Error",
+      "select_files": "Select files",
+      "create_scenes": "Create scenes in this tour",
+      "creating_scenes": "Creating..."
     },
     "actions": {
       "reprocess": "Reprocess",
