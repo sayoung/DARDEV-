@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
 import { Card, CardContent } from '../components/ui/Card.js';
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '../components/ui/Dialog.js';
+import { Select } from '../components/ui/Select.js';
 import { ProcessingStatusBadge } from '../components/ProcessingStatusBadge.js';
 import { PanoramaUploader } from '../catalog/PanoramaUploader.js';
 import { needsPolling } from '../catalog/media-polling.js';
@@ -238,8 +239,22 @@ export function MediaPage() {
         }
       />
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        <nav className="w-full lg:w-64 shrink-0 bg-card rounded-xl border shadow-sm p-4 sticky top-6">
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        <div className="w-full md:hidden">
+          <Select 
+            value={dossier || 'all'} 
+            onChange={(e) => { changeFolder(e.target.value); }}
+            aria-label={t('media.folders.title')}
+          >
+            {folderItems.map(f => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <nav className="hidden md:block w-full md:w-64 shrink-0 bg-card rounded-xl border shadow-sm p-4 sticky top-6">
           <h3 className="font-semibold text-sm text-muted-foreground mb-2 px-3">{t('media.folders.title')}</h3>
           <ul className="flex flex-col gap-2">
             {folderItems.map(f => {
