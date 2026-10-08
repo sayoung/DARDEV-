@@ -80,6 +80,7 @@ function row(
 
 function harness(rows: AssetRow[]) {
   const lists: ListArgs[] = [];
+  const counts: ListArgs['where'][] = [];
   const creates: Prisma.AssetCreateArgs[] = [];
   const updates: Prisma.AssetUpdateArgs[] = [];
   const deletes: Prisma.AssetDeleteArgs[] = [];
@@ -95,8 +96,10 @@ function harness(rows: AssetRow[]) {
       findMany: tourFindMany,
     },
     asset: {
-      count: ({ where }: { where: ListArgs['where'] }): Promise<number> =>
-        Promise.resolve(rows.filter((item) => matches(item, where)).length),
+      count: ({ where }: { where: ListArgs['where'] }): Promise<number> => {
+        counts.push(where);
+        return Promise.resolve(rows.filter((item) => matches(item, where)).length);
+      },
       findMany: (args: ListArgs): Promise<AssetRow[]> => {
         lists.push(args);
         const filtered = rows.filter((item) => matches(item, args.where || {}));
@@ -155,7 +158,7 @@ function harness(rows: AssetRow[]) {
 
   const env = { MEDIA_PUBLIC_URL: 'http://localhost:9000/xplor' };
 
-  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, creates, updates, deletes, storage, panoramaQueue, hotspotFindMany, tourFindMany };
+  return { service: new AssetsService(prisma, storage, panoramaQueue, env), env, lists, counts, creates, updates, deletes, storage, panoramaQueue, hotspotFindMany, tourFindMany };
 }
 
 function matches(item: AssetRow, where: ListArgs['where']): boolean {
@@ -763,7 +766,7 @@ describe('AssetsService', () => {
     const partner: Principal = { userId: 'user3', role: Role.PARTNER, hotelIds: [] };
     const editor: Principal = { userId: 'user4', role: Role.EDITOR, hotelIds: [] };
 
-    it('refuse les acteurs HOTEL_MANAGER et PARTNER', async () => {
+    it('un gestionnaire de l\'hôtel A ne voit pas les visites de l\'hôtel B', async () => {
       const { service } = harness([]);
       await expect(service.getFolders(manager, { kind: undefined })).rejects.toThrow(ForbiddenException);
       await expect(service.getFolders(partner, { kind: undefined })).rejects.toThrow(ForbiddenException);
@@ -776,9 +779,13 @@ describe('AssetsService', () => {
       await expect(service.getFolders(editor, { kind: undefined })).resolves.toBeDefined();
     });
 
-    it('compte 1 pour une visite si un média est utilisé à la fois en couverture et en hotspot', async () => {
-      const asset1 = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
-      const { service, tourFindMany } = harness([asset1]);
+    it('filtre kind appliqué au total, aux comptes et à la liste', async () => {
+      const imageAssetUsed = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+      const panoAssetUsed = row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z');
+      const imageAssetUnused = row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
+      const panoAssetUnused = row('01990000-0000-7000-8000-000000000004', AssetKind.PANORAMA, '2026-10-04T00:00:00.000Z');
+
+      const { service, lists, counts, tourFindMany } = harness([imageAssetUsed, panoAssetUsed, imageAssetUnused, panoAssetUnused]);
 
       tourFindMany.mockResolvedValue([
         {
@@ -787,16 +794,67 @@ describe('AssetsService', () => {
           coverAssetId: OLDER_ID,
           scenes: [
             {
-              panoramaAssetId: null,
+              panoramaAssetId: MIDDLE_ID,
               ambientAssetId: null,
-              hotspots: [{ mediaAssetIds: [OLDER_ID] }],
+              hotspots: [],
             },
           ],
         },
       ]);
 
-      const result = await service.getFolders(admin, { kind: AssetKind.IMAGE });
+      const resultImage = await service.getFolders(admin, { kind: AssetKind.IMAGE });
+      expect(resultImage.total).toBe(2);
+      expect(resultImage.unusedCount).toBe(1); // NEWER_ID is unused
+      expect(resultImage.tours).toEqual([
+        { id: 'tour1', title: { fr: 'Visite 1' }, count: 1 },
+      ]);
+      expect(counts).toContainEqual({ kind: AssetKind.IMAGE });
+      expect(lists[0]?.where?.kind).toBe(AssetKind.IMAGE);
+      expect(Array.isArray(lists[0]?.where?.id?.in)).toBe(true);
+    });
 
+    it('un média utilisé par deux visites via hotspots (index inversé)', async () => {
+      const asset = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+      const { service, tourFindMany } = harness([asset]);
+
+      tourFindMany.mockResolvedValue([
+        {
+          id: 'tour1',
+          title: { fr: 'Visite 1' },
+          coverAssetId: null,
+          scenes: [{ panoramaAssetId: null, ambientAssetId: null, hotspots: [{ mediaAssetIds: [OLDER_ID] }] }],
+        },
+        {
+          id: 'tour2',
+          title: { fr: 'Visite 2' },
+          coverAssetId: null,
+          scenes: [{ panoramaAssetId: null, ambientAssetId: null, hotspots: [{ mediaAssetIds: [OLDER_ID] }] }],
+        },
+      ]);
+
+      const result = await service.getFolders(admin, { kind: AssetKind.IMAGE });
+      expect(result.total).toBe(1);
+      expect(result.unusedCount).toBe(0);
+      expect(result.tours).toEqual(expect.arrayContaining([
+        { id: 'tour1', title: { fr: 'Visite 1' }, count: 1 },
+        { id: 'tour2', title: { fr: 'Visite 2' }, count: 1 },
+      ]));
+    });
+
+    it('un média utilisé à la fois en couverture et en hotspot de la même visite (compté une fois)', async () => {
+      const asset = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+      const { service, tourFindMany } = harness([asset]);
+
+      tourFindMany.mockResolvedValue([
+        {
+          id: 'tour1',
+          title: { fr: 'Visite 1' },
+          coverAssetId: OLDER_ID,
+          scenes: [{ panoramaAssetId: null, ambientAssetId: null, hotspots: [{ mediaAssetIds: [OLDER_ID] }] }],
+        },
+      ]);
+
+      const result = await service.getFolders(admin, { kind: AssetKind.IMAGE });
       expect(result.total).toBe(1);
       expect(result.unusedCount).toBe(0);
       expect(result.tours).toEqual([
@@ -804,7 +862,28 @@ describe('AssetsService', () => {
       ]);
     });
 
-    it('affiche une visite sans média avec count 0', async () => {
+    it('un média non utilisé (unusedCount > 0)', async () => {
+      const asset = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
+      const { service, tourFindMany } = harness([asset]);
+
+      tourFindMany.mockResolvedValue([
+        {
+          id: 'tour1',
+          title: { fr: 'Visite 1' },
+          coverAssetId: null,
+          scenes: [],
+        },
+      ]);
+
+      const result = await service.getFolders(admin, { kind: AssetKind.IMAGE });
+      expect(result.total).toBe(1);
+      expect(result.unusedCount).toBe(1);
+      expect(result.tours).toEqual([
+        { id: 'tour1', title: { fr: 'Visite 1' }, count: 0 },
+      ]);
+    });
+
+    it('une visite sans média (count 0)', async () => {
       const { service, tourFindMany } = harness([]);
 
       tourFindMany.mockResolvedValue([
@@ -824,44 +903,6 @@ describe('AssetsService', () => {
         { id: 'tour2', title: { fr: 'Visite sans média' }, count: 0 },
       ]);
     });
-
-    it('applique le filtre kind au total, à unusedCount et à la liste', async () => {
-      const imageAssetUsed = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
-      const panoAssetUsed = row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z');
-      const imageAssetUnused = row(NEWER_ID, AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
-      const panoAssetUnused = row('01990000-0000-7000-8000-000000000004', AssetKind.PANORAMA, '2026-10-04T00:00:00.000Z');
-
-      const { service, tourFindMany } = harness([imageAssetUsed, panoAssetUsed, imageAssetUnused, panoAssetUnused]);
-
-      tourFindMany.mockResolvedValue([
-        {
-          id: 'tour1',
-          title: { fr: 'Visite 1' },
-          coverAssetId: OLDER_ID,
-          scenes: [
-            {
-              panoramaAssetId: MIDDLE_ID,
-              ambientAssetId: null,
-              hotspots: [],
-            },
-          ],
-        },
-      ]);
-
-      const resultImage = await service.getFolders(admin, { kind: AssetKind.IMAGE });
-      expect(resultImage.total).toBe(2);
-      expect(resultImage.unusedCount).toBe(1);
-      expect(resultImage.tours).toEqual([
-        { id: 'tour1', title: { fr: 'Visite 1' }, count: 1 },
-      ]);
-
-      const resultPano = await service.getFolders(admin, { kind: AssetKind.PANORAMA });
-      expect(resultPano.total).toBe(2);
-      expect(resultPano.unusedCount).toBe(1);
-      expect(resultPano.tours).toEqual([
-        { id: 'tour1', title: { fr: 'Visite 1' }, count: 1 },
-      ]);
-    });
   });
 
   describe('list', () => {
@@ -870,7 +911,7 @@ describe('AssetsService', () => {
     const partner: Principal = { userId: 'user3', role: Role.PARTNER, hotelIds: [] };
     const editor: Principal = { userId: 'user4', role: Role.EDITOR, hotelIds: [] };
 
-    it('refuse les acteurs HOTEL_MANAGER et PARTNER', async () => {
+    it('un gestionnaire de l\'hôtel A ne voit pas les visites de l\'hôtel B', async () => {
       const { service } = harness([]);
       await expect(service.list(manager, { page: 1, pageSize: 20 })).rejects.toThrow(ForbiddenException);
       await expect(service.list(partner, { page: 1, pageSize: 20 })).rejects.toThrow(ForbiddenException);
@@ -886,7 +927,7 @@ describe('AssetsService', () => {
       const imageAsset = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
       const panoAsset = row(MIDDLE_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z');
 
-      const { service, lists } = harness([imageAsset, panoAsset]);
+      const { service, lists, counts } = harness([imageAsset, panoAsset]);
 
       const res = await service.list(admin, { page: 1, pageSize: 20, kind: AssetKind.IMAGE });
       expect(res.total).toBe(1);
@@ -894,11 +935,13 @@ describe('AssetsService', () => {
 
       expect(lists).toHaveLength(1);
       expect(lists[0]?.where?.AND).toContainEqual({ kind: AssetKind.IMAGE });
+      expect(counts).toHaveLength(1);
+      expect(counts[0]?.AND).toContainEqual({ kind: AssetKind.IMAGE });
     });
 
     it('utilise notIn pour list({unused:true})', async () => {
       const imageAsset = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
-      const { service, lists, tourFindMany } = harness([imageAsset]);
+      const { service, lists, counts, tourFindMany } = harness([imageAsset]);
 
       tourFindMany.mockResolvedValue([
         {
@@ -916,11 +959,17 @@ describe('AssetsService', () => {
       const notInCondition = conditions.find((c) => c?.id?.notIn);
       expect(notInCondition).toBeDefined();
       expect(notInCondition?.id?.notIn).toContain(OLDER_ID);
+
+      expect(counts).toHaveLength(1);
+      const countConditions = counts[0]?.AND || [];
+      const countNotInCondition = countConditions.find((c) => c?.id?.notIn);
+      expect(countNotInCondition).toBeDefined();
+      expect(countNotInCondition?.id?.notIn).toContain(OLDER_ID);
     });
 
     it('utilise in pour list({tourId})', async () => {
       const imageAsset = row(OLDER_ID, AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
-      const { service, lists, tourFindMany } = harness([imageAsset]);
+      const { service, lists, counts, tourFindMany } = harness([imageAsset]);
 
       tourFindMany.mockResolvedValue([
         {
@@ -938,16 +987,23 @@ describe('AssetsService', () => {
       const inCondition = conditions.find((c) => c?.id?.in);
       expect(inCondition).toBeDefined();
       expect(inCondition?.id?.in).toContain(OLDER_ID);
+
+      expect(counts).toHaveLength(1);
+      const countConditions = counts[0]?.AND || [];
+      const countInCondition = countConditions.find((c) => c?.id?.in);
+      expect(countInCondition).toBeDefined();
+      expect(countInCondition?.id?.in).toContain(OLDER_ID);
     });
 
     it('renvoie une page vide sans requête findMany si tourId+unused', async () => {
-      const { service, lists } = harness([]);
+      const { service, lists, counts } = harness([]);
 
       const result = await service.list(admin, { page: 1, pageSize: 20, tourId: 'tour1', unused: 'true' });
 
       expect(result.items).toEqual([]);
       expect(result.total).toBe(0);
-      expect(lists).toHaveLength(0); // findMany non appelé
+      expect(lists).toHaveLength(0);
+      expect(counts).toHaveLength(0);
     });
   });
 
