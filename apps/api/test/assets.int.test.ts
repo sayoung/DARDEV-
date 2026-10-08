@@ -891,6 +891,40 @@ describe('dossiers médiathèque HTTP', () => {
     const res = await read('/api/v1/admin/assets/folders', manager);
     expect(res.statusCode).toBe(403);
   });
+
+  it('GET /api/v1/admin/assets?tourId= : filtre par tourId (les assets utilisés par la visite, cover ou scène)', async () => {
+    const listA = await listAssets(editor, `tourId=${tourA.id}`);
+    const idsA = listA.items.map((i) => i.id).sort();
+    const expectedA = [coverAssetA.id, sceneAssetA.id].sort();
+    expect(idsA).toEqual(expectedA);
+
+    const listB = await listAssets(editor, `tourId=${tourB.id}`);
+    const idsB = listB.items.map((i) => i.id).sort();
+    const expectedB = [coverAssetB.id].sort();
+    expect(idsB).toEqual(expectedB);
+  });
+
+  it('GET /api/v1/admin/assets?unused=true : filtre les assets non utilisés', async () => {
+    const unusedAudio = await insertAsset(AssetKind.AUDIO, '2026-10-08T00:00:04.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    try {
+      const listUnused = await listAssets(editor, 'unused=true');
+      const idsUnused = listUnused.items.map((i) => i.id);
+      expect(idsUnused).toContain(unusedAudio.id);
+      expect(idsUnused).not.toContain(coverAssetA.id);
+      expect(idsUnused).not.toContain(sceneAssetA.id);
+      expect(idsUnused).not.toContain(coverAssetB.id);
+    } finally {
+      await prisma.asset.delete({ where: { id: unusedAudio.id } }).catch(() => {});
+    }
+  });
+
+  it('GET /api/v1/admin/assets?tourId=...&unused=true : combinaison incompatible renvoie vide', async () => {
+    const listCombined = await listAssets(editor, `tourId=${tourA.id}&unused=true`);
+    expect(listCombined.items).toHaveLength(0);
+    expect(listCombined.total).toBe(0);
+  });
 });
 
 async function insertAsset(
