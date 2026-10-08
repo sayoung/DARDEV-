@@ -745,14 +745,14 @@ describe('médias HTTP', () => {
 describe('dossiers médiathèque HTTP', () => {
   let editor: Session;
   let adminUser: { id: string };
-  let hotel: { id: string };
-  let city: { id: string };
-  let tourA: { id: string };
-  let tourB: { id: string };
-  let sceneA: { id: string };
-  let coverAssetA: { id: string };
-  let sceneAssetA: { id: string };
-  let coverAssetB: { id: string };
+  let hotel = { id: '' };
+  let city = { id: '' };
+  let tourA = { id: '' };
+  let tourB = { id: '' };
+  let sceneA = { id: '' };
+  let coverAssetA = { id: '' };
+  let sceneAssetA = { id: '' };
+  let coverAssetB = { id: '' };
   let beforeTotal = 0;
   let beforeUnused = 0;
 
@@ -822,22 +822,14 @@ describe('dossiers médiathèque HTTP', () => {
   });
 
   afterEach(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (sceneA) await prisma.scene.delete({ where: { id: sceneA.id } }).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (tourB) await prisma.tour.delete({ where: { id: tourB.id } }).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (tourA) await prisma.tour.delete({ where: { id: tourA.id } }).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (hotel) await prisma.hotel.delete({ where: { id: hotel.id } }).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (city) await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (coverAssetB) await prisma.asset.delete({ where: { id: coverAssetB.id } }).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (sceneAssetA) await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (coverAssetA) await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
+    if (sceneA.id !== '') await prisma.scene.delete({ where: { id: sceneA.id } }).catch(() => {});
+    if (tourB.id !== '') await prisma.tour.delete({ where: { id: tourB.id } }).catch(() => {});
+    if (tourA.id !== '') await prisma.tour.delete({ where: { id: tourA.id } }).catch(() => {});
+    if (hotel.id !== '') await prisma.hotel.delete({ where: { id: hotel.id } }).catch(() => {});
+    if (city.id !== '') await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
+    if (coverAssetB.id !== '') await prisma.asset.delete({ where: { id: coverAssetB.id } }).catch(() => {});
+    if (sceneAssetA.id !== '') await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
+    if (coverAssetA.id !== '') await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
   });
 
   it('GET /api/v1/admin/assets/folders renvoie count=2 pour tourA (cover + 1 scène avec un second asset) et count=1 pour tourB (cover dédiée)', async () => {
