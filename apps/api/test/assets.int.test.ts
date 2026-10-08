@@ -918,12 +918,87 @@ describe('dossiers médiathèque HTTP', () => {
     expect(editorFolders.statusCode).toBe(200);
   });
 
-  it("test d'accès hôtel A / hôtel B (HOTEL_MANAGER refusé globalement)", () => {
-    // HOTEL_MANAGER n'a pas accès à la médiathèque globalement selon la décision D-76 
-    // et la politique canManageContent de AccessPolicy. 
-    // L'accès est réservé à ADMIN et EDITOR. Par conséquent, un gestionnaire ne peut voir
-    // ni ses médias ni ceux de B.
-    expect(true).toBe(true);
+  it("test d'accès hôtel A / hôtel B (HOTEL_MANAGER refusé globalement)", async () => {
+    const hotelA = await prisma.hotel.create({
+      data: {
+        name: 'Hotel A',
+        stars: 'FOUR',
+        cityId: city.id,
+        address: 'Addr A',
+        phone: '111',
+        email: 'a@xplor.local',
+        brandColor: '#000000',
+        contractType: 'SALE',
+        contractStart: new Date('2026-01-01T00:00:00Z'),
+        contractEnd: new Date('2027-01-01T00:00:00Z'),
+      },
+    });
+    const hotelB = await prisma.hotel.create({
+      data: {
+        name: 'Hotel B',
+        stars: 'FIVE',
+        cityId: city.id,
+        address: 'Addr B',
+        phone: '222',
+        email: 'b@xplor.local',
+        brandColor: '#FFFFFF',
+        contractType: 'RENTAL',
+        contractStart: new Date('2026-01-01T00:00:00Z'),
+        contractEnd: new Date('2027-01-01T00:00:00Z'),
+      },
+    });
+
+    const managerAUser = await prisma.user.create({
+      data: {
+        email: 'mana@xplor.local',
+        name: 'Manager A',
+        passwordHash,
+        role: 'HOTEL_MANAGER',
+        hotels: { create: [{ hotelId: hotelA.id }] },
+      },
+    });
+    const managerBUser = await prisma.user.create({
+      data: {
+        email: 'manb@xplor.local',
+        name: 'Manager B',
+        passwordHash,
+        role: 'HOTEL_MANAGER',
+        hotels: { create: [{ hotelId: hotelB.id }] },
+      },
+    });
+
+    try {
+      const sessA = await login('mana@xplor.local');
+      const sessB = await login('manb@xplor.local');
+
+      for (const sess of [sessA, sessB]) {
+        const resFolders = await read('/api/v1/admin/assets/folders', sess);
+        expect(resFolders.statusCode).toBe(403);
+        expect(resFolders.body).not.toContain(tourB.id);
+
+        const resAssets = await read('/api/v1/admin/assets', sess);
+        expect(resAssets.statusCode).toBe(403);
+        expect(resAssets.body).not.toContain(tourB.id);
+
+        const resTourB = await read(`/api/v1/admin/assets?tourId=${tourB.id}`, sess);
+        expect(resTourB.statusCode).toBe(403);
+        expect(resTourB.body).not.toContain(tourB.id);
+
+        const resUnused = await read('/api/v1/admin/assets?unused=true', sess);
+        expect(resUnused.statusCode).toBe(403);
+        expect(resUnused.body).not.toContain(tourB.id);
+      }
+    } finally {
+      await prisma.userHotel.deleteMany({
+        where: { userId: { in: [managerAUser.id, managerBUser.id] } },
+      }).catch(() => {});
+      await prisma.user.deleteMany({
+        where: { id: { in: [managerAUser.id, managerBUser.id] } },
+      }).catch(() => {});
+      await prisma.hotel.deleteMany({
+        where: { id: { in: [hotelA.id, hotelB.id] } },
+      }).catch(() => {});
+    }
   });
 
   it('GET /api/v1/admin/assets?tourId= : filtre par tourId (les assets utilisés par la visite, cover ou scène)', async () => {
