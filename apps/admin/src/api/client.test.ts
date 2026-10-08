@@ -273,6 +273,7 @@ describe('Assets API', () => {
   it('completeAsset, reprocessAsset, deleteAsset envoient les bonnes requêtes avec CSRF', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, {
       id: '018f3a38-c393-79d2-97b7-5f214f4df7e3',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1024,
@@ -294,6 +295,7 @@ describe('Assets API', () => {
 
     fetchMock.mockResolvedValueOnce(jsonResponse(200, {
       id: '018f3a38-c393-79d2-97b7-5f214f4df7e3',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1024,
@@ -330,6 +332,7 @@ describe('Assets API', () => {
     // 3. completeAsset
     fetchMock.mockResolvedValueOnce(jsonResponse(200, {
       id: '018f3a38-c393-79d2-97b7-5f214f4df7e3',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1024,

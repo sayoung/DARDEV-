@@ -57,6 +57,7 @@ const listAll: AssetListQuery = { page: 1, pageSize: 20 };
 
 function row(
   id: string,
+  
   kind: AssetKind,
   createdAt: string,
   extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus' | 'processingLog' | 'contentHash'>> = {},
@@ -233,6 +234,7 @@ describe('AssetsService', () => {
       items: [
         {
           id: OLDER_ID,
+          
           kind: AssetKind.IMAGE,
           mimeType: 'image/jpeg',
           sizeBytes: 128,
@@ -242,6 +244,7 @@ describe('AssetsService', () => {
           processingLog: null,
           copyright: null, thumbnailUrl: null,
   derivatives: {}, panorama: null,
+          filename: OLDER_ID,
           createdAt: '2026-09-02T00:00:00.000Z',
         },
       ],
@@ -262,6 +265,7 @@ describe('AssetsService', () => {
     expect(images.items).toEqual([
       {
         id: OLDER_ID,
+        
         kind: AssetKind.IMAGE,
         mimeType: 'image/jpeg',
         sizeBytes: 128,
@@ -271,6 +275,7 @@ describe('AssetsService', () => {
         processingLog: null,
         copyright: 'Libre', thumbnailUrl: 'http://localhost:9000/xplor/panoramas/01990000-0000-7000-8000-000000000001/testhash/thumb.jpg',
   derivatives: {}, panorama: null,
+        filename: OLDER_ID,
         createdAt: '2026-09-01T00:00:00.000Z',
       },
     ]);

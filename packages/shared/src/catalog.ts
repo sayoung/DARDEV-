@@ -302,6 +302,7 @@ export type HotspotResponse = z.infer<typeof HotspotResponseSchema>;
  */
 export const AssetResponseSchema = z.object({
   id: idSchema,
+  filename: z.string(),
   kind: z.enum(AssetKind),
   mimeType: z.string().min(1),
   sizeBytes: z.number().int().min(0),

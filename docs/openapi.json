@@ -3187,6 +3187,9 @@
                             "type": "string",
                             "format": "uuid"
                           },
+                          "filename": {
+                            "type": "string"
+                          },
                           "kind": {
                             "type": "string",
                             "enum": [
@@ -3349,6 +3352,7 @@
                         },
                         "required": [
                           "id",
+                          "filename",
                           "kind",
                           "mimeType",
                           "sizeBytes",
@@ -3512,6 +3516,9 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "filename": {
+                      "type": "string"
+                    },
                     "kind": {
                       "type": "string",
                       "enum": [
@@ -3674,6 +3681,7 @@
                   },
                   "required": [
                     "id",
+                    "filename",
                     "kind",
                     "mimeType",
                     "sizeBytes",
@@ -4242,6 +4250,9 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "filename": {
+                      "type": "string"
+                    },
                     "kind": {
                       "type": "string",
                       "enum": [
@@ -4404,6 +4415,7 @@
                   },
                   "required": [
                     "id",
+                    "filename",
                     "kind",
                     "mimeType",
                     "sizeBytes",
@@ -4642,6 +4654,9 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "filename": {
+                      "type": "string"
+                    },
                     "kind": {
                       "type": "string",
                       "enum": [
@@ -4804,6 +4819,7 @@
                   },
                   "required": [
                     "id",
+                    "filename",
                     "kind",
                     "mimeType",
                     "sizeBytes",

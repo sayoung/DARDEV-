@@ -105,7 +105,7 @@ describe('PanoramaUploader', () => {
     vi.mocked(client.uploadPanorama).mockResolvedValue({
       id: 'asset-id-1',
       createdAt: new Date().toISOString(),
-      kind: AssetKind.PANORAMA,
+      filename: 'mock.jpg', kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 100,
       width: 8000,
@@ -129,7 +129,7 @@ describe('PanoramaUploader', () => {
     vi.mocked(catalog.getAsset).mockResolvedValue({
       id: 'asset-id-1',
       createdAt: new Date().toISOString(),
-      kind: AssetKind.PANORAMA,
+      filename: 'mock.jpg', kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 100,
       width: 8000,
@@ -167,7 +167,7 @@ describe('PanoramaUploader', () => {
     vi.mocked(client.uploadPanorama).mockResolvedValue({
       id: 'asset-id-1',
       createdAt: new Date().toISOString(),
-      kind: AssetKind.PANORAMA,
+      filename: 'mock.jpg', kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 100,
       width: 8000,
@@ -202,7 +202,7 @@ describe('PanoramaUploader', () => {
     vi.mocked(client.uploadPanorama).mockResolvedValue({
       id: 'asset-id-1',
       createdAt: new Date().toISOString(),
-      kind: AssetKind.PANORAMA,
+      filename: 'mock.jpg', kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 100,
       width: 8000,
@@ -226,7 +226,7 @@ describe('PanoramaUploader', () => {
     vi.mocked(catalog.getAsset).mockResolvedValue({
       id: 'asset-id-1',
       createdAt: new Date().toISOString(),
-      kind: AssetKind.PANORAMA,
+      filename: 'mock.jpg', kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 100,
       width: 8000,
@@ -258,7 +258,7 @@ describe('PanoramaUploader', () => {
     vi.mocked(client.uploadPanorama).mockResolvedValue({
       id: 'asset-id-1',
       createdAt: new Date().toISOString(),
-      kind: AssetKind.PANORAMA,
+      filename: 'mock.jpg', kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 100,
       width: 8000,
@@ -282,7 +282,7 @@ describe('PanoramaUploader', () => {
     vi.mocked(catalog.getAsset).mockResolvedValue({
       id: 'asset-id-1',
       createdAt: new Date().toISOString(),
-      kind: AssetKind.PANORAMA,
+      filename: 'mock.jpg', kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 100,
       width: 8000,

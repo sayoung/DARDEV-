@@ -550,6 +550,7 @@ function toAsset(row: Asset, mediaBase: string): AssetResponse {
 
   return AssetResponseSchema.parse({
     id: row.id,
+    filename: row.originalKey ? row.originalKey.split('/').pop() ?? '' : '',
     kind: row.kind,
     mimeType: row.mimeType,
     sizeBytes: row.sizeBytes,

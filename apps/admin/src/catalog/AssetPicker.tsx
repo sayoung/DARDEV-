@@ -6,6 +6,8 @@ import { listAssets } from '../api/catalog.js';
 import { Label } from '../components/ui/Label.js';
 import { Alert } from '../components/ui/Alert.js';
 
+import { Input } from '../components/ui/Input.js';
+
 interface AssetPickerProps {
   label: string;
   kind?: AssetKind;
@@ -21,6 +23,7 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [assets, setAssets] = useState<AssetResponse[]>([]);
+  const [search, setSearch] = useState('');
 
   const kindsDep = (kinds ?? (kind ? [kind] : [])).join(',');
   const kindsRef = useRef<readonly AssetKind[]>(kinds ?? (kind ? [kind] : []));
@@ -85,11 +88,28 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
     return <Alert variant="destructive">{t('catalog.asset.error')}</Alert>;
   }
 
+  const filteredAssets = assets.filter(a => {
+    if (!search) return true;
+    const date = new Intl.DateTimeFormat(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(a.createdAt));
+    const name = a.filename || t('catalog.asset.fallbackFilename', { date });
+    return name.toLowerCase().includes(search.toLowerCase());
+  });
+
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label} {required && '*'}</Label>
       
-      {assets.length === 0 ? (
+      {assets.length > 0 && (
+        <Input
+          type="search"
+          placeholder={t('catalog.asset.searchPlaceholder')}
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); }}
+          className="mb-4"
+        />
+      )}
+
+      {filteredAssets.length === 0 ? (
         <Alert>{t('catalog.asset.empty')}</Alert>
       ) : (
         <div 
@@ -98,9 +118,8 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
           role="radiogroup" 
           aria-label={label}
         >
-          {assets.map((asset) => {
+          {filteredAssets.map((asset) => {
             const isSelected = value === asset.id;
-            const shortId = asset.id.slice(-8);
             
             const date = new Intl.DateTimeFormat(i18n.language, {
               day: '2-digit',
@@ -108,11 +127,15 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
               year: 'numeric',
             }).format(new Date(asset.createdAt));
 
+            const name = asset.filename || t('catalog.asset.fallbackFilename', { date });
+            const dim = asset.width && asset.height ? `${String(asset.width)} × ${String(asset.height)}` : '';
+
             return (
               <button
                 key={asset.id}
                 type="button"
                 role="radio"
+                aria-label={name}
                 aria-checked={isSelected}
                 onClick={() => { onChange(asset.id); }}
                 disabled={loading}
@@ -124,10 +147,10 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
               >
                 <div className="w-full aspect-video bg-muted flex items-center justify-center text-muted-foreground relative">
                   {asset.thumbnailUrl ? (
-                    <img src={asset.thumbnailUrl} alt={t('catalog.asset.thumbnailOf', { id: shortId })} className="w-full h-full object-cover" />
+                    <img src={asset.thumbnailUrl} alt={t('catalog.asset.thumbnailOf', { id: name })} className="w-full h-full object-cover" />
                   ) : (
                     <>
-                      <span className="sr-only">{t('catalog.asset.thumbnailOf', { id: shortId })}</span>
+                      <span className="sr-only">{t('catalog.asset.thumbnailOf', { id: name })}</span>
                       <div className="flex flex-col items-center gap-2">
                         <span className="text-xs font-semibold px-2 py-1 bg-background/80 rounded">
                           {t(`catalog.asset.kind.${asset.kind}`)}
@@ -138,8 +161,8 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
                   )}
                 </div>
                 <div className="p-2 bg-card w-full">
-                  <p className="text-sm font-medium truncate" title={shortId}>{shortId}</p>
-                  <p className="text-xs text-muted-foreground">{date}</p>
+                  <p className="text-sm font-medium truncate" title={name}>{name}</p>
+                  <p className="text-xs text-muted-foreground">{dim ? `${dim} - ${date}` : date}</p>
                 </div>
               </button>
             );

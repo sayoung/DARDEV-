@@ -28,6 +28,7 @@ const profileAdmin: MeResponse = {
 
 const mockReadyAsset: AssetResponse = {
   id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d91',
+  filename: 'mock.jpg',
   kind: AssetKind.PANORAMA,
   mimeType: 'image/jpeg',
   sizeBytes: 5242880, // 5.0 MB
@@ -44,6 +45,7 @@ const mockReadyAsset: AssetResponse = {
 
 const mockErrorAsset: AssetResponse = {
   id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d92',
+  filename: 'mock.jpg',
   kind: AssetKind.PANORAMA,
   mimeType: 'image/jpeg',
   sizeBytes: 1048576, // 1.0 MB
@@ -146,6 +148,42 @@ describe('MediaPage', () => {
     
     // Vérifier le log de l'erreur
     expect(screen.getByText('Image trop petite')).toBeTruthy();
+  });
+
+  it('affiche la colonne Nom avec filename ou repli et miniature', async () => {
+    // mockReadyAsset a filename="mock.jpg"
+    // On va modifier mockErrorAsset pour enlever le filename et ajouter une miniature
+    const localMockReady = { ...mockReadyAsset, filename: 'custom_pano.jpg', thumbnailUrl: 'http://test/thumb.jpg' };
+    const localMockError = { ...mockErrorAsset, filename: '', thumbnailUrl: null };
+    
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/assets/folders')) return Promise.resolve(jsonResponse(200, { total: 0, unusedCount: 0, tours: [] }));
+      if (url.includes('/admin/assets') && methodOf(input, init) === 'GET') {
+        return Promise.resolve(jsonResponse(200, {
+          items: [localMockReady, localMockError],
+          total: 2, page: 1, pageSize: 20
+        }));
+      }
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    
+    await screen.findByText('custom_pano.jpg');
+    
+    // Vérifier le filename et la miniature pour le premier
+    expect(screen.getByText('custom_pano.jpg')).toBeTruthy();
+    const img = screen.getByAltText('custom_pano.jpg');
+    expect(img.getAttribute('src')).toBe('http://test/thumb.jpg');
+
+    // Vérifier le repli pour le deuxième (date: 02/10/2026 selon mockErrorAsset createdAt)
+    const fallbackText = resources.fr.catalog.asset.fallbackFilename.replace('{{date}}', '02/10/2026');
+    expect(screen.getByText(fallbackText)).toBeTruthy();
+    
+    // Vérifier qu'il y a le fallback miniature (le type MIME JPEG)
+    expect(screen.getByText(/jpeg/i)).toBeTruthy();
   });
 
   it('reprocess met à jour le badge', async () => {

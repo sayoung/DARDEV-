@@ -710,6 +710,7 @@ describe('AssetResponseSchema', () => {
   const createdAt = '2026-09-29T12:00:00.000Z';
   const asset = {
     id: id.cover,
+    filename: 'test.jpg',
     kind: AssetKind.IMAGE,
     mimeType: 'image/jpeg',
     sizeBytes: 128,
@@ -803,6 +804,7 @@ describe('PaginatedAssetResponseSchema', () => {
       items: [
         {
           id: id.cover,
+          filename: 'test.mp3',
           kind: AssetKind.AUDIO,
           mimeType: 'audio/mpeg',
           sizeBytes: 20,

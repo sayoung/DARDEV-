@@ -5,6 +5,7 @@ import { needsPolling } from './media-polling.js';
 describe('needsPolling', () => {
   const createAsset = (status: ProcessingStatus): AssetResponse => ({
     id: 'asset-1',
+    filename: 'mock.jpg',
     createdAt: new Date().toISOString(),
     kind: AssetKind.PANORAMA,
     sizeBytes: 1024,
