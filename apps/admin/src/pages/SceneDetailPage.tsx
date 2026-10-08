@@ -398,7 +398,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
                 <div className="flex space-x-4">
                   {isRelocating ? (
                     <span className="text-sm text-muted-foreground flex items-center">
-                      {t('catalog.hotspots.editor.relocateHint', 'Cliquez sur la photo ou appuyez sur Échap pour annuler.')}
+                      {t('catalog.hotspots.editor.relocateHint')}
                     </span>
                   ) : (
                     <>
@@ -407,7 +407,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
                         onClick={() => { setIsRelocating(true); }}
                         disabled={isSubmitting}
                       >
-                        {t('catalog.hotspots.editor.relocate', 'Déplacer ici')}
+                        {t('catalog.hotspots.editor.relocate')}
                       </Button>
                       <Button
                         variant="destructive"
