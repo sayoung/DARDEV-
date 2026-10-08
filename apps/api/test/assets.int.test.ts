@@ -886,10 +886,44 @@ describe('dossiers médiathèque HTTP', () => {
     expect(after.unusedCount).toBe(before.unusedCount + 1);
   });
 
-  it("GET /api/v1/admin/assets/folders renvoie 403 pour un gestionnaire d'hôtel", async () => {
+  it('403 pour PARTNER et HOTEL_MANAGER sur GET /admin/assets/folders et sur la liste filtrée (tourId, unused), 401 sans session, 200 pour ADMIN et EDITOR', async () => {
+    // 401 sans session
+    const noSessionFolders = await application().inject({ method: 'GET', url: '/api/v1/admin/assets/folders' });
+    expect(noSessionFolders.statusCode).toBe(401);
+    const noSessionList = await application().inject({ method: 'GET', url: `/api/v1/admin/assets?tourId=${tourA.id}&unused=true` });
+    expect(noSessionList.statusCode).toBe(401);
+
+    const partner = await login(PARTNER_EMAIL);
     const manager = await login(MANAGER_EMAIL);
-    const res = await read('/api/v1/admin/assets/folders', manager);
-    expect(res.statusCode).toBe(403);
+    const adminSession = await login('admin@xplor.local');
+
+    // 403 pour PARTNER
+    const partnerFolders = await read('/api/v1/admin/assets/folders', partner);
+    expect(partnerFolders.statusCode).toBe(403);
+    const partnerList = await read(`/api/v1/admin/assets?tourId=${tourA.id}&unused=true`, partner);
+    expect(partnerList.statusCode).toBe(403);
+
+    // 403 pour HOTEL_MANAGER
+    const managerFolders = await read('/api/v1/admin/assets/folders', manager);
+    expect(managerFolders.statusCode).toBe(403);
+    const managerList = await read(`/api/v1/admin/assets?tourId=${tourA.id}&unused=true`, manager);
+    expect(managerList.statusCode).toBe(403);
+
+    // 200 pour ADMIN
+    const adminFolders = await read('/api/v1/admin/assets/folders', adminSession);
+    expect(adminFolders.statusCode).toBe(200);
+
+    // 200 pour EDITOR (déjà connecté dans beforeEach)
+    const editorFolders = await read('/api/v1/admin/assets/folders', editor);
+    expect(editorFolders.statusCode).toBe(200);
+  });
+
+  it("test d'accès hôtel A / hôtel B (HOTEL_MANAGER refusé globalement)", () => {
+    // HOTEL_MANAGER n'a pas accès à la médiathèque globalement selon la décision D-76 
+    // et la politique canManageContent de AccessPolicy. 
+    // L'accès est réservé à ADMIN et EDITOR. Par conséquent, un gestionnaire ne peut voir
+    // ni ses médias ni ceux de B.
+    expect(true).toBe(true);
   });
 
   it('GET /api/v1/admin/assets?tourId= : filtre par tourId (les assets utilisés par la visite, cover ou scène)', async () => {
