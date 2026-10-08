@@ -6,6 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearCsrfToken } from '../api/client.js';
 import { App } from '../App.js';
 import { i18n } from '../i18n.js';
+import { listAssets, listAssetFolders } from '../api/catalog.js';
+
+vi.mock('../api/catalog.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../api/catalog.js')>();
+  return {
+    ...actual,
+    listAssets: vi.fn(actual.listAssets),
+    listAssetFolders: vi.fn(actual.listAssetFolders),
+  };
+});
 
 const profileAdmin: MeResponse = {
   id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d90',
@@ -357,12 +367,10 @@ describe('MediaPage', () => {
       expect(window.location.search).toContain('dossier=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95');
       expect(window.location.search).toContain('page=1');
       
-      const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
-      expect(assetCalls.length).toBeGreaterThan(0);
-      const lastCall = assetCalls[assetCalls.length - 1] as [unknown, unknown];
-      const lastCallUrl = requestUrl(lastCall[0]);
-      expect(lastCallUrl).toContain('tourId=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95');
-      expect(lastCallUrl).toContain('page=1');
+      expect(vi.mocked(listAssets)).toHaveBeenCalledWith(
+        expect.objectContaining({ tourId: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95', page: 1 })
+      );
+      expect(vi.mocked(listAssetFolders)).toHaveBeenCalled();
     });
 
     it('gère le clic sur Non utilisés', async () => {
@@ -393,14 +401,13 @@ describe('MediaPage', () => {
 
       expect(window.location.search).toContain('dossier=unused');
       
-      const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
-      expect(assetCalls.length).toBeGreaterThan(0);
-      const lastCall = assetCalls[assetCalls.length - 1] as [unknown, unknown];
-      const lastCallUrl = requestUrl(lastCall[0]);
-      expect(lastCallUrl).toContain('unused=true');
+      expect(vi.mocked(listAssets)).toHaveBeenLastCalledWith(
+        expect.objectContaining({ unused: 'true' })
+      );
     });
 
-    it('lit le dossier initial depuis l\'URL', async () => {
+    it('chargement initial depuis ?dossier=<id> (MemoryRouter initialEntries) appelle listAssets avec le bon filtre', async () => {
+      // Équivalent de MemoryRouter initialEntries pour notre routeur maison
       window.history.replaceState(null, '', '/media?dossier=unused');
 
       fetchMock.mockImplementation((input: unknown, init?: unknown) => {
@@ -428,11 +435,9 @@ describe('MediaPage', () => {
       const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (2)' });
       expect(unusedBtn.getAttribute('aria-current')).toBe('page');
 
-      const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
-      expect(assetCalls.length).toBeGreaterThan(0);
-      const lastCall = assetCalls[assetCalls.length - 1] as [unknown, unknown];
-      const lastCallUrl = requestUrl(lastCall[0]);
-      expect(lastCallUrl).toContain('unused=true');
+      expect(vi.mocked(listAssets)).toHaveBeenCalledWith(
+        expect.objectContaining({ unused: 'true' })
+      );
     });
   });
 
