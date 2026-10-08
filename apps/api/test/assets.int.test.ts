@@ -14,6 +14,7 @@ import { AssetKind, PrismaClient, ProcessingStatus } from '@prisma/client';
 import {
   AssetCleanupDryRunResponseSchema,
   AssetCleanupResultSchema,
+  AssetFoldersResponseSchema,
   AssetResponseSchema,
   AssetUploadResponseSchema,
   MeResponseSchema,
@@ -21,7 +22,7 @@ import {
   type PaginatedAssetResponse,
 } from '@xplor/shared';
 import { Redis } from 'ioredis';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../src/app.module.js';
 import { toPrismaRole } from '../src/auth/prisma-role.js';
@@ -738,6 +739,114 @@ describe('médias HTTP', () => {
         await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
       }
     }
+  });
+});
+
+describe('dossiers médiathèque HTTP', () => {
+  let editor: Session;
+  let adminUser: { id: string };
+  let hotel: { id: string };
+  let city: { id: string };
+  let tourA: { id: string };
+  let tourB: { id: string };
+  let sceneA: { id: string };
+  let coverAssetA: { id: string };
+  let sceneAssetA: { id: string };
+  let coverAssetB: { id: string };
+  let beforeTotal = 0;
+  let beforeUnused = 0;
+
+  async function insertHotel() {
+    city = await prisma.city.create({
+      data: { name: { fr: 'Ville' }, region: 'Region', lat: 33, lng: -7 },
+    });
+    return prisma.hotel.create({
+      data: {
+        name: 'Hotel',
+        stars: 'FIVE',
+        cityId: city.id,
+        address: '1 rue',
+        phone: '00',
+        email: 'h@h.com',
+        brandColor: '#123456',
+        contractType: 'SALE',
+        contractStart: new Date(),
+        contractEnd: new Date(),
+      },
+    });
+  }
+
+  async function insertTour(coverAssetId: string, title: string) {
+    return prisma.tour.create({
+      data: {
+        title: { fr: title },
+        summary: { fr: 'Résumé' },
+        cityId: city.id,
+        createdById: adminUser.id,
+        coverAssetId,
+      },
+    });
+  }
+
+  async function insertScene(tourId: string, panoramaAssetId: string) {
+    return prisma.scene.create({
+      data: {
+        tourId,
+        title: { fr: 'Scene' },
+        panoramaAssetId,
+        weight: 1,
+        createdById: adminUser.id,
+      },
+    });
+  }
+
+  beforeEach(async () => {
+    editor = await login(EDITOR_EMAIL);
+    adminUser = await prisma.user.findFirstOrThrow({ where: { role: 'ADMIN' } });
+
+    const beforeRes = await read('/api/v1/admin/assets/folders', editor);
+    expect(beforeRes.statusCode).toBe(200);
+    const beforeStats = AssetFoldersResponseSchema.parse(parseJson(beforeRes.body));
+    beforeTotal = beforeStats.total;
+    beforeUnused = beforeStats.unusedCount;
+
+    hotel = await insertHotel();
+
+    coverAssetA = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:00.000Z', { processingStatus: ProcessingStatus.READY });
+    sceneAssetA = await insertAsset(AssetKind.PANORAMA, '2026-10-08T00:00:01.000Z', { processingStatus: ProcessingStatus.READY });
+    coverAssetB = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:02.000Z', { processingStatus: ProcessingStatus.READY });
+
+    tourA = await insertTour(coverAssetA.id, 'Tour A');
+    sceneA = await insertScene(tourA.id, sceneAssetA.id);
+    tourB = await insertTour(coverAssetB.id, 'Tour B');
+  });
+
+  afterEach(async () => {
+    await prisma.scene.delete({ where: { id: sceneA.id } }).catch(() => {});
+    await prisma.tour.delete({ where: { id: tourB.id } }).catch(() => {});
+    await prisma.tour.delete({ where: { id: tourA.id } }).catch(() => {});
+    await prisma.hotel.delete({ where: { id: hotel.id } }).catch(() => {});
+    await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
+    await prisma.asset.delete({ where: { id: coverAssetB.id } }).catch(() => {});
+    await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
+    await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
+  });
+
+  it('GET /api/v1/admin/assets/folders renvoie count=2 pour tourA (cover + 1 scène avec un second asset) et count=1 pour tourB (cover dédiée)', async () => {
+    const afterRes = await read('/api/v1/admin/assets/folders', editor);
+    expect(afterRes.statusCode).toBe(200);
+    const after = AssetFoldersResponseSchema.parse(parseJson(afterRes.body));
+
+    expect(after.total).toBe(beforeTotal + 3);
+    expect(after.unusedCount).toBe(beforeUnused);
+
+    const tourAAfter = after.tours.find((t) => t.id === tourA.id);
+    expect(tourAAfter).toBeDefined();
+    expect(tourAAfter?.count).toBe(2);
+
+    const tourBAfter = after.tours.find((t) => t.id === tourB.id);
+    expect(tourBAfter).toBeDefined();
+    expect(tourBAfter?.count).toBe(1);
   });
 });
 
