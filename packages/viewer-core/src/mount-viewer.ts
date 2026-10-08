@@ -10,6 +10,7 @@ import {
 import type { TourGraph } from '@xplor/shared';
 import { tourPluginOptions } from './tour-config.js';
 import { toMarkers } from './scene-markers.js';
+import { computeSceneOrientation } from './orientation.js';
 
 /**
  * CSS requirements for the application mounting this viewer:
@@ -49,7 +50,7 @@ export function mountViewer(
     }
   });
 
-  tourPlugin.addEventListener('node-changed', ({ node }) => {
+  tourPlugin.addEventListener('node-changed', ({ node, data }) => {
     const scene = graph.scenes.find((s) => s.id === node.id);
     if (scene) {
       const markers = toMarkers(scene);
@@ -61,6 +62,12 @@ export function mountViewer(
         html: `<div class="marker-icon"><span class="icon-${m.icon}"></span></div>`,
       }));
       markersPlugin.setMarkers(markerConfigs);
+
+      const orientation = computeSceneOrientation(scene, data.fromLink);
+      viewer.rotate({ yaw: orientation.yaw, pitch: orientation.pitch });
+      if (orientation.zoom != null) {
+        viewer.zoom(orientation.zoom);
+      }
     }
     
     if (opts?.onSceneChange) {

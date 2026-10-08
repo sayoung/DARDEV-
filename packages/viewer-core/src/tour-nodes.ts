@@ -22,6 +22,9 @@ export function toTourNodes(graph: TourGraph): VirtualTourNode[] {
               yaw: h.yaw,
               pitch: h.pitch,
             },
+            data: {
+              arrivalYaw: h.arrivalYaw,
+            },
           },
         ];
       }

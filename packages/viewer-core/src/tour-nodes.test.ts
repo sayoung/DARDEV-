@@ -141,7 +141,8 @@ describe('toTourNodes', () => {
     expect(node0.links).toEqual([
       {
         nodeId: scene2Id,
-        position: { yaw: 1.5, pitch: -0.5 }
+        position: { yaw: 1.5, pitch: -0.5 },
+        data: { arrivalYaw: 0 }
       }
     ]);
     expect(node1.links).toEqual([]);
