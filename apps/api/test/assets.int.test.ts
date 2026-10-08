@@ -345,18 +345,18 @@ describe('médias HTTP', () => {
 
     // Média libre
     const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-01T00:00:00.000Z');
-    
+
     // Média utilisé (on crée une scène qui le référence)
     const usedAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T00:00:00.000Z');
-    
+
     // Créer une ville pour le tour
     const city = await prisma.city.create({
       data: {
         name: { fr: 'Ville Test' },
         region: 'Region',
         lat: 33,
-        lng: -7
-      }
+        lng: -7,
+      },
     });
 
     const cover = await insertAsset(AssetKind.IMAGE, '2026-10-03T00:00:00.000Z');
@@ -364,13 +364,13 @@ describe('médias HTTP', () => {
     const adminUser = await prisma.user.findFirstOrThrow({ where: { role: 'ADMIN' } });
 
     const tour = await prisma.tour.create({
-      data: { 
-        title: { fr: 'Tour Test' }, 
+      data: {
+        title: { fr: 'Tour Test' },
         summary: { fr: 'Résumé' },
         cityId: city.id,
         coverAssetId: cover.id,
         createdById: adminUser.id,
-      }
+      },
     });
     await prisma.scene.create({
       data: {
@@ -379,7 +379,7 @@ describe('médias HTTP', () => {
         panoramaAssetId: usedAsset.id,
         weight: 1,
         createdById: adminUser.id,
-      }
+      },
     });
 
     // 1. Sans CSRF
@@ -426,7 +426,7 @@ describe('médias HTTP', () => {
     });
     expect(success.statusCode).toBe(204);
     expect(success.body).toBe('');
-    
+
     // Vérifier que le média est bien supprimé en DB
     const checkDb = await prisma.asset.findUnique({ where: { id: freeAsset.id } });
     expect(checkDb).toBeNull();
@@ -557,11 +557,15 @@ describe('médias HTTP', () => {
     const s3Client = application().get<S3Client>(S3_CLIENT);
     const env = application().get<Env>(ENV);
 
-    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-01T10:00:00Z', { processingStatus: ProcessingStatus.READY });
+    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-01T10:00:00Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
     const freeKey = `uploads/${freeAsset.id}/free.jpg`;
     await prisma.asset.update({ where: { id: freeAsset.id }, data: { originalKey: freeKey } });
 
-    const refAsset = await insertAsset(AssetKind.PANORAMA, '2026-10-01T10:00:00Z', { processingStatus: ProcessingStatus.READY });
+    const refAsset = await insertAsset(AssetKind.PANORAMA, '2026-10-01T10:00:00Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
     const referencedKey = `uploads/${refAsset.id}/ref.jpg`;
     await prisma.asset.update({ where: { id: refAsset.id }, data: { originalKey: referencedKey } });
 
@@ -586,16 +590,20 @@ describe('médias HTTP', () => {
     });
 
     try {
-      await s3Client.send(new PutObjectCommand({
-        Bucket: env.S3_BUCKET,
-        Key: freeKey,
-        Body: Buffer.from('free'),
-      }));
-      await s3Client.send(new PutObjectCommand({
-        Bucket: env.S3_BUCKET,
-        Key: referencedKey,
-        Body: Buffer.from('ref'),
-      }));
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: env.S3_BUCKET,
+          Key: freeKey,
+          Body: Buffer.from('free'),
+        }),
+      );
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: env.S3_BUCKET,
+          Key: referencedKey,
+          Body: Buffer.from('ref'),
+        }),
+      );
 
       const payload = JSON.stringify({ dryRun: false });
       const response = await application().inject({
@@ -629,19 +637,29 @@ describe('médias HTTP', () => {
       }
     }
 
-    const listFree = await s3Client.send(new ListObjectsV2Command({ Bucket: env.S3_BUCKET, Prefix: `uploads/${freeAsset.id}/` }));
+    const listFree = await s3Client.send(
+      new ListObjectsV2Command({ Bucket: env.S3_BUCKET, Prefix: `uploads/${freeAsset.id}/` }),
+    );
     expect(listFree.KeyCount).toBe(0);
-    const listRef = await s3Client.send(new ListObjectsV2Command({ Bucket: env.S3_BUCKET, Prefix: `uploads/${refAsset.id}/` }));
+    const listRef = await s3Client.send(
+      new ListObjectsV2Command({ Bucket: env.S3_BUCKET, Prefix: `uploads/${refAsset.id}/` }),
+    );
     expect(listRef.KeyCount).toBe(0);
   });
 
-  it('un asset référencé uniquement par Hotspot.mediaAssetIds n\'est pas nettoyé', async () => {
+  it("un asset référencé uniquement par Hotspot.mediaAssetIds n'est pas nettoyé", async () => {
     const editor = await login(EDITOR_EMAIL);
     const adminUser = await prisma.user.findFirstOrThrow({ where: { role: 'ADMIN' } });
 
-    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T10:00:00Z', { processingStatus: ProcessingStatus.READY });
-    const usedAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T10:00:01Z', { processingStatus: ProcessingStatus.READY });
-    const coverAsset = await insertAsset(AssetKind.PANORAMA, '2026-10-02T10:00:02Z', { processingStatus: ProcessingStatus.READY });
+    const freeAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T10:00:00Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    const usedAsset = await insertAsset(AssetKind.IMAGE, '2026-10-02T10:00:01Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    const coverAsset = await insertAsset(AssetKind.PANORAMA, '2026-10-02T10:00:02Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
 
     let city = await prisma.city.findFirst();
     let cityCreated = false;
@@ -700,10 +718,10 @@ describe('médias HTTP', () => {
 
       expect(dryRunRes.statusCode).toBe(200);
       const parsedDryRun = AssetCleanupDryRunResponseSchema.parse(dryRunRes.json());
-      
+
       const freeInDryRun = parsedDryRun.items.find((i) => i.id === freeAsset.id);
       expect(freeInDryRun).toBeDefined();
-      
+
       const usedInDryRun = parsedDryRun.items.find((i) => i.id === usedAsset.id);
       expect(usedInDryRun).toBeUndefined();
 
@@ -745,7 +763,6 @@ describe('médias HTTP', () => {
 describe('dossiers médiathèque HTTP', () => {
   let editor: Session;
   let adminUser: { id: string };
-  let hotel = { id: '' };
   let city = { id: '' };
   let tourA = { id: '' };
   let tourB = { id: '' };
@@ -755,26 +772,6 @@ describe('dossiers médiathèque HTTP', () => {
   let coverAssetB = { id: '' };
   let beforeTotal = 0;
   let beforeUnused = 0;
-
-  async function insertHotel() {
-    city = await prisma.city.create({
-      data: { name: { fr: 'Ville' }, region: 'Region', lat: 33, lng: -7 },
-    });
-    return prisma.hotel.create({
-      data: {
-        name: 'Hotel',
-        stars: 'FIVE',
-        cityId: city.id,
-        address: '1 rue',
-        phone: '00',
-        email: 'h@h.com',
-        brandColor: '#123456',
-        contractType: 'SALE',
-        contractStart: new Date(),
-        contractEnd: new Date(),
-      },
-    });
-  }
 
   async function insertTour(coverAssetId: string, title: string) {
     return prisma.tour.create({
@@ -810,11 +807,19 @@ describe('dossiers médiathèque HTTP', () => {
     beforeTotal = beforeStats.total;
     beforeUnused = beforeStats.unusedCount;
 
-    hotel = await insertHotel();
+    city = await prisma.city.create({
+      data: { name: { fr: 'Ville' }, region: 'Region', lat: 33, lng: -7 },
+    });
 
-    coverAssetA = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:00.000Z', { processingStatus: ProcessingStatus.READY });
-    sceneAssetA = await insertAsset(AssetKind.PANORAMA, '2026-10-08T00:00:01.000Z', { processingStatus: ProcessingStatus.READY });
-    coverAssetB = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:02.000Z', { processingStatus: ProcessingStatus.READY });
+    coverAssetA = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:00.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    sceneAssetA = await insertAsset(AssetKind.PANORAMA, '2026-10-08T00:00:01.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    coverAssetB = await insertAsset(AssetKind.IMAGE, '2026-10-08T00:00:02.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
 
     tourA = await insertTour(coverAssetA.id, 'Tour A');
     sceneA = await insertScene(tourA.id, sceneAssetA.id);
@@ -825,11 +830,13 @@ describe('dossiers médiathèque HTTP', () => {
     if (sceneA.id !== '') await prisma.scene.delete({ where: { id: sceneA.id } }).catch(() => {});
     if (tourB.id !== '') await prisma.tour.delete({ where: { id: tourB.id } }).catch(() => {});
     if (tourA.id !== '') await prisma.tour.delete({ where: { id: tourA.id } }).catch(() => {});
-    if (hotel.id !== '') await prisma.hotel.delete({ where: { id: hotel.id } }).catch(() => {});
     if (city.id !== '') await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
-    if (coverAssetB.id !== '') await prisma.asset.delete({ where: { id: coverAssetB.id } }).catch(() => {});
-    if (sceneAssetA.id !== '') await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
-    if (coverAssetA.id !== '') await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
+    if (coverAssetB.id !== '')
+      await prisma.asset.delete({ where: { id: coverAssetB.id } }).catch(() => {});
+    if (sceneAssetA.id !== '')
+      await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
+    if (coverAssetA.id !== '')
+      await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
   });
 
   it('GET /api/v1/admin/assets/folders renvoie count=2 pour tourA (cover + 1 scène avec un second asset) et count=1 pour tourB (cover dédiée)', async () => {
