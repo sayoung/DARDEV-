@@ -19,6 +19,7 @@ describe('AssetPicker', () => {
       items: [
         {
           id: '01923e45-6789-7abc-8ef0-123456789abc',
+          filename: 'pano.jpg',
           kind: 'PANORAMA',
           mimeType: 'image/jpeg',
           sizeBytes: 1024,
@@ -73,7 +74,7 @@ describe('AssetPicker', () => {
     const radios = screen.getAllByRole('radio');
     expect(radios).toHaveLength(1);
     
-    const img = screen.getByAltText('Miniature de 56789abc');
+    const img = screen.getByAltText('Miniature de pano.jpg');
     expect(img.getAttribute('src')).toBe('http://example.com/thumb.jpg');
 
     // Clic pour sélectionner
@@ -90,6 +91,7 @@ describe('AssetPicker', () => {
       items: [
         {
           id: '11111111-1111-1111-1111-111111111111',
+          filename: 'pending.jpg',
           kind: 'IMAGE',
           mimeType: 'image/jpeg',
           processingStatus: 'PENDING',
@@ -97,6 +99,7 @@ describe('AssetPicker', () => {
         },
         {
           id: '22222222-2222-2222-2222-222222222222',
+          filename: 'ready.jpg',
           kind: 'IMAGE',
           mimeType: 'image/jpeg',
           processingStatus: 'READY',
@@ -136,6 +139,7 @@ describe('AssetPicker', () => {
       items: [
         {
           id: '33333333-3333-3333-3333-333333333333',
+          filename: 'video.mp4',
           kind: 'VIDEO',
           mimeType: 'video/mp4',
           processingStatus: 'READY',

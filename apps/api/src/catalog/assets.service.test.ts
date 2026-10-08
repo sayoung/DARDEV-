@@ -57,6 +57,7 @@ const listAll: AssetListQuery = { page: 1, pageSize: 20 };
 
 function row(
   id: string,
+  
   kind: AssetKind,
   createdAt: string,
   extra: Partial<Pick<AssetRow, 'width' | 'height' | 'copyright' | 'processingStatus' | 'processingLog' | 'contentHash'>> = {},
@@ -233,6 +234,7 @@ describe('AssetsService', () => {
       items: [
         {
           id: OLDER_ID,
+          
           kind: AssetKind.IMAGE,
           mimeType: 'image/jpeg',
           sizeBytes: 128,
@@ -262,6 +264,7 @@ describe('AssetsService', () => {
     expect(images.items).toEqual([
       {
         id: OLDER_ID,
+        
         kind: AssetKind.IMAGE,
         mimeType: 'image/jpeg',
         sizeBytes: 128,

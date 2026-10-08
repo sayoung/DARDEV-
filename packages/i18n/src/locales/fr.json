@@ -102,6 +102,8 @@
       "error": "Impossible de charger les médias.",
       "emptyOption": "Sélectionner un média...",
       "thumbnailOf": "Miniature de {{id}}",
+      "fallbackFilename": "Média du {{date}}",
+      "searchPlaceholder": "Rechercher par nom...",
       "kind": {
         "IMAGE": "Image",
         "PANORAMA": "Panorama",
@@ -326,6 +328,7 @@
     "subtitle": "Gérez les images, panoramas et sons.",
     "empty": "Aucun média trouvé.",
     "columns": {
+      "name": "Nom",
       "date": "Date de création",
       "dimensions": "Dimensions",
       "size": "Taille (Mo)",

@@ -28,6 +28,7 @@ const profileAdmin: MeResponse = {
 
 const mockReadyAsset: AssetResponse = {
   id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d91',
+  filename: 'mock.jpg',
   kind: AssetKind.PANORAMA,
   mimeType: 'image/jpeg',
   sizeBytes: 5242880, // 5.0 MB
@@ -44,6 +45,7 @@ const mockReadyAsset: AssetResponse = {
 
 const mockErrorAsset: AssetResponse = {
   id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d92',
+  filename: 'mock.jpg',
   kind: AssetKind.PANORAMA,
   mimeType: 'image/jpeg',
   sizeBytes: 1048576, // 1.0 MB

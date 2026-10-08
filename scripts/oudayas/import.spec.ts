@@ -65,7 +65,7 @@ function installMainFetch(mockFetch: MockedFunction<typeof fetch>, options: { as
       const id = urlId.length > 30 ? urlId : '00000000-0000-7000-8000-000000000000';
       return new Response(
         JSON.stringify({
-          id,
+          id, filename: 'mock.jpg',
           kind: AssetKind.PANORAMA,
           mimeType: 'image/jpeg',
           sizeBytes: 9,
@@ -401,7 +401,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
         if (targetAssetId && urlId === targetAssetId) {
           return new Response(
             JSON.stringify({
-              id: urlId,
+              id: urlId, filename: 'mock.jpg',
               kind: AssetKind.PANORAMA,
               mimeType: 'image/jpeg',
               sizeBytes: 9,
@@ -752,7 +752,7 @@ describe('Import Oudaïas (partie référentiels - listTours et resolveReference
     const mockSceneResponse = (id: string, titleStr: string, infoStr: string, assetId: string, weight: number) => {
       return new Response(
         JSON.stringify({
-          id,
+          id, filename: 'mock.jpg',
           tourId,
           title: { fr: titleStr, en: titleStr, ar: titleStr },
           info: { fr: infoStr, en: infoStr, ar: infoStr },

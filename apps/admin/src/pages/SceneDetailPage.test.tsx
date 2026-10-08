@@ -250,6 +250,7 @@ describe('SceneDetailPage', () => {
 
     const mockAsset: AssetResponse = {
       id: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1000,
@@ -342,6 +343,7 @@ describe('SceneDetailPage', () => {
 
     const mockAsset: AssetResponse = {
       id: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1000,
@@ -383,7 +385,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([{ ...mockSceneResponse, id: 's-2', title: { fr: 'Scene 2' } }]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -426,7 +428,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([{ ...mockSceneResponse, id: 's-2', title: { fr: 'Scene 2' } }]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -519,7 +521,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -562,7 +564,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -636,7 +638,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -704,7 +706,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -764,7 +766,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -822,7 +824,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -878,7 +880,7 @@ describe('SceneDetailPage', () => {
     vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
     vi.mocked(listScenes).mockResolvedValue([]);
     const mockAsset: AssetResponse = {
-      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
       width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
       thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
       createdAt: new Date().toISOString(),
@@ -937,6 +939,7 @@ describe('SceneDetailPage', () => {
     
     const mockAsset: AssetResponse = {
       id: 'asset-1',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1000,
@@ -1036,6 +1039,7 @@ describe('SceneDetailPage', () => {
     
     const mockAsset: AssetResponse = {
       id: 'asset-1',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1000,

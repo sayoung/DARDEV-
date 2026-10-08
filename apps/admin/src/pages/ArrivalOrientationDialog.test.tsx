@@ -62,6 +62,7 @@ describe('ArrivalOrientationDialog', () => {
     };
     const mockAsset: AssetResponse = {
       id: '00000000-0000-0000-0000-000000000001',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1000,
@@ -119,6 +120,7 @@ describe('ArrivalOrientationDialog', () => {
     };
     const mockAsset: AssetResponse = {
       id: '00000000-0000-0000-0000-000000000001',
+      filename: 'mock.jpg',
       kind: AssetKind.PANORAMA,
       mimeType: 'image/jpeg',
       sizeBytes: 1000,

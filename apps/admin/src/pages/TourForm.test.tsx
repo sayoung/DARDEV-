@@ -37,6 +37,7 @@ const mockAssets = {
   items: [
     {
       id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9e', // Image READY
+      filename: 'mock1.jpg',
       kind: 'IMAGE',
       mimeType: 'image/jpeg',
       sizeBytes: 100,
@@ -52,6 +53,7 @@ const mockAssets = {
     },
     {
       id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1da0', // Panorama READY (shortId: 5b2a1da0)
+      filename: 'pano.jpg',
       kind: 'PANORAMA',
       mimeType: 'image/jpeg',
       sizeBytes: 200,
@@ -67,6 +69,7 @@ const mockAssets = {
     },
     {
       id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1da1', // Image PENDING (shortId: 5b2a1da1)
+      filename: 'pending.jpg',
       kind: 'IMAGE',
       mimeType: 'image/jpeg',
       sizeBytes: 100,
@@ -171,10 +174,10 @@ describe('TourForm Pages', () => {
     fireEvent.click(screen.getByLabelText(/Musée/));
     
     // Le média READY est présent (image d9e)
-    expect(await screen.findByRole('radio', { name: /5b2a1d9e/ })).toBeTruthy();
+    expect(await screen.findByRole('radio', { name: /mock1\.jpg/ })).toBeTruthy();
     
     // Le panorama READY est présent (5b2a1da0) et on le sélectionne
-    const panoramaRadio = await screen.findByRole('radio', { name: /5b2a1da0/ });
+    const panoramaRadio = await screen.findByRole('radio', { name: /pano\.jpg/ });
     expect(panoramaRadio).toBeTruthy();
     fireEvent.click(panoramaRadio);
     
@@ -212,7 +215,7 @@ describe('TourForm Pages', () => {
     fireEvent.change(frSummaryInput, { target: { value: 'Un résumé court' } });
 
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
-    fireEvent.click(await screen.findByRole('radio', { name: /5b2a1d9e/ }));
+    fireEvent.click(await screen.findByRole('radio', { name: /mock1\.jpg/ }));
 
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
@@ -376,7 +379,8 @@ describe('TourForm Pages', () => {
     fireEvent.change(titleInput, { target: { value: 'Titre Modifié' } });
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
-    await screen.findByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
+    const alerts = await screen.findAllByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
+    expect(alerts.length).toBeGreaterThan(0);
     const kept = screen.getAllByDisplayValue('Titre Modifié').find((el) => !el.classList.contains('sr-only'));
     expect(kept).toBeTruthy();
     expect(screen.getByRole('button', { name: resources.fr.common.save })).toBeTruthy();
@@ -409,7 +413,8 @@ describe('TourForm Pages', () => {
     await screen.findAllByDisplayValue('Tour 1');
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.delete }));
 
-    await screen.findByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
+    const alerts = await screen.findAllByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
+    expect(alerts.length).toBeGreaterThan(0);
     expect(screen.getAllByDisplayValue('Tour 1').length).toBeGreaterThan(0);
     expect(window.location.pathname).toBe('/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
 

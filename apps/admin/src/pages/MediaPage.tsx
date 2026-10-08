@@ -302,6 +302,7 @@ export function MediaPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>{t('media.columns.name')}</TableHead>
                     <TableHead>{t('media.columns.date')}</TableHead>
                     <TableHead>{t('media.columns.dimensions')}</TableHead>
                     <TableHead>{t('media.columns.size')}</TableHead>
@@ -320,9 +321,23 @@ export function MediaPage() {
                       ? `${String(asset.width)} × ${String(asset.height)}` 
                       : '—';
                     const sizeMb = (asset.sizeBytes / (1024 * 1024)).toFixed(1);
+                    
+                    const name = asset.filename || t('catalog.asset.fallbackFilename', { date });
 
                     return (
                       <TableRow key={asset.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-muted flex items-center justify-center rounded overflow-hidden shrink-0">
+                              {asset.thumbnailUrl ? (
+                                <img src={asset.thumbnailUrl} alt={name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-xs font-semibold uppercase">{asset.mimeType.split('/')[1]}</span>
+                              )}
+                            </div>
+                            <span className="font-medium truncate max-w-[200px]" title={name}>{name}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>{date}</TableCell>
                         <TableCell>{dimensions}</TableCell>
                         <TableCell>{sizeMb}</TableCell>
