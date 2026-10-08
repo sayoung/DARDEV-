@@ -80,7 +80,7 @@ export function MultiAssetPicker({ label, kind, value, onChange, required }: Mul
         />
       )}
 
-      {assets.length === 0 ? (
+      {filteredAssets.length === 0 ? (
         <Alert>{t('catalog.asset.empty')}</Alert>
       ) : (
         <div 

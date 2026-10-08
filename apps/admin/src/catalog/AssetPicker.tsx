@@ -109,7 +109,7 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
         />
       )}
 
-      {assets.length === 0 ? (
+      {filteredAssets.length === 0 ? (
         <Alert>{t('catalog.asset.empty')}</Alert>
       ) : (
         <div 
