@@ -145,6 +145,8 @@ export async function listAssets(query?: AssetListQuery): Promise<PaginatedAsset
     if (query.page) url.searchParams.set('page', query.page.toString());
     if (query.pageSize) url.searchParams.set('pageSize', query.pageSize.toString());
     if (query.kind) url.searchParams.set('kind', query.kind);
+    if (query.tourId) url.searchParams.set('tourId', query.tourId);
+    if (query.unused) url.searchParams.set('unused', query.unused);
   }
   return requestJson(`${url.pathname}${url.search}`, PaginatedAssetResponseSchema);
 }

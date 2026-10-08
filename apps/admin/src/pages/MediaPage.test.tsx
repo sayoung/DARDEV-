@@ -66,6 +66,13 @@ describe('MediaPage', () => {
       if (url.endsWith('/auth/me')) {
         return Promise.resolve(jsonResponse(200, profileAdmin));
       }
+      if (url.includes('/admin/assets/folders')) {
+        return Promise.resolve(jsonResponse(200, {
+          total: 0,
+          unusedCount: 0,
+          tours: []
+        }));
+      }
       if (url.includes('/admin/assets') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, {
           items: [mockReadyAsset, mockErrorAsset],
@@ -88,6 +95,13 @@ describe('MediaPage', () => {
     fetchMock.mockImplementation((input: unknown) => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/assets/folders')) {
+        return Promise.resolve(jsonResponse(200, {
+          total: 0,
+          unusedCount: 0,
+          tours: []
+        }));
+      }
       if (url.includes('/admin/assets')) {
         return Promise.resolve(jsonResponse(200, {
           items: [],
@@ -169,6 +183,13 @@ describe('MediaPage', () => {
     // On mocke la réponse de rechargement de la liste
     fetchMock.mockImplementationOnce((input: unknown, init?: unknown) => {
       const url = requestUrl(input);
+      if (url.includes('/admin/assets/folders')) {
+        return Promise.resolve(jsonResponse(200, {
+          total: 0,
+          unusedCount: 0,
+          tours: []
+        }));
+      }
       if (url.includes('/admin/assets') && methodOf(input, init) === 'GET') {
         return Promise.resolve(jsonResponse(200, {
           items: [mockErrorAsset], // on enlève l'asset supprimé
@@ -225,7 +246,7 @@ describe('MediaPage', () => {
     
     // Le fetch ne doit pas être appelé pour le DELETE
     // On peut vérifier en comptant le nombre d'appels à fetchMock (1 pour /me, 1 pour /assets)
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('rafraîchit toutes les 3s tant qu’un asset est en cours de traitement', async () => {
@@ -239,6 +260,13 @@ describe('MediaPage', () => {
       const method = methodOf(input, init);
       
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+      if (url.includes('/admin/assets/folders')) {
+        return Promise.resolve(jsonResponse(200, {
+          total: 0,
+          unusedCount: 0,
+          tours: []
+        }));
+      }
       if (url.includes('/admin/assets') && method === 'GET') {
         listAssetsCount++;
         if (listAssetsCount === 1) {
@@ -285,6 +313,74 @@ describe('MediaPage', () => {
     vi.useRealTimers();
   });
 
+
+  describe('Panneau Dossiers', () => {
+    it('affiche le dossier actif et gère le clic sur une visite', async () => {
+      // Mock folders data
+      fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+        const url = requestUrl(input);
+        const method = methodOf(input, init);
+        
+        if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+        if (url.includes('/admin/assets/folders')) {
+          return Promise.resolve(jsonResponse(200, {
+            total: 5,
+            unusedCount: 2,
+            tours: [
+              { id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95', title: { fr: 'Visite Test', en: 'Test Tour' }, count: 3 }
+            ]
+          }));
+        }
+        if (url.includes('/admin/assets') && method === 'GET') {
+          return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
+        }
+        return Promise.resolve(jsonResponse(404, {}));
+      });
+
+      render(<App />);
+
+      // Le panneau doit afficher "Tous les médias (5)" etc.
+      const allBtn = await screen.findByRole('button', { name: 'Tous les médias (5)' });
+      const tourBtn = await screen.findByRole('button', { name: 'Visite Test (3)' });
+      const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (2)' });
+
+      // Par défaut, "Tous les médias" est actif
+      expect(allBtn.getAttribute('aria-current')).toBe('page');
+      expect(tourBtn.getAttribute('aria-current')).toBeNull();
+      expect(unusedBtn.getAttribute('aria-current')).toBeNull();
+
+      // Clic sur la visite
+      fireEvent.click(tourBtn);
+
+      // L'URL doit être mise à jour avec dossier=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95 et page=1
+      expect(window.location.search).toContain('dossier=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95');
+      expect(window.location.search).toContain('page=1');
+      
+      // listAssets doit avoir été appelé avec le bon paramètre (tourId)
+      // fetchMock.calls montre que /admin/assets?page=1&pageSize=20&tourId=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95 a été appelé
+      const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
+      expect(assetCalls.length).toBeGreaterThan(0);
+      const lastCall = assetCalls[assetCalls.length - 1];
+      const lastCallUrl = lastCall && lastCall[0] !== undefined ? requestUrl(lastCall[0]) : '';
+      expect(lastCallUrl).toContain('tourId=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95');
+    });
+
+    it('gère le clic sur Non utilisés', async () => {
+      render(<App />);
+
+      const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (0)' });
+      fireEvent.click(unusedBtn);
+
+      expect(window.location.search).toContain('dossier=unused');
+      
+      const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
+      expect(assetCalls.length).toBeGreaterThan(0);
+      const lastCall = assetCalls[assetCalls.length - 1];
+      const lastCallUrl = lastCall && lastCall[0] !== undefined ? requestUrl(lastCall[0]) : '';
+      expect(lastCallUrl).toContain('unused=true');
+    });
+  });
+
   describe('Nettoyage', () => {
     it('affiche le message si rien à nettoyer', async () => {
       render(<App />);
@@ -323,7 +419,14 @@ describe('MediaPage', () => {
           cleanupCallCount++;
           return Promise.resolve(jsonResponse(200, { count: 12, totalBytes: 340 * 1024 * 1024, items: [] }));
         }
-        if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, { id: 'admin-1', email: 'admin@test.com', role: 'SUPERADMIN' }));
+        if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+        if (url.includes('/admin/assets/folders')) {
+          return Promise.resolve(jsonResponse(200, {
+            total: 0,
+            unusedCount: 0,
+            tours: []
+          }));
+        }
         if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
         return Promise.resolve(jsonResponse(404, {}));
       });
@@ -362,7 +465,14 @@ describe('MediaPage', () => {
             return Promise.resolve(jsonResponse(200, { deleted: 12, failed: 0 }));
           }
         }
-        if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, { id: 'admin-1', email: 'admin@test.com', role: 'SUPERADMIN' }));
+        if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+        if (url.includes('/admin/assets/folders')) {
+          return Promise.resolve(jsonResponse(200, {
+            total: 0,
+            unusedCount: 0,
+            tours: []
+          }));
+        }
         if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
         return Promise.resolve(jsonResponse(404, {}));
       });
