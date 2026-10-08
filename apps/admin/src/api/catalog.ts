@@ -23,6 +23,9 @@ import {
   type PaginatedAssetResponse,
   AssetResponseSchema,
   PaginatedAssetResponseSchema,
+  type AssetFoldersQuery,
+  type AssetFoldersResponse,
+  AssetFoldersResponseSchema,
   SceneListResponseSchema,
   SceneResponseSchema,
   type SceneListResponse,
@@ -144,6 +147,14 @@ export async function listAssets(query?: AssetListQuery): Promise<PaginatedAsset
     if (query.kind) url.searchParams.set('kind', query.kind);
   }
   return requestJson(`${url.pathname}${url.search}`, PaginatedAssetResponseSchema);
+}
+
+export async function listAssetFolders(query?: AssetFoldersQuery): Promise<AssetFoldersResponse> {
+  const url = new URL('/api/v1/admin/assets/folders', 'http://d');
+  if (query) {
+    if (query.kind) url.searchParams.set('kind', query.kind);
+  }
+  return requestJson(`${url.pathname}${url.search}`, AssetFoldersResponseSchema);
 }
 
 export async function getAsset(id: string): Promise<AssetResponse> {

@@ -361,6 +361,12 @@
       "confirmTitle": "Confirmation",
       "emptyTitle": "Information",
       "successTitle": "Succès"
+    },
+    "folders": {
+      "title": "Dossiers",
+      "all": "Tous les médias",
+      "unused": "Non utilisés",
+      "mobileMenu": "Dossiers"
     }
   },
   "page": {
