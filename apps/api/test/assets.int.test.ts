@@ -822,14 +822,22 @@ describe('dossiers médiathèque HTTP', () => {
   });
 
   afterEach(async () => {
-    await prisma.scene.delete({ where: { id: sceneA.id } }).catch(() => {});
-    await prisma.tour.delete({ where: { id: tourB.id } }).catch(() => {});
-    await prisma.tour.delete({ where: { id: tourA.id } }).catch(() => {});
-    await prisma.hotel.delete({ where: { id: hotel.id } }).catch(() => {});
-    await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
-    await prisma.asset.delete({ where: { id: coverAssetB.id } }).catch(() => {});
-    await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
-    await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (sceneA) await prisma.scene.delete({ where: { id: sceneA.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (tourB) await prisma.tour.delete({ where: { id: tourB.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (tourA) await prisma.tour.delete({ where: { id: tourA.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (hotel) await prisma.hotel.delete({ where: { id: hotel.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (city) await prisma.city.delete({ where: { id: city.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (coverAssetB) await prisma.asset.delete({ where: { id: coverAssetB.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (sceneAssetA) await prisma.asset.delete({ where: { id: sceneAssetA.id } }).catch(() => {});
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (coverAssetA) await prisma.asset.delete({ where: { id: coverAssetA.id } }).catch(() => {});
   });
 
   it('GET /api/v1/admin/assets/folders renvoie count=2 pour tourA (cover + 1 scène avec un second asset) et count=1 pour tourB (cover dédiée)', async () => {
