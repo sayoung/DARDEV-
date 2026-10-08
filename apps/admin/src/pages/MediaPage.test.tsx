@@ -315,13 +315,18 @@ describe('MediaPage', () => {
 
 
   describe('Panneau Dossiers', () => {
+    afterEach(() => {
+      window.history.replaceState({}, '', '/');
+    });
+
     it('affiche le dossier actif et gère le clic sur une visite', async () => {
-      // Mock folders data
       fetchMock.mockImplementation((input: unknown, init?: unknown) => {
         const url = requestUrl(input);
         const method = methodOf(input, init);
         
-        if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
+        if (url.endsWith('/auth/me')) {
+          return Promise.resolve(jsonResponse(200, profileAdmin));
+        }
         if (url.includes('/admin/assets/folders')) {
           return Promise.resolve(jsonResponse(200, {
             total: 5,
@@ -339,44 +344,94 @@ describe('MediaPage', () => {
 
       render(<App />);
 
-      // Le panneau doit afficher "Tous les médias (5)" etc.
       const allBtn = await screen.findByRole('button', { name: 'Tous les médias (5)' });
       const tourBtn = await screen.findByRole('button', { name: 'Visite Test (3)' });
       const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (2)' });
 
-      // Par défaut, "Tous les médias" est actif
       expect(allBtn.getAttribute('aria-current')).toBe('page');
       expect(tourBtn.getAttribute('aria-current')).toBeNull();
       expect(unusedBtn.getAttribute('aria-current')).toBeNull();
 
-      // Clic sur la visite
       fireEvent.click(tourBtn);
 
-      // L'URL doit être mise à jour avec dossier=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95 et page=1
       expect(window.location.search).toContain('dossier=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95');
       expect(window.location.search).toContain('page=1');
       
-      // listAssets doit avoir été appelé avec le bon paramètre (tourId)
-      // fetchMock.calls montre que /admin/assets?page=1&pageSize=20&tourId=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95 a été appelé
       const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
       expect(assetCalls.length).toBeGreaterThan(0);
-      const lastCall = assetCalls[assetCalls.length - 1];
-      const lastCallUrl = lastCall && lastCall[0] !== undefined ? requestUrl(lastCall[0]) : '';
+      const lastCall = assetCalls[assetCalls.length - 1] as [unknown, unknown];
+      const lastCallUrl = requestUrl(lastCall[0]);
       expect(lastCallUrl).toContain('tourId=018f6b21-4d39-7a1b-9e45-3f8c5b2a1d95');
+      expect(lastCallUrl).toContain('page=1');
     });
 
     it('gère le clic sur Non utilisés', async () => {
+      fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+        const url = requestUrl(input);
+        const method = methodOf(input, init);
+        
+        if (url.endsWith('/auth/me')) {
+          return Promise.resolve(jsonResponse(200, profileAdmin));
+        }
+        if (url.includes('/admin/assets/folders')) {
+          return Promise.resolve(jsonResponse(200, {
+            total: 5,
+            unusedCount: 2,
+            tours: []
+          }));
+        }
+        if (url.includes('/admin/assets') && method === 'GET') {
+          return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
+        }
+        return Promise.resolve(jsonResponse(404, {}));
+      });
+
       render(<App />);
 
-      const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (0)' });
+      const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (2)' });
       fireEvent.click(unusedBtn);
 
       expect(window.location.search).toContain('dossier=unused');
       
       const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
       expect(assetCalls.length).toBeGreaterThan(0);
-      const lastCall = assetCalls[assetCalls.length - 1];
-      const lastCallUrl = lastCall && lastCall[0] !== undefined ? requestUrl(lastCall[0]) : '';
+      const lastCall = assetCalls[assetCalls.length - 1] as [unknown, unknown];
+      const lastCallUrl = requestUrl(lastCall[0]);
+      expect(lastCallUrl).toContain('unused=true');
+    });
+
+    it('lit le dossier initial depuis l\'URL', async () => {
+      window.history.replaceState(null, '', '/media?dossier=unused');
+
+      fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+        const url = requestUrl(input);
+        const method = methodOf(input, init);
+        
+        if (url.endsWith('/auth/me')) {
+          return Promise.resolve(jsonResponse(200, profileAdmin));
+        }
+        if (url.includes('/admin/assets/folders')) {
+          return Promise.resolve(jsonResponse(200, {
+            total: 5,
+            unusedCount: 2,
+            tours: []
+          }));
+        }
+        if (url.includes('/admin/assets') && method === 'GET') {
+          return Promise.resolve(jsonResponse(200, { items: [], total: 0, page: 1, pageSize: 20 }));
+        }
+        return Promise.resolve(jsonResponse(404, {}));
+      });
+
+      render(<App />);
+
+      const unusedBtn = await screen.findByRole('button', { name: 'Non utilisés (2)' });
+      expect(unusedBtn.getAttribute('aria-current')).toBe('page');
+
+      const assetCalls = fetchMock.mock.calls.filter(call => requestUrl(call[0]).includes('/admin/assets') && !requestUrl(call[0]).includes('/folders'));
+      expect(assetCalls.length).toBeGreaterThan(0);
+      const lastCall = assetCalls[assetCalls.length - 1] as [unknown, unknown];
+      const lastCallUrl = requestUrl(lastCall[0]);
       expect(lastCallUrl).toContain('unused=true');
     });
   });
