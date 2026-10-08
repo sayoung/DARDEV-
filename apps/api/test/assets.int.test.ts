@@ -925,6 +925,53 @@ describe('dossiers médiathèque HTTP', () => {
     expect(listCombined.items).toHaveLength(0);
     expect(listCombined.total).toBe(0);
   });
+
+  it('cohérence du filtre kind entre la liste et les dossiers', async () => {
+    const unusedVideo = await insertAsset(AssetKind.VIDEO, '2026-10-08T00:00:10.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    const videoInTourA = await insertAsset(AssetKind.VIDEO, '2026-10-08T00:00:11.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    const hotspot = await prisma.hotspot.create({
+      data: {
+        sceneId: sceneA.id,
+        type: 'MEDIA',
+        yaw: 0,
+        pitch: 0,
+        label: { fr: 'Video' },
+        icon: 'PLAY',
+        mediaAssetIds: [videoInTourA.id],
+        createdById: adminUser.id,
+      },
+    });
+
+    try {
+      const listRes = await listAssets(editor, 'kind=VIDEO');
+      const listIds = listRes.items.map((i) => i.id).sort();
+      const expectedList = [unusedVideo.id, videoInTourA.id].sort();
+      expect(listIds).toEqual(expectedList);
+
+      const foldersRes = await read('/api/v1/admin/assets/folders?kind=VIDEO', editor);
+      const folders = AssetFoldersResponseSchema.parse(parseJson(foldersRes.body));
+      expect(listRes.total).toBe(folders.total);
+
+      const listTourA = await listAssets(editor, `tourId=${tourA.id}&kind=VIDEO`);
+      const listTourAIds = listTourA.items.map((i) => i.id).sort();
+      expect(listTourAIds).toEqual([videoInTourA.id]);
+      const tourAFolder = folders.tours.find((t) => t.id === tourA.id);
+      expect(listTourA.total).toBe(tourAFolder?.count);
+
+      const listUnused = await listAssets(editor, 'unused=true&kind=VIDEO');
+      const listUnusedIds = listUnused.items.map((i) => i.id).sort();
+      expect(listUnusedIds).toEqual([unusedVideo.id]);
+      expect(listUnused.total).toBe(folders.unusedCount);
+    } finally {
+      await prisma.hotspot.delete({ where: { id: hotspot.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: unusedVideo.id } }).catch(() => {});
+      await prisma.asset.delete({ where: { id: videoInTourA.id } }).catch(() => {});
+    }
+  });
 });
 
 async function insertAsset(
