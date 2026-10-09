@@ -280,6 +280,9 @@
     },
     "notFound": "Tour not found.",
     "backToList": "Back to tours",
+    "backToDetail": "Back to tour",
+    "previousScene": "Previous scene",
+    "nextScene": "Next scene",
     "saveSuccess": "Tour saved."
   },
   "viewer": {

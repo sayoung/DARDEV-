@@ -280,6 +280,9 @@
     },
     "notFound": "لم يتم العثور على الجولة.",
     "backToList": "العودة إلى الجولات",
+    "backToDetail": "Retour à la visite",
+    "previousScene": "Scène précédente",
+    "nextScene": "Scène suivante",
     "saveSuccess": "تم حفظ الجولة."
   },
   "viewer": {

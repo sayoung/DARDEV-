@@ -431,6 +431,9 @@
     },
     "notFound": "Visite introuvable.",
     "backToList": "Retour aux visites",
+    "backToDetail": "Retour à la visite",
+    "previousScene": "Scène précédente",
+    "nextScene": "Scène suivante",
     "saveSuccess": "Visite enregistrée."
   },
   "viewer": {
