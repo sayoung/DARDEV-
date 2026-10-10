@@ -148,6 +148,12 @@ describe('TourForm Pages', () => {
       if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/)) {
+        const match = url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/);
+        const asset = mockAssets.items.find(a => a.id === match?.[1]);
+        if (asset) return Promise.resolve(jsonResponse(200, asset));
+        return Promise.resolve(jsonResponse(404, {}));
+      }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours') && method === 'POST') {
         return Promise.resolve(jsonResponse(201, { ...mockTour, id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d90' }));
@@ -264,6 +270,12 @@ describe('TourForm Pages', () => {
       if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/)) {
+        const match = url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/);
+        const asset = mockAssets.items.find(a => a.id === match?.[1]);
+        if (asset) return Promise.resolve(jsonResponse(200, asset));
+        return Promise.resolve(jsonResponse(404, {}));
+      }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
@@ -310,6 +322,12 @@ describe('TourForm Pages', () => {
       if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/)) {
+        const match = url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/);
+        const asset = mockAssets.items.find(a => a.id === match?.[1]);
+        if (asset) return Promise.resolve(jsonResponse(200, asset));
+        return Promise.resolve(jsonResponse(404, {}));
+      }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
@@ -364,6 +382,12 @@ describe('TourForm Pages', () => {
       if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/)) {
+        const match = url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/);
+        const asset = mockAssets.items.find(a => a.id === match?.[1]);
+        if (asset) return Promise.resolve(jsonResponse(200, asset));
+        return Promise.resolve(jsonResponse(404, {}));
+      }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
@@ -402,6 +426,12 @@ describe('TourForm Pages', () => {
       if (url.includes('/auth/me')) return Promise.resolve(jsonResponse(200, profileAdmin));
       if (url.includes('/admin/cities')) return Promise.resolve(jsonResponse(200, mockCities));
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/)) {
+        const match = url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/);
+        const asset = mockAssets.items.find(a => a.id === match?.[1]);
+        if (asset) return Promise.resolve(jsonResponse(200, asset));
+        return Promise.resolve(jsonResponse(404, {}));
+      }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
@@ -438,6 +468,12 @@ describe('TourForm Pages', () => {
         return Promise.resolve(jsonResponse(500, { error: { code: 'INTERNAL', message: 'fail' } }));
       }
       if (url.includes('/admin/categories')) return Promise.resolve(jsonResponse(200, mockCategories));
+      if (url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/)) {
+        const match = url.match(/\/admin\/assets\/([0-9a-fA-F-]+)$/);
+        const asset = mockAssets.items.find(a => a.id === match?.[1]);
+        if (asset) return Promise.resolve(jsonResponse(200, asset));
+        return Promise.resolve(jsonResponse(404, {}));
+      }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       return Promise.resolve(jsonResponse(404, {}));
     });
