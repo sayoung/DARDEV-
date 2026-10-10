@@ -147,6 +147,9 @@ export async function listAssets(query?: AssetListQuery): Promise<PaginatedAsset
     if (query.kind) url.searchParams.set('kind', query.kind);
     if (query.tourId) url.searchParams.set('tourId', query.tourId);
     if (query.unused) url.searchParams.set('unused', query.unused);
+    if (query.q) url.searchParams.set('q', query.q);
+    if (query.status) url.searchParams.set('status', query.status);
+    if (query.kinds && query.kinds.length > 0) url.searchParams.set('kinds', query.kinds.join(','));
   }
   return requestJson(`${url.pathname}${url.search}`, PaginatedAssetResponseSchema);
 }

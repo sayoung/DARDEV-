@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnprocessableEntityException } from '@nestjs/common';
 import { AssetKind, CityCreateSchema, Role, TourStatus, type Principal } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
@@ -130,6 +130,30 @@ describe('parseAssetListQuery', () => {
 
   it('refuse un kind inconnu', () => {
     expect(() => parseAssetListQuery({ kind: 'GIF' })).toThrow(BadRequestException);
+  });
+
+  it('accepte kinds CSV valide (avec espaces)', () => {
+    expect(parseAssetListQuery({ kinds: 'IMAGE, PANORAMA ' })).toEqual({
+      page: 1,
+      pageSize: 20,
+      kinds: [AssetKind.IMAGE, AssetKind.PANORAMA],
+    });
+  });
+
+  it('refuse kinds CSV invalide', () => {
+    expect(() => parseAssetListQuery({ kinds: 'IMAGE,GIF' })).toThrow(UnprocessableEntityException);
+  });
+
+  it('refuse status invalide', () => {
+    expect(() => parseAssetListQuery({ status: 'INVALID' })).toThrow(UnprocessableEntityException);
+  });
+
+  it('rogne q', () => {
+    expect(parseAssetListQuery({ q: '  test  ' })).toEqual({
+      page: 1,
+      pageSize: 20,
+      q: 'test',
+    });
   });
 });
 

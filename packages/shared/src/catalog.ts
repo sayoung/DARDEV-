@@ -345,7 +345,10 @@ export type TourListQuery = z.infer<typeof TourListQuerySchema>;
  */
 export const AssetListQuerySchema = PaginationQuerySchema.extend({
   page: z.number().int().min(1).default(1),
+  q: z.string().trim().max(100).optional(),
+  status: z.enum(ProcessingStatus).optional(),
   kind: z.enum(AssetKind).optional(),
+  kinds: z.array(z.enum(AssetKind)).optional(),
   tourId: idSchema.optional(),
   unused: z.literal('true').optional(),
 });

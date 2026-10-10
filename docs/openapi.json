@@ -3138,6 +3138,29 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "PROCESSING",
+                "READY",
+                "ERROR"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "enum": [
                 "PANORAMA",
                 "IMAGE",
@@ -3147,6 +3170,23 @@
             },
             "required": false,
             "name": "kind",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "PANORAMA",
+                  "IMAGE",
+                  "AUDIO",
+                  "VIDEO"
+                ]
+              }
+            },
+            "required": false,
+            "name": "kinds",
             "in": "query"
           },
           {

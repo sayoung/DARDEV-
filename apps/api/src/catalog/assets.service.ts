@@ -54,7 +54,23 @@ export class AssetsService {
       return { items: [], page: query.page, pageSize: query.pageSize, total: 0 };
     }
 
-    const conditions: Prisma.AssetWhereInput[] = [kindWhere(query.kind)];
+    const conditions: Prisma.AssetWhereInput[] = [];
+
+    if (query.kind !== undefined) {
+      conditions.push({ kind: toPrismaKind(query.kind) });
+    } else if (query.kinds !== undefined && query.kinds.length > 0) {
+      conditions.push({ kind: { in: query.kinds.map(toPrismaKind) } });
+    } else {
+      conditions.push({});
+    }
+
+    if (query.status !== undefined) {
+      conditions.push({ processingStatus: query.status });
+    }
+
+    if (query.q !== undefined && query.q !== '') {
+      conditions.push({ originalKey: { contains: query.q, mode: 'insensitive' } });
+    }
 
     if (query.tourId !== undefined || query.unused === 'true') {
       const usage = await this.usageIndex();

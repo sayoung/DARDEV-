@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnprocessableEntityException } from '@nestjs/common';
 import {
   AssetFoldersQuerySchema,
   AssetListQuerySchema,
@@ -71,7 +71,27 @@ export function parseAssetListQuery(query: Record<string, unknown>): AssetListQu
   assignString(raw, 'kind', query.kind);
   assignString(raw, 'tourId', query.tourId);
   assignString(raw, 'unused', query.unused);
-  return parseBody(AssetListQuerySchema, raw);
+  assignString(raw, 'q', query.q);
+  assignString(raw, 'status', query.status);
+
+  if (typeof query.kinds === 'string') {
+    raw.kinds = query.kinds.split(',').map((k) => k.trim());
+  } else if (query.kinds !== undefined) {
+    raw.kinds = query.kinds;
+  }
+
+  const parsed = AssetListQuerySchema.safeParse(raw);
+  if (!parsed.success) {
+    const issues = parsed.error.issues;
+    const isNewFieldError = issues.some(
+      (issue) => issue.path[0] === 'q' || issue.path[0] === 'status' || issue.path[0] === 'kinds'
+    );
+    if (isNewFieldError) {
+      throw new UnprocessableEntityException();
+    }
+    throw new BadRequestException();
+  }
+  return parsed.data;
 }
 
 /**
