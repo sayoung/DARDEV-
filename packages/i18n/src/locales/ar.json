@@ -100,7 +100,14 @@
         "PROCESSING": "قيد المعالجة",
         "READY": "جاهز",
         "ERROR": "خطأ"
-      }
+      },
+      "libraryTab": "مكتبة الوسائط",
+      "uploadTab": "رفع من جهاز الكمبيوتر",
+      "upload": "رفع",
+      "processing": "جاري المعالجة…",
+      "uploadError": "خطأ أثناء الرفع.",
+      "processingError": "خطأ في معالجة الوسائط.",
+      "chooseFile": "اختر ملفًا"
     },
     "translation": {
       "tab": {

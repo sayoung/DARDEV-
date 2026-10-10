@@ -123,7 +123,14 @@
       "kindFilterLabel": "Filtrer par type",
       "loadMore": "Charger plus",
       "allKinds": "Tous les types",
-      "pickerTitle": "Sélectionner un média"
+      "pickerTitle": "Sélectionner un média",
+      "libraryTab": "Médiathèque",
+      "uploadTab": "Envoyer depuis mon ordinateur",
+      "upload": "Envoyer",
+      "processing": "Traitement en cours…",
+      "uploadError": "Erreur lors de l'envoi.",
+      "processingError": "Erreur de traitement du média.",
+      "chooseFile": "Choisir un fichier"
     },
     "translation": {
       "tab": {
