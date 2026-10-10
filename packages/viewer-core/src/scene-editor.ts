@@ -94,7 +94,7 @@ export function mountSceneEditor(
     defaultPitch: options.initialView.pitch,
     defaultZoomLvl: options.initialView.zoom,
     plugins: [
-      [MarkersPlugin, {}],
+      [MarkersPlugin, { clickEventOnMarker: true }],
     ],
   });
 
@@ -103,12 +103,21 @@ export function mountSceneEditor(
   const markerConfigs: MarkerConfig[] = options.markers.map(toEditorMarkerConfig);
   markersPlugin.setMarkers(markerConfigs);
 
+  viewer.container.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+
+  viewer.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+  });
+
   viewer.addEventListener('click', (e) => {
     if (e.data.rightclick) {
       return;
     }
     
-    if (e.data.target?.closest('.psv-marker')) {
+    if (e.data.marker || e.data.target?.closest('.psv-marker')) {
        return;
     }
     
@@ -191,15 +200,13 @@ export function mountSceneEditor(
         if (marker) id = marker.id;
       }
       if (typeof id !== 'string') return;
-
-      e.stopPropagation();
-      e.preventDefault();
       
       draggedMarkerId = id;
       isDragging = false;
       startX = e.clientX;
       startY = e.clientY;
       
+      viewer.setOption('mousemove', false);
       viewer.container.setPointerCapture(e.pointerId);
     };
 
@@ -211,13 +218,15 @@ export function mountSceneEditor(
         const dy = e.clientY - startY;
         if (dx * dx + dy * dy >= 16) {
           isDragging = true;
-          viewer.setOption('mousemove', false);
         } else {
           return;
         }
       }
 
-      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
+      const boundingRect = viewer.container.getBoundingClientRect();
+      const viewerX = e.clientX - boundingRect.left;
+      const viewerY = e.clientY - boundingRect.top;
+      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: viewerX, y: viewerY });
       if (!isSphericalPosition(spherical)) return;
       
       markersPlugin.updateMarker({
@@ -230,13 +239,18 @@ export function mountSceneEditor(
       if (!draggedMarkerId) return;
       
       viewer.container.releasePointerCapture(e.pointerId);
+      viewer.setOption('mousemove', true);
       
       if (isDragging) {
-        const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
+        const boundingRect = viewer.container.getBoundingClientRect();
+        const viewerX = e.clientX - boundingRect.left;
+        const viewerY = e.clientY - boundingRect.top;
+        const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: viewerX, y: viewerY });
         if (isSphericalPosition(spherical)) {
           onMarkerMoveCb(draggedMarkerId, normalizeYaw(spherical.yaw), spherical.pitch);
         }
-        viewer.setOption('mousemove', true);
+      } else {
+        options.onMarkerSelect(draggedMarkerId);
       }
       
       draggedMarkerId = null;
