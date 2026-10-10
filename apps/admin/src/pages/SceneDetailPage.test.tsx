@@ -1,11 +1,11 @@
-import { render, screen, waitFor, fireEvent, cleanup, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, cleanup, act, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { i18n } from '../i18n.js';
 import { SceneDetailPage } from './SceneDetailPage.js';
 import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { getScene, createScene, updateScene, listScenes, getAsset, listHotspots, createHotspot, updateHotspot, deleteHotspot } from '../api/catalog.js';
-import { Role, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus, type HotspotResponse, HotspotType, HotspotIcon } from '@xplor/shared';
+import { getScene, createScene, updateScene, listScenes, getAsset, listHotspots, createHotspot, updateHotspot, deleteHotspot, getTour } from '../api/catalog.js';
+import { Role, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus, type HotspotResponse, HotspotType, HotspotIcon, type TourResponse } from '@xplor/shared';
 import { SceneEditor360 } from '../components/SceneEditor360.js';
 
 vi.mock('../router.js', () => ({
@@ -19,6 +19,7 @@ vi.mock('../auth/AuthProvider.js', () => ({
 }));
 
 vi.mock('../api/catalog.js', () => ({
+  getTour: vi.fn(),
   getScene: vi.fn(),
   createScene: vi.fn(),
   updateScene: vi.fn(),
@@ -115,6 +116,18 @@ describe('SceneDetailPage', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     await i18n.changeLanguage('fr');
+    vi.mocked(getTour).mockResolvedValue({
+      id: 't-1',
+      title: { fr: 'Visite de test' },
+      description: null,
+      status: 'DRAFT',
+      category: null,
+      city: null,
+      location: null,
+      thumbnailAssetId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as unknown as TourResponse);
   });
 
   afterEach(() => {
@@ -130,6 +143,7 @@ describe('SceneDetailPage', () => {
       search: '',
     });
     vi.mocked(getScene).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(listScenes).mockImplementation(() => new Promise(() => {}));
 
     render(<SceneDetailPage />);
     expect(screen.getByText('Chargement...')).toBeDefined();
@@ -1100,6 +1114,129 @@ describe('SceneDetailPage', () => {
     });
 
     expect(screen.queryByText("Définir l'orientation d'arrivée")).toBeNull();
+  });
+
+  it('renders breadcrumbs and back link correctly', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+    
+    vi.mocked(getTour).mockResolvedValue({
+      id: 't-1',
+      title: { fr: 'Ma visite' },
+      description: null,
+      status: 'DRAFT',
+      category: null,
+      city: null,
+      location: null,
+      thumbnailAssetId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as unknown as TourResponse);
+
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1', tourId: 't-1', title: { fr: 'Ma scène' }, panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 0, hotspotCount: 0,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    vi.mocked(listScenes).mockResolvedValue([mockSceneResponse]);
+    vi.mocked(updateScene).mockResolvedValue({ ...mockSceneResponse, title: { fr: 'Ma scène modifiée' } });
+
+    const { container } = render(<SceneDetailPage />);
+    
+    // Check back link
+    const backLink = await screen.findByText('← Retour à la visite');
+    expect(backLink).toBeDefined();
+    expect(backLink.getAttribute('href')).toBe('/tours/t-1');
+
+    // Check click behavior on back link
+    fireEvent.click(backLink);
+    expect(navigate).toHaveBeenCalledWith('/tours/t-1');
+    vi.mocked(navigate).mockClear();
+
+    // Check ctrl+click behavior (should not call navigate)
+    fireEvent.click(backLink, { ctrlKey: true });
+    expect(navigate).not.toHaveBeenCalled();
+
+    // Check breadcrumbs
+    let toursLink = await screen.findByText('Visites');
+    expect(toursLink.getAttribute('href')).toBe('/tours');
+
+    let tourLink = await screen.findByText('Ma visite');
+    expect(tourLink.getAttribute('href')).toBe('/tours/t-1');
+
+    const currentScene = await screen.findByText('Ma scène');
+    expect(currentScene).toBeDefined();
+
+    // Verify breadcrumbs after save
+    const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
+    fireEvent.change(titleInput, { target: { value: 'Ma scène modifiée' } });
+    const form = container.querySelector('form') as HTMLFormElement;
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(updateScene).toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText('Scène enregistrée avec succès')).toBeDefined();
+
+    const updatedSceneInBreadcrumb = await screen.findByText('Ma scène modifiée');
+    expect(updatedSceneInBreadcrumb).toBeDefined();
+
+    // Re-verify links after save
+    toursLink = await screen.findByText('Visites');
+    expect(toursLink.getAttribute('href')).toBe('/tours');
+
+    tourLink = await screen.findByText('Ma visite');
+    expect(tourLink.getAttribute('href')).toBe('/tours/t-1');
+    
+    const backLinkAfterSave = await screen.findByText('← Retour à la visite');
+    expect(backLinkAfterSave.getAttribute('href')).toBe('/tours/t-1');
+  });
+
+  it('renders breadcrumbs for a new scene', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 'new' },
+      notice: null,
+      search: '',
+    });
+    
+    vi.mocked(getTour).mockResolvedValue({
+      id: 't-1',
+      title: { fr: 'Ma visite' },
+      description: null,
+      status: 'DRAFT',
+      category: null,
+      city: null,
+      location: null,
+      thumbnailAssetId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as unknown as TourResponse);
+
+    vi.mocked(listScenes).mockResolvedValue([]);
+
+    render(<SceneDetailPage />);
+    
+    // Check breadcrumbs
+    const toursLink = await screen.findByText('Visites');
+    expect(toursLink).toBeDefined();
+
+    const tourLink = await screen.findByText('Ma visite');
+    expect(tourLink).toBeDefined();
+
+    const navElement = screen.getByRole('navigation', { name: "Fil d'Ariane" });
+    const breadcrumbList = within(navElement).getByRole('list');
+    const items = within(breadcrumbList).getAllByRole('listitem');
+    const lastItem = items[items.length - 1];
+    expect(lastItem).toBeDefined();
+    expect(lastItem?.getAttribute('aria-current')).toBe('page');
+    expect(lastItem?.textContent).toBe('Nouvelle scène');
   });
 
 });

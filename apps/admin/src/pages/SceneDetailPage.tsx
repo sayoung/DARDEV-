@@ -4,11 +4,11 @@ import { useAuth } from '../auth/AuthProvider.js';
 import { SceneForm } from './SceneForm.js';
 import { HotspotForm } from './HotspotForm.js';
 import { ArrivalOrientationDialog } from './ArrivalOrientationDialog.js';
-import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot, deleteHotspot, updateHotspot } from '../api/catalog.js';
+import { getScene, updateScene, createScene, deleteScene, listScenes, getAsset, listHotspots, createHotspot, deleteHotspot, updateHotspot, getTour } from '../api/catalog.js';
 import { createDebouncedSaver, type SaveStatus } from '../editor/debouncedSaver.js';
 import { createEditHistory } from '../editor/editHistory.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
-import { Role, type SceneResponse, type SceneCreate, type HotspotCreate, z, ProcessingStatus, type HotspotResponse, type HotspotUpdate, HotspotType } from '@xplor/shared';
+import { Role, type SceneResponse, type SceneCreate, type HotspotCreate, z, ProcessingStatus, type HotspotResponse, type HotspotUpdate, HotspotType, type TourResponse, localize } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { Card, CardContent } from '../components/ui/Card.js';
@@ -18,6 +18,7 @@ import { SceneCreateSchema, SceneUpdateSchema } from '@xplor/shared';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs.js';
 import { SceneEditor360, type SceneEditor360Handle } from '../components/SceneEditor360.js';
 import { editorMarkers, editorPanorama, type EditorMarker, type EditorPanorama } from '@xplor/viewer-core';
+import { getSceneNavLinks } from './sceneNavLinks.js';
 
 function normalizeLang(lang: string): 'fr' | 'ar' | 'en' {
   if (lang === 'ar' || lang === 'en') {
@@ -484,13 +485,15 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
 }
 
 export function SceneDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const auth = useAuth();
   const { route } = useAppLocation();
   const tourId = route.name === 'scene-detail' ? route.tourId : '';
   const sceneId = route.name === 'scene-detail' ? route.sceneId : '';
   const isNew = sceneId === 'new';
 
+  const [tour, setTour] = useState<TourResponse | null>(null);
+  const [tourScenes, setTourScenes] = useState<SceneResponse[]>([]);
   const [scene, setScene] = useState<SceneResponse | null>(null);
   const [weight, setWeight] = useState(0);
   const [loading, setLoading] = useState(!isNew);
@@ -503,9 +506,19 @@ export function SceneDetailPage() {
   useEffect(() => {
     let active = true;
     if (auth.state.status === 'authenticated' && (auth.state.profile.role === Role.ADMIN || auth.state.profile.role === Role.EDITOR) && tourId) {
+      getTour(tourId).then((fetchedTour) => {
+        if (active) setTour(fetchedTour);
+      }).catch(() => {});
+
+      const scenesPromise = listScenes(tourId);
+
+      scenesPromise.then((scenes) => {
+        if (active) setTourScenes(scenes);
+      }).catch(() => {});
+
       if (isNew) {
         setLoading(true);
-        listScenes(tourId).then((scenes) => {
+        scenesPromise.then((scenes) => {
           if (active) {
             setWeight(scenes.length);
             setLoading(false);
@@ -621,8 +634,58 @@ export function SceneDetailPage() {
     }
   };
 
+  const navLinks = getSceneNavLinks({
+    tourId,
+    currentSceneId: isNew ? null : sceneId,
+    scenes: tourScenes,
+  });
+
+  const handleLinkClick = (url: string) => (event: React.MouseEvent) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0) return;
+    event.preventDefault();
+    navigate(url);
+  };
+
   return (
     <div className="space-y-6 pb-8">
+      <div className="space-y-4">
+        <nav aria-label={t('common.breadcrumb')}>
+          <ol className="flex flex-wrap items-center space-x-2 text-sm text-muted-foreground">
+            <li>
+              <a
+                href={hrefFor(navLinks.toursListUrl)}
+                className="hover:underline"
+                onClick={handleLinkClick(navLinks.toursListUrl)}
+              >
+                {t('nav.tours')}
+              </a>
+            </li>
+            <li aria-hidden="true">›</li>
+            <li>
+              <a
+                href={hrefFor(navLinks.tourDetailUrl)}
+                className="hover:underline"
+                onClick={handleLinkClick(navLinks.tourDetailUrl)}
+              >
+                {tour ? localize(tour.title, i18n.language) : t('common.loading')}
+              </a>
+            </li>
+            <li aria-hidden="true">›</li>
+            <li className="text-foreground font-medium" aria-current="page">
+              {isNew ? t('tour.newScene') : (scene ? localize(scene.title, i18n.language) : t('common.loading'))}
+            </li>
+          </ol>
+        </nav>
+        <div>
+          <a
+            href={hrefFor(navLinks.tourDetailUrl)}
+            className="inline-flex items-center text-sm font-medium text-primary hover:underline"
+            onClick={handleLinkClick(navLinks.tourDetailUrl)}
+          >
+            ← {t('tour.backToDetail')}
+          </a>
+        </div>
+      </div>
       <PageHeader 
         title={isNew ? t('catalog.scene.actions.add') : t('catalog.edit')} 
       />
