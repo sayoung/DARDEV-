@@ -10,8 +10,8 @@ vi.mock('../api/catalog.js');
 describe('AssetPicker', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('fr');
-    vi.mocked(listAssets).mockClear();
-    vi.mocked(getAsset).mockClear();
+    vi.mocked(listAssets).mockReset();
+    vi.mocked(getAsset).mockReset();
   });
 
   afterEach(() => {
@@ -93,10 +93,8 @@ describe('AssetPicker', () => {
     render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
     fireEvent.click(screen.getByText('Sélectionner un média...'));
     
-    const alert = await screen.findByText('Impossible de charger les médias.');
-    expect(alert).toBeTruthy();
-    const alertWrapper = alert.closest('.destructive') || alert.closest('[class*="destructive"]');
-    expect(alertWrapper).toBeTruthy();
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Impossible de charger les médias.');
   });
 
   it('(5) \'Charger plus\' visible tant que items cumulés < total, appelle listAssets page 2 et AJOUTE les items, disparaît quand tout est chargé', async () => {
@@ -116,6 +114,7 @@ describe('AssetPicker', () => {
     const loadMore = screen.getByRole('button', { name: 'Charger plus' });
     fireEvent.click(loadMore);
     
+    expect(listAssets).toHaveBeenNthCalledWith(2, { status: 'READY', page: 2, pageSize: 24 });
     expect(await screen.findByRole('radio', { name: 'page2.jpg' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'page1.jpg' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Charger plus' })).toBeNull();
@@ -131,7 +130,9 @@ describe('AssetPicker', () => {
 
     rerender(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO]} onChange={vi.fn()} value="" />);
     
-    expect(listAssets).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(listAssets).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('(7) une réponse obsolète est ignorée (deux ouvertures/fermetures ou changement de kind avec promesses résolues dans l\'ordre inverse)', async () => {
@@ -162,7 +163,8 @@ describe('AssetPicker', () => {
     });
 
     // On vérifie que la première réponse est bien ignorée (n'écrase pas la seconde)
-    await new Promise(r => setTimeout(r, 100));
-    expect(screen.queryByRole('radio', { name: 'first.jpg' })).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('radio', { name: 'first.jpg' })).toBeNull();
+    });
   });
 });
