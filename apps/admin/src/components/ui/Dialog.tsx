@@ -6,16 +6,18 @@ export function Dialog({
   open,
   onOpenChange,
   children,
+  className,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => { onOpenChange(false); }}>
-      <div role="dialog" aria-modal="true" className="w-full max-w-lg" onClick={(e) => { e.stopPropagation(); }}>
+      <div role="dialog" aria-modal="true" className={cn("w-full max-w-lg", className)} onClick={(e) => { e.stopPropagation(); }}>
         <Card className="w-full shadow-lg">
           {children}
         </Card>

@@ -21,7 +21,9 @@
     "error": {
       "generic": "Une erreur est survenue."
     },
-    "unknown": "Inconnu"
+    "unknown": "Inconnu",
+    "select": "Sélectionner",
+    "change": "Modifier"
   },
   "auth": {
     "slogan": "Votre voyage commence ici",
@@ -116,7 +118,10 @@
         "PROCESSING": "En cours",
         "READY": "Prêt",
         "ERROR": "Erreur"
-      }
+      },
+      "loadMore": "Charger plus",
+      "allKinds": "Tous les types",
+      "pickerTitle": "Sélectionner un média"
     },
     "translation": {
       "tab": {
