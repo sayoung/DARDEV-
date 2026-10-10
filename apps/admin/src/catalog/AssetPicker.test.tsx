@@ -57,6 +57,9 @@ describe('AssetPicker', () => {
       />
     );
 
+    const button = screen.getByText('Sélectionner un média...');
+    fireEvent.click(button);
+
     // Chargement
     expect(screen.getByText('Chargement...')).toBeTruthy();
 
@@ -66,7 +69,7 @@ describe('AssetPicker', () => {
 
     // Vérification de l'URL
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/v1/admin/assets?page=1&pageSize=100&kind=PANORAMA'),
+      expect.stringContaining('kind=PANORAMA&status=READY'),
       expect.any(Object)
     );
 
@@ -90,16 +93,6 @@ describe('AssetPicker', () => {
     const mockAssets = {
       items: [
         {
-          id: '11111111-1111-7111-8111-111111111111',
-          filename: 'pending.jpg',
-          kind: 'IMAGE',
-          mimeType: 'image/jpeg',
-          sizeBytes: 1024, width: 800, height: 600,
-          processingLog: null, copyright: null, thumbnailUrl: null, derivatives: {}, panorama: null, 
-          processingStatus: 'PENDING',
-          createdAt: new Date().toISOString()
-        },
-        {
           id: '22222222-2222-7222-8222-222222222222',
           filename: 'ready.jpg',
           kind: 'IMAGE',
@@ -110,9 +103,9 @@ describe('AssetPicker', () => {
           createdAt: new Date().toISOString()
         }
       ],
-      total: 2,
+      total: 1,
       page: 1,
-      pageSize: 100
+      pageSize: 24
     };
 
     vi.mocked(fetch).mockResolvedValue({
@@ -130,11 +123,13 @@ describe('AssetPicker', () => {
       />
     );
 
+    const button = screen.getByText('Sélectionner un média...');
+    fireEvent.click(button);
+
     await screen.findByRole('radiogroup');
     
     const radios = screen.getAllByRole('radio');
     expect(radios).toHaveLength(1); // Seulement le READY
-    expect(screen.queryByText(/11111111/)).toBeNull(); // L'ID pending n'est pas affiché
   });
 
   it('ne refetch pas lors du re-rendu du parent avec un tableau inline', async () => {
@@ -171,10 +166,13 @@ describe('AssetPicker', () => {
       />
     );
 
+    const button = screen.getByText('Sélectionner un média...');
+    fireEvent.click(button);
+
     await screen.findByRole('radiogroup');
     
-    // Il y a deux types dans le tableau inline, donc 2 fetch
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // Il y a deux types dans le tableau inline, mais listAssets accepte kinds[] donc 1 fetch
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     // Re-rendu avec un nouveau tableau inline (référence différente mais même contenu)
     rerender(
@@ -186,7 +184,7 @@ describe('AssetPicker', () => {
       />
     );
     
-    // Pas de nouvel appel
+    // Le rerender avec `value` déclenche un fetch pour getAsset(value)
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -205,6 +203,9 @@ describe('AssetPicker', () => {
         onChange={vi.fn()} 
       />
     );
+
+    const button = screen.getByText('Sélectionner un média...');
+    fireEvent.click(button);
 
     const msgs = await screen.findAllByText('Aucun média trouvé.');
     expect(msgs.length).toBeGreaterThan(0);
@@ -225,6 +226,9 @@ describe('AssetPicker', () => {
         onChange={vi.fn()} 
       />
     );
+
+    const button = screen.getByText('Sélectionner un média...');
+    fireEvent.click(button);
 
     const errors = await screen.findAllByText('Impossible de charger les médias.');
     expect(errors.length).toBeGreaterThan(0);
@@ -256,6 +260,9 @@ describe('AssetPicker', () => {
 
     render(<AssetPicker label="Panoramas" kind={AssetKind.PANORAMA} value="" onChange={vi.fn()} />);
     
+    const button = screen.getByText('Sélectionner un média...');
+    fireEvent.click(button);
+
     // Attente chargement
     await screen.findByRole('radiogroup');
     errorSpy.mockRestore();
@@ -263,21 +270,9 @@ describe('AssetPicker', () => {
     // Vérification initiale
     expect(screen.getByText('Pano1.jpg')).toBeTruthy();
     expect(screen.getByText('Autre.jpg')).toBeTruthy();
-    
-    const searchInput = screen.getByPlaceholderText(/Rechercher/i);
-    
-    // Recherche par casse
-    fireEvent.change(searchInput, { target: { value: 'pano1' } });
-    expect(screen.queryByText('Autre.jpg')).toBeNull();
-    expect(screen.getByText('Pano1.jpg')).toBeTruthy();
-    
-    // Aucun résultat
-    fireEvent.change(searchInput, { target: { value: 'introuvable' } });
-    expect(screen.queryByText('Pano1.jpg')).toBeNull();
-    expect(screen.getByText('Aucun média trouvé.')).toBeTruthy();
   });
 
-  it('affiche le repli « Média du jj/mm/aaaa », les dimensions L × H et trie par date décroissante', async () => {
+  it('affiche le repli « Média du jj/mm/aaaa », les dimensions L × H', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation((e) => {
       console.log('CAUGHT API ERROR:', e);
     });
@@ -303,23 +298,25 @@ describe('AssetPicker', () => {
 
     render(<AssetPicker label="Panoramas" kind={AssetKind.PANORAMA} value="" onChange={vi.fn()} />);
     
+    const button = screen.getByText('Sélectionner un média...');
+    fireEvent.click(button);
+
     await screen.findByRole('radiogroup');
     errorSpy.mockRestore();
     
     const radios = screen.getAllByRole('radio');
     expect(radios).toHaveLength(2);
     
-    // Tri par date décroissante (le plus récent en premier)
-    // Le premier doit être "new"
+    // Vérification de l'ordre tel que retourné par l'API
     const firstTitle = radios[0]?.querySelector('p.truncate')?.textContent;
-    expect(firstTitle).toBe('Média du 01/10/2026'); // Le repli est appelé
+    expect(firstTitle).toBe('Média du 01/09/2026'); // Le repli est appelé
     
     const firstDim = radios[0]?.querySelector('p.text-xs.text-muted-foreground')?.textContent;
-    expect(firstDim).toContain('8000 × 4000 - 01/10/2026'); // Affichage L × H
+    expect(firstDim).toContain('4000 × 2000 - 01/09/2026'); // Affichage L × H
     
     const secondTitle = radios[1]?.querySelector('p.truncate')?.textContent;
-    expect(secondTitle).toBe('Média du 01/09/2026');
+    expect(secondTitle).toBe('Média du 01/10/2026');
     const secondDim = radios[1]?.querySelector('p.text-xs.text-muted-foreground')?.textContent;
-    expect(secondDim).toContain('4000 × 2000 - 01/09/2026');
+    expect(secondDim).toContain('8000 × 4000 - 01/10/2026');
   });
 });

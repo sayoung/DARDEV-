@@ -173,6 +173,8 @@ describe('TourForm Pages', () => {
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
     fireEvent.click(screen.getByLabelText(/Musée/));
     
+    const thumbnailBtn = screen.getByLabelText(new RegExp(resources.fr.tour.form.coverAssetId));
+    fireEvent.click(thumbnailBtn);
     // Le média READY est présent (image d9e)
     expect(await screen.findByRole('radio', { name: /mock1\.jpg/ })).toBeTruthy();
     
@@ -215,6 +217,8 @@ describe('TourForm Pages', () => {
     fireEvent.change(frSummaryInput, { target: { value: 'Un résumé court' } });
 
     fireEvent.change(screen.getByLabelText(resources.fr.tour.form.cityId), { target: { value: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c' } });
+    const thumbnailBtn = screen.getByLabelText(new RegExp(resources.fr.tour.form.coverAssetId));
+    fireEvent.click(thumbnailBtn);
     fireEvent.click(await screen.findByRole('radio', { name: /mock1\.jpg/ }));
 
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
