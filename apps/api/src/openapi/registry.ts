@@ -529,7 +529,13 @@ function registerAssetReads(): void {
     summary: 'Lister les médias',
     tags: ['Catalogue'],
     security: sessionSecurity,
-    request: { query: AssetListQuerySchema },
+    request: {
+      query: AssetListQuerySchema.extend({
+        q: AssetListQuerySchema.shape.q.describe('Recherche textuelle dans le nom original du fichier (insensible à la casse).'),
+        status: AssetListQuerySchema.shape.status.describe('Filtrer par statut de traitement.'),
+        kinds: AssetListQuerySchema.shape.kinds.describe('Filtrer par une liste de natures autorisées.'),
+      }),
+    },
     responses: {
       '200': jsonResponse(
         'Page de médias, triée par date de création décroissante.',

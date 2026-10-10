@@ -3138,9 +3138,11 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 100
+              "maxLength": 100,
+              "description": "Recherche textuelle dans le nom original du fichier (insensible à la casse)."
             },
             "required": false,
+            "description": "Recherche textuelle dans le nom original du fichier (insensible à la casse).",
             "name": "q",
             "in": "query"
           },
@@ -3152,9 +3154,11 @@
                 "PROCESSING",
                 "READY",
                 "ERROR"
-              ]
+              ],
+              "description": "Filtrer par statut de traitement."
             },
             "required": false,
+            "description": "Filtrer par statut de traitement.",
             "name": "status",
             "in": "query"
           },
@@ -3183,9 +3187,11 @@
                   "AUDIO",
                   "VIDEO"
                 ]
-              }
+              },
+              "description": "Filtrer par une liste de natures autorisées."
             },
             "required": false,
+            "description": "Filtrer par une liste de natures autorisées.",
             "name": "kinds",
             "in": "query"
           },
