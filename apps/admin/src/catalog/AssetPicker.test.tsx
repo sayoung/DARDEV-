@@ -1,13 +1,23 @@
-﻿import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { AssetPicker } from './AssetPicker.js';
 import { listAssets, getAsset } from '../api/catalog.js';
+import { uploadAsset } from '../api/client.js';
+import { waitUntilAssetReady } from './media-polling.js';
 import { AssetKind, ProcessingStatus, type AssetResponse } from '@xplor/shared';
 import { i18n } from '../i18n.js';
 
 vi.mock('../api/catalog.js', () => ({
   listAssets: vi.fn(),
   getAsset: vi.fn(),
+}));
+
+vi.mock('../api/client.js', () => ({
+  uploadAsset: vi.fn(),
+}));
+
+vi.mock('./media-polling.js', () => ({
+  waitUntilAssetReady: vi.fn(),
 }));
 
 describe('AssetPicker', () => {
@@ -243,5 +253,80 @@ describe('AssetPicker', () => {
 
     expect(screen.queryByRole('radio', { name: 'first.jpg' })).toBeNull();
     expect(screen.getByRole('radio', { name: 'second.jpg' })).toBeTruthy();
+  });
+
+  it('(9) envoi puis sélection automatique, indicateur de traitement visible', async () => {
+    vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
+    const onChange = vi.fn();
+
+    render(<AssetPicker label="Média" onChange={onChange} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+
+    const uploadTab = await screen.findByRole('tab', { name: 'Envoyer depuis mon ordinateur' });
+    fireEvent.pointerDown(uploadTab);
+    fireEvent.mouseDown(uploadTab);
+    fireEvent.click(uploadTab);
+
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    const input = await screen.findByLabelText('Choisir un fichier');
+    fireEvent.change(input, { target: { files: [file] } });
+
+    let resolveWait: (val: AssetResponse) => void = () => {};
+    const waitPromise = new Promise<AssetResponse>((resolve) => { resolveWait = resolve; });
+    vi.mocked(uploadAsset).mockResolvedValueOnce(makeMockAsset('new-asset', 'test.jpg', AssetKind.IMAGE));
+    vi.mocked(waitUntilAssetReady).mockReturnValueOnce(waitPromise);
+
+    const submitBtn = screen.getByRole('button', { name: 'Envoyer' });
+    fireEvent.click(submitBtn);
+
+    expect(uploadAsset).toHaveBeenCalledWith(file, AssetKind.IMAGE, expect.any(Function));
+
+    await act(async () => {
+      await Promise.resolve(); // wait for uploadAsset to resolve
+    });
+
+    expect(screen.getByText('Traitement en cours…')).toBeTruthy();
+    expect(waitUntilAssetReady).toHaveBeenCalledWith('new-asset', expect.any(Object));
+
+    resolveWait(makeMockAsset('new-asset', 'test.jpg', AssetKind.IMAGE));
+
+    await act(async () => {
+      await waitPromise;
+    });
+
+    expect(onChange).toHaveBeenCalledWith('new-asset');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+  });
+
+  it('(10) erreur affichée si le média passe en ERROR', async () => {
+    vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
+    const onChange = vi.fn();
+
+    render(<AssetPicker label="Média" onChange={onChange} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+
+    const uploadTab = await screen.findByRole('tab', { name: 'Envoyer depuis mon ordinateur' });
+    fireEvent.pointerDown(uploadTab);
+    fireEvent.mouseDown(uploadTab);
+    fireEvent.click(uploadTab);
+
+    const file = new File(['error'], 'error.jpg', { type: 'image/jpeg' });
+    const input = await screen.findByLabelText('Choisir un fichier');
+    fireEvent.change(input, { target: { files: [file] } });
+
+    vi.mocked(uploadAsset).mockResolvedValueOnce(makeMockAsset('err-asset', 'error.jpg', AssetKind.IMAGE));
+    vi.mocked(waitUntilAssetReady).mockRejectedValueOnce(new Error('Asset processing failed'));
+
+    const submitBtn = screen.getByRole('button', { name: 'Envoyer' });
+    fireEvent.click(submitBtn);
+
+    await act(async () => {
+      await Promise.resolve(); // uploadAsset
+      await Promise.resolve(); // waitUntilAssetReady catch
+    });
+
+    expect(await screen.findByText('Erreur de traitement du média.')).toBeTruthy();
   });
 });

@@ -100,7 +100,14 @@
         "PROCESSING": "Processing",
         "READY": "Ready",
         "ERROR": "Error"
-      }
+      },
+      "libraryTab": "Media Library",
+      "uploadTab": "Upload from my computer",
+      "upload": "Upload",
+      "processing": "Processing…",
+      "uploadError": "Upload error.",
+      "processingError": "Media processing error.",
+      "chooseFile": "Choose file"
     },
     "translation": {
       "tab": {
