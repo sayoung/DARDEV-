@@ -1,5 +1,6 @@
 {
   "common": {
+    "breadcrumb": "Breadcrumb",
     "appName": "Xplor",
     "loading": "Loading...",
     "language": {
@@ -265,6 +266,7 @@
     }
   },
   "tour": {
+    "newScene": "New scene",
     "form": {
       "title": "Title",
       "summary": "Summary",

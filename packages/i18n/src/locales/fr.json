@@ -1,5 +1,6 @@
 {
   "common": {
+    "breadcrumb": "Fil d'Ariane",
     "appName": "Xplor",
     "loading": "Chargement...",
     "language": {
@@ -415,6 +416,7 @@
     }
   },
   "tour": {
+    "newScene": "Nouvelle scène",
     "form": {
       "title": "Titre",
       "summary": "Résumé",
