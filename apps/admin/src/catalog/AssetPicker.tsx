@@ -83,6 +83,28 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
     };
   }, [value]);
 
+  const getQueryParams = useCallback((loadPage: number) => {
+    const queryParams: Parameters<typeof listAssets>[0] = {
+      status: ProcessingStatus.READY,
+      page: loadPage,
+      pageSize: 24,
+    };
+    
+    if (debouncedQ) {
+      queryParams.q = debouncedQ;
+    }
+
+    if (kind) {
+      queryParams.kind = kind;
+    } else if (kindFilter !== 'all') {
+      queryParams.kind = kindFilter;
+    } else if (kindsRef.current) {
+      queryParams.kinds = [...kindsRef.current];
+    }
+
+    return queryParams;
+  }, [debouncedQ, kind, kindFilter, kindsDep]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -90,30 +112,16 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
     const currentRequest = ++requestCounter.current;
     
     const load = async (loadPage: number, reset: boolean) => {
-      setLoading(true);
       if (reset) {
         setError(false);
+        setAssets([]);
+        setPage(1);
+        setTotal(0);
       }
+      setLoading(true);
       
       try {
-        const queryParams: Parameters<typeof listAssets>[0] = {
-          status: ProcessingStatus.READY,
-          page: loadPage,
-          pageSize: 24,
-        };
-        
-        if (debouncedQ) {
-          queryParams.q = debouncedQ;
-        }
-
-        if (kind) {
-          queryParams.kind = kind;
-        } else if (kindFilter !== 'all') {
-          queryParams.kind = kindFilter;
-        } else if (kindsRef.current) {
-          queryParams.kinds = [...kindsRef.current];
-        }
-
+        const queryParams = getQueryParams(loadPage);
         const res = await listAssets(queryParams);
         
         if (!mounted || currentRequest !== requestCounter.current) {
@@ -138,30 +146,13 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
     return () => {
       mounted = false;
     };
-  }, [open, debouncedQ, kindFilter, kindsDep, kind]);
+  }, [open, getQueryParams]);
 
   const loadMore = useCallback(async (loadPage: number) => {
     const currentRequest = ++requestCounter.current;
     setLoading(true);
     try {
-      const queryParams: Parameters<typeof listAssets>[0] = {
-        status: ProcessingStatus.READY,
-        page: loadPage,
-        pageSize: 24,
-      };
-      
-      if (debouncedQ) {
-        queryParams.q = debouncedQ;
-      }
-
-      if (kind) {
-        queryParams.kind = kind;
-      } else if (kindFilter !== 'all') {
-        queryParams.kind = kindFilter;
-      } else if (kindsRef.current) {
-        queryParams.kinds = [...kindsRef.current];
-      }
-
+      const queryParams = getQueryParams(loadPage);
       const res = await listAssets(queryParams);
       
       if (currentRequest !== requestCounter.current) {
@@ -179,7 +170,7 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
       setError(true);
       setLoading(false);
     }
-  }, [debouncedQ, kind, kindFilter]);
+  }, [getQueryParams]);
 
   let selectedLabel = t('catalog.asset.emptyOption');
   if (selectedAsset) {
