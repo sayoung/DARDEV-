@@ -1,4 +1,5 @@
 import { AssetResponse, ProcessingStatus } from '@xplor/shared';
+import { getAsset } from '../api/catalog.js';
 
 export function needsPolling(items: AssetResponse[]): boolean {
   return items.some(
@@ -21,10 +22,6 @@ export async function waitUntilAssetReady(
   const intervalMs = options.intervalMs ?? 2000;
   const maxAttempts = options.maxAttempts ?? 30;
   const signal = options.signal;
-
-  // Since we don't have access to the real getAsset function in tests if we mock it directly without DI, 
-  // wait, we can just import getAsset and use vi.mock in tests.
-  const { getAsset } = await import('../api/catalog.js');
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     if (signal?.aborted) {

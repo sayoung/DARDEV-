@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { ProcessingStatus, AssetKind, AssetResponse } from '@xplor/shared';
-import { needsPolling } from './media-polling.js';
+import { needsPolling, waitUntilAssetReady } from './media-polling.js';
+import * as catalogApi from '../api/catalog.js';
+
+vi.mock('../api/catalog.js', () => ({
+  getAsset: vi.fn(),
+}));
 
 describe('needsPolling', () => {
   const createAsset = (status: ProcessingStatus): AssetResponse => ({
@@ -40,14 +45,6 @@ describe('needsPolling', () => {
     expect(needsPolling([createAsset(ProcessingStatus.ERROR), createAsset(ProcessingStatus.READY)])).toBe(false);
   });
 });
-
-import { vi, afterEach, beforeEach } from 'vitest';
-import { waitUntilAssetReady } from './media-polling.js';
-import * as catalogApi from '../api/catalog.js';
-
-vi.mock('../api/catalog.js', () => ({
-  getAsset: vi.fn(),
-}));
 
 describe('waitUntilAssetReady', () => {
   const createAsset = (status: ProcessingStatus): AssetResponse => ({
@@ -115,7 +112,7 @@ describe('waitUntilAssetReady', () => {
     expect(getAssetMock).toHaveBeenCalledTimes(3);
   });
   
-  it('abandon via AbortSignal', async () => {
+  it('abandon via AbortSignal pendant l\'attente', async () => {
     const getAssetMock = vi.mocked(catalogApi.getAsset);
     getAssetMock.mockResolvedValue(createAsset(ProcessingStatus.PROCESSING));
 
@@ -123,10 +120,14 @@ describe('waitUntilAssetReady', () => {
     const promise = waitUntilAssetReady('asset-1', { intervalMs: 1000, signal: controller.signal });
     const assertion = expect(promise).rejects.toThrow('Aborted');
 
-    // Fast-forward so it waits
+    // Laissons l'exécution atteindre la promesse d'attente (setTimeout)
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // Déclenche l'abandon
     controller.abort();
-    await vi.runOnlyPendingTimersAsync();
     
     await assertion;
+    expect(getAssetMock).toHaveBeenCalledTimes(1);
   });
 });
