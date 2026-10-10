@@ -15,7 +15,8 @@
     "error": {
       "generic": "An error occurred."
     },
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "change": "Change"
   },
   "auth": {
     "login": {

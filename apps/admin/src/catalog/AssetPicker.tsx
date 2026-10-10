@@ -1,4 +1,4 @@
-import { useEffect, useState, useId, useRef, useCallback } from 'react';
+﻿import { useEffect, useState, useId, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AssetKind, type AssetResponse, ProcessingStatus, z } from '@xplor/shared';
 import { listAssets, getAsset } from '../api/catalog.js';
@@ -185,17 +185,42 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label} {required && '*'}</Label>
-      <Button 
-        id={id}
-        type="button" 
-        variant="outline" 
-        className="w-full justify-start font-normal text-start" 
-        onClick={() => { setOpen(true); }}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-      >
-        {selectedLabel}
-      </Button>
+      {!selectedAsset ? (
+        <Button 
+          id={id}
+          type="button" 
+          variant="outline" 
+          className="w-full justify-start font-normal text-start" 
+          onClick={() => { setOpen(true); }}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+        >
+          {t('catalog.asset.emptyOption')}
+        </Button>
+      ) : (
+        <div className="flex items-center justify-between p-3 border rounded-md bg-card">
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm font-medium truncate" title={selectedLabel}>
+              {selectedLabel}
+            </span>
+            <span className="text-xs text-muted-foreground uppercase">
+              {t(`catalog.asset.kind.${selectedAsset.kind}`)}
+            </span>
+          </div>
+          <Button
+            id={id}
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => { setOpen(true); }}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            className="ms-4 shrink-0"
+          >
+            {t('common.change')}
+          </Button>
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen} className="max-w-4xl">
         <DialogHeader>

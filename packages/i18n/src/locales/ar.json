@@ -15,7 +15,8 @@
     "error": {
       "generic": "حدث خطأ."
     },
-    "unknown": "غير معروف"
+    "unknown": "غير معروف",
+    "change": "تغيير"
   },
   "auth": {
     "login": {
