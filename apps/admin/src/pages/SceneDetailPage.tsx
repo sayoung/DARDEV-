@@ -704,32 +704,62 @@ export function SceneDetailPage() {
           </CardContent>
         </Card>
       ) : (
-        <Tabs defaultValue="info">
-          <TabsList>
-            <TabsTrigger value="info">{t('catalog.scenes.tabs.info')}</TabsTrigger>
-            <TabsTrigger value="editor">{t('catalog.scenes.tabs.editor')}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="info">
-            <Card>
-              <CardContent className="pt-6">
-                <SceneForm
-                  initialData={scene}
-                  onSubmit={handleSubmit}
-                  onDelete={handleDelete}
-                  isSubmitting={isSubmitting}
-                  weight={weight}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="editor">
-            <Card>
-              <CardContent className="pt-6">
-                {scene && <SceneEditorTab scene={scene} />}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <>
+          <Tabs defaultValue="info">
+            <TabsList>
+              <TabsTrigger value="info">{t('catalog.scenes.tabs.info')}</TabsTrigger>
+              <TabsTrigger value="editor">{t('catalog.scenes.tabs.editor')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="info">
+              <Card>
+                <CardContent className="pt-6">
+                  <SceneForm
+                    initialData={scene}
+                    onSubmit={handleSubmit}
+                    onDelete={handleDelete}
+                    isSubmitting={isSubmitting}
+                    weight={weight}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="editor">
+              <Card>
+                <CardContent className="pt-6">
+                  {scene && <SceneEditorTab scene={scene} />}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+          <div className="flex justify-between items-center mt-8">
+            {navLinks.prevSceneUrl ? (
+              <a
+                href={hrefFor(navLinks.prevSceneUrl)}
+                className="text-primary hover:underline font-medium"
+                onClick={handleLinkClick(navLinks.prevSceneUrl)}
+              >
+                ← {t('tour.previousScene')}
+              </a>
+            ) : (
+              <span className="text-muted-foreground cursor-not-allowed">
+                ← {t('tour.previousScene')}
+              </span>
+            )}
+            {navLinks.nextSceneUrl ? (
+              <a
+                href={hrefFor(navLinks.nextSceneUrl)}
+                className="text-primary hover:underline font-medium"
+                onClick={handleLinkClick(navLinks.nextSceneUrl)}
+              >
+                {t('tour.nextScene')} →
+              </a>
+            ) : (
+              <span className="text-muted-foreground cursor-not-allowed">
+                {t('tour.nextScene')} →
+              </span>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

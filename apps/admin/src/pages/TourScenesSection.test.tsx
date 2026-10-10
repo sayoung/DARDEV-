@@ -206,7 +206,19 @@ describe('TourScenesSection', () => {
       const call = mockFetch.mock.calls.find(c => c[0] === `/api/v1/admin/scenes/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c` && (c[1] as RequestInit | undefined)?.method === 'DELETE');
       expect(call).toBeDefined();
     });
-    
     confirmSpy.mockRestore();
+  });
+
+  it('le titre de la scène est un lien vers le détail', async () => {
+    render(<TourScenesSection tour={mockTour} onTourUpdated={onTourUpdated} />);
+    
+    await waitFor(() => {
+      expect(screen.getAllByRole('row').length).toBeGreaterThan(1);
+    });
+    
+    const links = screen.getAllByRole('link');
+    const firstSceneLink = links.find(l => l.textContent === 'Scène A');
+    expect(firstSceneLink).toBeDefined();
+    expect(firstSceneLink?.getAttribute('href')).toBe(`/tours/${mockTour.id}/scenes/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9c`);
   });
 });
