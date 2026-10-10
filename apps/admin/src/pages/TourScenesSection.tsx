@@ -18,7 +18,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { Badge } from '../components/ui/Badge.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
-import { navigate } from '../router.js';
+import { navigate, hrefFor } from '../router.js';
 
 interface Props {
   tour: TourResponse;
@@ -124,7 +124,17 @@ export function TourScenesSection({ tour, onTourUpdated }: Props) {
                   <TableRow key={scene.id} id={`scene-${scene.id}`}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        {localize(scene.title, i18n.language)}
+                        <a
+                          href={hrefFor(`/tours/${tour.id}/scenes/${scene.id}`)}
+                          className="hover:underline text-primary"
+                          onClick={(e) => {
+                            if (isModifiedClick(e)) return;
+                            e.preventDefault();
+                            navigate(`/tours/${tour.id}/scenes/${scene.id}`);
+                          }}
+                        >
+                          {localize(scene.title, i18n.language)}
+                        </a>
                         {scene.id === tour.startSceneId && (
                           <Badge variant="secondary">{t('catalog.scene.startBadge')}</Badge>
                         )}

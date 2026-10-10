@@ -1239,4 +1239,75 @@ describe('SceneDetailPage', () => {
     expect(lastItem?.textContent).toBe('Nouvelle scène');
   });
 
+  it('affiche et gère correctement les liens scène précédente / suivante', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-2' },
+      notice: null,
+      search: '',
+    });
+
+    const mockScene2: SceneResponse = {
+      id: 's-2', tourId: 't-1', title: { fr: 'Scène 2' }, panoramaAssetId: 'asset-1',
+      initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 1, hotspotCount: 0,
+      createdAt: '', updatedAt: '',
+    };
+    const mockScene1: SceneResponse = { ...mockScene2, id: 's-1', title: { fr: 'Scène 1' }, weight: 0 };
+    const mockScene3: SceneResponse = { ...mockScene2, id: 's-3', title: { fr: 'Scène 3' }, weight: 2 };
+
+    vi.mocked(getScene).mockResolvedValue(mockScene2);
+    vi.mocked(listScenes).mockResolvedValue([mockScene1, mockScene2, mockScene3]);
+    vi.mocked(getAsset).mockResolvedValue(null as unknown as import('@xplor/shared').AssetResponse);
+    vi.mocked(listHotspots).mockResolvedValue([]);
+
+    render(<SceneDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Chargement...')).toBeNull();
+    });
+
+    const prevLink = screen.getByText('← Scène précédente');
+    const nextLink = screen.getByText('Scène suivante →');
+    
+    expect(prevLink.tagName).toBe('A');
+    expect(prevLink.getAttribute('href')).toBe('/tours/t-1/scenes/s-1');
+    
+    expect(nextLink.tagName).toBe('A');
+    expect(nextLink.getAttribute('href')).toBe('/tours/t-1/scenes/s-3');
+    
+    fireEvent.click(prevLink);
+    expect(navigate).toHaveBeenCalledWith('/tours/t-1/scenes/s-1');
+  });
+
+  it('désactive les liens précédent/suivant aux extrémités', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+
+    const mockScene1: SceneResponse = {
+      id: 's-1', tourId: 't-1', title: { fr: 'Scène 1' }, panoramaAssetId: 'asset-1',
+      initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 0, hotspotCount: 0,
+      createdAt: '', updatedAt: '',
+    };
+    
+    vi.mocked(getScene).mockResolvedValue(mockScene1);
+    vi.mocked(listScenes).mockResolvedValue([mockScene1]);
+    vi.mocked(getAsset).mockResolvedValue(null as unknown as import('@xplor/shared').AssetResponse);
+    vi.mocked(listHotspots).mockResolvedValue([]);
+
+    render(<SceneDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Chargement...')).toBeNull();
+    });
+
+    const prevSpan = screen.getByText('← Scène précédente');
+    const nextSpan = screen.getByText('Scène suivante →');
+    
+    expect(prevSpan.tagName).toBe('SPAN');
+    expect(nextSpan.tagName).toBe('SPAN');
+  });
 });
