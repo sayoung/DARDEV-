@@ -111,10 +111,16 @@ export function HotspotsPage() {
     <div className="space-y-6 pb-8">
       <div className="flex items-center justify-between">
         <div>
+          <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
+            <a href={hrefFor('/tours')} onClick={(e) => { e.preventDefault(); navigate('/tours'); }} className="hover:underline">{t('catalog.tours.list')}</a>
+            <span>›</span>
+            <a href={hrefFor(`/tours/${tourId}`)} onClick={(e) => { e.preventDefault(); navigate(`/tours/${tourId}`); }} className="hover:underline">{localize(tour?.title || { fr: '' }, i18n.language)}</a>
+            <span>›</span>
+            <a href={hrefFor(`/tours/${tourId}/scenes/${sceneId}`)} onClick={(e) => { e.preventDefault(); navigate(`/tours/${tourId}/scenes/${sceneId}`); }} className="hover:underline">{localize(scene.title, i18n.language)}</a>
+            <span>›</span>
+            <span>{t('catalog.hotspots.list')}</span>
+          </div>
           <PageHeader title={t('catalog.hotspots.list')} />
-          <p className="text-sm text-muted-foreground mt-1">
-            {localize(tour?.title || { fr: '' }, i18n.language)} — {localize(scene.title, i18n.language)}
-          </p>
         </div>
         <div className="flex items-center gap-4">
           <Button

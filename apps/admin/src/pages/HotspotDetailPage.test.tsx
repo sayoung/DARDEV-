@@ -4,8 +4,8 @@ import { i18n } from '../i18n.js';
 import { HotspotDetailPage } from './HotspotDetailPage.js';
 import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { getScene, createHotspot, listScenes } from '../api/catalog.js';
-import { Role, HotspotType, type SceneResponse } from '@xplor/shared';
+import { getScene, createHotspot, listScenes, getTour } from '../api/catalog.js';
+import { Role, HotspotType, type SceneResponse, type TourResponse } from '@xplor/shared';
 import { ApiError } from '../api/client.js';
 
 vi.mock('../router.js', () => ({
@@ -25,6 +25,7 @@ vi.mock('../api/catalog.js', () => ({
   updateHotspot: vi.fn(),
   listScenes: vi.fn(),
   listTours: vi.fn(),
+  getTour: vi.fn(),
   listAssets: vi.fn(() => Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })),
 }));
 
@@ -44,6 +45,7 @@ const mockAuth = {
 };
 
 const dummyScene = { id: 's1', title: { fr: 'Scene 1' } } as unknown as SceneResponse;
+const dummyTour = { id: 't1', title: { fr: 'Tour 1' } } as unknown as TourResponse;
 describe('HotspotDetailPage', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -51,6 +53,7 @@ describe('HotspotDetailPage', () => {
     vi.mocked(useAuth).mockReturnValue(mockAuth as never);
     vi.mocked(listScenes).mockResolvedValue([dummyScene]);
     vi.mocked(getScene).mockResolvedValue(dummyScene);
+    vi.mocked(getTour).mockResolvedValue(dummyTour);
   });
 
   afterEach(() => {
@@ -69,7 +72,7 @@ describe('HotspotDetailPage', () => {
     render(<HotspotDetailPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Ajouter un hotspot')).toBeDefined();
+      expect(screen.getAllByText('Ajouter un hotspot').length).toBeGreaterThan(0);
     });
 
     const typeSelect = screen.getByLabelText('Type');
@@ -107,7 +110,7 @@ describe('HotspotDetailPage', () => {
     render(<HotspotDetailPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Ajouter un hotspot')).toBeDefined();
+      expect(screen.getAllByText('Ajouter un hotspot').length).toBeGreaterThan(0);
     });
 
     const typeSelect = screen.getByLabelText('Type');
@@ -125,5 +128,32 @@ describe('HotspotDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Veuillez corriger les erreurs dans le formulaire.')).toBeDefined();
     });
+  });
+
+  it('affiche le fil d\'Ariane et le bouton de retour avec les bons liens', async () => {
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'hotspot-new', tourId: 't1', sceneId: 's1' },
+      notice: null,
+      search: '',
+    } as never);
+
+    render(<HotspotDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Ajouter un hotspot').length).toBeGreaterThan(0);
+    });
+
+    const links = screen.getAllByRole('link');
+    const toursLink = links.find(l => l.getAttribute('href') === '/tours');
+    const tourLink = links.find(l => l.getAttribute('href') === '/tours/t1');
+    const sceneLink = links.find(l => l.getAttribute('href') === '/tours/t1/scenes/s1');
+    
+    expect(toursLink).toBeDefined();
+    expect(tourLink).toBeDefined();
+    expect(sceneLink).toBeDefined();
+    
+    // Le bouton de retour a href vers /tours/t1 et contient le texte retour
+    const backBtn = screen.getByText(/Retour à la visite|tour\.backToDetail/i);
+    expect(backBtn.closest('a')?.getAttribute('href')).toBe('/tours/t1');
   });
 });

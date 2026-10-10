@@ -96,4 +96,21 @@ describe('HotspotsPage', () => {
       expect(screen.queryByText('Mon hotspot')).toBeNull();
     });
   });
+
+  it('affiche le fil d\'Ariane avec les bons liens', async () => {
+    render(<HotspotsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Mon hotspot')).toBeDefined();
+    });
+
+    const links = screen.getAllByRole('link');
+    const toursLink = links.find(l => l.getAttribute('href') === '/tours');
+    const tourLink = links.find(l => l.getAttribute('href') === '/tours/t1');
+    const sceneLink = links.find(l => l.getAttribute('href') === '/tours/t1/scenes/s1');
+    
+    expect(toursLink).toBeDefined();
+    expect(tourLink).toBeDefined();
+    expect(sceneLink).toBeDefined();
+  });
 });
