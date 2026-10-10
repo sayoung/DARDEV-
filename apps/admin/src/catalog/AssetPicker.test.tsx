@@ -1,322 +1,168 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { AssetPicker } from './AssetPicker.js';
-import { AssetKind } from '@xplor/shared';
+import { AssetKind, ProcessingStatus, type AssetResponse } from '@xplor/shared';
 import { i18n } from '../i18n.js';
+import { listAssets, getAsset } from '../api/catalog.js';
+
+vi.mock('../api/catalog.js');
 
 describe('AssetPicker', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('fr');
-    vi.stubGlobal('fetch', vi.fn());
+    vi.mocked(listAssets).mockClear();
+    vi.mocked(getAsset).mockClear();
   });
 
   afterEach(() => {
     cleanup();
-    vi.unstubAllGlobals();
   });
 
-  it('affiche les médias READY et permet la sélection', async () => {
-    const mockAssets = {
-      items: [
-        {
-          id: '01923e45-6789-7abc-8ef0-123456789abc',
-          filename: 'pano.jpg',
-          kind: 'PANORAMA',
-          mimeType: 'image/jpeg',
-          sizeBytes: 1024,
-          width: 800,
-          height: 600,
-          processingStatus: 'READY',
-          processingLog: null,
-          copyright: null,
-          thumbnailUrl: 'http://example.com/thumb.jpg',
-  derivatives: {},
-          panorama: null,
-          createdAt: new Date().toISOString()
-        }
-      ],
-      total: 1,
-      page: 1,
-      pageSize: 100
-    };
+  const makeMockAsset = (id: string, filename: string, kind = AssetKind.PANORAMA): AssetResponse => ({
+    id,
+    filename,
+    kind,
+    mimeType: 'image/jpeg',
+    sizeBytes: 1024,
+    width: 800,
+    height: 600,
+    processingStatus: ProcessingStatus.READY,
+    processingLog: null,
+    copyright: null,
+    thumbnailUrl: null,
+    derivatives: {},
+    panorama: null,
+    createdAt: new Date().toISOString(),
+  });
 
-    const fetchMock = vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(mockAssets),
-    } as Response);
+  it('(1) le bouton affiche t(\'catalog.asset.emptyOption\') sans value, et le filename renvoyé par getAsset(value) sinon', async () => {
+    vi.mocked(getAsset).mockResolvedValueOnce(makeMockAsset('val1', 'mon-fichier.jpg'));
+
+    const { rerender } = render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
+    expect(screen.getByText('Sélectionner un média...')).toBeTruthy();
+
+    rerender(<AssetPicker label="Média" onChange={vi.fn()} value="val1" />);
+    expect(await screen.findByText('mon-fichier.jpg')).toBeTruthy();
+    expect(getAsset).toHaveBeenCalledWith('val1');
+  });
+
+  it('(2) l\'ouverture appelle listAssets avec les bons paramètres selon kind ou kinds', () => {
+    vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
+    const { unmount } = render(<AssetPicker label="Média" kind={AssetKind.PANORAMA} onChange={vi.fn()} value="" />);
+    
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+    expect(listAssets).toHaveBeenCalledWith({ kind: AssetKind.PANORAMA, status: 'READY', page: 1, pageSize: 24 });
+    
+    unmount();
+    vi.mocked(listAssets).mockClear();
+    
+    render(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO]} onChange={vi.fn()} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+    expect(listAssets).toHaveBeenCalledWith({ kinds: [AssetKind.IMAGE, AssetKind.VIDEO], status: 'READY', page: 1, pageSize: 24 });
+  });
+
+  it('(3) cliquer un radio appelle onChange(id) et ferme la fenêtre', async () => {
+    vi.mocked(listAssets).mockResolvedValueOnce({
+      items: [makeMockAsset('asset-1', 'asset1.jpg')], total: 1, page: 1, pageSize: 24
+    });
 
     const onChange = vi.fn();
-
-    render(
-      <AssetPicker 
-        label="Panorama" 
-        kind={AssetKind.PANORAMA} 
-        value="" 
-        onChange={onChange} 
-      />
-    );
-
-    const button = screen.getByText('Sélectionner un média...');
-    fireEvent.click(button);
-
-    // Chargement
-    expect(screen.getByText('Chargement...')).toBeTruthy();
-
-    // Attente du rendu du sélecteur
-    const radioGroup = await screen.findByRole('radiogroup', { name: 'Panorama' });
-    expect(radioGroup).toBeTruthy();
-
-    // Vérification de l'URL
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('kind=PANORAMA&status=READY'),
-      expect.any(Object)
-    );
-
-    // Vérification des options
-    const radios = screen.getAllByRole('radio');
-    expect(radios).toHaveLength(1);
+    render(<AssetPicker label="Média" kind={AssetKind.PANORAMA} onChange={onChange} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
     
-    const img = screen.getByAltText('Miniature de pano.jpg');
-    expect(img.getAttribute('src')).toBe('http://example.com/thumb.jpg');
-
-    // Clic pour sélectionner
-    const radio = radios[0];
-    if (radio) fireEvent.click(radio);
-    expect(onChange).toHaveBeenCalledWith('01923e45-6789-7abc-8ef0-123456789abc');
+    const radio = await screen.findByRole('radio', { name: 'asset1.jpg' });
+    fireEvent.click(radio);
     
-    // Le fetch n'a été appelé qu'une seule fois
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('asset-1');
+    
+    // Le dialog devrait être fermé (soit caché, soit démonté)
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
   });
 
-  it('ne montre pas les médias PENDING ou en erreur', async () => {
-    const mockAssets = {
-      items: [
-        {
-          id: '22222222-2222-7222-8222-222222222222',
-          filename: 'ready.jpg',
-          kind: 'IMAGE',
-          mimeType: 'image/jpeg',
-          sizeBytes: 1024, width: 800, height: 600,
-          processingLog: null, copyright: null, thumbnailUrl: null, derivatives: {}, panorama: null, 
-          processingStatus: 'READY',
-          createdAt: new Date().toISOString()
-        }
-      ],
-      total: 1,
-      page: 1,
-      pageSize: 24
-    };
-
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(mockAssets),
-    } as Response);
-
-    render(
-      <AssetPicker 
-        label="Image" 
-        kind={AssetKind.IMAGE} 
-        value="" 
-        onChange={vi.fn()} 
-      />
-    );
-
-    const button = screen.getByText('Sélectionner un média...');
-    fireEvent.click(button);
-
-    await screen.findByRole('radiogroup');
+  it('(4) état vide, état erreur (Alert destructive)', async () => {
+    vi.mocked(listAssets).mockResolvedValueOnce({ items: [], total: 0, page: 1, pageSize: 24 });
+    const { unmount } = render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
     
-    const radios = screen.getAllByRole('radio');
-    expect(radios).toHaveLength(1); // Seulement le READY
-  });
+    expect(await screen.findByText('Aucun média trouvé.')).toBeTruthy();
+    unmount();
 
-  it('ne refetch pas lors du re-rendu du parent avec un tableau inline', async () => {
-    const mockAssets = {
-      items: [
-        {
-          id: '33333333-3333-7333-8333-333333333333',
-          filename: 'video.mp4',
-          kind: 'VIDEO',
-          mimeType: 'video/mp4',
-          sizeBytes: 1024, width: 800, height: 600,
-          processingLog: null, copyright: null, thumbnailUrl: null, derivatives: {}, panorama: null, 
-          processingStatus: 'READY',
-          createdAt: new Date().toISOString()
-        }
-      ],
-      total: 1,
-      page: 1,
-      pageSize: 100
-    };
-
-    const fetchMock = vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve(mockAssets),
-    } as Response);
-
-    const { rerender } = render(
-      <AssetPicker 
-        label="Vidéo" 
-        kinds={[AssetKind.VIDEO, AssetKind.IMAGE]} 
-        value="" 
-        onChange={vi.fn()} 
-      />
-    );
-
-    const button = screen.getByText('Sélectionner un média...');
-    fireEvent.click(button);
-
-    await screen.findByRole('radiogroup');
+    vi.mocked(listAssets).mockRejectedValueOnce(new Error('Erreur API'));
+    render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
     
-    // Il y a deux types dans le tableau inline, mais listAssets accepte kinds[] donc 1 fetch
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const alert = await screen.findByText('Impossible de charger les médias.');
+    expect(alert).toBeTruthy();
+    const alertWrapper = alert.closest('.destructive') || alert.closest('[class*="destructive"]');
+    expect(alertWrapper).toBeTruthy();
+  });
 
-    // Re-rendu avec un nouveau tableau inline (référence différente mais même contenu)
-    rerender(
-      <AssetPicker 
-        label="Vidéo" 
-        kinds={[AssetKind.VIDEO, AssetKind.IMAGE]} 
-        value="33333333-3333-7333-8333-333333333333" 
-        onChange={vi.fn()} 
-      />
-    );
+  it('(5) \'Charger plus\' visible tant que items cumulés < total, appelle listAssets page 2 et AJOUTE les items, disparaît quand tout est chargé', async () => {
+    const item1 = makeMockAsset('asset-1', 'page1.jpg');
+    const item2 = makeMockAsset('asset-2', 'page2.jpg');
     
-    // Le rerender avec `value` déclenche un fetch pour getAsset(value)
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.mocked(listAssets)
+      .mockResolvedValueOnce({ items: [item1], total: 2, page: 1, pageSize: 1 })
+      .mockResolvedValueOnce({ items: [item2], total: 2, page: 2, pageSize: 1 });
+
+    render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+    
+    expect(await screen.findByRole('radio', { name: 'page1.jpg' })).toBeTruthy();
+    expect(screen.queryByRole('radio', { name: 'page2.jpg' })).toBeNull();
+    
+    const loadMore = screen.getByRole('button', { name: 'Charger plus' });
+    fireEvent.click(loadMore);
+    
+    expect(await screen.findByRole('radio', { name: 'page2.jpg' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'page1.jpg' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Charger plus' })).toBeNull();
   });
 
-  it('affiche un message si la liste est vide', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ items: [], total: 0, page: 1, pageSize: 100 }),
-    } as Response);
+  it('(6) un re-rendu du parent avec un tableau kinds inline ne relance pas listAssets', async () => {
+    vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
+    const { rerender } = render(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO]} onChange={vi.fn()} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+    
+    await screen.findByText('Aucun média trouvé.');
+    expect(listAssets).toHaveBeenCalledTimes(1);
 
-    render(
-      <AssetPicker 
-        label="Vidéo" 
-        kind={AssetKind.VIDEO} 
-        value="" 
-        onChange={vi.fn()} 
-      />
-    );
-
-    const button = screen.getByText('Sélectionner un média...');
-    fireEvent.click(button);
-
-    const msgs = await screen.findAllByText('Aucun média trouvé.');
-    expect(msgs.length).toBeGreaterThan(0);
+    rerender(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO]} onChange={vi.fn()} value="" />);
+    
+    expect(listAssets).toHaveBeenCalledTimes(1);
   });
 
-  it('affiche une erreur 500 générique', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: () => Promise.resolve({ error: { code: 'INTERNAL_ERROR', message: 'Erreur' } }),
-    } as Response);
+  it('(7) une réponse obsolète est ignorée (deux ouvertures/fermetures ou changement de kind avec promesses résolues dans l\'ordre inverse)', async () => {
+    let resolveFirst!: (v: Awaited<ReturnType<typeof listAssets>>) => void;
+    let resolveSecond!: (v: Awaited<ReturnType<typeof listAssets>>) => void;
 
-    render(
-      <AssetPicker 
-        label="Panorama" 
-        kind={AssetKind.PANORAMA} 
-        value="" 
-        onChange={vi.fn()} 
-      />
-    );
+    vi.mocked(listAssets)
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveSecond = resolve; }));
 
-    const button = screen.getByText('Sélectionner un média...');
-    fireEvent.click(button);
-
-    const errors = await screen.findAllByText('Impossible de charger les médias.');
-    expect(errors.length).toBeGreaterThan(0);
-  });
-
-  it('filtre par la recherche (casse, aucun résultat)', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation((e) => {
-      console.log('CAUGHT API ERROR:', e);
+    const { rerender } = render(<AssetPicker label="Média" kind={AssetKind.PANORAMA} onChange={vi.fn()} value="" />);
+    
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+    
+    // Le changement de prop kind déclenche un re-rendu et refetch (useEffect dans load)
+    rerender(<AssetPicker label="Média" kind={AssetKind.IMAGE} onChange={vi.fn()} value="" />);
+    
+    // On résout la DEUXIÈME promesse d'abord
+    resolveSecond({
+      items: [makeMockAsset('asset-2', 'second.jpg', AssetKind.IMAGE)], total: 1, page: 1, pageSize: 24
     });
 
-    const mockAssets = {
-      items: [
-        {
-          id: '11111111-1111-7111-8111-111111111111', filename: 'Pano1.jpg', kind: 'PANORAMA', mimeType: 'image/jpeg', 
-          sizeBytes: 1024, width: 800, height: 600, processingStatus: 'READY', 
-          processingLog: null, copyright: null, thumbnailUrl: null, derivatives: {}, panorama: null, 
-          createdAt: '2026-10-01T10:00:00.000Z'
-        },
-        {
-          id: '22222222-2222-7222-8222-222222222222', filename: 'Autre.jpg', kind: 'PANORAMA', mimeType: 'image/jpeg', 
-          sizeBytes: 1024, width: 800, height: 600, processingStatus: 'READY', 
-          processingLog: null, copyright: null, thumbnailUrl: null, derivatives: {}, panorama: null, 
-          createdAt: '2026-10-01T12:00:00.000Z'
-        }
-      ],
-      total: 2, page: 1, pageSize: 100
-    };
-    vi.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve(mockAssets) } as Response);
-
-    render(<AssetPicker label="Panoramas" kind={AssetKind.PANORAMA} value="" onChange={vi.fn()} />);
+    expect(await screen.findByRole('radio', { name: 'second.jpg' })).toBeTruthy();
     
-    const button = screen.getByText('Sélectionner un média...');
-    fireEvent.click(button);
-
-    // Attente chargement
-    await screen.findByRole('radiogroup');
-    errorSpy.mockRestore();
-    
-    // Vérification initiale
-    expect(screen.getByText('Pano1.jpg')).toBeTruthy();
-    expect(screen.getByText('Autre.jpg')).toBeTruthy();
-  });
-
-  it('affiche le repli « Média du jj/mm/aaaa », les dimensions L × H', async () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation((e) => {
-      console.log('CAUGHT API ERROR:', e);
+    // On résout la PREMIÈRE (obsolète)
+    resolveFirst({
+      items: [makeMockAsset('asset-1', 'first.jpg', AssetKind.PANORAMA)], total: 1, page: 1, pageSize: 24
     });
 
-    const mockAssets = {
-      items: [
-        {
-          id: '33333333-3333-7333-8333-333333333333', filename: '', kind: 'PANORAMA', mimeType: 'image/jpeg', 
-          sizeBytes: 1024, width: 4000, height: 2000, processingStatus: 'READY', 
-          processingLog: null, copyright: null, thumbnailUrl: null, derivatives: {}, panorama: null, 
-          createdAt: '2026-09-01T10:00:00.000Z'
-        },
-        {
-          id: '44444444-4444-7444-8444-444444444444', filename: '', kind: 'PANORAMA', mimeType: 'image/jpeg', 
-          sizeBytes: 1024, width: 8000, height: 4000, processingStatus: 'READY', 
-          processingLog: null, copyright: null, thumbnailUrl: null, derivatives: {}, panorama: null, 
-          createdAt: '2026-10-01T12:00:00.000Z'
-        }
-      ],
-      total: 2, page: 1, pageSize: 100
-    };
-    vi.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve(mockAssets) } as Response);
-
-    render(<AssetPicker label="Panoramas" kind={AssetKind.PANORAMA} value="" onChange={vi.fn()} />);
-    
-    const button = screen.getByText('Sélectionner un média...');
-    fireEvent.click(button);
-
-    await screen.findByRole('radiogroup');
-    errorSpy.mockRestore();
-    
-    const radios = screen.getAllByRole('radio');
-    expect(radios).toHaveLength(2);
-    
-    // Vérification de l'ordre tel que retourné par l'API
-    const firstTitle = radios[0]?.querySelector('p.truncate')?.textContent;
-    expect(firstTitle).toBe('Média du 01/09/2026'); // Le repli est appelé
-    
-    const firstDim = radios[0]?.querySelector('p.text-xs.text-muted-foreground')?.textContent;
-    expect(firstDim).toContain('4000 × 2000 - 01/09/2026'); // Affichage L × H
-    
-    const secondTitle = radios[1]?.querySelector('p.truncate')?.textContent;
-    expect(secondTitle).toBe('Média du 01/10/2026');
-    const secondDim = radios[1]?.querySelector('p.text-xs.text-muted-foreground')?.textContent;
-    expect(secondDim).toContain('8000 × 4000 - 01/10/2026');
+    // On vérifie que la première réponse est bien ignorée (n'écrase pas la seconde)
+    await new Promise(r => setTimeout(r, 100));
+    expect(screen.queryByRole('radio', { name: 'first.jpg' })).toBeNull();
   });
 });
