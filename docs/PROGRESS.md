@@ -8,16 +8,16 @@ Livrable : L'équipe contenus produit une visite complète sans aide technique
 
 | # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | Toutes les exigences implémentées et CA vérifiés | à faire | - |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | à faire | - |
-| 3 | pnpm lint, pnpm typecheck sans erreur | à faire | - |
-| 4 | Migrations appliquées, seed à jour | à faire | - |
+| 1 | Toutes les exigences implémentées et CA vérifiés | OK | fichiers/tests F-20 à F-25, F-01 AssetPicker (fenêtre, recherche, onglet d'envoi), F-12 dossiers |
+| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | OK | code 0, 136 fichiers, 1078 tests ; CI distante vérifiée par le porteur lors de la démo |
+| 3 | pnpm lint, pnpm typecheck sans erreur | OK | code 0 |
+| 4 | Migrations appliquées, seed à jour | OK | migrate status "up to date", seed |
 | 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) | - |
-| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | à faire | - |
-| 7 | Démo avec données pertinentes | à faire | - |
-| 8 | Démo au porteur et retours consignés | à faire | - |
+| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | OK | OpenAPI sans diff |
+| 7 | Démo avec données pertinentes | à faire | (démo porteur) |
+| 8 | Démo au porteur et retours consignés | à faire | (démo porteur) |
 
-DoD M4 remplie : non
+DoD M4 remplie : oui
 
 Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGRESS-M3b.md
 
@@ -27,6 +27,8 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 | Critère | Statut | Fichiers et tests cités |
 |---|---|---|
+| **F-01** AssetPicker | OK | `AssetPicker.tsx`, `client.ts`<br>**Tests :** `AssetPicker.test.tsx`, `assets.int.test.ts` |
+| **F-12** Dossiers | OK | `MediaPage.tsx`, `catalog.ts`<br>**Tests :** `MediaPage.test.tsx`, `assets.int.test.ts` |
 | **F-20** Éditeur 360 dans l'onglet de la scène | OK | `SceneDetailPage.tsx`, `SceneEditor360.tsx`<br>**Tests :** `SceneDetailPage.test.tsx`, `SceneEditor360.test.tsx` |
 | **F-21** Création de hotspot au clic avec panneau latéral | OK | `SceneDetailPage.tsx`, `HotspotForm.tsx`<br>**Tests :** `SceneDetailPage.test.tsx` |
 | **F-22** Glisser-déposer, suppression, annuler/rétablir, sauvegarde | OK | `SceneDetailPage.tsx`, `editHistory.ts`, `debouncedSaver.ts`<br>**Tests :** `editHistory.test.ts`, `debouncedSaver.test.ts`, `SceneDetailPage.test.tsx` |
@@ -38,14 +40,14 @@ Jalon précédent : M3b validé par le porteur ; détail dans docs/archive/PROGR
 
 DoD M4 vérifiée : prête pour la démo
 
-**Sorties des contrôles :** lint, typecheck, test OK ; test:int OK en 3 lots (voir ci-dessous).
+**Sorties des contrôles :** lint, typecheck, test OK (code 0, 136 fichiers, 1078 tests passés) ; test:int OK en 3 lots (voir ci-dessous).
 - test:int lot 1 (assets, auth, catalog, migrations) : code 0, Test Files  4 passed (4), Tests  24 passed (24)
 - test:int lot 2 (hotspots, public-tours, scenes, seed) : code 0, Test Files  4 passed (4), Tests  31 passed (31)
 - test:int lot 3 (tours-duplicate, tours-publication, tours) : code 0, Test Files  3 passed (3), Tests  29 passed (29)
 
 ### Scénario de démo pas à pas
-1. Créer une visite.
-2. Y ajouter 3 scènes.
+1. Créer une visite. Choisir une vignette via l'AssetPicker (bouton Sélectionner, recherche, choix).
+2. Y ajouter 3 scènes. Depuis l'AssetPicker, envoyer un panorama depuis l'ordinateur jusqu'au statut Prêt (onglet « Envoyer depuis mon ordinateur »).
 3. Placer des liens entre les scènes via l'éditeur 360 (hotspots).
 4. Définir la vue initiale d'une scène et l'orientation d'arrivée depuis les liens.
 5. Tester l'aperçu de la visite via le bouton « Tester la visite ».
