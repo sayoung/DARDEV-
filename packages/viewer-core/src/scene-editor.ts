@@ -77,6 +77,7 @@ export function mountSceneEditor(
     panorama: EditorPanorama;
     markers: EditorMarker[];
     initialView: { yaw: number; pitch: number; zoom: number };
+    labels?: { moveMode: string };
     onPanoramaClick: (yaw: number, pitch: number) => void;
     onMarkerSelect: (id: string) => void;
     onMarkerMove?: (id: string, yaw: number, pitch: number) => void;
@@ -86,6 +87,8 @@ export function mountSceneEditor(
     showErrorTile: true,
   };
 
+  let isMoveModeActive = false;
+
   const viewer = new Viewer({
     container,
     adapter: [EquirectangularTilesAdapter, adapterConfig],
@@ -93,6 +96,22 @@ export function mountSceneEditor(
     defaultYaw: options.initialView.yaw,
     defaultPitch: options.initialView.pitch,
     defaultZoomLvl: options.initialView.zoom,
+    navbar: [
+      'zoom',
+      {
+        id: 'move-mode',
+        content: options.labels?.moveMode || 'Déplacer',
+        title: options.labels?.moveMode || 'Déplacer',
+        className: 'xplor-move-btn',
+        onClick: () => {
+          isMoveModeActive = !isMoveModeActive;
+          const btn = viewer.navbar.getButton('move-mode');
+          btn.toggleActive(isMoveModeActive);
+        },
+      },
+      'caption',
+      'fullscreen',
+    ],
     plugins: [
       [MarkersPlugin, { clickEventOnMarker: true }],
     ],
@@ -103,6 +122,7 @@ export function mountSceneEditor(
   const markerConfigs: MarkerConfig[] = options.markers.map(toEditorMarkerConfig);
   markersPlugin.setMarkers(markerConfigs);
 
+  // Disable default double click zoom
   viewer.container.addEventListener('dblclick', (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -110,18 +130,6 @@ export function mountSceneEditor(
 
   viewer.addEventListener('dblclick', (e) => {
     e.preventDefault();
-  });
-
-  viewer.addEventListener('click', (e) => {
-    if (e.data.rightclick) {
-      return;
-    }
-    
-    if (e.data.marker || e.data.target?.closest('.psv-marker')) {
-       return;
-    }
-    
-    options.onPanoramaClick(normalizeYaw(e.data.yaw), e.data.pitch);
   });
 
   let currentSelectedMarkerId: string | null = null;
@@ -139,11 +147,43 @@ export function mountSceneEditor(
     });
   };
 
+  viewer.addEventListener('click', (e) => {
+    if (e.data.rightclick) {
+      return;
+    }
+    
+    // Prevent any action if clicking on a marker
+    if (e.data.marker || e.data.target?.closest('.psv-marker')) {
+       return;
+    }
+    
+    const yaw = normalizeYaw(e.data.yaw);
+    const pitch = e.data.pitch;
+
+    if (isMoveModeActive && currentSelectedMarkerId && options.onMarkerMove) {
+      isMoveModeActive = false;
+      const btn = viewer.navbar.getButton('move-mode');
+      btn.toggleActive(false);
+      
+      markersPlugin.updateMarker({ id: currentSelectedMarkerId, position: { yaw, pitch } });
+      options.onMarkerMove(currentSelectedMarkerId, yaw, pitch);
+    } else {
+      options.onPanoramaClick(yaw, pitch);
+    }
+  });
+
   markersPlugin.addEventListener('select-marker', ({ marker }) => {
     options.onMarkerSelect(marker.id);
   });
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && isMoveModeActive) {
+      isMoveModeActive = false;
+      const btn = viewer.navbar.getButton('move-mode');
+      btn.toggleActive(false);
+      return;
+    }
+
     if (!currentSelectedMarkerId) return;
     const activeEl = document.activeElement;
     if (activeEl) {
@@ -250,6 +290,7 @@ export function mountSceneEditor(
           onMarkerMoveCb(draggedMarkerId, normalizeYaw(spherical.yaw), spherical.pitch);
         }
       } else {
+        // Only select, do not trigger anything else
         options.onMarkerSelect(draggedMarkerId);
       }
       

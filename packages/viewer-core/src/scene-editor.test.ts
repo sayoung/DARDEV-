@@ -136,6 +136,7 @@ vi.mock('@photo-sphere-viewer/core', () => {
         destroy: vi.fn(),
         container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
         dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
+        navbar: { getButton: vi.fn().mockReturnValue({ toggleActive: vi.fn() }) },
       };
     }),
   };
@@ -178,6 +179,119 @@ describe('mountSceneEditor', () => {
     onPanoramaClick: vi.fn(),
     onMarkerSelect: vi.fn(),
   };
+
+  it('clic photo sans mode Déplacer = aucun appel à onMarkerMove', () => {
+    const mockAddEventListener = vi.fn();
+    const mockMarkersPlugin = { setMarkers: vi.fn(), addEventListener: vi.fn(), updateMarker: vi.fn(), getMarkers: vi.fn().mockReturnValue([]) };
+    vi.mocked(Viewer).mockImplementationOnce(() => ({
+      getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+      addEventListener: mockAddEventListener,
+      getPosition: vi.fn(),
+      getZoomLevel: vi.fn(),
+      destroy: vi.fn(),
+      container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
+      navbar: { getButton: vi.fn() },
+    }) as unknown as Viewer);
+
+    const onMarkerMove = vi.fn();
+    const onPanoramaClick = vi.fn();
+    mountSceneEditor({} as HTMLElement, { ...defaultOptions, onMarkerMove, onPanoramaClick });
+
+    const clickCall = mockAddEventListener.mock.calls.find((call: unknown[]) => call[0] === 'click');
+    if (!clickCall) throw new Error('Événement click non branché');
+    const clickHandler = clickCall[1] as (e: { data: { rightclick: boolean, yaw: number, pitch: number, target: unknown } }) => void;
+
+    // Simulate click on panorama
+    clickHandler({ data: { rightclick: false, yaw: 1.0, pitch: 0.5, target: { closest: () => null } } });
+    
+    expect(onMarkerMove).not.toHaveBeenCalled();
+    expect(onPanoramaClick).toHaveBeenCalledWith(1.0, 0.5);
+  });
+
+  it('clic photo avec mode actif = déplacement puis sortie du mode', () => {
+    let viewerConfig: Record<string, unknown> = {};
+    const mockAddEventListener = vi.fn();
+    const mockToggleActive = vi.fn();
+    const mockMarkersPlugin = { setMarkers: vi.fn(), addEventListener: vi.fn(), updateMarker: vi.fn(), getMarkers: vi.fn().mockReturnValue([{ id: 'm1', config: { className: '' } }]) };
+    
+    vi.mocked(Viewer).mockImplementationOnce((config) => {
+      viewerConfig = config;
+      return {
+        getPlugin: vi.fn().mockReturnValue(mockMarkersPlugin),
+        addEventListener: mockAddEventListener,
+        getPosition: vi.fn(),
+        getZoomLevel: vi.fn(),
+        destroy: vi.fn(),
+        container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+        dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
+        navbar: { getButton: vi.fn().mockReturnValue({ toggleActive: mockToggleActive }) },
+      } as unknown as Viewer;
+    });
+
+    const onMarkerMove = vi.fn();
+    const onPanoramaClick = vi.fn();
+    const instance = mountSceneEditor({} as HTMLElement, { ...defaultOptions, onMarkerMove, onPanoramaClick });
+    
+    // Select marker
+    instance.setSelectedMarker('m1');
+
+    // Activate move mode
+    const navItems = viewerConfig.navbar as Array<{ id?: string, onClick?: () => void }>;
+    const moveBtnConfig = navItems.find((n) => n.id === 'move-mode');
+    if (!moveBtnConfig || !moveBtnConfig.onClick) throw new Error('btn missing');
+    moveBtnConfig.onClick();
+    
+    expect(mockToggleActive).toHaveBeenCalledWith(true);
+
+    const clickCall = mockAddEventListener.mock.calls.find((call: unknown[]) => call[0] === 'click');
+    if (!clickCall) throw new Error('Événement click non branché');
+    const clickHandler = clickCall[1] as (e: { data: { rightclick: boolean, yaw: number, pitch: number, target: unknown } }) => void;
+
+    // Click on panorama
+    clickHandler({ data: { rightclick: false, yaw: 2.0, pitch: -0.5, target: { closest: () => null } } });
+    
+    expect(mockMarkersPlugin.updateMarker).toHaveBeenCalledWith({ id: 'm1', position: { yaw: 2.0, pitch: -0.5 } });
+    expect(onMarkerMove).toHaveBeenCalledWith('m1', 2.0, -0.5);
+    expect(onPanoramaClick).not.toHaveBeenCalled();
+    expect(mockToggleActive).toHaveBeenCalledWith(false);
+  });
+
+  it('Échap désactive le mode', () => {
+    let viewerConfig: Record<string, unknown> = {};
+    let handleKeyDown: (e: { key: string }) => void = () => {};
+    vi.spyOn(window, 'addEventListener').mockImplementation((event, cb) => {
+      if (event === 'keydown') handleKeyDown = cb as unknown as typeof handleKeyDown;
+    });
+
+    const mockToggleActive = vi.fn();
+    vi.mocked(Viewer).mockImplementationOnce((config) => {
+      viewerConfig = config;
+      return {
+        getPlugin: vi.fn().mockReturnValue({ setMarkers: vi.fn(), addEventListener: vi.fn(), updateMarker: vi.fn(), getMarkers: vi.fn().mockReturnValue([]) }),
+        addEventListener: vi.fn(),
+        getPosition: vi.fn(),
+        getZoomLevel: vi.fn(),
+        destroy: vi.fn(),
+        container: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+        dataHelper: { viewerCoordsToSphericalCoords: vi.fn() },
+        navbar: { getButton: vi.fn().mockReturnValue({ toggleActive: mockToggleActive }) },
+      } as unknown as Viewer;
+    });
+
+    mountSceneEditor({} as HTMLElement, defaultOptions);
+
+    // Activate move mode
+    const navItems = viewerConfig.navbar as Array<{ id?: string, onClick?: () => void }>;
+    const moveBtnConfig = navItems.find((n) => n.id === 'move-mode');
+    if (!moveBtnConfig || !moveBtnConfig.onClick) throw new Error('btn missing');
+    moveBtnConfig.onClick();
+
+    // Press Escape
+    handleKeyDown({ key: 'Escape' });
+
+    expect(mockToggleActive).toHaveBeenCalledWith(false);
+  });
 
   it('un clic appelle onPanoramaClick avec les bonnes valeurs', () => {
     const mockAddEventListener = vi.fn();
@@ -352,7 +466,7 @@ describe('mountSceneEditor', () => {
     let handlePointerMove: (e: { clientX: number; clientY: number }) => void = () => {};
     let handlePointerUp: (e: { pointerId: number; clientX: number; clientY: number }) => void = () => {};
 
-      const mockContainer = {
+    const mockContainer = {
       addEventListener: vi.fn().mockImplementation((event: string, cb: unknown) => {
         if (event === 'pointerdown') handlePointerDown = cb as typeof handlePointerDown;
         if (event === 'pointermove') handlePointerMove = cb as typeof handlePointerMove;
