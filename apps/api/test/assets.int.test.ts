@@ -196,6 +196,79 @@ describe('médias HTTP', () => {
     });
   });
 
+  it('filtre par q, status, kinds, paginations et valide les permissions/paramètres', async () => {
+    const editor = await login(EDITOR_EMAIL);
+    const partner = await login(PARTNER_EMAIL);
+
+    const suffix = Date.now().toString(); // suffixe unique pour isoler ce test
+    const qValue = `CaSa${suffix}`;
+
+    const asset1 = await insertAsset(AssetKind.IMAGE, '2026-09-10T00:00:00.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    await prisma.asset.update({ where: { id: asset1.id }, data: { originalKey: `uploads/mon-${qValue}-test.jpg` } });
+
+    const asset2 = await insertAsset(AssetKind.PANORAMA, '2026-09-11T00:00:00.000Z', {
+      processingStatus: ProcessingStatus.READY,
+    });
+    await prisma.asset.update({ where: { id: asset2.id }, data: { originalKey: `uploads/autre-${qValue.toLowerCase()}-image.jpg` } });
+
+    const asset3 = await insertAsset(AssetKind.VIDEO, '2026-09-12T00:00:00.000Z', {
+      processingStatus: ProcessingStatus.PENDING,
+    });
+    await prisma.asset.update({ where: { id: asset3.id }, data: { originalKey: `uploads/rien-a-voir-${suffix}.mp4` } });
+
+    const searchRes = await listAssets(editor, `q=${qValue}`);
+    const searchIds = searchRes.items.map((i) => i.id);
+    expect(searchIds).toContain(asset1.id);
+    expect(searchIds).toContain(asset2.id);
+    expect(searchIds).not.toContain(asset3.id);
+
+    const statusRes = await listAssets(editor, `q=${suffix}&status=READY`);
+    const statusIds = statusRes.items.map((i) => i.id);
+    expect(statusRes.items.length).toBeGreaterThan(0);
+    expect(statusIds).toContain(asset1.id);
+    expect(statusIds).toContain(asset2.id);
+    expect(statusIds).not.toContain(asset3.id);
+    for (const item of statusRes.items) {
+      expect(item.processingStatus).toBe(ProcessingStatus.READY);
+    }
+
+    const kindsRes = await listAssets(editor, `q=${suffix}&status=READY&kinds=IMAGE,PANORAMA`);
+    const kindsIds = kindsRes.items.map((i) => i.id);
+    expect(kindsRes.items.length).toBeGreaterThan(0);
+    expect(kindsIds).toContain(asset1.id);
+    expect(kindsIds).toContain(asset2.id);
+    expect(kindsIds).not.toContain(asset3.id);
+    for (const item of kindsRes.items) {
+      expect([AssetKind.IMAGE, AssetKind.PANORAMA]).toContain(item.kind);
+    }
+
+    const page2Res = await listAssets(editor, `q=${qValue.toLowerCase()}&page=2&pageSize=1`);
+    expect(page2Res.page).toBe(2);
+    expect(page2Res.pageSize).toBe(1);
+    expect(page2Res.items).toHaveLength(1);
+    expect(page2Res.items[0]?.id).toBe(asset1.id); // trié par createdAt desc (asset2 le plus récent en p1)
+    expect(page2Res.total).toBe(2);
+
+    const forbidden = await read('/api/v1/admin/assets?q=casa', partner);
+    expect(forbidden.statusCode).toBe(403);
+
+    const unprocessableKinds = await application().inject({
+      method: 'GET',
+      url: '/api/v1/admin/assets?kinds=IMAGE,GIF',
+      headers: { cookie: sessionCookie(editor.sessionId) },
+    });
+    expect(unprocessableKinds.statusCode).toBe(422);
+
+    const unprocessableStatus = await application().inject({
+      method: 'GET',
+      url: '/api/v1/admin/assets?status=DONE',
+      headers: { cookie: sessionCookie(editor.sessionId) },
+    });
+    expect(unprocessableStatus.statusCode).toBe(422);
+  });
+
   it('génère une URL d’upload', async () => {
     const editor = await login(EDITOR_EMAIL);
     const partner = await login(PARTNER_EMAIL);
