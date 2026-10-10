@@ -163,6 +163,7 @@ describe('médias HTTP', () => {
       'copyright',
       'createdAt',
       'derivatives',
+      'filename',
       'height',
       'id',
       'kind',
