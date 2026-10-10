@@ -7,6 +7,7 @@ import {
   completeAsset,
   reprocessAsset,
   deleteAsset,
+  uploadAsset,
   uploadPanorama,
   acceptInvite,
   apiFetch,
@@ -320,6 +321,41 @@ describe('Assets API', () => {
     expect(lastCall()?.url).toBe('/api/v1/admin/assets/018f3a38-c393-79d2-97b7-5f214f4df7e3');
     expect(lastCall()?.method).toBe('DELETE');
     expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe(profile.csrfToken);
+  });
+
+  it('uploadAsset avec kind IMAGE envoie bien kind=IMAGE dans la demande d\'upload-url', async () => {
+    const file = new File(['fake content'], 'test.png', { type: 'image/png' });
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { assetId: '018f3a38-c393-79d2-97b7-5f214f4df7e3', uploadUrl: 'http://test/up', uploadMethod: 'PUT', expiresInSeconds: 60 }));
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      id: '018f3a38-c393-79d2-97b7-5f214f4df7e3',
+      filename: 'test.png',
+      kind: AssetKind.IMAGE,
+      mimeType: 'image/png',
+      sizeBytes: 1024,
+      width: 1024,
+      height: 512,
+      processingStatus: 'READY',
+      processingLog: null,
+      copyright: null,
+      thumbnailUrl: null,
+      derivatives: {},
+      panorama: null,
+      createdAt: '2023-01-01T00:00:00.000Z',
+      issues: [],
+    }));
+
+    const onProgress = vi.fn();
+    await uploadAsset(file, AssetKind.IMAGE, onProgress);
+
+    const call1 = fetchMock.mock.calls[0];
+    if (!call1) throw new Error('call1 is undefined');
+    
+    // Parse the body to check the kind
+    const bodyStr = (call1[1] as RequestInit).body as string;
+    const body = JSON.parse(bodyStr) as Record<string, unknown>;
+    expect(body.kind).toBe(AssetKind.IMAGE);
   });
 
   it('uploadPanorama enchaîne les 3 appels dans l\'ordre', async () => {

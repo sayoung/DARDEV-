@@ -264,10 +264,10 @@ export async function deleteAsset(id: string): Promise<void> {
   });
 }
 
-export async function uploadPanorama(file: File, onProgress?: (percent: number) => void): Promise<AssetResponse> {
+export async function uploadAsset(file: File, kind: AssetKind, onProgress?: (percent: number) => void): Promise<AssetResponse> {
   try {
     const uploadRes = await requestAssetUploadUrl({
-      kind: AssetKind.PANORAMA,
+      kind,
       mimeType: file.type,
       sizeBytes: file.size,
       filename: file.name,
@@ -296,6 +296,10 @@ export async function uploadPanorama(file: File, onProgress?: (percent: number) 
     }
     throw error;
   }
+}
+
+export async function uploadPanorama(file: File, onProgress?: (percent: number) => void): Promise<AssetResponse> {
+  return uploadAsset(file, AssetKind.PANORAMA, onProgress);
 }
 
 export async function cleanupAssetsDryRun(): Promise<AssetCleanupDryRunResponse> {
