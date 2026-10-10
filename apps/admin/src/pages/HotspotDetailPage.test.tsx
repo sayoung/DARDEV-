@@ -153,7 +153,26 @@ describe('HotspotDetailPage', () => {
     expect(sceneLink).toBeDefined();
     
     // Le bouton de retour a href vers /tours/t1 et contient le texte retour
-    const backBtn = screen.getByText(/Retour à la visite|tour\.backToDetail/i);
+    const backBtn = screen.getByText('← Retour à la visite');
+    expect(backBtn.closest('a')?.getAttribute('href')).toBe('/tours/t1');
+  });
+
+  it('affiche le formulaire et le lien de retour même si getTour rejette', async () => {
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'hotspot-new', tourId: 't1', sceneId: 's1' },
+      notice: null,
+      search: '',
+    } as never);
+
+    vi.mocked(getTour).mockRejectedValueOnce(new Error('Erreur API'));
+
+    render(<HotspotDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Ajouter un hotspot').length).toBeGreaterThan(0);
+    });
+
+    const backBtn = screen.getByText('← Retour à la visite');
     expect(backBtn.closest('a')?.getAttribute('href')).toBe('/tours/t1');
   });
 });

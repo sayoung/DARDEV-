@@ -14,7 +14,8 @@
     "delete": "Delete",
     "error": {
       "generic": "An error occurred."
-    }
+    },
+    "unknown": "Unknown"
   },
   "auth": {
     "login": {

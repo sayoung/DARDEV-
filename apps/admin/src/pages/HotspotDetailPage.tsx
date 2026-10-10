@@ -31,9 +31,9 @@ export function HotspotDetailPage() {
     let active = true;
     if (auth.state.status === 'authenticated' && (auth.state.profile.role === Role.ADMIN || auth.state.profile.role === Role.EDITOR) && tourId && sceneId) {
       Promise.all([
-        getScene(sceneId),
+        getScene(sceneId).catch(() => null),
         listScenes(tourId),
-        getTour(tourId),
+        getTour(tourId).catch(() => null),
         hotspotId ? getHotspot(hotspotId) : Promise.resolve(null)
       ])
         .then(([resScene, resScenes, resTour, resHotspot]) => {
@@ -122,14 +122,20 @@ export function HotspotDetailPage() {
     );
   }
 
+  const handleLinkClick = (event: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0) return;
+    event.preventDefault();
+    navigate(path);
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
-        <a href={hrefFor('/tours')} onClick={(e) => { e.preventDefault(); navigate('/tours'); }} className="hover:underline">{t('catalog.tours.list')}</a>
+        <a href={hrefFor('/tours')} onClick={(e) => { handleLinkClick(e, '/tours'); }} className="hover:underline">{t('catalog.tours.list')}</a>
         <span>›</span>
-        <a href={hrefFor(`/tours/${tourId}`)} onClick={(e) => { e.preventDefault(); navigate(`/tours/${tourId}`); }} className="hover:underline">{localize(tour?.title || { fr: '' }, i18n.language)}</a>
+        <a href={hrefFor(`/tours/${tourId}`)} onClick={(e) => { handleLinkClick(e, `/tours/${tourId}`); }} className="hover:underline">{tour ? localize(tour.title, i18n.language) : t('common.unknown')}</a>
         <span>›</span>
-        <a href={hrefFor(`/tours/${tourId}/scenes/${sceneId}`)} onClick={(e) => { e.preventDefault(); navigate(`/tours/${tourId}/scenes/${sceneId}`); }} className="hover:underline">{localize(scene.title, i18n.language)}</a>
+        <a href={hrefFor(`/tours/${tourId}/scenes/${sceneId}`)} onClick={(e) => { handleLinkClick(e, `/tours/${tourId}/scenes/${sceneId}`); }} className="hover:underline">{localize(scene.title, i18n.language)}</a>
         <span>›</span>
         <span>{hotspotId ? t('catalog.hotspots.edit') : t('catalog.hotspots.add')}</span>
       </div>
@@ -138,11 +144,7 @@ export function HotspotDetailPage() {
         <a
           href={hrefFor(`/tours/${tourId}`)}
           className="text-sm text-muted-foreground hover:text-foreground mb-1 block"
-          onClick={(event) => {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0) return;
-            event.preventDefault();
-            navigate(`/tours/${tourId}`);
-          }}
+          onClick={(e) => { handleLinkClick(e, `/tours/${tourId}`); }}
         >
           &larr; {t('tour.backToDetail')}
         </a>
