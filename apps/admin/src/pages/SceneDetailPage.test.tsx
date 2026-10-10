@@ -4,7 +4,7 @@ import { i18n } from '../i18n.js';
 import { SceneDetailPage } from './SceneDetailPage.js';
 import { navigate, useAppLocation } from '../router.js';
 import { useAuth } from '../auth/AuthProvider.js';
-import { getScene, createScene, updateScene, listScenes, getAsset, listHotspots, createHotspot, updateHotspot, deleteHotspot, getTour } from '../api/catalog.js';
+import { getScene, createScene, updateScene, listScenes, getAsset, listAssets, listHotspots, createHotspot, updateHotspot, deleteHotspot, getTour } from '../api/catalog.js';
 import { Role, type SceneResponse, type AssetResponse, AssetKind, ProcessingStatus, type HotspotResponse, HotspotType, HotspotIcon, type TourResponse } from '@xplor/shared';
 import { SceneEditor360 } from '../components/SceneEditor360.js';
 
@@ -66,21 +66,7 @@ vi.mock('../components/SceneEditor360.js', () => ({
   }),
 }));
 
-interface MockAssetPickerProps {
-  kind: string;
-  value: string;
-  onChange: (val: string) => void;
-}
 
-vi.mock('../catalog/AssetPicker.js', () => ({
-  AssetPicker: (props: MockAssetPickerProps) => (
-    <input
-      data-testid={`mock-asset-picker-${props.kind}`}
-      value={props.value || ''}
-      onChange={(e) => { props.onChange(e.target.value); }}
-    />
-  )
-}));
 
 const mockAuth = (role = Role.ADMIN) => {
   vi.mocked(useAuth).mockReturnValue({
@@ -172,6 +158,29 @@ describe('SceneDetailPage', () => {
       search: '',
     });
     vi.mocked(listScenes).mockResolvedValue([]);
+    vi.mocked(listAssets).mockResolvedValue({
+      items: [
+        {
+          id: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+          filename: 'mock.jpg',
+          kind: AssetKind.PANORAMA,
+          mimeType: 'image/jpeg',
+          sizeBytes: 100,
+          width: 800,
+          height: 600,
+          processingStatus: ProcessingStatus.READY,
+          processingLog: null,
+          copyright: null,
+          thumbnailUrl: null,
+          derivatives: {},
+          panorama: null,
+          createdAt: new Date().toISOString(),
+        }
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 20
+    });
     const mockSceneResponse: SceneResponse = {
       id: 's-new',
       tourId: 't-1',
@@ -195,9 +204,12 @@ describe('SceneDetailPage', () => {
     const titleInput = container.querySelector('input[type="text"]') as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: 'Nouvelle scène' } });
 
-    // Fill panorama with valid UUID
-    const panoramaInput = screen.getByTestId('mock-asset-picker-PANORAMA');
-    fireEvent.change(panoramaInput, { target: { value: '018b1d62-a5e3-7a91-9e23-2834b6b63300' } });
+    // Fill panorama
+    const panoramaBtn = screen.getByLabelText(/Panorama/i);
+    fireEvent.click(panoramaBtn);
+    
+    const radio = await screen.findByRole('radio', { name: /mock\.jpg/i });
+    fireEvent.click(radio);
 
     const form = container.querySelector('form') as HTMLFormElement;
     fireEvent.submit(form);

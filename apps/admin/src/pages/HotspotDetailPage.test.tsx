@@ -29,13 +29,7 @@ vi.mock('../api/catalog.js', () => ({
   listAssets: vi.fn(() => Promise.resolve({ items: [], total: 0, page: 1, pageSize: 10 })),
 }));
 
-// Mock minimal des Pickers car ils peuvent avoir des requêtes
-vi.mock('../catalog/AssetPicker.js', () => ({
-  AssetPicker: ({ label, 'data-testid': testId }: { label: string; 'data-testid'?: string }) => <div data-testid={testId || 'asset-picker'}>{label}</div>
-}));
-vi.mock('../catalog/MultiAssetPicker.js', () => ({
-  MultiAssetPicker: ({ label }: { label: string }) => <div>{label}</div>
-}));
+
 
 const mockAuth = {
   state: {
