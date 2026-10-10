@@ -62,6 +62,7 @@ export function SceneEditor360({
       panorama,
       markers: hotspots, // Pass hotspots on mount so they are not lost
       initialView: initialViewRef.current, // Use ref to prevent remount if initialView is a literal passed on each render
+      labels: { moveMode: t('editor.moveMode') },
       onPanoramaClick: (yaw, pitch) => { callbacksRef.current.onPanoramaClick(yaw, pitch); },
       onMarkerSelect: (id) => { callbacksRef.current.onMarkerSelect(id); },
       onMarkerMove: (id, yaw, pitch) => { callbacksRef.current.onMarkerMove?.(id, yaw, pitch); },

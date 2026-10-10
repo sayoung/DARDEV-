@@ -77,6 +77,7 @@ export function mountSceneEditor(
     panorama: EditorPanorama;
     markers: EditorMarker[];
     initialView: { yaw: number; pitch: number; zoom: number };
+    labels?: { moveMode: string };
     onPanoramaClick: (yaw: number, pitch: number) => void;
     onMarkerSelect: (id: string) => void;
     onMarkerMove?: (id: string, yaw: number, pitch: number) => void;
@@ -86,6 +87,8 @@ export function mountSceneEditor(
     showErrorTile: true,
   };
 
+  let isMoveModeActive = false;
+
   const viewer = new Viewer({
     container,
     adapter: [EquirectangularTilesAdapter, adapterConfig],
@@ -93,8 +96,24 @@ export function mountSceneEditor(
     defaultYaw: options.initialView.yaw,
     defaultPitch: options.initialView.pitch,
     defaultZoomLvl: options.initialView.zoom,
+    navbar: [
+      'zoom',
+      {
+        id: 'move-mode',
+        content: options.labels?.moveMode || 'Déplacer',
+        title: options.labels?.moveMode || 'Déplacer',
+        className: 'xplor-move-btn',
+        onClick: () => {
+          isMoveModeActive = !isMoveModeActive;
+          const btn = viewer.navbar.getButton('move-mode');
+          btn.toggleActive(isMoveModeActive);
+        },
+      },
+      'caption',
+      'fullscreen',
+    ],
     plugins: [
-      [MarkersPlugin, {}],
+      [MarkersPlugin, { clickEventOnMarker: true }],
     ],
   });
 
@@ -103,16 +122,14 @@ export function mountSceneEditor(
   const markerConfigs: MarkerConfig[] = options.markers.map(toEditorMarkerConfig);
   markersPlugin.setMarkers(markerConfigs);
 
-  viewer.addEventListener('click', (e) => {
-    if (e.data.rightclick) {
-      return;
-    }
-    
-    if (e.data.target?.closest('.psv-marker')) {
-       return;
-    }
-    
-    options.onPanoramaClick(normalizeYaw(e.data.yaw), e.data.pitch);
+  // Disable default double click zoom
+  viewer.container.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+
+  viewer.addEventListener('dblclick', (e) => {
+    e.preventDefault();
   });
 
   let currentSelectedMarkerId: string | null = null;
@@ -130,11 +147,43 @@ export function mountSceneEditor(
     });
   };
 
+  viewer.addEventListener('click', (e) => {
+    if (e.data.rightclick) {
+      return;
+    }
+    
+    // Prevent any action if clicking on a marker
+    if (e.data.marker || e.data.target?.closest('.psv-marker')) {
+       return;
+    }
+    
+    const yaw = normalizeYaw(e.data.yaw);
+    const pitch = e.data.pitch;
+
+    if (isMoveModeActive && currentSelectedMarkerId && options.onMarkerMove) {
+      isMoveModeActive = false;
+      const btn = viewer.navbar.getButton('move-mode');
+      btn.toggleActive(false);
+      
+      markersPlugin.updateMarker({ id: currentSelectedMarkerId, position: { yaw, pitch } });
+      options.onMarkerMove(currentSelectedMarkerId, yaw, pitch);
+    } else {
+      options.onPanoramaClick(yaw, pitch);
+    }
+  });
+
   markersPlugin.addEventListener('select-marker', ({ marker }) => {
     options.onMarkerSelect(marker.id);
   });
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && isMoveModeActive) {
+      isMoveModeActive = false;
+      const btn = viewer.navbar.getButton('move-mode');
+      btn.toggleActive(false);
+      return;
+    }
+
     if (!currentSelectedMarkerId) return;
     const activeEl = document.activeElement;
     if (activeEl) {
@@ -191,15 +240,13 @@ export function mountSceneEditor(
         if (marker) id = marker.id;
       }
       if (typeof id !== 'string') return;
-
-      e.stopPropagation();
-      e.preventDefault();
       
       draggedMarkerId = id;
       isDragging = false;
       startX = e.clientX;
       startY = e.clientY;
       
+      viewer.setOption('mousemove', false);
       viewer.container.setPointerCapture(e.pointerId);
     };
 
@@ -211,13 +258,15 @@ export function mountSceneEditor(
         const dy = e.clientY - startY;
         if (dx * dx + dy * dy >= 16) {
           isDragging = true;
-          viewer.setOption('mousemove', false);
         } else {
           return;
         }
       }
 
-      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
+      const boundingRect = viewer.container.getBoundingClientRect();
+      const viewerX = e.clientX - boundingRect.left;
+      const viewerY = e.clientY - boundingRect.top;
+      const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: viewerX, y: viewerY });
       if (!isSphericalPosition(spherical)) return;
       
       markersPlugin.updateMarker({
@@ -230,13 +279,19 @@ export function mountSceneEditor(
       if (!draggedMarkerId) return;
       
       viewer.container.releasePointerCapture(e.pointerId);
+      viewer.setOption('mousemove', true);
       
       if (isDragging) {
-        const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: e.clientX, y: e.clientY });
+        const boundingRect = viewer.container.getBoundingClientRect();
+        const viewerX = e.clientX - boundingRect.left;
+        const viewerY = e.clientY - boundingRect.top;
+        const spherical = viewer.dataHelper.viewerCoordsToSphericalCoords({ x: viewerX, y: viewerY });
         if (isSphericalPosition(spherical)) {
           onMarkerMoveCb(draggedMarkerId, normalizeYaw(spherical.yaw), spherical.pitch);
         }
-        viewer.setOption('mousemove', true);
+      } else {
+        // Only select, do not trigger anything else
+        options.onMarkerSelect(draggedMarkerId);
       }
       
       draggedMarkerId = null;

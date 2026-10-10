@@ -462,6 +462,7 @@
     "openMap": "Voir sur la carte"
   },
   "editor": {
-    "sceneAriaLabel": "Éditeur de panorama 360"
+    "sceneAriaLabel": "Éditeur de panorama 360",
+    "moveMode": "Déplacer"
   }
 }

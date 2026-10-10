@@ -309,6 +309,7 @@
     "loadError": "Impossible de charger la visite. Réessayez plus tard."
   },
   "editor": {
-    "sceneAriaLabel": "Éditeur de panorama 360"
+    "sceneAriaLabel": "Éditeur de panorama 360",
+    "moveMode": "Move"
   }
 }
