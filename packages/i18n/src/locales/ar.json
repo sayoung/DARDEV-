@@ -1,5 +1,6 @@
 {
   "common": {
+    "breadcrumb": "Fil d'Ariane",
     "appName": "Xplor",
     "loading": "جاري التحميل...",
     "language": {
@@ -265,6 +266,7 @@
     }
   },
   "tour": {
+    "newScene": "Nouvelle scène",
     "form": {
       "title": "العنوان",
       "summary": "الملخص",
