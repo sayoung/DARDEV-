@@ -125,6 +125,8 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
         variant="outline" 
         className="w-full justify-start font-normal text-start" 
         onClick={() => { setOpen(true); }}
+        aria-haspopup="dialog"
+        aria-expanded={open}
       >
         {selectedLabel}
       </Button>
