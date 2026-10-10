@@ -119,6 +119,8 @@
         "READY": "Prêt",
         "ERROR": "Erreur"
       },
+      "searchLabel": "Rechercher un média",
+      "kindFilterLabel": "Filtrer par type",
       "loadMore": "Charger plus",
       "allKinds": "Tous les types",
       "pickerTitle": "Sélectionner un média"

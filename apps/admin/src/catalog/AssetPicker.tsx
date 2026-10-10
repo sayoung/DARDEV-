@@ -1,12 +1,14 @@
 import { useEffect, useState, useId, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type AssetKind, type AssetResponse, ProcessingStatus } from '@xplor/shared';
+import { AssetKind, type AssetResponse, ProcessingStatus, z } from '@xplor/shared';
 import { listAssets, getAsset } from '../api/catalog.js';
 
 import { Label } from '../components/ui/Label.js';
 import { Alert } from '../components/ui/Alert.js';
 import { Button } from '../components/ui/Button.js';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../components/ui/Dialog.js';
+import { Input } from '../components/ui/Input.js';
+import { Select } from '../components/ui/Select.js';
 
 interface AssetPickerProps {
   label: string;
@@ -30,6 +32,19 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
+  const [q, setQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const [kindFilter, setKindFilter] = useState<AssetKind | 'all'>('all');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQ(q);
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [q]);
+
   const requestCounter = useRef(0);
   
   const kindsDep = kinds?.join(',');
@@ -37,6 +52,14 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
   if (kindsRef.current?.join(',') !== kindsDep) {
     kindsRef.current = kinds;
   }
+
+  useEffect(() => {
+    if (!open) {
+      setQ('');
+      setDebouncedQ('');
+      setKindFilter('all');
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!value) {
@@ -60,14 +83,66 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
     };
   }, [value]);
 
-  const load = useCallback(async (loadPage: number, reset: boolean) => {
+  useEffect(() => {
+    if (!open) return;
+
+    let mounted = true;
     const currentRequest = ++requestCounter.current;
     
+    const load = async (loadPage: number, reset: boolean) => {
+      setLoading(true);
+      if (reset) {
+        setError(false);
+      }
+      
+      try {
+        const queryParams: Parameters<typeof listAssets>[0] = {
+          status: ProcessingStatus.READY,
+          page: loadPage,
+          pageSize: 24,
+        };
+        
+        if (debouncedQ) {
+          queryParams.q = debouncedQ;
+        }
+
+        if (kind) {
+          queryParams.kind = kind;
+        } else if (kindFilter !== 'all') {
+          queryParams.kind = kindFilter;
+        } else if (kindsRef.current) {
+          queryParams.kinds = [...kindsRef.current];
+        }
+
+        const res = await listAssets(queryParams);
+        
+        if (!mounted || currentRequest !== requestCounter.current) {
+          return;
+        }
+
+        setAssets(prev => reset ? res.items : [...prev, ...res.items]);
+        setTotal(res.total);
+        setPage(loadPage);
+        setLoading(false);
+      } catch {
+        if (!mounted || currentRequest !== requestCounter.current) {
+          return;
+        }
+        setError(true);
+        setLoading(false);
+      }
+    };
+
+    void load(1, true);
+
+    return () => {
+      mounted = false;
+    };
+  }, [open, debouncedQ, kindFilter, kindsDep, kind]);
+
+  const loadMore = useCallback(async (loadPage: number) => {
+    const currentRequest = ++requestCounter.current;
     setLoading(true);
-    if (reset) {
-      setError(false);
-    }
-    
     try {
       const queryParams: Parameters<typeof listAssets>[0] = {
         status: ProcessingStatus.READY,
@@ -75,8 +150,14 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
         pageSize: 24,
       };
       
+      if (debouncedQ) {
+        queryParams.q = debouncedQ;
+      }
+
       if (kind) {
         queryParams.kind = kind;
+      } else if (kindFilter !== 'all') {
+        queryParams.kind = kindFilter;
       } else if (kindsRef.current) {
         queryParams.kinds = [...kindsRef.current];
       }
@@ -87,7 +168,7 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
         return;
       }
 
-      setAssets(prev => reset ? res.items : [...prev, ...res.items]);
+      setAssets(prev => [...prev, ...res.items]);
       setTotal(res.total);
       setPage(loadPage);
       setLoading(false);
@@ -98,13 +179,7 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
       setError(true);
       setLoading(false);
     }
-  }, [kind]);
-
-  useEffect(() => {
-    if (open) {
-      void load(1, true);
-    }
-  }, [open, load]);
+  }, [debouncedQ, kind, kindFilter]);
 
   let selectedLabel = t('catalog.asset.emptyOption');
   if (selectedAsset) {
@@ -139,6 +214,44 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
           {error && <Alert variant="destructive">{t('catalog.asset.error')}</Alert>}
           {!error && !loading && assets.length === 0 && <Alert>{t('catalog.asset.empty')}</Alert>}
           
+          <div className="flex flex-col sm:flex-row gap-4 mb-4 mt-2">
+            <div className="flex-1">
+              <Input
+                type="search"
+                placeholder={t('catalog.asset.searchPlaceholder')}
+                aria-label={t('catalog.asset.searchLabel')}
+                value={q}
+                onChange={(e) => { setQ(e.target.value); }}
+              />
+            </div>
+            {!kind && kindsRef.current && kindsRef.current.length > 1 && (
+              <div className="w-full sm:w-64">
+                <Select
+                  value={kindFilter}
+                  onChange={(e) => { 
+                    const val = e.target.value;
+                    if (val === 'all') {
+                      setKindFilter('all');
+                    } else {
+                      const parsed = z.enum(AssetKind).safeParse(val);
+                      if (parsed.success && kindsRef.current?.includes(parsed.data)) {
+                        setKindFilter(parsed.data);
+                      }
+                    }
+                  }}
+                  aria-label={t('catalog.asset.kindFilterLabel')}
+                >
+                  <option value="all">{t('catalog.asset.allKinds')}</option>
+                  {kindsRef.current.map((k) => (
+                    <option key={k} value={k}>
+                      {t(`catalog.asset.kind.${k}`)}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+          </div>
+
           {assets.length > 0 && (
             <div 
               className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4" 
@@ -205,7 +318,7 @@ export function AssetPicker({ label, kind, kinds, value, onChange, required }: A
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => { void load(page + 1, false); }} 
+                onClick={() => { void loadMore(page + 1); }} 
                 disabled={loading}
               >
                 {loading ? t('common.loading') : t('catalog.asset.loadMore')}
