@@ -14,7 +14,8 @@
     "delete": "حذف",
     "error": {
       "generic": "حدث خطأ."
-    }
+    },
+    "unknown": "غير معروف"
   },
   "auth": {
     "login": {

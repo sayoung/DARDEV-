@@ -20,7 +20,8 @@
     },
     "error": {
       "generic": "Une erreur est survenue."
-    }
+    },
+    "unknown": "Inconnu"
   },
   "auth": {
     "slogan": "Votre voyage commence ici",

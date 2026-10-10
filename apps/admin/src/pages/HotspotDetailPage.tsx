@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getScene, listScenes, getHotspot, createHotspot, updateHotspot } from '../api/catalog.js';
+import { getScene, listScenes, getHotspot, createHotspot, updateHotspot, getTour } from '../api/catalog.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
-import { Role, type HotspotCreate, type HotspotResponse, type SceneResponse } from '@xplor/shared';
+import { Role, type HotspotCreate, type HotspotResponse, type SceneResponse, type TourResponse, localize } from '@xplor/shared';
 import { useAuth } from '../auth/AuthProvider.js';
 import { PageHeader } from '../components/PageHeader.js';
 import { HotspotForm } from './HotspotForm.js';
 import { ApiError } from '../api/client.js';
+import { i18n } from '../i18n.js';
 
 export function HotspotDetailPage() {
   const { t } = useTranslation();
@@ -16,6 +17,7 @@ export function HotspotDetailPage() {
   const sceneId = (route.name === 'hotspot-detail' || route.name === 'hotspot-new') ? route.sceneId : '';
   const hotspotId = route.name === 'hotspot-detail' ? route.id : undefined;
 
+  const [tour, setTour] = useState<TourResponse | null>(null);
   const [scene, setScene] = useState<SceneResponse | null>(null);
   const [currentTourScenes, setCurrentTourScenes] = useState<SceneResponse[]>([]);
   const [hotspot, setHotspot] = useState<HotspotResponse | null>(null);
@@ -29,14 +31,16 @@ export function HotspotDetailPage() {
     let active = true;
     if (auth.state.status === 'authenticated' && (auth.state.profile.role === Role.ADMIN || auth.state.profile.role === Role.EDITOR) && tourId && sceneId) {
       Promise.all([
-        getScene(sceneId),
+        getScene(sceneId).catch(() => null),
         listScenes(tourId),
+        getTour(tourId).catch(() => null),
         hotspotId ? getHotspot(hotspotId) : Promise.resolve(null)
       ])
-        .then(([resScene, resScenes, resHotspot]) => {
+        .then(([resScene, resScenes, resTour, resHotspot]) => {
           if (active) {
             setScene(resScene);
             setCurrentTourScenes(resScenes);
+            setTour(resTour);
             if (resHotspot) setHotspot(resHotspot);
             setLoading(false);
           }
@@ -118,19 +122,31 @@ export function HotspotDetailPage() {
     );
   }
 
+  const handleLinkClick = (event: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0) return;
+    event.preventDefault();
+    navigate(path);
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
+      <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
+        <a href={hrefFor('/tours')} onClick={(e) => { handleLinkClick(e, '/tours'); }} className="hover:underline">{t('catalog.tours.list')}</a>
+        <span>›</span>
+        <a href={hrefFor(`/tours/${tourId}`)} onClick={(e) => { handleLinkClick(e, `/tours/${tourId}`); }} className="hover:underline">{tour ? localize(tour.title, i18n.language) : t('common.unknown')}</a>
+        <span>›</span>
+        <a href={hrefFor(`/tours/${tourId}/scenes/${sceneId}`)} onClick={(e) => { handleLinkClick(e, `/tours/${tourId}/scenes/${sceneId}`); }} className="hover:underline">{localize(scene.title, i18n.language)}</a>
+        <span>›</span>
+        <span>{hotspotId ? t('catalog.hotspots.edit') : t('catalog.hotspots.add')}</span>
+      </div>
+
       <div className="flex items-center gap-4">
         <a
-          href={hrefFor(`/tours/${tourId}/scenes/${sceneId}/hotspots`)}
+          href={hrefFor(`/tours/${tourId}`)}
           className="text-sm text-muted-foreground hover:text-foreground mb-1 block"
-          onClick={(event) => {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0) return;
-            event.preventDefault();
-            navigate(`/tours/${tourId}/scenes/${sceneId}/hotspots`);
-          }}
+          onClick={(e) => { handleLinkClick(e, `/tours/${tourId}`); }}
         >
-          &larr; {t('catalog.hotspots.backToList')}
+          &larr; {t('tour.backToDetail')}
         </a>
       </div>
 
