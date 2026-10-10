@@ -329,4 +329,103 @@ describe('AssetPicker', () => {
 
     expect(await screen.findByText('Erreur de traitement du média.')).toBeTruthy();
   });
+
+  it('(11) uploadAsset rejeté', async () => {
+    vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
+    const onChange = vi.fn();
+
+    render(<AssetPicker label="Média" onChange={onChange} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+
+    const uploadTab = await screen.findByRole('tab', { name: 'Envoyer depuis mon ordinateur' });
+    fireEvent.pointerDown(uploadTab);
+    fireEvent.mouseDown(uploadTab);
+    fireEvent.click(uploadTab);
+
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    const input = await screen.findByLabelText('Choisir un fichier');
+    fireEvent.change(input, { target: { files: [file] } });
+
+    vi.mocked(uploadAsset).mockRejectedValueOnce(new Error('boom'));
+
+    const submitBtn = screen.getByRole('button', { name: 'Envoyer' });
+    fireEvent.click(submitBtn);
+
+    await act(async () => {
+      await Promise.resolve(); // uploadAsset rejects
+    });
+
+    expect(await screen.findByText("Erreur lors de l'envoi.")).toBeTruthy();
+    expect(screen.queryByText('Erreur de traitement du média.')).toBeNull();
+    
+    expect(waitUntilAssetReady).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+
+    // Button should be usable to retry
+    expect((submitBtn as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('(12) fermeture/réouverture de la fenêtre pendant le traitement', async () => {
+    vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
+    const onChange = vi.fn();
+
+    render(<AssetPicker label="Média" onChange={onChange} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+
+    const uploadTab = await screen.findByRole('tab', { name: 'Envoyer depuis mon ordinateur' });
+    fireEvent.pointerDown(uploadTab);
+    fireEvent.mouseDown(uploadTab);
+    fireEvent.click(uploadTab);
+
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    const input = await screen.findByLabelText('Choisir un fichier');
+    fireEvent.change(input, { target: { files: [file] } });
+
+    const waitPromise = new Promise<AssetResponse>(() => {});
+    vi.mocked(uploadAsset).mockResolvedValueOnce(makeMockAsset('new-asset', 'test.jpg', AssetKind.IMAGE));
+    vi.mocked(waitUntilAssetReady).mockReturnValueOnce(waitPromise);
+
+    const submitBtn = screen.getByRole('button', { name: 'Envoyer' });
+    fireEvent.click(submitBtn);
+
+    await act(async () => {
+      await Promise.resolve(); // uploadAsset resolves
+    });
+
+    expect(screen.getByText('Traitement en cours…')).toBeTruthy();
+    
+    const waitCall = vi.mocked(waitUntilAssetReady).mock.calls[0];
+    expect(waitCall).toBeDefined();
+    const abortSignal = waitCall?.[1]?.signal;
+    expect(abortSignal).toBeDefined();
+    
+    // Close the dialog
+    // It's closed by clicking outside
+    const dialog = screen.getByRole('dialog');
+    if (dialog.parentElement) {
+      fireEvent.click(dialog.parentElement);
+    }
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    // Check that signal is aborted
+    expect(abortSignal?.aborted).toBe(true);
+
+    // Reopen dialog
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeTruthy();
+    });
+
+    // The displayed tab is Médiathèque
+    const activeTab = screen.getByRole('tab', { selected: true });
+    expect(activeTab.textContent).toBe('Médiathèque');
+    
+    // No residual error appears upon reopening
+    expect(screen.queryByText("Erreur lors de l'envoi.")).toBeNull();
+    expect(screen.queryByText('Erreur de traitement du média.')).toBeNull();
+  });
 });
