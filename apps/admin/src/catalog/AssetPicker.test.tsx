@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import { AssetPicker } from './AssetPicker.js';
 import { AssetKind, ProcessingStatus, type AssetResponse } from '@xplor/shared';
 import { i18n } from '../i18n.js';
@@ -9,12 +9,15 @@ vi.mock('../api/catalog.js');
 
 describe('AssetPicker', () => {
   beforeEach(async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     await i18n.changeLanguage('fr');
     vi.mocked(listAssets).mockReset();
     vi.mocked(getAsset).mockReset();
   });
 
   afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
     cleanup();
   });
 
@@ -35,7 +38,7 @@ describe('AssetPicker', () => {
     createdAt: new Date().toISOString(),
   });
 
-  it('(1) le bouton affiche t(\'catalog.asset.emptyOption\') sans value, et le filename renvoyé par getAsset(value) sinon', async () => {
+  it('(1) le bouton affiche le texte par défaut sans value, et le filename renvoyé par getAsset(value) sinon', async () => {
     vi.mocked(getAsset).mockResolvedValueOnce(makeMockAsset('val1', 'mon-fichier.jpg'));
 
     const { rerender } = render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
@@ -46,11 +49,12 @@ describe('AssetPicker', () => {
     expect(getAsset).toHaveBeenCalledWith('val1');
   });
 
-  it('(2) l\'ouverture appelle listAssets avec les bons paramètres selon kind ou kinds', () => {
+  it('(2) l\'ouverture de la fenêtre appelle listAssets avec les bons paramètres selon kind ou kinds', () => {
     vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
     const { unmount } = render(<AssetPicker label="Média" kind={AssetKind.PANORAMA} onChange={vi.fn()} value="" />);
     
     fireEvent.click(screen.getByText('Sélectionner un média...'));
+    
     expect(listAssets).toHaveBeenCalledWith({ kind: AssetKind.PANORAMA, status: 'READY', page: 1, pageSize: 24 });
     
     unmount();
@@ -58,6 +62,7 @@ describe('AssetPicker', () => {
     
     render(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO]} onChange={vi.fn()} value="" />);
     fireEvent.click(screen.getByText('Sélectionner un média...'));
+    
     expect(listAssets).toHaveBeenCalledWith({ kinds: [AssetKind.IMAGE, AssetKind.VIDEO], status: 'READY', page: 1, pageSize: 24 });
   });
 
@@ -75,7 +80,6 @@ describe('AssetPicker', () => {
     
     expect(onChange).toHaveBeenCalledWith('asset-1');
     
-    // Le dialog devrait être fermé (soit caché, soit démonté)
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull();
     });
@@ -97,7 +101,7 @@ describe('AssetPicker', () => {
     expect(alert.textContent).toContain('Impossible de charger les médias.');
   });
 
-  it('(5) \'Charger plus\' visible tant que items cumulés < total, appelle listAssets page 2 et AJOUTE les items, disparaît quand tout est chargé', async () => {
+  it('(5) \'Charger plus\' visible tant que items cumulés < total, appelle listAssets page 2 et AJOUTE les items', async () => {
     const item1 = makeMockAsset('asset-1', 'page1.jpg');
     const item2 = makeMockAsset('asset-2', 'page2.jpg');
     
@@ -120,22 +124,47 @@ describe('AssetPicker', () => {
     expect(screen.queryByRole('button', { name: 'Charger plus' })).toBeNull();
   });
 
-  it('(6) un re-rendu du parent avec un tableau kinds inline ne relance pas listAssets', async () => {
+  it('(6) recherche avec debounce 300 ms transmet q à listAssets', () => {
     vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
-    const { rerender } = render(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO]} onChange={vi.fn()} value="" />);
+    
+    render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
     fireEvent.click(screen.getByText('Sélectionner un média...'));
     
-    await screen.findByText('Aucun média trouvé.');
-    expect(listAssets).toHaveBeenCalledTimes(1);
+    expect(listAssets).toHaveBeenCalledWith({ status: 'READY', page: 1, pageSize: 24 });
+    vi.mocked(listAssets).mockClear();
 
-    rerender(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO]} onChange={vi.fn()} value="" />);
+    const searchInput = screen.getByPlaceholderText('Rechercher par nom...');
     
-    await waitFor(() => {
-      expect(listAssets).toHaveBeenCalledTimes(1);
+    fireEvent.change(searchInput, { target: { value: 'test' } });
+    
+    // Le debounce de 300ms n'est pas encore passé
+    expect(listAssets).not.toHaveBeenCalled();
+    
+    act(() => {
+      vi.advanceTimersByTime(300);
     });
+
+    expect(listAssets).toHaveBeenCalledWith({ q: 'test', status: 'READY', page: 1, pageSize: 24 });
   });
 
-  it('(7) une réponse obsolète est ignorée (deux ouvertures/fermetures ou changement de kind avec promesses résolues dans l\'ordre inverse)', async () => {
+  it('(7) filtre de type (kindFilter) relance la requête', () => {
+    vi.mocked(listAssets).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 24 });
+    
+    render(<AssetPicker label="Média" kinds={[AssetKind.IMAGE, AssetKind.VIDEO, AssetKind.PANORAMA]} onChange={vi.fn()} value="" />);
+    fireEvent.click(screen.getByText('Sélectionner un média...'));
+    
+    // L'ouverture charge tous les kinds
+    expect(listAssets).toHaveBeenCalledWith({ kinds: [AssetKind.IMAGE, AssetKind.VIDEO, AssetKind.PANORAMA], status: 'READY', page: 1, pageSize: 24 });
+    vi.mocked(listAssets).mockClear();
+
+    const select = screen.getByRole('combobox', { name: 'Filtrer par type' });
+    
+    fireEvent.change(select, { target: { value: AssetKind.IMAGE } });
+    
+    expect(listAssets).toHaveBeenCalledWith({ kind: AssetKind.IMAGE, status: 'READY', page: 1, pageSize: 24 });
+  });
+
+  it('(8) une requête obsolète est ignorée', async () => {
     let resolveFirst!: (v: Awaited<ReturnType<typeof listAssets>>) => void;
     let resolveSecond!: (v: Awaited<ReturnType<typeof listAssets>>) => void;
 
@@ -143,18 +172,24 @@ describe('AssetPicker', () => {
       .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
       .mockImplementationOnce(() => new Promise((resolve) => { resolveSecond = resolve; }));
 
-    const { rerender } = render(<AssetPicker label="Média" kind={AssetKind.PANORAMA} onChange={vi.fn()} value="" />);
+    render(<AssetPicker label="Média" onChange={vi.fn()} value="" />);
     
     fireEvent.click(screen.getByText('Sélectionner un média...'));
     
-    // Le changement de prop kind déclenche un re-rendu et refetch (useEffect dans load)
-    rerender(<AssetPicker label="Média" kind={AssetKind.IMAGE} onChange={vi.fn()} value="" />);
+    const searchInput = await screen.findByPlaceholderText('Rechercher par nom...');
+    
+    // On lance une deuxième recherche avant que la première ne réponde
+    fireEvent.change(searchInput, { target: { value: 'test' } });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
     
     // On résout la DEUXIÈME promesse d'abord
     resolveSecond({
       items: [makeMockAsset('asset-2', 'second.jpg', AssetKind.IMAGE)], total: 1, page: 1, pageSize: 24
     });
 
+    // La deuxième réponse est affichée
     expect(await screen.findByRole('radio', { name: 'second.jpg' })).toBeTruthy();
     
     // On résout la PREMIÈRE (obsolète)
@@ -162,7 +197,7 @@ describe('AssetPicker', () => {
       items: [makeMockAsset('asset-1', 'first.jpg', AssetKind.PANORAMA)], total: 1, page: 1, pageSize: 24
     });
 
-    // On vérifie que la première réponse est bien ignorée (n'écrase pas la seconde)
+    // La première réponse est ignorée
     await waitFor(() => {
       expect(screen.queryByRole('radio', { name: 'first.jpg' })).toBeNull();
     });
