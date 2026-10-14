@@ -37,8 +37,7 @@ export class SessionGuard implements CanActivate {
     const principal: Principal = {
       userId: user.id,
       role: user.role,
-      // La table UserHotel existe ; ce garde ne charge pas encore les hôtels du compte.
-      hotelIds: [],
+      hotelIds: user.hotelIds ?? [],
     };
     request.principal = principal;
     request.session = session;
