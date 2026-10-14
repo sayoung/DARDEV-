@@ -145,4 +145,19 @@ export {
   type TourGraphScene,
   type TourGraphHotspot,
 } from './tour-graph.js';
+export {
+  ContractType,
+  ContractTypeSchema,
+  HotelCreateSchema,
+  HotelListResponseSchema,
+  HotelResponseSchema,
+  HotelStars,
+  HotelStarsSchema,
+  HotelUpdateSchema,
+  hotelLanguagesSchema,
+  type HotelCreate,
+  type HotelListResponse,
+  type HotelResponse,
+  type HotelUpdate,
+} from './hotel.js';
 
