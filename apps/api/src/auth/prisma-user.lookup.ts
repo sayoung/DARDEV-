@@ -11,7 +11,12 @@ export class PrismaUserLookup implements UserLookup {
   async findById(id: string): Promise<SessionUser | null> {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, role: true, active: true },
+      select: {
+        id: true,
+        role: true,
+        active: true,
+        hotels: { select: { hotelId: true } },
+      },
     });
     if (!user) {
       return null;
@@ -20,6 +25,7 @@ export class PrismaUserLookup implements UserLookup {
       id: user.id,
       role: toSharedRole(user.role),
       active: user.active,
+      hotelIds: user.hotels.map((item) => item.hotelId),
     };
   }
 }

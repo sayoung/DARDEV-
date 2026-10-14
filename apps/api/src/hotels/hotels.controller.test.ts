@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
   HttpStatus,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   ContractType,
@@ -338,9 +339,25 @@ describe('HotelsController', () => {
       expect(service.createCalls).toHaveLength(0);
     });
 
+    it('POST refuse une brandColor invalide avec 422 UnprocessableEntityException', () => {
+      const req = makeRequest(adminPrincipal);
+      expect(() =>
+        controller.create(req, { ...validCreatePayload, brandColor: 'invalid-hex' }),
+      ).toThrow(UnprocessableEntityException);
+      expect(service.createCalls).toHaveLength(0);
+    });
+
     it('PATCH refuse un corps invalide avec 400 BadRequestException', () => {
       const req = makeRequest(adminPrincipal);
       expect(() => controller.update(req, HOTEL_ID, { email: 'invalid-email' })).toThrow(BadRequestException);
+      expect(service.updateCalls).toHaveLength(0);
+    });
+
+    it('PATCH refuse une brandColor invalide avec 422 UnprocessableEntityException', () => {
+      const req = makeRequest(adminPrincipal);
+      expect(() =>
+        controller.update(req, HOTEL_ID, { brandColor: 'not-a-color' }),
+      ).toThrow(UnprocessableEntityException);
       expect(service.updateCalls).toHaveLength(0);
     });
   });
