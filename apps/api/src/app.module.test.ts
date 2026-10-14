@@ -12,6 +12,7 @@ import { ScenesController } from './catalog/scenes.controller.js';
 import { ToursController } from './catalog/tours.controller.js';
 import { loadEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
+import { HotelsController } from './hotels/hotels.controller.js';
 import { UsersController } from './users/users.controller.js';
 
 /**
@@ -38,6 +39,7 @@ describe('AppModule', () => {
     }).compile();
     expect(moduleRef.get(AuthController)).toBeInstanceOf(AuthController);
     expect(moduleRef.get(UsersController)).toBeInstanceOf(UsersController);
+    expect(moduleRef.get(HotelsController)).toBeInstanceOf(HotelsController);
     expect(moduleRef.get(CitiesController)).toBeInstanceOf(CitiesController);
     expect(moduleRef.get(CategoriesController)).toBeInstanceOf(CategoriesController);
     expect(moduleRef.get(ToursController)).toBeInstanceOf(ToursController);

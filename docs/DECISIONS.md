@@ -902,3 +902,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Aucune.
 - **À valider :** non
 
+## D-115 — Accès à /admin/hotels (API-26)
+
+- **Date :** 14/10/2026
+- **Décision :** lecture de /admin/hotels ouverte aux gestionnaires, limitée à leurs hôtels rattachés ; écriture ADMIN seul.
+- **Alternatives :** lecture réservée aux seuls administrateurs ; écriture ouverte aux gestionnaires sur leurs propres hôtels.
+- **À valider :** oui
+

@@ -5,6 +5,7 @@ import { CatalogModule } from './catalog/catalog.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { type Env } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
+import { HotelsModule } from './hotels/hotels.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { OpenApiModule } from './openapi/openapi.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -28,6 +29,7 @@ export class AppModule {
         MailModule,
         AuthModule,
         UsersModule,
+        HotelsModule,
         CatalogModule,
         StorageModule,
         ViewerModule,
