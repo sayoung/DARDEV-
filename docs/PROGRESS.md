@@ -29,3 +29,5 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 - Aucun.
 
 ### Fait
+
+- 14/10/2026 — M5 Bilan (ouverture du jalon) : tâche de bilan autorisée, seuls fichiers modifiables docs/PROGRESS.md et docs/archive/PROGRESS-M4.md (nouveau). Copier intégrale… — Archive PROGRESS-M4.md créée et en-tête M5 de PROGRESS.md réécrit conformément à la demande, seuls les deux fichiers autorisés modifiés, contrôles au vert. (b0ada82)
