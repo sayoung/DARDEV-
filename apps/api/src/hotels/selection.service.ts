@@ -31,6 +31,16 @@ export interface SelectionRow {
   items: SelectionItemRow[];
 }
 
+export interface SelectionTx {
+  selection: {
+    upsert(args: Prisma.SelectionUpsertArgs): Promise<{ id: string }>;
+  };
+  selectionItem: {
+    deleteMany(args: Prisma.SelectionItemDeleteManyArgs): Promise<unknown>;
+    createMany(args: Prisma.SelectionItemCreateManyArgs): Promise<unknown>;
+  };
+}
+
 export interface SelectionPrismaClient {
   hotel: {
     findFirst(args: { where: Prisma.HotelWhereInput }): Promise<HotelSummaryRow | null>;
@@ -40,7 +50,15 @@ export interface SelectionPrismaClient {
       where: Prisma.SelectionWhereUniqueInput;
       include?: Prisma.SelectionInclude;
     }): Promise<SelectionRow | null>;
+    upsert(args: Prisma.SelectionUpsertArgs): Promise<{ id: string }>;
   };
+  tour: {
+    findMany(args: {
+      where: Prisma.TourWhereInput;
+      select?: Prisma.TourSelect;
+    }): Promise<{ id: string }[]>;
+  };
+  $transaction<T>(fn: (tx: SelectionTx) => Promise<T>): Promise<T>;
 }
 
 @Injectable()
