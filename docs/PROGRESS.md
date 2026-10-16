@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 16/10/2026 — M5 F-50 (rattachement 2/5, a) Service : reprendre depuis la branche agent/20261016-104331-m5-f-50-rattachement-2-5-service-creer-a (lecture seule, via `git show… — Service HotelManagersService, constantes d'erreur et enregistrement dans HotelsModule conformes à la demande ; lint et typecheck passent. (9dc530f)
 - 16/10/2026 — M5 F-50 (rattachement 1/5) Schémas partagés : dans packages/shared/src/hotel.ts, ajouter HotelManagerSchema {id (uuid), email (email), name (string)}, HotelMana… — Schémas HotelManager/HotelManagersResponse/HotelManagersUpdate ajoutés dans packages/shared avec exports, types inférés et tests couvrant valide, vide, doublon et uuid invalide; contrôles verts, API e… (170e46d)
 - 16/10/2026 — M5 API-26 (5/5) OpenAPI des hôtels (2/2) — régénération de docs/openapi.json. Lance la commande existante `pnpm --filter @xplor/api openapi` (script `tsx --cond… — La régénération de docs/openapi.json ne produit aucun diff car les chemins des hôtels y figuraient déjà depuis le commit précédent, et lint, typecheck et test passent. (a0557b6)
 - 16/10/2026 — M5 API-26 (5/5) OpenAPI des hôtels (2/2) — test du registre. Dans apps/api/src/openapi/registry.test.ts, ajoute dans le tableau ROUTES (ligne ~9, après les rout… — Les 5 routes hôtels sont ajoutées à ROUTES et le nouveau test couvre toutes les assertions demandées (hôtels et villes), sans toucher registry.ts ni openapi.json; lint, typecheck et tests passent. (30df3ba)
