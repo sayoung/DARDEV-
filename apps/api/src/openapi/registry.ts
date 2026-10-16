@@ -426,7 +426,26 @@ function registerCatalogCrud(resource: {
   create: ZodType;
   update: ZodType;
   response: ZodType;
+  gender?: 'm' | 'f';
+  writeRoles?: 'ADMIN_EDITOR' | 'ADMIN';
+  unprocessable?: string;
+  listDescription?: string;
+  readDescription?: string;
+  conflictOnDelete?: boolean;
 }): void {
+  const gender = resource.gender ?? 'f';
+  const article = gender === 'm' ? 'un' : 'une';
+  const found = gender === 'm' ? 'trouvé' : 'trouvée';
+  const created = gender === 'm' ? 'créé' : 'créée';
+  const updated = gender === 'm' ? 'mis à jour' : 'mise à jour';
+  const deleted = gender === 'm' ? 'supprimé' : 'supprimée';
+  const writeRoles = resource.writeRoles ?? 'ADMIN_EDITOR';
+  const writeForbidden =
+    writeRoles === 'ADMIN'
+      ? 'Jeton CSRF refusé, ou rôle autre que ADMIN.'
+      : 'Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.';
+  const conflictOnDelete = resource.conflictOnDelete ?? true;
+
   const item = `${resource.collection}/{id}`;
   const idParam = z.object({ id: z.uuidv7() });
   registry.registerPath({
@@ -436,19 +455,25 @@ function registerCatalogCrud(resource: {
     tags: ['Catalogue'],
     security: sessionSecurity,
     responses: {
-      '200': jsonResponse(`Liste des ${resource.plural}.`, z.array(resource.response)),
+      '200': jsonResponse(
+        resource.listDescription ?? `Liste des ${resource.plural}.`,
+        z.array(resource.response),
+      ),
       '401': jsonResponse('Session absente.', unauthorizedError),
     },
   });
   registry.registerPath({
     method: 'get',
     path: item,
-    summary: `Lire une ${resource.singular}`,
+    summary: `Lire ${article} ${resource.singular}`,
     tags: ['Catalogue'],
     security: sessionSecurity,
     request: { params: idParam },
     responses: {
-      '200': jsonResponse(`${resource.singular} trouvée.`, resource.response),
+      '200': jsonResponse(
+        resource.readDescription ?? `${resource.singular} ${found}.`,
+        resource.response,
+      ),
       '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
       '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
@@ -457,21 +482,26 @@ function registerCatalogCrud(resource: {
   registry.registerPath({
     method: 'post',
     path: resource.collection,
-    summary: `Créer une ${resource.singular}`,
+    summary: `Créer ${article} ${resource.singular}`,
     tags: ['Catalogue'],
     security: sessionAndCsrfSecurity,
-    request: { body: jsonBody(resource.create, `Corps de création d'une ${resource.singular}.`) },
+    request: {
+      body: jsonBody(resource.create, `Corps de création d'${article} ${resource.singular}.`),
+    },
     responses: {
-      '201': jsonResponse(`${resource.singular} créée.`, resource.response),
+      '201': jsonResponse(`${resource.singular} ${created}.`, resource.response),
       '400': jsonResponse('Corps refusé par le schéma Zod.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
-      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '403': jsonResponse(writeForbidden, forbiddenError),
+      ...(resource.unprocessable !== undefined
+        ? { '422': jsonResponse(resource.unprocessable, referenceError) }
+        : {}),
     },
   });
   registry.registerPath({
     method: 'patch',
     path: item,
-    summary: `Remplacer une ${resource.singular}`,
+    summary: `Remplacer ${article} ${resource.singular}`,
     tags: ['Catalogue'],
     security: sessionAndCsrfSecurity,
     request: {
@@ -479,27 +509,32 @@ function registerCatalogCrud(resource: {
       body: jsonBody(resource.update, 'Mêmes champs que la création (remplacement complet).'),
     },
     responses: {
-      '200': jsonResponse(`${resource.singular} mise à jour.`, resource.response),
+      '200': jsonResponse(`${resource.singular} ${updated}.`, resource.response),
       '400': jsonResponse('Identifiant ou corps refusé.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
-      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '403': jsonResponse(writeForbidden, forbiddenError),
       '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
+      ...(resource.unprocessable !== undefined
+        ? { '422': jsonResponse(resource.unprocessable, referenceError) }
+        : {}),
     },
   });
   registry.registerPath({
     method: 'delete',
     path: item,
-    summary: `Supprimer une ${resource.singular}`,
+    summary: `Supprimer ${article} ${resource.singular}`,
     tags: ['Catalogue'],
     security: sessionAndCsrfSecurity,
     request: { params: idParam },
     responses: {
-      '204': { description: `${resource.singular} supprimée. Corps vide.` },
+      '204': { description: `${resource.singular} ${deleted}. Corps vide.` },
       '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
       '401': jsonResponse('Session absente.', unauthorizedError),
-      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN ou EDITOR.', forbiddenError),
+      '403': jsonResponse(writeForbidden, forbiddenError),
       '404': jsonResponse(`${resource.singular} introuvable.`, notFoundError),
-      '409': jsonResponse('Encore utilisée par une visite (IN_USE).', inUseError),
+      ...(conflictOnDelete
+        ? { '409': jsonResponse('Encore utilisée par une visite (IN_USE).', inUseError) }
+        : {}),
     },
   });
 }
