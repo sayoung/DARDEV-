@@ -5,6 +5,9 @@ import {
   ContractTypeSchema,
   HotelCreateSchema,
   HotelListResponseSchema,
+  HotelManagerSchema,
+  HotelManagersResponseSchema,
+  HotelManagersUpdateSchema,
   HotelResponseSchema,
   HotelStars,
   HotelStarsSchema,
@@ -18,6 +21,14 @@ const contractStart = '2026-01-01T00:00:00.000Z';
 const contractEnd = '2027-01-01T00:00:00.000Z';
 const createdAt = '2026-01-01T12:00:00.000Z';
 const updatedAt = '2026-01-02T12:00:00.000Z';
+const validUserId1 = '01990000-0000-7000-8000-000000000201';
+const validUserId2 = '01990000-0000-7000-8000-000000000202';
+
+const validManager = {
+  id: validUserId1,
+  email: 'gestionnaire@xplor.local',
+  name: 'Karim Bennani',
+};
 
 const validHotelInput = {
   name: 'Hôtel Démonstration Rabat',
@@ -326,6 +337,87 @@ describe('HotelListResponseSchema', () => {
   });
 });
 
+describe('HotelManagerSchema', () => {
+  it('accepte un gestionnaire complet et valide (cas valide)', () => {
+    const parsed = HotelManagerSchema.parse(validManager);
+    expect(parsed).toEqual(validManager);
+  });
+
+  it('refuse un identifiant qui n’est pas un UUID (uuid invalide refusé)', () => {
+    expect(
+      HotelManagerSchema.safeParse({ ...validManager, id: 'pas-un-uuid' }).success,
+    ).toBe(false);
+  });
+
+  it('refuse un email invalide', () => {
+    expect(
+      HotelManagerSchema.safeParse({ ...validManager, email: 'pas-un-email' }).success,
+    ).toBe(false);
+  });
+
+  it('refuse un nom absent ou de type incorrect', () => {
+    expect(
+      HotelManagerSchema.safeParse({ ...validManager, name: 12345 }).success,
+    ).toBe(false);
+  });
+});
+
+describe('HotelManagersResponseSchema', () => {
+  it('accepte une liste de gestionnaires valide (cas valide)', () => {
+    const data = {
+      managers: [validManager, { ...validManager, id: validUserId2, email: 'autre@xplor.local' }],
+    };
+    const parsed = HotelManagersResponseSchema.parse(data);
+    expect(parsed.managers).toHaveLength(2);
+  });
+
+  it('accepte une liste vide de gestionnaires (tableau vide accepté)', () => {
+    const data = { managers: [] };
+    const parsed = HotelManagersResponseSchema.parse(data);
+    expect(parsed).toEqual(data);
+  });
+
+  it('refuse une réponse avec un gestionnaire invalide', () => {
+    const invalid = { managers: [{ ...validManager, id: 'pas-un-uuid' }] };
+    expect(HotelManagersResponseSchema.safeParse(invalid).success).toBe(false);
+  });
+});
+
+describe('HotelManagersUpdateSchema', () => {
+  it('accepte une liste d’identifiants valides (cas valide)', () => {
+    const valid = { userIds: [validUserId1, validUserId2] };
+    const parsed = HotelManagersUpdateSchema.parse(valid);
+    expect(parsed).toEqual(valid);
+  });
+
+  it('accepte un tableau vide d’identifiants (tableau vide accepté)', () => {
+    const empty = { userIds: [] };
+    const parsed = HotelManagersUpdateSchema.parse(empty);
+    expect(parsed).toEqual(empty);
+  });
+
+  it('refuse les doublons dans les identifiants utilisateurs (doublon refusé)', () => {
+    const duplicates = { userIds: [validUserId1, validUserId1] };
+    const result = HotelManagersUpdateSchema.safeParse(duplicates);
+    expect(result.success).toBe(false);
+  });
+
+  it('refuse un identifiant qui n’est pas un UUID (uuid invalide refusé)', () => {
+    const invalid = { userIds: [validUserId1, 'pas-un-uuid'] };
+    const result = HotelManagersUpdateSchema.safeParse(invalid);
+    expect(result.success).toBe(false);
+  });
+
+  it('refuse une liste excédant 100 identifiants', () => {
+    const ids = Array.from({ length: 101 }, (_, i) => {
+      const hex = i.toString(16).padStart(12, '0');
+      return `01990000-0000-7000-8000-${hex}`;
+    });
+    const result = HotelManagersUpdateSchema.safeParse({ userIds: ids });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe('Exports depuis index.ts', () => {
   it('ré-exporte tous les schémas et énumérations d’hôtels', async () => {
     const shared = await import('./index.js');
@@ -333,6 +425,9 @@ describe('Exports depuis index.ts', () => {
     expect(shared.HotelUpdateSchema).toBeDefined();
     expect(shared.HotelResponseSchema).toBeDefined();
     expect(shared.HotelListResponseSchema).toBeDefined();
+    expect(shared.HotelManagerSchema).toBeDefined();
+    expect(shared.HotelManagersResponseSchema).toBeDefined();
+    expect(shared.HotelManagersUpdateSchema).toBeDefined();
     expect(shared.HotelStarsSchema).toBeDefined();
     expect(shared.ContractTypeSchema).toBeDefined();
     expect(shared.HotelStars).toBeDefined();
