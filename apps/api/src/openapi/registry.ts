@@ -24,6 +24,9 @@ import {
   CityResponseSchema,
   CityUpdateSchema,
   ForgotPasswordRequestSchema,
+  HotelCreateSchema,
+  HotelResponseSchema,
+  HotelUpdateSchema,
   HotspotCreateSchema,
   HotspotResponseSchema,
   HotspotUpdateSchema,
@@ -399,6 +402,23 @@ registerCatalogCrud({
   create: CategoryCreateSchema,
   update: CategoryUpdateSchema,
   response: CategoryResponseSchema,
+});
+
+registerCatalogCrud({
+  collection: '/api/v1/admin/hotels',
+  singular: 'hôtel',
+  plural: 'hôtels',
+  gender: 'm',
+  writeRoles: 'ADMIN',
+  unprocessable: 'brandColor invalide',
+  conflictOnDelete: false,
+  listDescription:
+    'Liste des hôtels. Filtrée par AccessPolicy selon le principal : un gestionnaire ne voit que son hôtel.',
+  readDescription:
+    'Hôtel trouvé. Filtré par AccessPolicy selon le principal : un gestionnaire ne voit que son hôtel, le détail renvoie 404 hors périmètre.',
+  create: HotelCreateSchema,
+  update: HotelUpdateSchema,
+  response: HotelResponseSchema,
 });
 
 registerAssetReads();
