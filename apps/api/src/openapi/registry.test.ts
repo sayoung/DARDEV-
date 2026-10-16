@@ -25,6 +25,8 @@ const ROUTES = [
   { path: '/api/v1/admin/hotels/{id}', method: 'get' },
   { path: '/api/v1/admin/hotels/{id}', method: 'patch' },
   { path: '/api/v1/admin/hotels/{id}', method: 'delete' },
+  { path: '/api/v1/admin/hotels/{id}/managers', method: 'get' },
+  { path: '/api/v1/admin/hotels/{id}/managers', method: 'put' },
   { path: '/api/v1/admin/categories', method: 'get' },
   { path: '/api/v1/admin/categories', method: 'post' },
   { path: '/api/v1/admin/categories/{id}', method: 'delete' },
@@ -182,6 +184,23 @@ describe('document OpenAPI', () => {
     expect(deleteHotel?.['409']).toBeUndefined();
 
     expect(JSON.stringify(createHotel?.['403'])).toContain('rôle autre que ADMIN');
+
+    const getManagers = doc.paths?.['/api/v1/admin/hotels/{id}/managers']?.get?.responses;
+    expect(getManagers?.['200']).toBeDefined();
+    expect(getManagers?.['401']).toBeDefined();
+    expect(getManagers?.['404']).toBeDefined();
+    expect(getManagers?.['400']).toBeUndefined();
+    expect(JSON.stringify(getManagers?.['200'])).toContain('AccessPolicy');
+    expect(JSON.stringify(getManagers?.['200'])).toContain('404 hors périmètre');
+
+    const putManagers = doc.paths?.['/api/v1/admin/hotels/{id}/managers']?.put?.responses;
+    expect(putManagers?.['200']).toBeDefined();
+    expect(putManagers?.['400']).toBeDefined();
+    expect(putManagers?.['401']).toBeDefined();
+    expect(putManagers?.['403']).toBeDefined();
+    expect(putManagers?.['404']).toBeDefined();
+    expect(putManagers?.['422']).toBeDefined();
+    expect(JSON.stringify(putManagers?.['403'])).toContain('Jeton CSRF refusé, ou rôle autre que ADMIN');
 
     const createCity = doc.paths?.['/api/v1/admin/cities']?.post?.responses;
     const updateCity = doc.paths?.['/api/v1/admin/cities/{id}']?.patch?.responses;
