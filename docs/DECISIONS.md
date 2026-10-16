@@ -909,3 +909,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** lecture réservée aux seuls administrateurs ; écriture ouverte aux gestionnaires sur leurs propres hôtels.
 - **À valider :** oui
 
+## D-116 — Rattachement gestionnaires ↔ hôtels (M5 F-50)
+
+- **Date :** 16/10/2026
+- **Décision :** le rattachement gestionnaire ↔ hôtel remplace la liste entière (PUT) ; il s'applique à la prochaine connexion du gestionnaire, car les hotelIds sont chargés en session.
+- **Alternatives :** opérations différentielles (POST/DELETE individuels) ; rafraîchissement immédiat de toutes les sessions actives en cache/Redis.
+- **À valider :** oui
+
