@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 16/10/2026 — M5 F-51 (sélection 2/8, tests) Tests de lecture : créer apps/api/src/hotels/selection.service.test.ts avec Prisma simulé, dans le style de hotel-managers.servic… — Les tests de lecture de SelectionService couvrent tous les cas demandés (cloisonnement, ADMIN, hôtel supprimé, sélection absente, tri) et lint, typecheck et tests passent. (f1378a3)
 - 16/10/2026 — M5 F-51 (sélection 2/8) Service, lecture : créer apps/api/src/hotels/selection.service.ts dans le style de hotel-managers.service.ts, et l'enregistrer en provid… — SelectionService.get conforme (404 identique à HotelsService.get, valeur par défaut sans écriture, items triés, updatedAt ISO validé par le schéma partagé), module enregistré, lint et typecheck OK. (83da9ff)
 - 16/10/2026 — M5 F-51 (sélection 1/8) Schémas partagés : créer packages/shared/src/selection.ts et l'exporter depuis packages/shared/src/index.ts. SelectionUpdateSchema {tour… — Schémas Zod de sélection et tests conformes à la demande, exportés depuis index.ts, lint/typecheck/tests verts. (a235a1b)
 - 16/10/2026 — M5 API-26 (rattachement 5/5) OpenAPI : dans apps/api/src/openapi/registry.ts, enregistrer GET et PUT /api/v1/admin/hotels/{id}/managers avec HotelManagersUpdate… — Routes GET/PUT des gestionnaires d'hôtel correctement enregistrées dans OpenAPI, tests ajoutés, openapi.json régénéré avec uniquement des ajouts, lint et typecheck OK. (3b35f2a)
