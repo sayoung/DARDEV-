@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 16/10/2026 — M5 F-50 (rattachement 3/5) Contrôleur : dans apps/api/src/hotels/hotels.controller.ts (ou un nouveau hotel-managers.controller.ts déclaré dans hotels.module.ts,… — Routes GET/PUT admin/hotels/:id/managers correctement gardées (PUT réservé ADMIN), validées via parseBody/parseResourceId, tests complets, D-116 consignée avec À valider : oui, contrôles verts. (bf04f39)
 - 16/10/2026 — M5 F-50 (rattachement 2/5, b) Tests : créer apps/api/src/hotels/hotel-managers.service.test.ts avec Prisma simulé dans le style de hotels.service.test.ts (le se… — Le test du service de rattachement des gestionnaires couvre les 6 cas demandés (plus 2 cas bonus) avec un Prisma simulé typé, et lint, typecheck et tests passent. (c4ecc0b)
 - 16/10/2026 — M5 F-50 (rattachement 2/5, a) Service : reprendre depuis la branche agent/20261016-104331-m5-f-50-rattachement-2-5-service-creer-a (lecture seule, via `git show… — Service HotelManagersService, constantes d'erreur et enregistrement dans HotelsModule conformes à la demande ; lint et typecheck passent. (9dc530f)
 - 16/10/2026 — M5 F-50 (rattachement 1/5) Schémas partagés : dans packages/shared/src/hotel.ts, ajouter HotelManagerSchema {id (uuid), email (email), name (string)}, HotelMana… — Schémas HotelManager/HotelManagersResponse/HotelManagersUpdate ajoutés dans packages/shared avec exports, types inférés et tests couvrant valide, vide, doublon et uuid invalide; contrôles verts, API e… (170e46d)
