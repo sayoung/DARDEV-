@@ -8,6 +8,7 @@ import {
   type HotelSummaryRow,
   type SelectionPrismaClient,
   type SelectionRow,
+  type SelectionTx,
 } from './selection.service.js';
 
 const HOTEL_A_ID = '01990000-0000-7000-8000-000000000101';
@@ -151,6 +152,24 @@ function harness(): {
           })),
         });
       },
+      upsert: () => Promise.resolve({ id: '' }),
+    },
+
+    tour: {
+      findMany: () => Promise.resolve([]),
+    },
+
+    $transaction: <T>(fn: (tx: SelectionTx) => Promise<T>): Promise<T> => {
+      const tx: SelectionTx = {
+        selection: {
+          upsert: () => Promise.resolve({ id: '' }),
+        },
+        selectionItem: {
+          deleteMany: () => Promise.resolve({ count: 0 }),
+          createMany: () => Promise.resolve({ count: 0 }),
+        },
+      };
+      return fn(tx);
     },
   };
 
