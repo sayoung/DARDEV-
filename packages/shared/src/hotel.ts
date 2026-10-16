@@ -108,3 +108,33 @@ export type HotelResponse = z.infer<typeof HotelResponseSchema>;
 export const HotelListResponseSchema = z.array(HotelResponseSchema);
 
 export type HotelListResponse = z.infer<typeof HotelListResponseSchema>;
+
+/** Gestionnaire rattaché à un hôtel (API-26, F-50). */
+export const HotelManagerSchema = z.object({
+  id: z.uuid(),
+  email: z.email(),
+  name: z.string(),
+});
+
+export type HotelManager = z.infer<typeof HotelManagerSchema>;
+
+/** Réponse de la liste des gestionnaires rattachés à un hôtel (API-26, F-50). */
+export const HotelManagersResponseSchema = z.object({
+  managers: z.array(HotelManagerSchema),
+});
+
+export type HotelManagersResponse = z.infer<typeof HotelManagersResponseSchema>;
+
+/** Corps de mise à jour des gestionnaires rattachés à un hôtel (API-26, F-50). */
+export const HotelManagersUpdateSchema = z.object({
+  userIds: z
+    .array(z.uuid())
+    .min(0)
+    .max(100)
+    .refine((items) => new Set(items).size === items.length, {
+      message: 'Les identifiants utilisateurs ne doivent pas contenir de doublons',
+    }),
+});
+
+export type HotelManagersUpdate = z.infer<typeof HotelManagersUpdateSchema>;
+
