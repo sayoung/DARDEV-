@@ -20,6 +20,11 @@ const ROUTES = [
   { path: '/api/v1/admin/cities/{id}', method: 'get' },
   { path: '/api/v1/admin/cities/{id}', method: 'patch' },
   { path: '/api/v1/admin/cities/{id}', method: 'delete' },
+  { path: '/api/v1/admin/hotels', method: 'get' },
+  { path: '/api/v1/admin/hotels', method: 'post' },
+  { path: '/api/v1/admin/hotels/{id}', method: 'get' },
+  { path: '/api/v1/admin/hotels/{id}', method: 'patch' },
+  { path: '/api/v1/admin/hotels/{id}', method: 'delete' },
   { path: '/api/v1/admin/categories', method: 'get' },
   { path: '/api/v1/admin/categories', method: 'post' },
   { path: '/api/v1/admin/categories/{id}', method: 'delete' },
@@ -148,6 +153,43 @@ describe('document OpenAPI', () => {
       { sessionCookie: [], csrfToken: [] },
     ]);
     expect(doc.paths?.['/api/v1/auth/me']?.get?.security).toEqual([{ sessionCookie: [] }]);
+  });
+
+  it('documente le CRUD des hôtels et ses spécificités par rapport aux villes', () => {
+    const doc = buildOpenApiDocument();
+
+    const listHotels = doc.paths?.['/api/v1/admin/hotels']?.get?.responses;
+    expect(listHotels?.['200']).toBeDefined();
+    expect(listHotels?.['401']).toBeDefined();
+
+    const createHotel = doc.paths?.['/api/v1/admin/hotels']?.post?.responses;
+    expect(createHotel?.['201']).toBeDefined();
+    expect(createHotel?.['400']).toBeDefined();
+    expect(createHotel?.['401']).toBeDefined();
+    expect(createHotel?.['403']).toBeDefined();
+    expect(createHotel?.['422']).toBeDefined();
+
+    const updateHotel = doc.paths?.['/api/v1/admin/hotels/{id}']?.patch?.responses;
+    expect(updateHotel?.['200']).toBeDefined();
+    expect(updateHotel?.['404']).toBeDefined();
+    expect(updateHotel?.['422']).toBeDefined();
+    expect(updateHotel?.['403']).toBeDefined();
+
+    const deleteHotel = doc.paths?.['/api/v1/admin/hotels/{id}']?.delete?.responses;
+    expect(deleteHotel?.['204']).toBeDefined();
+    expect(deleteHotel?.['404']).toBeDefined();
+    expect(deleteHotel?.['403']).toBeDefined();
+    expect(deleteHotel?.['409']).toBeUndefined();
+
+    expect(JSON.stringify(createHotel?.['403'])).toContain('rôle autre que ADMIN');
+
+    const createCity = doc.paths?.['/api/v1/admin/cities']?.post?.responses;
+    const updateCity = doc.paths?.['/api/v1/admin/cities/{id}']?.patch?.responses;
+    const deleteCity = doc.paths?.['/api/v1/admin/cities/{id}']?.delete?.responses;
+
+    expect(createCity?.['422']).toBeUndefined();
+    expect(updateCity?.['422']).toBeUndefined();
+    expect(deleteCity?.['409']).toBeDefined();
   });
 
   it('est identique à docs/openapi.json', () => {
