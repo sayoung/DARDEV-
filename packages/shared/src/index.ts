@@ -166,4 +166,14 @@ export {
   type HotelResponse,
   type HotelUpdate,
 } from './hotel.js';
+export {
+  SelectionItemResponseSchema,
+  SelectionItemSchema,
+  SelectionResponseSchema,
+  SelectionUpdateSchema,
+  type SelectionItem,
+  type SelectionItemResponse,
+  type SelectionResponse,
+  type SelectionUpdate,
+} from './selection.js';
 
