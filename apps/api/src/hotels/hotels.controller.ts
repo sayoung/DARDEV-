@@ -11,15 +11,18 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Req,
   UnprocessableEntityException,
   UseGuards,
 } from '@nestjs/common';
 import {
   HotelCreateSchema,
+  HotelManagersUpdateSchema,
   HotelUpdateSchema,
   Role,
   type HotelCreate,
+  type HotelManagersResponse,
   type HotelResponse,
   type HotelUpdate,
   type Principal,
@@ -28,7 +31,8 @@ import {
 import { CsrfGuard } from '../auth/csrf.guard.js';
 import type { SessionRequest } from '../auth/session-request.js';
 import { SessionGuard } from '../auth/session.guard.js';
-import { parseResourceId } from '../catalog/catalog-http.js';
+import { parseBody, parseResourceId } from '../catalog/catalog-http.js';
+import { HotelManagersService } from './hotel-managers.service.js';
 import { HotelsService } from './hotels.service.js';
 
 function hasBrandColorProperty(body: unknown): boolean {
@@ -90,7 +94,10 @@ function requireAdmin(request: SessionRequest): void {
 @Controller('admin/hotels')
 @UseGuards(SessionGuard, CsrfGuard)
 export class HotelsController {
-  constructor(@Inject(HotelsService) private readonly hotels: HotelsService) {}
+  constructor(
+    @Inject(HotelsService) private readonly hotels: HotelsService,
+    @Inject(HotelManagersService) private readonly hotelManagers: HotelManagersService,
+  ) {}
 
   @Get()
   list(@Req() request: SessionRequest): Promise<HotelResponse[]> {
@@ -126,5 +133,28 @@ export class HotelsController {
   async remove(@Req() request: SessionRequest, @Param('id') id: string): Promise<void> {
     requireAdmin(request);
     await this.hotels.remove(parseResourceId(id));
+  }
+
+  @Get(':id/managers')
+  async listManagers(
+    @Req() request: SessionRequest,
+    @Param('id') id: string,
+  ): Promise<HotelManagersResponse> {
+    const principal = requirePrincipal(request);
+    const managers = await this.hotelManagers.list(principal, parseResourceId(id));
+    return { managers };
+  }
+
+  @Put(':id/managers')
+  async replaceManagers(
+    @Req() request: SessionRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<HotelManagersResponse> {
+    requireAdmin(request);
+    const hotelId = parseResourceId(id);
+    const payload = parseBody(HotelManagersUpdateSchema, body);
+    const managers = await this.hotelManagers.replace(hotelId, payload.userIds);
+    return { managers };
   }
 }

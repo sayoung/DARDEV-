@@ -11,6 +11,7 @@ import {
   HotelStars,
   Role,
   type HotelCreate,
+  type HotelManager,
   type HotelResponse,
   type HotelUpdate,
   type Principal,
@@ -20,6 +21,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { CsrfGuard } from '../auth/csrf.guard.js';
 import type { SessionRequest } from '../auth/session-request.js';
 import { SessionGuard } from '../auth/session.guard.js';
+import {
+  HotelManagersService,
+  type HotelManagersPrismaClient,
+} from './hotel-managers.service.js';
 import { HotelsController } from './hotels.controller.js';
 import {
   HotelsService,
@@ -102,6 +107,46 @@ class RecordingHotelsService extends HotelsService {
   }
 }
 
+const sampleManager: HotelManager = {
+  id: '01990000-0000-7000-8000-000000000301',
+  email: 'karim@xplor.local',
+  name: 'Bennani Karim',
+};
+
+const stubManagersPrismaClient: HotelManagersPrismaClient = {
+  hotel: {
+    findFirst: () => Promise.resolve(null),
+  },
+  user: {
+    findMany: () => Promise.resolve([]),
+  },
+  userHotel: {
+    findMany: () => Promise.resolve([]),
+    deleteMany: () => Promise.resolve({ count: 0 }),
+    createMany: () => Promise.resolve({ count: 0 }),
+  },
+  $transaction: () => Promise.reject(new Error('unused in controller test')),
+};
+
+class RecordingHotelManagersService extends HotelManagersService {
+  public listCalls: { principal: Principal; hotelId: string }[] = [];
+  public replaceCalls: { hotelId: string; userIds: string[] }[] = [];
+
+  constructor() {
+    super(stubManagersPrismaClient);
+  }
+
+  override list(principal: Principal, hotelId: string): Promise<HotelManager[]> {
+    this.listCalls.push({ principal, hotelId });
+    return Promise.resolve([sampleManager]);
+  }
+
+  override replace(hotelId: string, userIds: string[]): Promise<HotelManager[]> {
+    this.replaceCalls.push({ hotelId, userIds });
+    return Promise.resolve([sampleManager]);
+  }
+}
+
 const adminPrincipal: Principal = {
   userId: '01990000-0000-7000-8000-000000000201',
   role: Role.ADMIN,
@@ -163,11 +208,13 @@ function methodHandler(name: 'create' | 'remove'): object {
 
 describe('HotelsController', () => {
   let service: RecordingHotelsService;
+  let managersService: RecordingHotelManagersService;
   let controller: HotelsController;
 
   beforeEach(() => {
     service = new RecordingHotelsService();
-    controller = new HotelsController(service);
+    managersService = new RecordingHotelManagersService();
+    controller = new HotelsController(service, managersService);
   });
 
   describe('Métadonnées et gardes', () => {
@@ -242,6 +289,40 @@ describe('HotelsController', () => {
 
       expect(service.removeCalls).toEqual([HOTEL_ID]);
     });
+
+    it('GET :id/managers : appelle le service avec le principal ADMIN et l’ID parsé', async () => {
+      const req = makeRequest(adminPrincipal);
+      const result = await controller.listManagers(req, HOTEL_ID);
+
+      expect(result).toEqual({ managers: [sampleManager] });
+      expect(managersService.listCalls).toEqual([{ principal: adminPrincipal, hotelId: HOTEL_ID }]);
+    });
+
+    it('PUT :id/managers : appelle le service replace avec l’ID et le corps validés', async () => {
+      const req = makeRequest(adminPrincipal);
+      const result = await controller.replaceManagers(req, HOTEL_ID, {
+        userIds: [sampleManager.id],
+      });
+
+      expect(result).toEqual({ managers: [sampleManager] });
+      expect(managersService.replaceCalls).toHaveLength(1);
+      const called = managersService.replaceCalls[0];
+      expect(called?.hotelId).toBe(HOTEL_ID);
+      expect(called?.userIds).toEqual([sampleManager.id]);
+    });
+
+    it('PUT :id/managers : accepte un tableau vide de gestionnaires', async () => {
+      const req = makeRequest(adminPrincipal);
+      const result = await controller.replaceManagers(req, HOTEL_ID, {
+        userIds: [],
+      });
+
+      expect(result).toEqual({ managers: [sampleManager] });
+      expect(managersService.replaceCalls).toHaveLength(1);
+      const called = managersService.replaceCalls[0];
+      expect(called?.hotelId).toBe(HOTEL_ID);
+      expect(called?.userIds).toEqual([]);
+    });
   });
 
   describe('Rôle GESTIONNAIRE : lecture autorisée, écriture interdite (403)', () => {
@@ -281,32 +362,57 @@ describe('HotelsController', () => {
       await expect(controller.remove(req, HOTEL_ID)).rejects.toThrow(ForbiddenException);
       expect(service.removeCalls).toHaveLength(0);
     });
+
+    it('GET :id/managers : autorisé, appelle le service avec le principal gestionnaire', async () => {
+      const req = makeRequest(managerPrincipal);
+      const result = await controller.listManagers(req, HOTEL_ID);
+
+      expect(result).toEqual({ managers: [sampleManager] });
+      expect(managersService.listCalls).toEqual([{ principal: managerPrincipal, hotelId: HOTEL_ID }]);
+    });
+
+    it('PUT :id/managers : refuse avec 403 ForbiddenException et n’appelle pas le service', async () => {
+      const req = makeRequest(managerPrincipal);
+
+      await expect(
+        controller.replaceManagers(req, HOTEL_ID, { userIds: [sampleManager.id] }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(managersService.replaceCalls).toHaveLength(0);
+    });
   });
 
   describe('Autres rôles : écriture refusée (403)', () => {
-    it('EDITOR : 403 sur POST, PATCH et DELETE', async () => {
+    it('EDITOR : 403 sur POST, PATCH, DELETE et PUT managers', async () => {
       const req = makeRequest(editorPrincipal);
 
       expect(() => controller.create(req, validCreatePayload)).toThrow(ForbiddenException);
       expect(() => controller.update(req, HOTEL_ID, validUpdatePayload)).toThrow(ForbiddenException);
       await expect(controller.remove(req, HOTEL_ID)).rejects.toThrow(ForbiddenException);
+      await expect(
+        controller.replaceManagers(req, HOTEL_ID, { userIds: [sampleManager.id] }),
+      ).rejects.toThrow(ForbiddenException);
       expect(service.createCalls).toHaveLength(0);
       expect(service.updateCalls).toHaveLength(0);
       expect(service.removeCalls).toHaveLength(0);
+      expect(managersService.replaceCalls).toHaveLength(0);
     });
 
-    it('PARTNER : 403 sur POST, PATCH et DELETE', async () => {
+    it('PARTNER : 403 sur POST, PATCH, DELETE et PUT managers', async () => {
       const req = makeRequest(partnerPrincipal);
 
       expect(() => controller.create(req, validCreatePayload)).toThrow(ForbiddenException);
       expect(() => controller.update(req, HOTEL_ID, validUpdatePayload)).toThrow(ForbiddenException);
       await expect(controller.remove(req, HOTEL_ID)).rejects.toThrow(ForbiddenException);
+      await expect(
+        controller.replaceManagers(req, HOTEL_ID, { userIds: [sampleManager.id] }),
+      ).rejects.toThrow(ForbiddenException);
       expect(service.createCalls).toHaveLength(0);
       expect(service.updateCalls).toHaveLength(0);
       expect(service.removeCalls).toHaveLength(0);
+      expect(managersService.replaceCalls).toHaveLength(0);
     });
 
-    it('Requête sans principal : 403 sur GET, POST, PATCH et DELETE', async () => {
+    it('Requête sans principal : 403 sur toutes les opérations', async () => {
       const req = makeRequest();
 
       expect(() => controller.list(req)).toThrow(ForbiddenException);
@@ -314,6 +420,12 @@ describe('HotelsController', () => {
       expect(() => controller.create(req, validCreatePayload)).toThrow(ForbiddenException);
       expect(() => controller.update(req, HOTEL_ID, validUpdatePayload)).toThrow(ForbiddenException);
       await expect(controller.remove(req, HOTEL_ID)).rejects.toThrow(ForbiddenException);
+      await expect(controller.listManagers(req, HOTEL_ID)).rejects.toThrow(ForbiddenException);
+      await expect(
+        controller.replaceManagers(req, HOTEL_ID, { userIds: [sampleManager.id] }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(managersService.listCalls).toHaveLength(0);
+      expect(managersService.replaceCalls).toHaveLength(0);
     });
   });
 
@@ -359,6 +471,46 @@ describe('HotelsController', () => {
         controller.update(req, HOTEL_ID, { brandColor: 'not-a-color' }),
       ).toThrow(UnprocessableEntityException);
       expect(service.updateCalls).toHaveLength(0);
+    });
+
+    it('GET :id/managers refuse un ID non-UUIDv7 avec 400 BadRequestException', async () => {
+      const req = makeRequest(adminPrincipal);
+      await expect(controller.listManagers(req, INVALID_UUID)).rejects.toThrow(BadRequestException);
+      expect(managersService.listCalls).toHaveLength(0);
+    });
+
+    it('PUT :id/managers refuse un ID non-UUIDv7 avec 400 BadRequestException', async () => {
+      const req = makeRequest(adminPrincipal);
+      await expect(
+        controller.replaceManagers(req, INVALID_UUID, { userIds: [] }),
+      ).rejects.toThrow(BadRequestException);
+      expect(managersService.replaceCalls).toHaveLength(0);
+    });
+
+    it('PUT :id/managers refuse un corps sans userIds avec 400 BadRequestException', async () => {
+      const req = makeRequest(adminPrincipal);
+      await expect(
+        controller.replaceManagers(req, HOTEL_ID, { invalid: true }),
+      ).rejects.toThrow(BadRequestException);
+      expect(managersService.replaceCalls).toHaveLength(0);
+    });
+
+    it('PUT :id/managers refuse un userId non-UUID avec 400 BadRequestException', async () => {
+      const req = makeRequest(adminPrincipal);
+      await expect(
+        controller.replaceManagers(req, HOTEL_ID, { userIds: ['not-a-uuid'] }),
+      ).rejects.toThrow(BadRequestException);
+      expect(managersService.replaceCalls).toHaveLength(0);
+    });
+
+    it('PUT :id/managers refuse des doublons dans userIds avec 400 BadRequestException', async () => {
+      const req = makeRequest(adminPrincipal);
+      await expect(
+        controller.replaceManagers(req, HOTEL_ID, {
+          userIds: [sampleManager.id, sampleManager.id],
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(managersService.replaceCalls).toHaveLength(0);
     });
   });
 });
