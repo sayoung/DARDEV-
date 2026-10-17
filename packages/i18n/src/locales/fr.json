@@ -451,8 +451,11 @@
       "featured": "Mise en avant",
       "attract": "Mode veille",
       "save": "Enregistrer",
+      "saving": "Enregistrement...",
       "saved": "Sélection enregistrée.",
       "error": "Impossible d'enregistrer la sélection.",
+      "loadError": "Impossible de charger la sélection.",
+      "empty": "Aucune visite sélectionnée.",
       "version": "Version {{version}}"
     }
   },
