@@ -930,3 +930,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** ajouter le glisser-déposer pendant M5.
 - **À valider :** oui
 
+## D-119 — Sécurité et supervision des kiosques (M5 F-52)
+
+- **Date :** 17/10/2026
+- **Décision :** jeton d'appareil de 256 bits stocké haché SHA-256 ; code d'enrôlement de 8 caractères valable 60 min, usage unique ; kiosque considéré hors ligne après 15 min sans heartbeat ; hôtes inconnus reçoivent une erreur générique. Un code d'enrôlement inconnu, expiré ou déjà utilisé renvoie le même message avec le statut HTTP 401.
+- **Alternatives :** statut HTTP 422 pour un code d'enrôlement invalide ; messages distincts selon le motif de rejet.
+- **À valider :** oui
+
