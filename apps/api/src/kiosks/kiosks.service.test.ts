@@ -3,6 +3,7 @@ import {
   EnrollmentCodeResponseSchema,
   KioskSchema,
   Role,
+  type KioskEnrollRequest,
   type KioskCreate,
   type Principal,
 } from '@xplor/shared';
@@ -14,6 +15,7 @@ import {
   type KioskPrismaClient,
   type KioskRow,
 } from './kiosks.service.js';
+import { hashDeviceToken } from './kiosk-secrets.js';
 
 const NOW = new Date('2026-10-17T12:00:00.000Z');
 const MANIFEST_VERSION = 'manifest-v3';
@@ -96,7 +98,16 @@ function harness(initialRows: KioskRow[] = []): {
         );
       },
       findFirst: (args) => {
-        const row = rows.get(args.where.id);
+        const row = args.where.id === undefined
+          ? [...rows.values()].find((candidate) =>
+            candidate.deletedAt === null
+            && (args.where.status === undefined || candidate.status === args.where.status)
+            && (args.where.enrollmentCode === undefined || candidate.enrollmentCode === args.where.enrollmentCode)
+            && (args.where.enrollmentExpiresAt === undefined
+              || (candidate.enrollmentExpiresAt !== null
+                && candidate.enrollmentExpiresAt > args.where.enrollmentExpiresAt.gt)),
+          )
+          : rows.get(args.where.id);
         return Promise.resolve(row?.deletedAt === null ? row : null);
       },
       create: (args) => {
@@ -128,6 +139,21 @@ function harness(initialRows: KioskRow[] = []): {
         const updated = { ...row, ...args.data, updatedAt: new Date() };
         rows.set(row.id, updated);
         return Promise.resolve(updated);
+      },
+      updateMany: (args) => {
+        const row = rows.get(args.where.id);
+        if (
+          row === undefined
+          || row.deletedAt !== null
+          || row.status !== args.where.status
+          || row.enrollmentCode !== args.where.enrollmentCode
+          || row.enrollmentExpiresAt === null
+          || row.enrollmentExpiresAt <= args.where.enrollmentExpiresAt.gt
+        ) {
+          return Promise.resolve({ count: 0 });
+        }
+        rows.set(row.id, { ...row, ...args.data, updatedAt: new Date() });
+        return Promise.resolve({ count: 1 });
       },
     },
     selection: {
@@ -441,6 +467,79 @@ describe('KioskService', () => {
         tokenHash: null,
         enrollmentCode: null,
       },
+    });
+  });
+
+  it('enrôle le kiosque, stocke uniquement le hash du jeton et mémorise l’IP', async () => {
+    const code = 'AB12CD34';
+    const { service, rows } = harness([kioskRow({
+      status: 'PENDING',
+      enrollmentCode: code,
+      enrollmentExpiresAt: new Date(Date.now() + 60_000),
+      tokenHash: null,
+    })]);
+    const request: KioskEnrollRequest = {
+      code,
+      deviceInfo: { userAgent: 'Xplor Kiosk/1.0' },
+    };
+
+    const response = await service.enroll(request, '192.0.2.40');
+
+    expect(response.kioskId).toBe(KIOSK_A_ID);
+    expect(response.token).toBeTruthy();
+    expect(response.token).not.toBe(rows.get(KIOSK_A_ID)?.tokenHash);
+    expect(rows.get(KIOSK_A_ID)).toMatchObject({
+      status: 'ACTIVE',
+      tokenHash: hashDeviceToken(response.token),
+      enrollmentCode: null,
+      enrollmentExpiresAt: null,
+      lastIp: '192.0.2.40',
+    });
+    expect(response).not.toHaveProperty('deviceInfo');
+  });
+
+  it.each([
+    ['inconnu', [], 'ZZZZZZZZ'],
+    ['expiré', [kioskRow({
+      status: 'PENDING',
+      enrollmentCode: 'AB12CD34',
+      enrollmentExpiresAt: new Date(Date.now() - 1),
+      tokenHash: null,
+    })], 'AB12CD34'],
+    ['déjà utilisé', [kioskRow({
+      status: 'ACTIVE',
+      enrollmentCode: 'AB12CD34',
+      enrollmentExpiresAt: new Date(Date.now() + 60_000),
+    })], 'AB12CD34'],
+  ])('refuse un code %s avec la même erreur générique', async (_label, rows, code) => {
+    const { service } = harness(rows);
+    const request: KioskEnrollRequest = {
+      code,
+      deviceInfo: { userAgent: 'Xplor Kiosk/1.0' },
+    };
+
+    await expect(service.enroll(request, null)).rejects.toMatchObject({
+      status: 401,
+      response: { error: { code: 'KIOSK_ENROLLMENT_INVALID' } },
+    });
+  });
+
+  it('refuse le second appel avec un code déjà consommé', async () => {
+    const { service } = harness([kioskRow({
+      status: 'PENDING',
+      enrollmentCode: 'AB12CD34',
+      enrollmentExpiresAt: new Date(Date.now() + 60_000),
+      tokenHash: null,
+    })]);
+    const request: KioskEnrollRequest = {
+      code: 'AB12CD34',
+      deviceInfo: { userAgent: 'Xplor Kiosk/1.0' },
+    };
+
+    await expect(service.enroll(request, null)).resolves.toMatchObject({ kioskId: KIOSK_A_ID });
+    await expect(service.enroll(request, null)).rejects.toMatchObject({
+      status: 401,
+      response: { error: { code: 'KIOSK_ENROLLMENT_INVALID' } },
     });
   });
 
