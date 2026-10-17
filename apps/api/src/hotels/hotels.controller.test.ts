@@ -15,6 +15,8 @@ import {
   type HotelResponse,
   type HotelUpdate,
   type Principal,
+  type SelectionResponse,
+  type SelectionUpdate,
 } from '@xplor/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -26,6 +28,7 @@ import {
   type HotelManagersPrismaClient,
 } from './hotel-managers.service.js';
 import { HotelsController } from './hotels.controller.js';
+import { SelectionService, type SelectionPrismaClient } from './selection.service.js';
 import {
   HotelsService,
   type HotelPrismaClient,
@@ -147,6 +150,48 @@ class RecordingHotelManagersService extends HotelManagersService {
   }
 }
 
+const selectionResponse: SelectionResponse = {
+  hotelId: HOTEL_ID,
+  version: 1,
+  featuredTourId: null,
+  attractTourIds: [],
+  items: [],
+  updatedAt: '2026-01-01T00:00:00.000Z',
+};
+
+const stubSelectionPrismaClient: SelectionPrismaClient = {
+  hotel: { findFirst: () => Promise.resolve(null) },
+  selection: {
+    findUnique: () => Promise.resolve(null),
+    upsert: () => Promise.reject(new Error('unused in controller test')),
+  },
+  tour: { findMany: () => Promise.resolve([]) },
+  $transaction: () => Promise.reject(new Error('unused in controller test')),
+};
+
+class RecordingSelectionService extends SelectionService {
+  public getCalls: { principal: Principal; hotelId: string }[] = [];
+  public replaceCalls: { principal: Principal; hotelId: string; input: SelectionUpdate }[] = [];
+
+  constructor() {
+    super(stubSelectionPrismaClient);
+  }
+
+  override get(principal: Principal, hotelId: string): Promise<SelectionResponse> {
+    this.getCalls.push({ principal, hotelId });
+    return Promise.resolve(selectionResponse);
+  }
+
+  override replace(
+    principal: Principal,
+    hotelId: string,
+    input: SelectionUpdate,
+  ): Promise<SelectionResponse> {
+    this.replaceCalls.push({ principal, hotelId, input });
+    return Promise.resolve(selectionResponse);
+  }
+}
+
 const adminPrincipal: Principal = {
   userId: '01990000-0000-7000-8000-000000000201',
   role: Role.ADMIN,
@@ -209,12 +254,14 @@ function methodHandler(name: 'create' | 'remove'): object {
 describe('HotelsController', () => {
   let service: RecordingHotelsService;
   let managersService: RecordingHotelManagersService;
+  let selectionService: RecordingSelectionService;
   let controller: HotelsController;
 
   beforeEach(() => {
     service = new RecordingHotelsService();
     managersService = new RecordingHotelManagersService();
-    controller = new HotelsController(service, managersService);
+    selectionService = new RecordingSelectionService();
+    controller = new HotelsController(service, managersService, selectionService);
   });
 
   describe('Métadonnées et gardes', () => {
@@ -245,6 +292,18 @@ describe('HotelsController', () => {
   });
 
   describe('Rôle ADMIN : toutes les opérations sont autorisées', () => {
+    it('GET/PUT :id/selection transmettent le principal et les entrées validées au service', async () => {
+      const req = makeRequest(adminPrincipal);
+      const payload = { tourIds: [], featuredTourId: null, attractTourIds: [] };
+
+      await expect(controller.getSelection(req, HOTEL_ID)).resolves.toEqual(selectionResponse);
+      await expect(controller.replaceSelection(req, HOTEL_ID, payload)).resolves.toEqual(selectionResponse);
+
+      expect(selectionService.getCalls).toEqual([{ principal: adminPrincipal, hotelId: HOTEL_ID }]);
+      expect(selectionService.replaceCalls).toEqual([
+        { principal: adminPrincipal, hotelId: HOTEL_ID, input: payload },
+      ]);
+    });
     it('GET list : appelle le service avec le principal ADMIN et renvoie la liste', async () => {
       const req = makeRequest(adminPrincipal);
       const result = await controller.list(req);
@@ -326,6 +385,17 @@ describe('HotelsController', () => {
   });
 
   describe('Rôle GESTIONNAIRE : lecture autorisée, écriture interdite (403)', () => {
+    it('GET/PUT :id/selection transmettent le principal gestionnaire au service', async () => {
+      const req = makeRequest(managerPrincipal);
+      const payload = { tourIds: [], featuredTourId: null, attractTourIds: [] };
+
+      await expect(controller.getSelection(req, HOTEL_ID)).resolves.toEqual(selectionResponse);
+      await expect(controller.replaceSelection(req, HOTEL_ID, payload)).resolves.toEqual(selectionResponse);
+      expect(selectionService.getCalls).toEqual([{ principal: managerPrincipal, hotelId: HOTEL_ID }]);
+      expect(selectionService.replaceCalls).toEqual([
+        { principal: managerPrincipal, hotelId: HOTEL_ID, input: payload },
+      ]);
+    });
     it('GET list : autorisé, appelle le service avec le principal gestionnaire', async () => {
       const req = makeRequest(managerPrincipal);
       const result = await controller.list(req);
@@ -493,6 +563,26 @@ describe('HotelsController', () => {
         controller.replaceManagers(req, HOTEL_ID, { invalid: true }),
       ).rejects.toThrow(BadRequestException);
       expect(managersService.replaceCalls).toHaveLength(0);
+    });
+
+    it('PUT :id/selection refuse un corps invalide avec 400 BadRequestException', () => {
+      const req = makeRequest(adminPrincipal);
+      expect(() => controller.replaceSelection(req, HOTEL_ID, { invalid: true })).toThrow(
+        BadRequestException,
+      );
+      expect(selectionService.replaceCalls).toHaveLength(0);
+    });
+
+    it('GET/PUT :id/selection refusent un ID invalide avec 400 BadRequestException', () => {
+      const req = makeRequest(adminPrincipal);
+      expect(() => controller.getSelection(req, INVALID_UUID)).toThrow(BadRequestException);
+      expect(
+        () => controller.replaceSelection(req, INVALID_UUID, {
+          tourIds: [], featuredTourId: null, attractTourIds: [],
+        }),
+      ).toThrow(BadRequestException);
+      expect(selectionService.getCalls).toHaveLength(0);
+      expect(selectionService.replaceCalls).toHaveLength(0);
     });
 
     it('PUT :id/managers refuse un userId non-UUID avec 400 BadRequestException', async () => {
