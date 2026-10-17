@@ -923,3 +923,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** opérations différentielles ; accepter des visites non publiées ; réserver l'écriture à ADMIN.
 - **À valider :** oui
 
+## D-118 — Réordonnancement de la sélection (M5 F-51)
+
+- **Date :** 17/10/2026
+- **Décision :** F-51 : l'ordre des visites se règle avec les boutons monter/descendre en phase 1 ; le glisser-déposer est reporté au durcissement M8.
+- **Alternatives :** ajouter le glisser-déposer pendant M5.
+- **À valider :** oui
+
