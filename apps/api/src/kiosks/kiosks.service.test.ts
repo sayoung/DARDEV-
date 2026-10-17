@@ -101,6 +101,7 @@ function harness(initialRows: KioskRow[] = []): {
         const row = args.where.id === undefined
           ? [...rows.values()].find((candidate) =>
             candidate.deletedAt === null
+            && (args.where.tokenHash === undefined || candidate.tokenHash === args.where.tokenHash)
             && (args.where.status === undefined || candidate.status === args.where.status)
             && (args.where.enrollmentCode === undefined || candidate.enrollmentCode === args.where.enrollmentCode)
             && (args.where.enrollmentExpiresAt === undefined
@@ -180,6 +181,31 @@ const kioskInput: KioskCreate = {
   hotelId: HOTEL_A_ID,
   deviceType: 'TOUCH_AND_HEADSET',
 };
+
+describe('KioskService.authenticateDevice', () => {
+  it('recherche un kiosque actif par hash du jeton et renvoie son identité', async () => {
+    const token = 'device-token';
+    const { service } = harness([
+      kioskRow({ tokenHash: hashDeviceToken(token) }),
+      kioskRow({
+        id: KIOSK_B_ID,
+        tokenHash: hashDeviceToken('other-token'),
+      }),
+      kioskRow({
+        id: '01990000-0000-7000-8000-000000000303',
+        tokenHash: hashDeviceToken('deleted-token'),
+        deletedAt: new Date('2026-10-16T00:00:00.000Z'),
+      }),
+    ]);
+
+    await expect(service.authenticateDevice(token)).resolves.toEqual({
+      id: KIOSK_A_ID,
+      hotelId: HOTEL_A_ID,
+      status: 'ACTIVE',
+    });
+    await expect(service.authenticateDevice('unknown-token')).resolves.toBeNull();
+  });
+});
 
 describe('toKioskResponse', () => {
   it('renvoie ONLINE avec heartbeat récent et manifeste synchronisé', () => {
