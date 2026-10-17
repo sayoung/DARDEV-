@@ -1,7 +1,7 @@
-import { Role, type MeResponse } from '@xplor/shared';
+import { ContractType, HotelStars, Role, type MeResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearCsrfToken, fetchCurrentUser } from './client.js';
-import { getHotelSelection, saveHotelSelection } from './hotels.js';
+import { getHotelSelection, listHotels, saveHotelSelection } from './hotels.js';
 
 const profile = {
   id: 'user-1',
@@ -14,6 +14,26 @@ const profile = {
 
 const hotelId = '018f3a38-c393-79d2-97b7-5f214f4df7e3';
 const tourId = '018f3a38-c393-79d2-97b7-5f214f4df7e4';
+const hotels = [
+  {
+    id: hotelId,
+    name: 'Hôtel Xplor',
+    stars: HotelStars.FOUR,
+    cityId: '018f3a38-c393-79d2-97b7-5f214f4df7e5',
+    address: 'Rabat',
+    phone: '+212 500 000 000',
+    email: 'contact@xplor.test',
+    brandColor: '#6958A5',
+    contractType: ContractType.SALE,
+    contractStart: '2026-01-01T00:00:00.000Z',
+    contractEnd: '2027-01-01T00:00:00.000Z',
+    languages: ['fr'],
+    active: true,
+    hasMaintenancePin: false,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+];
 const selection = {
   hotelId,
   version: 1,
@@ -50,6 +70,21 @@ describe('hotel selection API', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('GET liste les hôtels à la bonne URL', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, hotels));
+
+    await expect(listHotels()).resolves.toEqual(hotels);
+
+    expect(lastCall()?.url).toBe('/api/v1/admin/hotels');
+    expect(lastCall()?.init?.method).toBe('GET');
+  });
+
+  it('rejette une réponse de liste d’hôtels invalide', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, [{ id: 'not-a-uuid' }]));
+
+    await expect(listHotels()).rejects.toThrow();
   });
 
   it('GET lit la sélection à la bonne URL', async () => {
