@@ -916,3 +916,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** opérations différentielles (POST/DELETE individuels) ; rafraîchissement immédiat de toutes les sessions actives en cache/Redis.
 - **À valider :** oui
 
+## D-117 — Remplacement de la sélection d'un hôtel (M5 F-51)
+
+- **Date :** 17/10/2026
+- **Décision :** la sélection d'un hôtel est remplacée en bloc par PUT, chaque écriture incrémente version ; seules des visites PUBLISHED sont acceptées ; les gestionnaires de l'hôtel et ADMIN peuvent écrire ; EDITOR hors périmètre → 404.
+- **Alternatives :** opérations différentielles ; accepter des visites non publiées ; réserver l'écriture à ADMIN.
+- **À valider :** oui
+

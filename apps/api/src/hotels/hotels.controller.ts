@@ -21,11 +21,14 @@ import {
   HotelManagersUpdateSchema,
   HotelUpdateSchema,
   Role,
+  SelectionUpdateSchema,
   type HotelCreate,
   type HotelManagersResponse,
   type HotelResponse,
   type HotelUpdate,
   type Principal,
+  type SelectionResponse,
+  type SelectionUpdate,
 } from '@xplor/shared';
 
 import { CsrfGuard } from '../auth/csrf.guard.js';
@@ -34,6 +37,7 @@ import { SessionGuard } from '../auth/session.guard.js';
 import { parseBody, parseResourceId } from '../catalog/catalog-http.js';
 import { HotelManagersService } from './hotel-managers.service.js';
 import { HotelsService } from './hotels.service.js';
+import { SelectionService } from './selection.service.js';
 
 function hasBrandColorProperty(body: unknown): boolean {
   if (typeof body !== 'object' || body === null) {
@@ -97,6 +101,7 @@ export class HotelsController {
   constructor(
     @Inject(HotelsService) private readonly hotels: HotelsService,
     @Inject(HotelManagersService) private readonly hotelManagers: HotelManagersService,
+    @Inject(SelectionService) private readonly selection: SelectionService,
   ) {}
 
   @Get()
@@ -156,5 +161,25 @@ export class HotelsController {
     const payload = parseBody(HotelManagersUpdateSchema, body);
     const managers = await this.hotelManagers.replace(hotelId, payload.userIds);
     return { managers };
+  }
+
+  @Get(':id/selection')
+  getSelection(
+    @Req() request: SessionRequest,
+    @Param('id') id: string,
+  ): Promise<SelectionResponse> {
+    return this.selection.get(requirePrincipal(request), parseResourceId(id));
+  }
+
+  @Put(':id/selection')
+  replaceSelection(
+    @Req() request: SessionRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<SelectionResponse> {
+    const principal = requirePrincipal(request);
+    const hotelId = parseResourceId(id);
+    const payload: SelectionUpdate = parseBody(SelectionUpdateSchema, body);
+    return this.selection.replace(principal, hotelId, payload);
   }
 }
