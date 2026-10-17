@@ -9,6 +9,8 @@ export type AppRoute =
   | { name: 'tours' }
   | { name: 'tour-new' }
   | { name: 'tour-detail'; id: string }
+  | { name: 'hotels' }
+  | { name: 'hotel-selection'; id: string }
   | { name: 'scene-detail'; tourId: string; sceneId: string }
   | { name: 'hotspots'; tourId: string; sceneId: string }
   | { name: 'hotspot-new'; tourId: string; sceneId: string }
@@ -25,15 +27,22 @@ const HOTSPOT_DETAIL_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)\/hotspots\/([^/]
 const HOTSPOTS_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)\/hotspots$/;
 const SCENE_DETAIL_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)$/;
 const TOUR_DETAIL_PATH = /^\/tours\/([^/]+)$/;
+const HOTEL_SELECTION_PATH = /^\/hotels\/([^/]+)\/selection$/;
 
 export function parsePathname(pathname: string): AppRoute {
   if (pathname === '/forgot') return { name: 'forgot' };
   if (pathname === '/cities') return { name: 'cities' };
   if (pathname === '/categories') return { name: 'categories' };
   if (pathname === '/tours') return { name: 'tours' };
+  if (pathname === '/hotels') return { name: 'hotels' };
   if (pathname === '/tours/new') return { name: 'tour-new' };
   if (pathname === '/media') return { name: 'media' };
   if (pathname === '/') return { name: 'home' };
+
+  const hotelSelectionId = HOTEL_SELECTION_PATH.exec(pathname)?.[1];
+  if (hotelSelectionId !== undefined && hotelSelectionId !== '') {
+    return { name: 'hotel-selection', id: decodeSegment(hotelSelectionId) };
+  }
 
   const resetToken = RESET_PATH.exec(pathname)?.[1];
   if (resetToken !== undefined) {
