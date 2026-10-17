@@ -211,7 +211,104 @@ describe('KiosksPage', () => {
 
     expect((await screen.findByRole('alert')).textContent).toContain(resources.fr.page.kiosks.actionError);
   });
+
+  it('valide le formulaire avant de créer un kiosque', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: resources.fr.page.kiosks.actions.newKiosk }));
+    const label = await screen.findByLabelText(resources.fr.page.kiosks.form.label);
+    fireEvent.change(label, { target: { value: 'Kiosque test' } });
+    fireEvent.change(screen.getByLabelText(resources.fr.page.kiosks.form.idleTimeout), { target: { value: '14' } });
+    const form = screen.getByRole('button', { name: resources.fr.page.kiosks.form.submit }).closest('form');
+    expect(form).not.toBeNull();
+    if (form) fireEvent.submit(form);
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([input, init]) => requestUrl(input).endsWith('/admin/kiosks') && (init as RequestInit | undefined)?.method === 'POST')).toBe(false);
+  });
+
+  it('crée un kiosque, demande son code et affiche le code dans le dialogue', async () => {
+    const pendingKiosk: Kiosk = { ...kiosk, status: 'PENDING', connectionState: 'PENDING', lastHeartbeatAt: null };
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
+        id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
+        uiLang: 'fr', csrfToken: 'csrf-admin',
+      }));
+      if (url.endsWith('/admin/kiosks') && (init as RequestInit | undefined)?.method === 'POST') return Promise.resolve(jsonResponse(201, pendingKiosk));
+      if (url.endsWith(`/admin/kiosks/${pendingKiosk.id}/enrollment-code`)) return Promise.resolve(jsonResponse(200, { code: 'AB12CD34', expiresAt: '2026-10-17T11:00:00.000Z' }));
+      if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [pendingKiosk] }));
+      if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, [makeHotel()]));
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: resources.fr.page.kiosks.actions.newKiosk }));
+    fireEvent.change(await screen.findByLabelText(resources.fr.page.kiosks.form.label), { target: { value: 'Kiosque test' } });
+    fireEvent.click(screen.getByRole('button', { name: resources.fr.page.kiosks.form.submit }));
+
+    expect(await screen.findByText('AB12CD34')).toBeTruthy();
+    const createCall = fetchMock.mock.calls.find(([input, init]) => requestUrl(input).endsWith('/admin/kiosks') && (init as RequestInit | undefined)?.method === 'POST');
+    const createBody = (createCall?.[1] as RequestInit | undefined)?.body;
+    expect(JSON.parse(typeof createBody === 'string' ? createBody : '')).toEqual({
+      label: 'Kiosque test', hotelId, deviceType: 'TOUCH_SCREEN', idleTimeoutSeconds: 60,
+    });
+    const codeCall = fetchMock.mock.calls.find(([input, init]) => requestUrl(input).endsWith(`/admin/kiosks/${pendingKiosk.id}/enrollment-code`) && (init as RequestInit | undefined)?.method === 'POST');
+    expect(codeCall).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: resources.fr.page.kiosks.enrollmentCode.close }));
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.filter(([input, init]) => requestUrl(input).endsWith('/admin/kiosks') && (init as RequestInit | undefined)?.method !== 'POST')).toHaveLength(2);
+    });
+  });
+
+  it('affiche une erreur lorsque la création du kiosque échoue', async () => {
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
+        id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
+        uiLang: 'fr', csrfToken: 'csrf-admin',
+      }));
+      if (url.endsWith('/admin/kiosks') && (init as RequestInit | undefined)?.method === 'POST') return Promise.resolve(jsonResponse(500, {}));
+      if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [] }));
+      if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, [makeHotel()]));
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: resources.fr.page.kiosks.actions.newKiosk }));
+    fireEvent.change(await screen.findByLabelText(resources.fr.page.kiosks.form.label), { target: { value: 'Kiosque test' } });
+    fireEvent.click(screen.getByRole('button', { name: resources.fr.page.kiosks.form.submit }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain(resources.fr.page.kiosks.form.createError);
+  });
+
+  it('permet de réémettre le code depuis la ligne PENDING', async () => {
+    const pendingKiosk: Kiosk = { ...kiosk, status: 'PENDING', connectionState: 'PENDING', lastHeartbeatAt: null };
+    fetchMock.mockImplementation((input: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
+        id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
+        uiLang: 'fr', csrfToken: 'csrf-admin',
+      }));
+      if (url.endsWith(`/admin/kiosks/${pendingKiosk.id}/enrollment-code`)) return Promise.resolve(jsonResponse(200, { code: 'ZX98YU76', expiresAt: '2026-10-17T11:00:00.000Z' }));
+      if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [pendingKiosk] }));
+      if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, []));
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: resources.fr.page.kiosks.actions.enrollmentCode }));
+    expect(await screen.findByText('ZX98YU76')).toBeTruthy();
+  });
 });
+
+function makeHotel() {
+  return {
+    id: hotelId, name: 'Hôtel Démonstration Rabat', stars: HotelStars.FIVE, cityId: hotelId,
+    address: '1 avenue de la Démonstration, Rabat', phone: '+212537000000', email: 'rabat.demo@xplor.local',
+    brandColor: '#6958A5', contractType: ContractType.RENTAL,
+    contractStart: '2026-01-01T00:00:00.000Z', contractEnd: '2027-01-01T00:00:00.000Z', languages: ['fr'], active: true,
+    hasMaintenancePin: false, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+}
 
 function requestUrl(input: unknown): string {
   if (typeof input === 'string') return input;

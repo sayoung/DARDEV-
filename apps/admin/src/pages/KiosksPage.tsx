@@ -3,6 +3,7 @@ import { type Kiosk, type KioskConnectionState } from '@xplor/shared';
 import { useTranslation } from 'react-i18next';
 import { listHotels } from '../api/hotels.js';
 import { disableKiosk, forceSyncKiosk, listKiosks } from '../api/kiosks.js';
+import { KioskCreateDialog } from './KioskCreateDialog.js';
 import { Alert } from '../components/ui/Alert.js';
 import { Button } from '../components/ui/Button.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
@@ -24,6 +25,8 @@ export function KiosksPage() {
   const [fetchError, setFetchError] = useState(false);
   const [actionError, setActionError] = useState(false);
   const [actingKioskId, setActingKioskId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [enrollmentKioskId, setEnrollmentKioskId] = useState<string | undefined>();
 
   const fetchData = useCallback(async () => {
     try {
@@ -56,9 +59,18 @@ export function KiosksPage() {
     }
   }
 
+  function closeDialog() {
+    setDialogOpen(false);
+    setEnrollmentKioskId(undefined);
+    void fetchData().catch(() => undefined);
+  }
+
   return (
     <div className="space-y-8">
-      <PageHeader title={t('page.kiosks.title')} />
+      <PageHeader
+        title={t('page.kiosks.title')}
+        actions={<Button type="button" onClick={() => { setEnrollmentKioskId(undefined); setDialogOpen(true); }}>{t('page.kiosks.actions.newKiosk')}</Button>}
+      />
 
       {fetchError ? (
         <Alert variant="destructive">{t('page.kiosks.loadError')}</Alert>
@@ -98,6 +110,16 @@ export function KiosksPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-2">
+                    {kiosk.status === 'PENDING' ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={actingKioskId !== null}
+                        onClick={() => { setEnrollmentKioskId(kiosk.id); setDialogOpen(true); }}
+                      >
+                        {t('page.kiosks.actions.enrollmentCode')}
+                      </Button>
+                    ) : null}
                     {kiosk.status !== 'DISABLED' ? (
                       <Button
                         type="button"
@@ -132,6 +154,7 @@ export function KiosksPage() {
       {actionError ? (
         <Alert variant="destructive" role="alert">{t('page.kiosks.actionError')}</Alert>
       ) : null}
+      <KioskCreateDialog open={dialogOpen} kioskId={enrollmentKioskId} onClose={closeDialog} />
     </div>
   );
 }
