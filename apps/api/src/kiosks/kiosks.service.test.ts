@@ -3,6 +3,7 @@ import {
   EnrollmentCodeResponseSchema,
   KioskSchema,
   Role,
+  type KioskHeartbeatRequest,
   type KioskEnrollRequest,
   type KioskCreate,
   type Principal,
@@ -307,6 +308,75 @@ describe('toKioskResponse', () => {
 });
 
 describe('KioskService', () => {
+  it.each([
+    ['sans demande de resynchronisation', null, false],
+    ['avec demande de resynchronisation', new Date('2026-10-17T11:00:00.000Z'), true],
+  ])('enregistre le heartbeat %s et renvoie forceSync=%s', async (_label, forceSyncRequestedAt, forceSync) => {
+    const { service, rows, kioskUpdateCalls } = harness([
+      kioskRow({ forceSyncRequestedAt }),
+    ]);
+    const request: KioskHeartbeatRequest = {
+      appVersion: '2.4.1',
+      syncedManifestVersion: 'manifest-v9',
+      storageFreeMb: 1536,
+      recentErrors: ['ignored diagnostic'],
+    };
+
+    const response = await service.heartbeat(
+      { kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID },
+      request,
+      '192.0.2.80',
+    );
+
+    expect(rows.get(KIOSK_A_ID)).toMatchObject({
+      appVersion: '2.4.1',
+      syncedManifestVersion: 'manifest-v9',
+      storageFreeMb: 1536,
+      lastIp: '192.0.2.80',
+    });
+    expect(rows.get(KIOSK_A_ID)?.lastHeartbeatAt).toBeInstanceOf(Date);
+    expect(rows.get(KIOSK_A_ID)?.lastHeartbeatAt?.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(rows.get(KIOSK_A_ID)?.lastHeartbeatAt?.getTime()).toBeGreaterThan(Date.now() - 5_000);
+    expect(kioskUpdateCalls[0]).toMatchObject({
+      where: { id: KIOSK_A_ID },
+      data: { lastHeartbeatAt: rows.get(KIOSK_A_ID)?.lastHeartbeatAt },
+    });
+    expect(kioskUpdateCalls[0]).toMatchObject({
+      where: { id: KIOSK_A_ID },
+      data: {
+        appVersion: '2.4.1',
+        syncedManifestVersion: 'manifest-v9',
+        storageFreeMb: 1536,
+        lastIp: '192.0.2.80',
+      },
+    });
+    const updateData = (kioskUpdateCalls[0] as { data: Record<string, unknown> }).data;
+    expect(Object.keys(updateData)).not.toContain('recentErrors');
+    expect(response.forceSync).toBe(forceSync);
+    expect(typeof response.serverTime).toBe('string');
+    expect(new Date(response.serverTime).toISOString()).toBe(response.serverTime);
+  });
+
+  it.each([
+    ['inconnu', 'unknown-kiosk', []],
+    ['supprimé', KIOSK_A_ID, [kioskRow({ deletedAt: new Date() })]],
+  ])('renvoie KIOSK_NOT_FOUND pour un heartbeat de kiosque %s', async (_label, kioskId, rows) => {
+    const { service } = harness(rows);
+    const request: KioskHeartbeatRequest = {
+      appVersion: '2.4.1',
+      syncedManifestVersion: null,
+      storageFreeMb: null,
+      recentErrors: [],
+    };
+
+    await expect(service.heartbeat(
+      { kioskId, hotelId: HOTEL_A_ID }, request, null,
+    )).rejects.toMatchObject({
+      status: 404,
+      response: { error: { code: 'KIOSK_NOT_FOUND' } },
+    });
+  });
+
   it('construit le manifeste du kiosque, filtre les visites non publiées et acquitte le force-sync', async () => {
     const row = kioskRow({ forceSyncRequestedAt: new Date('2026-10-17T11:00:00.000Z') });
     const { service, rows, manifestSelections, kioskUpdateCalls } = harness([row]);
