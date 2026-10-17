@@ -80,12 +80,13 @@ describe('AppLayout', () => {
 
     const nav = screen.getByRole('navigation', { name: resources.fr.nav.label });
     const links = within(nav).getAllByRole('link');
-    expect(links).toHaveLength(5);
+    expect(links).toHaveLength(6);
     expect(links[0]?.textContent).toBe(resources.fr.nav.home);
     expect(links[1]?.textContent).toBe(resources.fr.nav.tours);
     expect(links[2]?.textContent).toBe(resources.fr.nav.cities);
-    expect(links[3]?.textContent).toBe(resources.fr.nav.categories);
-    expect(links[4]?.textContent).toBe(resources.fr.nav.media);
+    expect(links[3]?.textContent).toBe(resources.fr.nav.hotels);
+    expect(links[4]?.textContent).toBe(resources.fr.nav.categories);
+    expect(links[5]?.textContent).toBe(resources.fr.nav.media);
 
     const logoutButton = screen.getByRole('button', { name: resources.fr.auth.logout });
     fireEvent.click(logoutButton);

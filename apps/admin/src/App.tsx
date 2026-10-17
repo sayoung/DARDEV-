@@ -14,6 +14,7 @@ import { ToursPage } from './pages/ToursPage.js';
 import { MediaPage } from './pages/MediaPage.js';
 import { HotspotsPage } from './pages/HotspotsPage.js';
 import { HotspotDetailPage } from './pages/HotspotDetailPage.js';
+import { HotelsPage } from './pages/HotelsPage.js';
 import { useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
@@ -61,6 +62,7 @@ function AdminShell() {
 
       {isAuthenticated && route.name === 'home' ? <HomePage /> : null}
       {isAuthenticated && route.name === 'cities' ? <CitiesPage /> : null}
+      {isAuthenticated && route.name === 'hotels' ? <HotelsPage /> : null}
       {isAuthenticated && route.name === 'categories' ? <CategoriesPage /> : null}
       {isAuthenticated && route.name === 'tours' ? <ToursPage /> : null}
       {isAuthenticated && route.name === 'tour-new' ? <TourNewPage /> : null}
