@@ -77,7 +77,13 @@ describe('HotelsPage', () => {
 
     render(<App />);
     expect((await screen.findByRole('status')).textContent).toContain(resources.fr.common.loading);
-    resolveHotels?.(jsonResponse(200, [hotel]));
+    const completeHotelsRequest = await waitFor(() => {
+      if (resolveHotels === undefined) {
+        throw new Error('La requête des hôtels n’est pas encore en attente.');
+      }
+      return resolveHotels;
+    });
+    completeHotelsRequest(jsonResponse(200, [hotel]));
     expect(await screen.findByText(hotel.name)).toBeTruthy();
   });
 

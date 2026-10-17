@@ -298,8 +298,9 @@ export class KioskService {
     }
 
     const now = new Date();
+    let updated: KioskRow;
     try {
-      await this.prisma.kiosk.update({
+      updated = await this.prisma.kiosk.update({
         where: { id: kiosk.id },
         data: {
           lastHeartbeatAt: now,
@@ -317,7 +318,7 @@ export class KioskService {
     }
 
     return {
-      forceSync: kiosk.forceSyncRequestedAt !== null,
+      forceSync: updated.forceSyncRequestedAt !== null,
       serverTime: now.toISOString(),
     };
   }

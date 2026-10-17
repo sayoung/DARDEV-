@@ -339,6 +339,10 @@ describe('KioskService', () => {
     expect(rows.get(KIOSK_A_ID)?.lastHeartbeatAt?.getTime()).toBeGreaterThan(Date.now() - 5_000);
     expect(kioskUpdateCalls[0]).toMatchObject({
       where: { id: KIOSK_A_ID },
+      data: { lastHeartbeatAt: rows.get(KIOSK_A_ID)?.lastHeartbeatAt },
+    });
+    expect(kioskUpdateCalls[0]).toMatchObject({
+      where: { id: KIOSK_A_ID },
       data: {
         appVersion: '2.4.1',
         syncedManifestVersion: 'manifest-v9',
@@ -353,9 +357,11 @@ describe('KioskService', () => {
     expect(new Date(response.serverTime).toISOString()).toBe(response.serverTime);
   });
 
-  it('renvoie KIOSK_NOT_FOUND pour un heartbeat de kiosque inconnu ou supprimé', async () => {
-    const deleted = kioskRow({ deletedAt: new Date() });
-    const { service } = harness([deleted]);
+  it.each([
+    ['inconnu', 'unknown-kiosk', []],
+    ['supprimé', KIOSK_A_ID, [kioskRow({ deletedAt: new Date() })]],
+  ])('renvoie KIOSK_NOT_FOUND pour un heartbeat de kiosque %s', async (_label, kioskId, rows) => {
+    const { service } = harness(rows);
     const request: KioskHeartbeatRequest = {
       appVersion: '2.4.1',
       syncedManifestVersion: null,
@@ -364,7 +370,7 @@ describe('KioskService', () => {
     };
 
     await expect(service.heartbeat(
-      { kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID }, request, null,
+      { kioskId, hotelId: HOTEL_A_ID }, request, null,
     )).rejects.toMatchObject({
       status: 404,
       response: { error: { code: 'KIOSK_NOT_FOUND' } },
