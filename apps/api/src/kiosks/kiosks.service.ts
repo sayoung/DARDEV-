@@ -13,6 +13,8 @@ import {
   type KioskEnrollRequest,
   type KioskEnrollResponse,
   type KioskManifest,
+  type KioskHeartbeatRequest,
+  type KioskHeartbeatResponse,
   type Principal,
   LocalizedTextSchema,
 } from '@xplor/shared';
@@ -63,10 +65,6 @@ export interface KioskRow {
   updatedAt: Date;
 }
 
-type ManifestKioskRow = Pick<KioskRow,
-  'id' | 'label' | 'hotelId' | 'deviceType' | 'idleTimeoutSeconds' | 'forceSyncRequestedAt'
->;
-
 interface ManifestHotelRow {
   id: string;
   name: string;
@@ -106,7 +104,18 @@ export interface KioskPrismaClient {
   kiosk: {
     findUnique(args: {
       where: { id: string; deletedAt: null };
-    }): Promise<ManifestKioskRow | null>;
+  }): Promise<Pick<KioskRow,
+    | 'id'
+    | 'label'
+    | 'hotelId'
+    | 'deviceType'
+    | 'idleTimeoutSeconds'
+    | 'forceSyncRequestedAt'
+    | 'lastHeartbeatAt'
+    | 'appVersion'
+    | 'syncedManifestVersion'
+    | 'storageFreeMb'
+  > | null>;
     findMany(args: {
       where: {
         deletedAt: null;
@@ -145,6 +154,10 @@ export interface KioskPrismaClient {
         | 'enrollmentCode'
         | 'enrollmentExpiresAt'
         | 'lastIp'
+        | 'lastHeartbeatAt'
+        | 'appVersion'
+        | 'syncedManifestVersion'
+        | 'storageFreeMb'
         | 'forceSyncRequestedAt'
       >>;
     }): Promise<KioskRow>;
@@ -270,6 +283,43 @@ export class KioskService {
       });
     }
     return manifest;
+  }
+
+  async heartbeat(
+    device: KioskDevice,
+    body: KioskHeartbeatRequest,
+    ip: string | null,
+  ): Promise<KioskHeartbeatResponse> {
+    const kiosk = await this.prisma.kiosk.findUnique({
+      where: { id: device.kioskId, deletedAt: null },
+    });
+    if (kiosk === null || kiosk.hotelId !== device.hotelId) {
+      throw this.notFound();
+    }
+
+    const now = new Date();
+    try {
+      await this.prisma.kiosk.update({
+        where: { id: kiosk.id },
+        data: {
+          lastHeartbeatAt: now,
+          appVersion: body.appVersion,
+          syncedManifestVersion: body.syncedManifestVersion,
+          storageFreeMb: body.storageFreeMb,
+          lastIp: ip,
+        },
+      });
+    } catch (error: unknown) {
+      if (isRecordMissing(error)) {
+        throw this.notFound();
+      }
+      throw error;
+    }
+
+    return {
+      forceSync: kiosk.forceSyncRequestedAt !== null,
+      serverTime: now.toISOString(),
+    };
   }
 
   async create(principal: Principal, input: KioskCreate): Promise<Kiosk> {
