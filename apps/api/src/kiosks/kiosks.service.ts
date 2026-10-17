@@ -12,7 +12,9 @@ import {
   type EnrollmentCodeResponse,
   type KioskEnrollRequest,
   type KioskEnrollResponse,
+  type KioskManifest,
   type Principal,
+  LocalizedTextSchema,
 } from '@xplor/shared';
 
 import { canAccessHotel, scopeHotelIds } from '../auth/access-policy.js';
@@ -23,6 +25,8 @@ import {
 } from '../catalog/catalog.errors.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { computeConnectionState } from './kiosk-state.js';
+import { buildManifest } from './manifest-builder.js';
+import type { KioskDevice } from './kiosk-token.guard.js';
 import {
   KIOSK_HOTEL_INVALID,
   KIOSK_HOTEL_INVALID_MESSAGE,
@@ -59,13 +63,50 @@ export interface KioskRow {
   updatedAt: Date;
 }
 
+type ManifestKioskRow = Pick<KioskRow,
+  'id' | 'label' | 'hotelId' | 'deviceType' | 'idleTimeoutSeconds' | 'forceSyncRequestedAt'
+>;
+
+interface ManifestHotelRow {
+  id: string;
+  name: string;
+  brandColor: string;
+  languages: string[];
+  active: boolean;
+  logoAssetId: string | null;
+  maintenancePinHash: string | null;
+  logoAsset: { id: string } | null;
+}
+
+interface ManifestSelectionRow {
+  version: number;
+  featuredTourId: string | null;
+  attractTourIds: string[];
+  items: {
+    tourId: string;
+    position: number;
+    tour: { contentVersion: number; status: 'DRAFT' | 'PUBLISHED'; deletedAt: Date | null };
+  }[];
+}
+
+interface ManifestCategoryRow {
+  id: string;
+  name: unknown;
+  icon: string;
+  color: string;
+}
+
 export interface KioskPrismaClient {
   hotel: {
     findFirst(args: {
       where: { id: string; deletedAt: null };
-    }): Promise<{ id: string } | null>;
+      include?: { logoAsset: true };
+    }): Promise<ManifestHotelRow | null>;
   };
   kiosk: {
+    findUnique(args: {
+      where: { id: string; deletedAt: null };
+    }): Promise<ManifestKioskRow | null>;
     findMany(args: {
       where: {
         deletedAt: null;
@@ -128,7 +169,20 @@ export interface KioskPrismaClient {
     findUnique(args: {
       where: { hotelId: string };
       select?: { version: true };
-    }): Promise<{ version: number } | null>;
+      include?: {
+        items: {
+          include: { tour: { select: { contentVersion: true; status: true; deletedAt: true } } };
+        };
+      };
+    }): Promise<{
+      version: number;
+      featuredTourId?: string | null;
+      attractTourIds?: string[];
+      items?: ManifestSelectionRow['items'];
+    } | null>;
+  };
+  category: {
+    findMany(args: { orderBy: { weight: 'asc' } }): Promise<ManifestCategoryRow[]>;
   };
 }
 
@@ -146,6 +200,76 @@ export class KioskService {
       return null;
     }
     return { id: kiosk.id, hotelId: kiosk.hotelId, status: kiosk.status };
+  }
+
+  async getManifest(device: KioskDevice): Promise<KioskManifest> {
+    const kiosk = await this.prisma.kiosk.findUnique({
+      where: { id: device.kioskId, deletedAt: null },
+    });
+    if (kiosk === null || kiosk.hotelId !== device.hotelId) {
+      throw this.notFound();
+    }
+
+    const hotel = await this.prisma.hotel.findFirst({
+      where: { id: device.hotelId, deletedAt: null },
+      include: { logoAsset: true },
+    });
+    if (hotel === null) {
+      throw this.notFound();
+    }
+
+    const [selection, categories] = await Promise.all([
+      this.prisma.selection.findUnique({
+        where: { hotelId: device.hotelId },
+        include: {
+          items: {
+            include: { tour: { select: { contentVersion: true, status: true, deletedAt: true } } },
+          },
+        },
+      }),
+      this.prisma.category.findMany({ orderBy: { weight: 'asc' } }),
+    ]);
+
+    const manifest = buildManifest({
+      kiosk,
+      hotel: {
+        id: hotel.id,
+        name: hotel.name,
+        logoUrl: null,
+        brandColor: hotel.brandColor,
+        languages: hotel.languages,
+        active: hotel.active,
+        logoAssetId: hotel.logoAssetId,
+        maintenancePinHash: hotel.maintenancePinHash,
+      },
+      selection: {
+        version: selection?.version ?? 1,
+        featuredTourId: selection?.featuredTourId ?? null,
+        attractTourIds: selection?.attractTourIds ?? [],
+        items: selection?.items?.map((item) => ({
+          tourId: item.tourId,
+          position: item.position,
+          contentVersion: item.tour.contentVersion,
+          sizeBytes: 0,
+          status: item.tour.status,
+          deletedAt: item.tour.deletedAt,
+        })) ?? [],
+      },
+      categories: categories.map((category) => ({
+        id: category.id,
+        name: LocalizedTextSchema.parse(category.name),
+        icon: category.icon,
+        color: category.color,
+      })),
+    });
+
+    if (kiosk.forceSyncRequestedAt !== null) {
+      await this.prisma.kiosk.update({
+        where: { id: kiosk.id },
+        data: { forceSyncRequestedAt: null },
+      });
+    }
+    return manifest;
   }
 
   async create(principal: Principal, input: KioskCreate): Promise<Kiosk> {

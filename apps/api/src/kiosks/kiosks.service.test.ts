@@ -24,6 +24,8 @@ const HOTEL_B_ID = '01990000-0000-7000-8000-000000000102';
 const KIOSK_A_ID = '01990000-0000-7000-8000-000000000301';
 const KIOSK_B_ID = '01990000-0000-7000-8000-000000000302';
 const HOTEL_DELETED_ID = '01990000-0000-7000-8000-000000000103';
+const TOUR_A_ID = '01990000-0000-7000-8000-000000000401';
+const TOUR_B_ID = '01990000-0000-7000-8000-000000000402';
 
 const admin: Principal = {
   userId: '01990000-0000-7000-8000-000000000201',
@@ -69,6 +71,16 @@ function harness(initialRows: KioskRow[] = []): {
   hotels: Map<string, Date | null>;
   kioskCreateCalls: unknown[];
   kioskUpdateCalls: unknown[];
+  manifestSelections: Map<string, {
+    version: number;
+    featuredTourId: string | null;
+    attractTourIds: string[];
+    items: {
+      tourId: string;
+      position: number;
+      tour: { contentVersion: number; status: 'DRAFT' | 'PUBLISHED'; deletedAt: Date | null };
+    }[];
+  }>;
 } {
   const rows = new Map(initialRows.map((row) => [row.id, row]));
   const selections = new Map<string, number>();
@@ -79,16 +91,38 @@ function harness(initialRows: KioskRow[] = []): {
   ]);
   const kioskCreateCalls: unknown[] = [];
   const kioskUpdateCalls: unknown[] = [];
+  const manifestSelections = new Map<string, {
+    version: number;
+    featuredTourId: string | null;
+    attractTourIds: string[];
+    items: {
+      tourId: string;
+      position: number;
+      tour: { contentVersion: number; status: 'DRAFT' | 'PUBLISHED'; deletedAt: Date | null };
+    }[];
+  }>();
   const prisma: KioskPrismaClient = {
     hotel: {
-      findFirst: (args) =>
-        Promise.resolve(
-          hotels.has(args.where.id) && hotels.get(args.where.id) === null
-            ? { id: args.where.id }
-            : null,
-        ),
+      findFirst: (args) => Promise.resolve(
+        hotels.has(args.where.id) && hotels.get(args.where.id) === null
+          ? {
+              id: args.where.id,
+              name: 'Hôtel Exemple',
+              brandColor: '#6958A5',
+              languages: ['fr'],
+              active: true,
+              logoAssetId: null,
+              maintenancePinHash: null,
+              logoAsset: null,
+            }
+          : null,
+      ),
     },
     kiosk: {
+      findUnique: (args) => {
+        const row = rows.get(args.where.id);
+        return Promise.resolve(row?.deletedAt === null ? row : null);
+      },
       findMany: (args) => {
         let result = [...rows.values()].filter((row) => row.deletedAt === null);
         if (args.where.hotelId !== undefined) {
@@ -161,9 +195,15 @@ function harness(initialRows: KioskRow[] = []): {
     selection: {
       findUnique: (args) => {
         selectionReads.push(args.where.hotelId);
+        if (args.include !== undefined) {
+          return Promise.resolve(manifestSelections.get(args.where.hotelId) ?? null);
+        }
         const version = selections.get(args.where.hotelId);
         return Promise.resolve(version === undefined ? null : { version });
       },
+    },
+    category: {
+      findMany: () => Promise.resolve([]),
     },
   };
   return {
@@ -174,6 +214,7 @@ function harness(initialRows: KioskRow[] = []): {
     hotels,
     kioskCreateCalls,
     kioskUpdateCalls,
+    manifestSelections,
   };
 }
 
@@ -266,6 +307,57 @@ describe('toKioskResponse', () => {
 });
 
 describe('KioskService', () => {
+  it('construit le manifeste du kiosque, filtre les visites non publiées et acquitte le force-sync', async () => {
+    const row = kioskRow({ forceSyncRequestedAt: new Date('2026-10-17T11:00:00.000Z') });
+    const { service, rows, manifestSelections, kioskUpdateCalls } = harness([row]);
+    manifestSelections.set(HOTEL_A_ID, {
+      version: 4,
+      featuredTourId: TOUR_A_ID,
+      attractTourIds: [TOUR_A_ID, TOUR_B_ID],
+      items: [
+        { tourId: TOUR_A_ID, position: 0, tour: { contentVersion: 7, status: 'PUBLISHED', deletedAt: null } },
+        { tourId: TOUR_B_ID, position: 1, tour: { contentVersion: 2, status: 'DRAFT', deletedAt: null } },
+      ],
+    });
+
+    const manifest = await service.getManifest({ kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID });
+
+    expect(manifest.kiosk.id).toBe(KIOSK_A_ID);
+    expect(manifest.selection.tours).toEqual([{
+      id: TOUR_A_ID,
+      contentVersion: 7,
+      sizeBytes: 0,
+      url: `/api/v1/tours/${TOUR_A_ID}`,
+    }]);
+    expect(manifest.selection.featuredTourId).toBe(TOUR_A_ID);
+    expect(manifest.selection.attractTourIds).toEqual([TOUR_A_ID]);
+    expect(rows.get(KIOSK_A_ID)?.forceSyncRequestedAt).toBeNull();
+    expect(kioskUpdateCalls.at(-1)).toEqual({
+      where: { id: KIOSK_A_ID },
+      data: { forceSyncRequestedAt: null },
+    });
+  });
+
+  it('retourne une sélection vide si elle est absente', async () => {
+    const { service } = harness([kioskRow()]);
+
+    const manifest = await service.getManifest({ kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID });
+
+    expect(manifest.selection).toEqual({ featuredTourId: null, attractTourIds: [], tours: [] });
+  });
+
+  it.each([
+    ['inconnu', []],
+    ['supprimé', [kioskRow({ deletedAt: new Date() })]],
+  ])('renvoie KIOSK_NOT_FOUND pour un kiosque %s', async (_label, rows) => {
+    const { service } = harness(rows);
+
+    await expect(service.getManifest({ kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID })).rejects.toMatchObject({
+      status: 404,
+      response: { error: { code: 'KIOSK_NOT_FOUND' } },
+    });
+  });
+
   it('crée un kiosque ADMIN en PENDING avec les valeurs par défaut et sans secret', async () => {
     const { service, kioskCreateCalls } = harness();
 
