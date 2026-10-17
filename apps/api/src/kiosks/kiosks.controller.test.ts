@@ -48,6 +48,7 @@ class RecordingKioskService extends KioskService {
   public removeCalls: { principal: Principal; id: string }[] = [];
   public enrollmentCalls: { principal: Principal; id: string }[] = [];
   public disableCalls: { principal: Principal; id: string }[] = [];
+  public forceSyncCalls: { principal: Principal; id: string }[] = [];
 
   constructor() {
     super({} as KioskPrismaClient);
@@ -87,6 +88,11 @@ class RecordingKioskService extends KioskService {
     this.disableCalls.push({ principal: who, id });
     return Promise.resolve({ ...sampleKiosk, status: 'DISABLED', connectionState: 'DISABLED' });
   }
+
+  override forceSync(who: Principal, id: string): Promise<Kiosk> {
+    this.forceSyncCalls.push({ principal: who, id });
+    return Promise.resolve(sampleKiosk);
+  }
 }
 
 function makeRequest(who: Principal = principal): SessionRequest {
@@ -119,6 +125,7 @@ describe('KiosksController', () => {
     expect(Reflect.getMetadata('__httpCode__', methodHandler('remove'))).toBe(HttpStatus.NO_CONTENT);
     expect(Reflect.getMetadata('__httpCode__', methodHandler('issueEnrollmentCode'))).toBe(HttpStatus.OK);
     expect(Reflect.getMetadata('__httpCode__', methodHandler('disable'))).toBe(HttpStatus.OK);
+    expect(Reflect.getMetadata('__httpCode__', methodHandler('forceSync'))).toBe(HttpStatus.NO_CONTENT);
   });
 
   it('transmet le principal à toutes les opérations et les entrées validées', async () => {
@@ -133,6 +140,7 @@ describe('KiosksController', () => {
     await expect(controller.remove(req, KIOSK_ID)).resolves.toBeUndefined();
     await expect(controller.issueEnrollmentCode(req, KIOSK_ID)).resolves.toEqual(enrollmentCode);
     await expect(controller.disable(req, KIOSK_ID)).resolves.toMatchObject({ status: 'DISABLED' });
+    await expect(controller.forceSync(req, KIOSK_ID)).resolves.toBeUndefined();
 
     expect(service.listCalls).toEqual([principal]);
     expect(service.createCalls).toEqual([{ principal, input: createInput }]);
@@ -141,6 +149,7 @@ describe('KiosksController', () => {
     expect(service.removeCalls).toEqual([{ principal, id: KIOSK_ID }]);
     expect(service.enrollmentCalls).toEqual([{ principal, id: KIOSK_ID }]);
     expect(service.disableCalls).toEqual([{ principal, id: KIOSK_ID }]);
+    expect(service.forceSyncCalls).toEqual([{ principal, id: KIOSK_ID }]);
   });
 
   it('refuse les corps invalides avec 400 et sans appeler le service', () => {
@@ -158,10 +167,12 @@ describe('KiosksController', () => {
     await expect(controller.remove(makeRequest(), INVALID_ID)).rejects.toThrow(BadRequestException);
     expect(() => controller.issueEnrollmentCode(makeRequest(), INVALID_ID)).toThrow(BadRequestException);
     expect(() => controller.disable(makeRequest(), INVALID_ID)).toThrow(BadRequestException);
+    await expect(controller.forceSync(makeRequest(), INVALID_ID)).rejects.toThrow(BadRequestException);
     expect(service.getCalls).toHaveLength(0);
     expect(service.updateCalls).toHaveLength(0);
     expect(service.removeCalls).toHaveLength(0);
     expect(service.enrollmentCalls).toHaveLength(0);
     expect(service.disableCalls).toHaveLength(0);
+    expect(service.forceSyncCalls).toHaveLength(0);
   });
 });

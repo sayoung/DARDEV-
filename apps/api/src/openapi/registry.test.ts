@@ -32,6 +32,7 @@ const ROUTES = [
   { path: '/api/v1/admin/kiosks/{id}', method: 'delete' },
   { path: '/api/v1/admin/kiosks/{id}/enrollment-code', method: 'post' },
   { path: '/api/v1/admin/kiosks/{id}/disable', method: 'post' },
+  { path: '/api/v1/admin/kiosks/{id}/force-sync', method: 'post' },
   { path: '/api/v1/kiosk/enroll', method: 'post' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'get' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'put' },
@@ -239,6 +240,11 @@ describe('document OpenAPI', () => {
     const disable = doc.paths?.['/api/v1/admin/kiosks/{id}/disable']?.post;
     expect(disable?.responses?.['200']).toBeDefined();
     expect(disable?.responses?.['403']).toBeDefined();
+    const forceSync = doc.paths?.['/api/v1/admin/kiosks/{id}/force-sync']?.post;
+    expect(forceSync?.responses?.['204']).toBeDefined();
+    expect(forceSync?.responses?.['400']).toBeDefined();
+    expect(forceSync?.responses?.['403']).toBeDefined();
+    expect(forceSync?.responses?.['404']).toBeDefined();
 
     const enroll = doc.paths?.['/api/v1/kiosk/enroll']?.post;
     expect(enroll?.responses?.['200']).toBeDefined();

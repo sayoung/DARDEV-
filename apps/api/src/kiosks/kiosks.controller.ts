@@ -92,4 +92,10 @@ export class KiosksController {
   disable(@Req() request: SessionRequest, @Param('id') id: string): Promise<Kiosk> {
     return this.kiosks.disable(requirePrincipal(request), parseResourceId(id));
   }
+
+  @Post(':id/force-sync')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async forceSync(@Req() request: SessionRequest, @Param('id') id: string): Promise<void> {
+    await this.kiosks.forceSync(requirePrincipal(request), parseResourceId(id));
+  }
 }
