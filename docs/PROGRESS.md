@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 17/10/2026 — M5 F-52 (service kiosques 1/3) : créer apps/api/src/kiosks/kiosks.service.ts avec uniquement les types et la fonction exportée toKioskResponse, et son test kios… — toKioskResponse et KioskRow conformes à la demande : objet construit champ par champ sans secret ni IP, validé par KioskSchema, tests complets et contrôles lint/typecheck/test verts. (6401afc)
 - 17/10/2026 — M5 F-52 (kiosques 4/4) Constantes d'erreur : créer apps/api/src/kiosks/kiosks.errors.ts dans le style de hotels.errors.ts, avec les codes et messages KIOSK_NOT_… — Constantes d'erreur kiosques dans le style de hotels.errors.ts et décision D-119 (À valider : oui) ajoutées, seuls ces deux fichiers modifiés, contrôles verts. (fdaa187)
 - 17/10/2026 — M5 F-53 (kiosques 3/4) État calculé : créer apps/api/src/kiosks/kiosk-state.ts avec la fonction pure computeConnectionState(kiosk: {status, lastHeartbeatAt: Dat… — computeConnectionState et OFFLINE_AFTER_MINUTES conformes à la spécification, tests couvrant toutes les branches et la limite des 15 min, contrôles verts. (98d1b82)
 - 17/10/2026 — M5 F-52 (kiosques 2/4) Cryptographie des jetons : créer apps/api/src/kiosks/kiosk-secrets.ts (fonctions pures, node:crypto uniquement) : generateEnrollmentCode(… — kiosk-secrets.ts et son test respectent exactement la spécification (node:crypto seul, alphabet, 256 bits base64url, SHA-256 hex, TTL 60 min) et les contrôles passent. (442b25a)
