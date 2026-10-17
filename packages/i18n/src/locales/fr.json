@@ -443,18 +443,43 @@
     },
     "kiosks": {
       "title": "Kiosques",
+      "loadError": "Impossible de charger les kiosques.",
+      "empty": "Aucun kiosque trouvé.",
+      "actionError": "Impossible d'effectuer cette action.",
       "columns": {
+        "label": "Nom",
         "hotel": "Hôtel",
         "state": "État",
         "lastHeartbeat": "Dernier signal",
         "version": "Version",
-        "freeSpace": "Espace libre"
+        "freeSpace": "Espace libre",
+        "actions": "Actions"
       },
+      "notAvailable": "—",
+      "freeSpaceValue": "{{mb}} Mo",
+      "form": {
+        "label": "Nom du kiosque",
+        "hotel": "Hôtel",
+        "deviceType": "Type d'appareil",
+        "idleTimeout": "Délai avant le mode veille (secondes)",
+        "submit": "Créer le kiosque",
+        "cancel": "Annuler",
+        "createError": "Impossible de créer le kiosque."
+      },
+      "enrollmentCode": {
+        "title": "Code d'enrôlement",
+        "instruction": "Saisissez ce code sur l'appareil.",
+        "close": "Fermer",
+        "copy": "Copier"
+      },
+      "confirmDisable": "Voulez-vous vraiment désactiver ce kiosque ?",
+      "confirmDelete": "Voulez-vous vraiment supprimer ce kiosque ?",
       "actions": {
         "disable": "Désactiver",
         "forceSync": "Forcer la synchronisation",
         "newKiosk": "Nouveau kiosque",
-        "enrollmentCode": "Code d’enrôlement"
+        "enrollmentCode": "Code d’enrôlement",
+        "delete": "Supprimer"
       },
       "status": {
         "online": "En ligne",
