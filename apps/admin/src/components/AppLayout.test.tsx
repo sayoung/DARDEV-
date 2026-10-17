@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { Role } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +8,16 @@ import * as catalog from '../api/catalog.js';
 
 vi.mock('../api/catalog.js', () => ({
   listTours: vi.fn(),
+}));
+
+vi.mock('../api/hotels.js', () => ({
+  listHotels: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../api/kiosks.js', () => ({
+  listKiosks: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20 }),
+  disableKiosk: vi.fn(),
+  forceSyncKiosk: vi.fn(),
 }));
 
 function requestUrl(input: unknown): string {
@@ -79,14 +89,20 @@ describe('AppLayout', () => {
     expect(screen.getAllByText(resources.fr.auth.role.ADMIN)).toHaveLength(1);
 
     const nav = screen.getByRole('navigation', { name: resources.fr.nav.label });
-    const links = within(nav).getAllByRole('link');
-    expect(links).toHaveLength(6);
+    const links = nav.querySelectorAll('a');
+    expect(links).toHaveLength(7);
     expect(links[0]?.textContent).toBe(resources.fr.nav.home);
     expect(links[1]?.textContent).toBe(resources.fr.nav.tours);
     expect(links[2]?.textContent).toBe(resources.fr.nav.cities);
     expect(links[3]?.textContent).toBe(resources.fr.nav.hotels);
     expect(links[4]?.textContent).toBe(resources.fr.nav.categories);
     expect(links[5]?.textContent).toBe(resources.fr.nav.media);
+    const kiosksLink = screen.getByRole('link', { name: resources.fr.nav.kiosks });
+    expect(kiosksLink.getAttribute('href')).toBe('/kiosks');
+    expect(kiosksLink.getAttribute('aria-current')).toBeNull();
+
+    fireEvent.click(kiosksLink);
+    expect((await screen.findByRole('link', { name: resources.fr.nav.kiosks })).getAttribute('aria-current')).toBe('page');
 
     const logoutButton = screen.getByRole('button', { name: resources.fr.auth.logout });
     fireEvent.click(logoutButton);

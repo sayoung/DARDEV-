@@ -60,6 +60,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const isCitiesActive = route.name === 'cities';
   const isHotelsActive = route.name === 'hotels' || route.name === 'hotel-selection';
+const isKiosksActive = route.name === 'kiosks';
   const isCategoriesActive = route.name === 'categories';
   const isMediaActive = route.name === 'media';
 
@@ -157,6 +158,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 className={`block px-4 py-2 rounded-md transition-colors ${isMediaActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.media')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={hrefFor('/kiosks')}
+                aria-current={isKiosksActive ? 'page' : undefined}
+                onClick={(e) => { handleNavClick(e, '/kiosks'); }}
+                className={`block px-4 py-2 rounded-md transition-colors ${isKiosksActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+              >
+                {t('nav.kiosks')}
               </a>
             </li>
           </ul>
