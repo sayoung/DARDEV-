@@ -29,6 +29,13 @@ import {
   HotelManagersUpdateSchema,
   HotelResponseSchema,
   HotelUpdateSchema,
+  EnrollmentCodeResponseSchema,
+  KioskCreateSchema,
+  KioskEnrollRequestSchema,
+  KioskEnrollResponseSchema,
+  KioskListResponseSchema,
+  KioskSchema,
+  KioskUpdateSchema,
   HotspotCreateSchema,
   HotspotResponseSchema,
   HotspotUpdateSchema,
@@ -228,6 +235,9 @@ function jsonResponse(description: string, schema: ZodType): ResponseConfig {
 const tooManyRequests: ResponseConfig = {
   description: 'Plus de 5 requêtes par minute pour cette adresse IP.',
 };
+const kioskEnrollmentRateLimit: ResponseConfig = {
+  description: 'Plus de 10 requêtes par minute pour cette adresse IP.',
+};
 
 export const registry = new OpenAPIRegistry();
 
@@ -424,6 +434,7 @@ registerCatalogCrud({
 });
 
 registerHotelManagers();
+registerKiosks();
 
 registerAssetReads();
 registerAssetUpload();
@@ -604,6 +615,150 @@ function registerHotelManagers(): void {
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN.', forbiddenError),
       '404': jsonResponse('Hôtel introuvable.', notFoundError),
       '422': jsonResponse('Utilisateur introuvable ou invalide.', referenceError),
+    },
+  });
+}
+
+function registerKiosks(): void {
+  const collection = '/api/v1/admin/kiosks';
+  const item = `${collection}/{id}`;
+  const idParam = z.object({ id: z.uuidv7() });
+  const adminOnly = 'Jeton CSRF refusé, ou rôle autre que ADMIN.';
+
+  registry.registerPath({
+    method: 'get',
+    path: collection,
+    summary: 'Lister les kiosques',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    responses: {
+      '200': jsonResponse(
+        'Liste des kiosques. Filtrée par AccessPolicy selon le principal : un gestionnaire ne voit que les kiosques de ses hôtels.',
+        KioskListResponseSchema,
+      ),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: collection,
+    summary: 'Créer un kiosque',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { body: jsonBody(KioskCreateSchema, 'Informations du kiosque à créer.') },
+    responses: {
+      '201': jsonResponse('Kiosque créé en attente d’enrôlement.', KioskSchema),
+      '400': jsonResponse('Corps refusé par KioskCreateSchema.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(adminOnly, forbiddenError),
+      '422': jsonResponse(
+        'Hôtel inconnu ou supprimé.',
+        z.object({
+          error: z.object({
+            code: z.literal('KIOSK_HOTEL_INVALID'),
+            message: z.string(),
+          }),
+        }),
+      ),
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: item,
+    summary: 'Lire un kiosque',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Kiosque trouvé.', KioskSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '404': jsonResponse('Kiosque introuvable ou hors périmètre hôtel.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: item,
+    summary: 'Mettre à jour un kiosque',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(KioskUpdateSchema, 'Champs du kiosque à mettre à jour.'),
+    },
+    responses: {
+      '200': jsonResponse('Kiosque mis à jour.', KioskSchema),
+      '400': jsonResponse('Identifiant ou corps refusé.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(adminOnly, forbiddenError),
+      '404': jsonResponse('Kiosque introuvable.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'delete',
+    path: item,
+    summary: 'Supprimer un kiosque',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '204': { description: 'Kiosque supprimé. Corps vide.' },
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(adminOnly, forbiddenError),
+      '404': jsonResponse('Kiosque introuvable.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: `${item}/enrollment-code`,
+    summary: 'Générer un code d’enrôlement',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Code temporaire valable 60 minutes.', EnrollmentCodeResponseSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(adminOnly, forbiddenError),
+      '404': jsonResponse('Kiosque introuvable.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: `${item}/disable`,
+    summary: 'Désactiver un kiosque',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Kiosque désactivé et jeton révoqué.', KioskSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(adminOnly, forbiddenError),
+      '404': jsonResponse('Kiosque introuvable.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/kiosk/enroll',
+    summary: 'Enrôler un kiosque',
+    tags: ['Kiosque'],
+    request: {
+      body: jsonBody(KioskEnrollRequestSchema, 'Code temporaire et informations techniques de l’appareil.'),
+    },
+    responses: {
+      '200': jsonResponse('Jeton d’appareil remis une seule fois.', KioskEnrollResponseSchema),
+      '400': jsonResponse('Corps refusé par KioskEnrollRequestSchema.', badRequestError),
+      '401': jsonResponse('Code invalide, expiré ou déjà utilisé.', unauthorizedError),
+      '429': kioskEnrollmentRateLimit,
     },
   });
 }

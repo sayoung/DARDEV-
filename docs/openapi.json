@@ -4548,6 +4548,1581 @@
         }
       }
     },
+    "/api/v1/admin/kiosks": {
+      "get": {
+        "summary": "Lister les kiosques",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des kiosques. Filtrée par AccessPolicy selon le principal : un gestionnaire ne voit que les kiosques de ses hôtels.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "hotelId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "deviceType": {
+                            "type": "string",
+                            "enum": [
+                              "TOUCH_SCREEN",
+                              "VR_HEADSET",
+                              "TOUCH_AND_HEADSET"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "ACTIVE",
+                              "DISABLED"
+                            ]
+                          },
+                          "connectionState": {
+                            "type": "string",
+                            "enum": [
+                              "ONLINE",
+                              "OFFLINE",
+                              "DESYNCHRONIZED",
+                              "PENDING",
+                              "DISABLED"
+                            ]
+                          },
+                          "lastHeartbeatAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "appVersion": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "syncedManifestVersion": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "storageFreeMb": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "idleTimeoutSeconds": {
+                            "type": "integer"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label",
+                          "hotelId",
+                          "deviceType",
+                          "status",
+                          "connectionState",
+                          "lastHeartbeatAt",
+                          "appVersion",
+                          "syncedManifestVersion",
+                          "storageFreeMb",
+                          "idleTimeoutSeconds",
+                          "createdAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Créer un kiosque",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Informations du kiosque à créer.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "hotelId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "deviceType": {
+                    "type": "string",
+                    "enum": [
+                      "TOUCH_SCREEN",
+                      "VR_HEADSET",
+                      "TOUCH_AND_HEADSET"
+                    ]
+                  },
+                  "idleTimeoutSeconds": {
+                    "type": "integer",
+                    "minimum": 15,
+                    "maximum": 600
+                  }
+                },
+                "required": [
+                  "label",
+                  "hotelId",
+                  "deviceType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kiosque créé en attente d’enrôlement.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "hotelId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "enum": [
+                        "TOUCH_SCREEN",
+                        "VR_HEADSET",
+                        "TOUCH_AND_HEADSET"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "ACTIVE",
+                        "DISABLED"
+                      ]
+                    },
+                    "connectionState": {
+                      "type": "string",
+                      "enum": [
+                        "ONLINE",
+                        "OFFLINE",
+                        "DESYNCHRONIZED",
+                        "PENDING",
+                        "DISABLED"
+                      ]
+                    },
+                    "lastHeartbeatAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "appVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "syncedManifestVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storageFreeMb": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "idleTimeoutSeconds": {
+                      "type": "integer"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "hotelId",
+                    "deviceType",
+                    "status",
+                    "connectionState",
+                    "lastHeartbeatAt",
+                    "appVersion",
+                    "syncedManifestVersion",
+                    "storageFreeMb",
+                    "idleTimeoutSeconds",
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corps refusé par KioskCreateSchema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Hôtel inconnu ou supprimé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "KIOSK_HOTEL_INVALID"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/kiosks/{id}": {
+      "get": {
+        "summary": "Lire un kiosque",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kiosque trouvé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "hotelId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "enum": [
+                        "TOUCH_SCREEN",
+                        "VR_HEADSET",
+                        "TOUCH_AND_HEADSET"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "ACTIVE",
+                        "DISABLED"
+                      ]
+                    },
+                    "connectionState": {
+                      "type": "string",
+                      "enum": [
+                        "ONLINE",
+                        "OFFLINE",
+                        "DESYNCHRONIZED",
+                        "PENDING",
+                        "DISABLED"
+                      ]
+                    },
+                    "lastHeartbeatAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "appVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "syncedManifestVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storageFreeMb": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "idleTimeoutSeconds": {
+                      "type": "integer"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "hotelId",
+                    "deviceType",
+                    "status",
+                    "connectionState",
+                    "lastHeartbeatAt",
+                    "appVersion",
+                    "syncedManifestVersion",
+                    "storageFreeMb",
+                    "idleTimeoutSeconds",
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kiosque introuvable ou hors périmètre hôtel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Mettre à jour un kiosque",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Champs du kiosque à mettre à jour.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "deviceType": {
+                    "type": "string",
+                    "enum": [
+                      "TOUCH_SCREEN",
+                      "VR_HEADSET",
+                      "TOUCH_AND_HEADSET"
+                    ]
+                  },
+                  "idleTimeoutSeconds": {
+                    "type": "integer",
+                    "minimum": 15,
+                    "maximum": 600
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kiosque mis à jour.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "hotelId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "enum": [
+                        "TOUCH_SCREEN",
+                        "VR_HEADSET",
+                        "TOUCH_AND_HEADSET"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "ACTIVE",
+                        "DISABLED"
+                      ]
+                    },
+                    "connectionState": {
+                      "type": "string",
+                      "enum": [
+                        "ONLINE",
+                        "OFFLINE",
+                        "DESYNCHRONIZED",
+                        "PENDING",
+                        "DISABLED"
+                      ]
+                    },
+                    "lastHeartbeatAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "appVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "syncedManifestVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storageFreeMb": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "idleTimeoutSeconds": {
+                      "type": "integer"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "hotelId",
+                    "deviceType",
+                    "status",
+                    "connectionState",
+                    "lastHeartbeatAt",
+                    "appVersion",
+                    "syncedManifestVersion",
+                    "storageFreeMb",
+                    "idleTimeoutSeconds",
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant ou corps refusé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kiosque introuvable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Supprimer un kiosque",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Kiosque supprimé. Corps vide."
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kiosque introuvable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/kiosks/{id}/enrollment-code": {
+      "post": {
+        "summary": "Générer un code d’enrôlement",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Code temporaire valable 60 minutes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "minLength": 8,
+                      "maxLength": 8
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "expiresAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kiosque introuvable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/kiosks/{id}/disable": {
+      "post": {
+        "summary": "Désactiver un kiosque",
+        "tags": [
+          "Catalogue"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kiosque désactivé et jeton révoqué.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "hotelId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "enum": [
+                        "TOUCH_SCREEN",
+                        "VR_HEADSET",
+                        "TOUCH_AND_HEADSET"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "ACTIVE",
+                        "DISABLED"
+                      ]
+                    },
+                    "connectionState": {
+                      "type": "string",
+                      "enum": [
+                        "ONLINE",
+                        "OFFLINE",
+                        "DESYNCHRONIZED",
+                        "PENDING",
+                        "DISABLED"
+                      ]
+                    },
+                    "lastHeartbeatAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "appVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "syncedManifestVersion": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storageFreeMb": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "idleTimeoutSeconds": {
+                      "type": "integer"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "hotelId",
+                    "deviceType",
+                    "status",
+                    "connectionState",
+                    "lastHeartbeatAt",
+                    "appVersion",
+                    "syncedManifestVersion",
+                    "storageFreeMb",
+                    "idleTimeoutSeconds",
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant qui n’est pas un UUID v7.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Jeton CSRF refusé, ou rôle autre que ADMIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Kiosque introuvable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        404
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kiosk/enroll": {
+      "post": {
+        "summary": "Enrôler un kiosque",
+        "tags": [
+          "Kiosque"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Code temporaire et informations techniques de l’appareil.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[A-Z0-9]{8}$"
+                  },
+                  "deviceInfo": {
+                    "type": "object",
+                    "properties": {
+                      "userAgent": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "screen": {
+                        "type": "string",
+                        "maxLength": 50
+                      }
+                    },
+                    "required": [
+                      "userAgent"
+                    ]
+                  }
+                },
+                "required": [
+                  "code",
+                  "deviceInfo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Jeton d’appareil remis une seule fois.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "kioskId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kioskId",
+                    "token"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corps refusé par KioskEnrollRequestSchema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Code invalide, expiré ou déjà utilisé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Plus de 10 requêtes par minute pour cette adresse IP."
+          }
+        }
+      }
+    },
     "/api/v1/admin/assets/folders": {
       "get": {
         "summary": "Lister les dossiers de la médiathèque",
