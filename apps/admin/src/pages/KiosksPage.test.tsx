@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { ContractType, HotelStars, Role, type Kiosk } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,6 +39,10 @@ describe('KiosksPage', () => {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
         uiLang: 'fr', csrfToken: 'csrf-admin',
       }));
+      if (url.endsWith(`/admin/kiosks/${kiosk.id}/disable`)) {
+        return Promise.resolve(jsonResponse(200, { ...kiosk, status: 'DISABLED', connectionState: 'DISABLED' }));
+      }
+      if (url.endsWith(`/admin/kiosks/${kiosk.id}/force-sync`)) return Promise.resolve(new Response(null, { status: 204 }));
       if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [kiosk] }));
       if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, [{
         id: hotelId, name: 'Hôtel Démonstration Rabat', stars: HotelStars.FIVE, cityId: hotelId,
@@ -128,6 +132,84 @@ describe('KiosksPage', () => {
 
     render(<App />);
     expect((await screen.findByRole('alert')).textContent).toContain(resources.fr.page.kiosks.loadError);
+  });
+
+  it('désactive un kiosque après confirmation avec son identifiant et le jeton CSRF, puis recharge la liste', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: resources.fr.page.kiosks.actions.disable }));
+
+    await waitFor(() => {
+      const disableCall = fetchMock.mock.calls.find(([input, init]) =>
+        requestUrl(input).endsWith(`/admin/kiosks/${kiosk.id}/disable`)
+        && (init as RequestInit | undefined)?.method === 'POST'
+      );
+      expect(disableCall).toBeDefined();
+      expect(new Headers((disableCall?.[1] as RequestInit | undefined)?.headers).get('X-CSRF-Token')).toBe('csrf-admin');
+      expect(fetchMock.mock.calls.filter(([input]) => requestUrl(input).endsWith('/admin/kiosks'))).toHaveLength(2);
+    });
+    expect(confirm).toHaveBeenCalledWith(resources.fr.page.kiosks.confirmDisable);
+  });
+
+  it('force la synchronisation par POST avec le bon identifiant et recharge la liste', async () => {
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole('button', { name: resources.fr.page.kiosks.actions.forceSync }));
+
+    await waitFor(() => {
+      const syncCall = fetchMock.mock.calls.find(([input, init]) =>
+        requestUrl(input).endsWith(`/admin/kiosks/${kiosk.id}/force-sync`)
+        && (init as RequestInit | undefined)?.method === 'POST'
+      );
+      expect(syncCall).toBeDefined();
+      expect(new Headers((syncCall?.[1] as RequestInit | undefined)?.headers).get('X-CSRF-Token')).toBe('csrf-admin');
+      expect(fetchMock.mock.calls.filter(([input]) => requestUrl(input).endsWith('/admin/kiosks'))).toHaveLength(2);
+    });
+  });
+
+  it('masque les actions de synchronisation pour les kiosques désactivés ou en attente', async () => {
+    fetchMock.mockImplementation((input: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
+        id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
+        uiLang: 'fr', csrfToken: 'csrf-admin',
+      }));
+      if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [
+        { ...kiosk, id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d21', label: 'Désactivé', status: 'DISABLED', connectionState: 'DISABLED' },
+        { ...kiosk, id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d22', label: 'En attente', status: 'PENDING', connectionState: 'PENDING' },
+      ] }));
+      if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, []));
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+
+    expect(await screen.findAllByText('Désactivé')).toHaveLength(2);
+    expect(screen.queryAllByRole('button', { name: resources.fr.page.kiosks.actions.disable })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: resources.fr.page.kiosks.actions.forceSync })).toBeNull();
+  });
+
+  it('affiche une alerte si une action échoue', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
+        id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
+        uiLang: 'fr', csrfToken: 'csrf-admin',
+      }));
+      if (url.endsWith(`/admin/kiosks/${kiosk.id}/disable`)) {
+        return Promise.resolve(jsonResponse(500, {}));
+      }
+      if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [kiosk] }));
+      if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, []));
+      return Promise.resolve(jsonResponse(404, {}));
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: resources.fr.page.kiosks.actions.disable }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain(resources.fr.page.kiosks.actionError);
   });
 });
 
