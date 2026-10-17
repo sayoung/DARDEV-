@@ -142,6 +142,7 @@ export class SelectionService {
     if (input.featuredTourId !== null) {
       rawIds.push(input.featuredTourId);
     }
+    rawIds.push(...input.tourIds);
     rawIds.push(...input.attractTourIds);
     const ids = [...new Set(rawIds)];
 

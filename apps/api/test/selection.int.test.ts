@@ -16,6 +16,7 @@ import {
   HotelStars,
   MeResponseSchema,
   SelectionResponseSchema,
+  z,
   type HotelCreate,
 } from '@xplor/shared';
 import { Redis } from 'ioredis';
@@ -26,6 +27,10 @@ import { PasswordService } from '../src/auth/password.service.js';
 import { toPrismaRole } from '../src/auth/prisma-role.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-cookie.js';
 import { loadEnv, type Env } from '../src/config/env.js';
+import {
+  SELECTION_TOUR_INVALID,
+  SELECTION_TOUR_INVALID_MESSAGE,
+} from '../src/hotels/hotels.errors.js';
 import { REDIS } from '../src/redis/redis.module.js';
 import { buildSeedUsers } from '../src/seed/seed-users.js';
 import { readDatabaseUrlTest, resetDb } from './global-setup.js';
@@ -37,6 +42,16 @@ const MISSING_REDIS_URL =
   'REDIS_URL est absent. Les tests HTTP de sélection ont besoin de Redis (voir .env.example et docs/INSTALL.md).';
 
 const ADMIN_EMAIL = 'admin@xplor.local';
+const MANAGER_EMAIL = 'manager@xplor.local';
+const EDITOR_EMAIL = 'editor@xplor.local';
+const UNKNOWN_TOUR_ID = '01990000-0000-7000-8000-000000000999';
+
+const ErrorResponseSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+  }),
+});
 
 const databaseUrl = readDatabaseUrlTest();
 const savedDatabaseUrl = process.env.DATABASE_URL;
@@ -161,6 +176,112 @@ describe('sélection des visites HTTP (API-26, F-51)', () => {
     });
     expect(getRes.statusCode).toBe(200);
     expect(SelectionResponseSchema.parse(parseJson(getRes.body))).toEqual(updated);
+
+    const nextPut = await send('PUT', `/api/v1/admin/hotels/${hotel.id}/selection`, admin, {
+      tourIds: [tours.first.id],
+      featuredTourId: tours.first.id,
+      attractTourIds: [],
+    });
+    expect(nextPut.statusCode).toBe(200);
+    expect(SelectionResponseSchema.parse(parseJson(nextPut.body)).version).toBe(3);
+  });
+
+  it.each([
+    ['une visite brouillon', 'draft' as const],
+    ['une visite inconnue', 'unknown' as const],
+  ])('refuse un PUT contenant %s avec SELECTION_TOUR_INVALID', async (_label, kind) => {
+    const admin = await login();
+    const { hotel, cityId } = await createHotelFixture(admin);
+    const tours = await createTours(cityId, admin.userId);
+    const tourId = kind === 'draft' ? tours.draft.id : UNKNOWN_TOUR_ID;
+
+    const response = await send('PUT', `/api/v1/admin/hotels/${hotel.id}/selection`, admin, {
+      tourIds: [tourId],
+      featuredTourId: null,
+      attractTourIds: [],
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(ErrorResponseSchema.parse(parseJson(response.body)).error).toEqual({
+      code: SELECTION_TOUR_INVALID,
+      message: SELECTION_TOUR_INVALID_MESSAGE,
+    });
+  });
+
+  it('répond 400 si featuredTourId ne figure pas dans tourIds', async () => {
+    const admin = await login();
+    const { hotel, cityId } = await createHotelFixture(admin);
+    const tours = await createTours(cityId, admin.userId);
+
+    const response = await send('PUT', `/api/v1/admin/hotels/${hotel.id}/selection`, admin, {
+      tourIds: [tours.first.id],
+      featuredTourId: tours.second.id,
+      attractTourIds: [],
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('un HOTEL_MANAGER de l’hôtel A accède à la sélection A, mais pas à celle de B', async () => {
+    const admin = await login();
+    const { hotel: hotelA } = await createHotelFixture(admin);
+    const { hotel: hotelB } = await createHotelFixture(admin);
+    const manager = await login(MANAGER_EMAIL);
+    const attachRes = await send(
+      'PUT',
+      `/api/v1/admin/hotels/${hotelA.id}/managers`,
+      admin,
+      { userIds: [manager.userId] },
+    );
+    expect(attachRes.statusCode).toBe(200);
+
+    const getA = await application().inject({
+      method: 'GET',
+      url: `/api/v1/admin/hotels/${hotelA.id}/selection`,
+      headers: { cookie: sessionCookie(manager.sessionId) },
+    });
+    expect(getA.statusCode).toBe(200);
+
+    const putA = await send('PUT', `/api/v1/admin/hotels/${hotelA.id}/selection`, manager, {
+      tourIds: [],
+      featuredTourId: null,
+      attractTourIds: [],
+    });
+    expect(putA.statusCode).toBe(200);
+
+    const getB = await application().inject({
+      method: 'GET',
+      url: `/api/v1/admin/hotels/${hotelB.id}/selection`,
+      headers: { cookie: sessionCookie(manager.sessionId) },
+    });
+    expect(getB.statusCode).toBe(404);
+
+    const putB = await send('PUT', `/api/v1/admin/hotels/${hotelB.id}/selection`, manager, {
+      tourIds: [],
+      featuredTourId: null,
+      attractTourIds: [],
+    });
+    expect(putB.statusCode).toBe(404);
+  });
+
+  it('un EDITOR hors périmètre reçoit 404 sur la sélection de l’hôtel A', async () => {
+    const admin = await login();
+    const { hotel } = await createHotelFixture(admin);
+    const editor = await login(EDITOR_EMAIL);
+
+    const getRes = await application().inject({
+      method: 'GET',
+      url: `/api/v1/admin/hotels/${hotel.id}/selection`,
+      headers: { cookie: sessionCookie(editor.sessionId) },
+    });
+    expect(getRes.statusCode).toBe(404);
+
+    const putRes = await send('PUT', `/api/v1/admin/hotels/${hotel.id}/selection`, editor, {
+      tourIds: [],
+      featuredTourId: null,
+      attractTourIds: [],
+    });
+    expect(putRes.statusCode).toBe(404);
   });
 });
 
@@ -205,7 +326,7 @@ async function createHotelFixture(admin: Session): Promise<{ hotel: { id: string
 async function createTours(
   cityId: string,
   createdById: string,
-): Promise<{ first: { id: string }; second: { id: string } }> {
+): Promise<{ first: { id: string }; second: { id: string }; draft: { id: string } }> {
   const cover = await prisma.asset.create({
     data: {
       kind: 'IMAGE',
@@ -239,8 +360,8 @@ async function createTours(
 
   const first = await createTour('first', 'Kasbah des Oudayas', 'PUBLISHED');
   const second = await createTour('second', 'Jardin de Salé', 'PUBLISHED');
-  await createTour('draft', 'Visite brouillon', 'DRAFT');
-  return { first, second };
+  const draft = await createTour('draft', 'Visite brouillon', 'DRAFT');
+  return { first, second, draft };
 }
 
 async function startApplication(): Promise<NestFastifyApplication> {
@@ -345,12 +466,12 @@ interface Session {
   userId: string;
 }
 
-async function login(): Promise<Session> {
+async function login(email = ADMIN_EMAIL): Promise<Session> {
   const response = await application().inject({
     method: 'POST',
     url: '/api/v1/auth/login',
     headers: { 'content-type': 'application/json' },
-    payload: JSON.stringify({ email: ADMIN_EMAIL, password: seedPassword }),
+    payload: JSON.stringify({ email, password: seedPassword }),
   });
   expect(response.statusCode).toBe(200);
   const me = MeResponseSchema.parse(parseJson(response.body));
