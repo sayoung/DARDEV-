@@ -192,7 +192,7 @@ describe('KiosksPage', () => {
 
   it('affiche une alerte si une action échoue', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+    fetchMock.mockImplementation((input: unknown) => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
