@@ -198,4 +198,16 @@ export {
   type KioskStatus,
   type KioskUpdate,
 } from './kiosk.js';
+export {
+  KioskHeartbeatRequestSchema,
+  KioskHeartbeatResponseSchema,
+  KioskManifestCategorySchema,
+  KioskManifestSchema,
+  KioskManifestTourSchema,
+  type KioskHeartbeatRequest,
+  type KioskHeartbeatResponse,
+  type KioskManifest,
+  type KioskManifestCategory,
+  type KioskManifestTour,
+} from './kiosk-device.js';
 
