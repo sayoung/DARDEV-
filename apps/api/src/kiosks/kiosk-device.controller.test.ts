@@ -2,7 +2,13 @@ import 'reflect-metadata';
 
 import { BadRequestException, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import type { KioskEnrollRequest, KioskEnrollResponse, KioskManifest } from '@xplor/shared';
+import type {
+  KioskEnrollRequest,
+  KioskEnrollResponse,
+  KioskHeartbeatRequest,
+  KioskHeartbeatResponse,
+  KioskManifest,
+} from '@xplor/shared';
 import type { FastifyRequest } from 'fastify';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -49,6 +55,18 @@ const manifest: KioskManifest = {
   categories: [],
 };
 
+const heartbeatRequest: KioskHeartbeatRequest = {
+  appVersion: '1.2.3',
+  syncedManifestVersion: 's1-tabc123',
+  storageFreeMb: 1024,
+  recentErrors: [],
+};
+
+const heartbeatResponse: KioskHeartbeatResponse = {
+  forceSync: false,
+  serverTime: '2026-10-17T12:00:00.000Z',
+};
+
 function enrollHandler(): object {
   const handler: unknown = Object.getOwnPropertyDescriptor(KioskDeviceController.prototype, 'enroll')?.value;
   if (typeof handler !== 'function') throw new Error('Méthode absente : enroll');
@@ -58,11 +76,16 @@ function enrollHandler(): object {
 describe('KioskDeviceController', () => {
   const enrollMock = vi.fn<KioskService['enroll']>();
   const getManifestMock = vi.fn<KioskService['getManifest']>();
+  const heartbeatMock = vi.fn<KioskService['heartbeat']>();
   let controller: KioskDeviceController;
 
   beforeEach(() => {
     vi.resetAllMocks();
-    controller = new KioskDeviceController({ enroll: enrollMock, getManifest: getManifestMock } as unknown as KioskService);
+    controller = new KioskDeviceController({
+      enroll: enrollMock,
+      getManifest: getManifestMock,
+      heartbeat: heartbeatMock,
+    } as unknown as KioskService);
   });
 
   it('valide le corps puis transmet le corps et l’adresse IP au service', async () => {
@@ -117,5 +140,40 @@ describe('KioskDeviceController', () => {
   it('refuse le manifeste si le guard n’a pas attaché l’appareil', () => {
     expect(() => controller.manifest({} as KioskDeviceRequest)).toThrow(UnauthorizedException);
     expect(getManifestMock).not.toHaveBeenCalled();
+  });
+
+  it('valide le heartbeat puis transmet l’appareil, le corps et l’adresse IP au service', async () => {
+    heartbeatMock.mockResolvedValue(heartbeatResponse);
+    const request = { kioskDevice: device, ip: '203.0.113.9' } as KioskDeviceRequest;
+
+    await expect(controller.heartbeat(heartbeatRequest, request)).resolves.toEqual(heartbeatResponse);
+    expect(heartbeatMock).toHaveBeenCalledWith(device, heartbeatRequest, '203.0.113.9');
+  });
+
+  it('rejette un corps heartbeat invalide avec 400 sans appeler le service', () => {
+    expect(() => controller.heartbeat({ ...heartbeatRequest, storageFreeMb: -1 }, {
+      kioskDevice: device,
+      ip: '192.0.2.1',
+    } as KioskDeviceRequest)).toThrow(BadRequestException);
+    expect(heartbeatMock).not.toHaveBeenCalled();
+  });
+
+  it('refuse le heartbeat si le guard n’a pas attaché l’appareil', () => {
+    expect(() => controller.heartbeat(heartbeatRequest, { ip: '192.0.2.1' } as KioskDeviceRequest))
+      .toThrow(UnauthorizedException);
+    expect(heartbeatMock).not.toHaveBeenCalled();
+  });
+
+  it('protège le heartbeat par jeton et le limite à 30 requêtes par minute', () => {
+    const handler: unknown = Object.getOwnPropertyDescriptor(KioskDeviceController.prototype, 'heartbeat')?.value;
+    if (typeof handler !== 'function') throw new Error('Méthode absente : heartbeat');
+    const rawGuards: unknown = Reflect.getMetadata('__guards__', handler);
+    const guards = Array.isArray(rawGuards) ? rawGuards : [];
+
+    expect(guards).toContain(KioskTokenGuard);
+    expect(guards).toContain(ThrottlerGuard);
+    expect(Reflect.getMetadata('THROTTLER:LIMITdefault', handler)).toBe(30);
+    expect(Reflect.getMetadata('THROTTLER:TTLdefault', handler)).toBe(60_000);
+    expect(Reflect.getMetadata('__httpCode__', handler)).toBe(HttpStatus.OK);
   });
 });
