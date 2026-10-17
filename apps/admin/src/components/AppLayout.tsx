@@ -59,6 +59,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     route.name === 'hotspot-detail';
 
   const isCitiesActive = route.name === 'cities';
+  const isHotelsActive = route.name === 'hotels' || route.name === 'hotel-selection';
   const isCategoriesActive = route.name === 'categories';
   const isMediaActive = route.name === 'media';
 
@@ -126,6 +127,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 className={`block px-4 py-2 rounded-md transition-colors ${isCitiesActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.cities')}
+              </a>
+            </li>
+            <li>
+              <a
+                href={hrefFor('/hotels')}
+                aria-current={isHotelsActive ? 'page' : undefined}
+                onClick={(e) => { handleNavClick(e, '/hotels'); }}
+                className={`block px-4 py-2 rounded-md transition-colors ${isHotelsActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+              >
+                {t('nav.hotels')}
               </a>
             </li>
             <li>
