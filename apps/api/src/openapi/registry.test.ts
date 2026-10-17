@@ -25,6 +25,14 @@ const ROUTES = [
   { path: '/api/v1/admin/hotels/{id}', method: 'get' },
   { path: '/api/v1/admin/hotels/{id}', method: 'patch' },
   { path: '/api/v1/admin/hotels/{id}', method: 'delete' },
+  { path: '/api/v1/admin/kiosks', method: 'get' },
+  { path: '/api/v1/admin/kiosks', method: 'post' },
+  { path: '/api/v1/admin/kiosks/{id}', method: 'get' },
+  { path: '/api/v1/admin/kiosks/{id}', method: 'patch' },
+  { path: '/api/v1/admin/kiosks/{id}', method: 'delete' },
+  { path: '/api/v1/admin/kiosks/{id}/enrollment-code', method: 'post' },
+  { path: '/api/v1/admin/kiosks/{id}/disable', method: 'post' },
+  { path: '/api/v1/kiosk/enroll', method: 'post' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'get' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'put' },
   { path: '/api/v1/admin/categories', method: 'get' },
@@ -209,6 +217,34 @@ describe('document OpenAPI', () => {
     expect(createCity?.['422']).toBeUndefined();
     expect(updateCity?.['422']).toBeUndefined();
     expect(deleteCity?.['409']).toBeDefined();
+  });
+
+  it('documente le CRUD des kiosques et leur enrôlement public', () => {
+    const doc = buildOpenApiDocument();
+    const createKiosk = doc.paths?.['/api/v1/admin/kiosks']?.post;
+    expect(createKiosk?.responses?.['201']).toBeDefined();
+    expect(createKiosk?.responses?.['403']).toBeDefined();
+    expect(createKiosk?.responses?.['422']).toBeDefined();
+    const listKiosks = doc.paths?.['/api/v1/admin/kiosks']?.get;
+    expect(listKiosks?.responses?.['200']).toBeDefined();
+    expect(JSON.stringify(listKiosks?.responses?.['200'])).toContain('AccessPolicy');
+
+    const updateKiosk = doc.paths?.['/api/v1/admin/kiosks/{id}']?.patch;
+    expect(updateKiosk?.responses?.['200']).toBeDefined();
+    expect(updateKiosk?.responses?.['403']).toBeDefined();
+    expect(updateKiosk?.responses?.['404']).toBeDefined();
+    const enrollmentCode = doc.paths?.['/api/v1/admin/kiosks/{id}/enrollment-code']?.post;
+    expect(enrollmentCode?.responses?.['200']).toBeDefined();
+    expect(enrollmentCode?.responses?.['403']).toBeDefined();
+    const disable = doc.paths?.['/api/v1/admin/kiosks/{id}/disable']?.post;
+    expect(disable?.responses?.['200']).toBeDefined();
+    expect(disable?.responses?.['403']).toBeDefined();
+
+    const enroll = doc.paths?.['/api/v1/kiosk/enroll']?.post;
+    expect(enroll?.responses?.['200']).toBeDefined();
+    expect(enroll?.responses?.['401']).toBeDefined();
+    expect(enroll?.responses?.['429']).toBeDefined();
+    expect(enroll?.security).toBeUndefined();
   });
 
   it('est identique à docs/openapi.json', () => {
