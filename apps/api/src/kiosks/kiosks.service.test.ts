@@ -1,6 +1,10 @@
-import { KioskSchema } from '@xplor/shared';
-import { NotFoundException } from '@nestjs/common';
-import { Role, type Principal } from '@xplor/shared';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  KioskSchema,
+  Role,
+  type KioskCreate,
+  type Principal,
+} from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -16,6 +20,7 @@ const HOTEL_A_ID = '01990000-0000-7000-8000-000000000101';
 const HOTEL_B_ID = '01990000-0000-7000-8000-000000000102';
 const KIOSK_A_ID = '01990000-0000-7000-8000-000000000301';
 const KIOSK_B_ID = '01990000-0000-7000-8000-000000000302';
+const HOTEL_DELETED_ID = '01990000-0000-7000-8000-000000000103';
 
 const admin: Principal = {
   userId: '01990000-0000-7000-8000-000000000201',
@@ -57,11 +62,26 @@ function harness(initialRows: KioskRow[] = []): {
   rows: Map<string, KioskRow>;
   selections: Map<string, number>;
   selectionReads: string[];
+  hotels: Map<string, Date | null>;
+  kioskCreateCalls: unknown[];
 } {
   const rows = new Map(initialRows.map((row) => [row.id, row]));
   const selections = new Map<string, number>();
   const selectionReads: string[] = [];
+  const hotels = new Map<string, Date | null>([
+    [HOTEL_A_ID, null],
+    [HOTEL_DELETED_ID, new Date('2026-10-10T00:00:00.000Z')],
+  ]);
+  const kioskCreateCalls: unknown[] = [];
   const prisma: KioskPrismaClient = {
+    hotel: {
+      findFirst: (args) =>
+        Promise.resolve(
+          hotels.has(args.where.id) && hotels.get(args.where.id) === null
+            ? { id: args.where.id }
+            : null,
+        ),
+    },
     kiosk: {
       findMany: (args) => {
         let result = [...rows.values()].filter((row) => row.deletedAt === null);
@@ -75,6 +95,26 @@ function harness(initialRows: KioskRow[] = []): {
       findFirst: (args) => {
         const row = rows.get(args.where.id);
         return Promise.resolve(row?.deletedAt === null ? row : null);
+      },
+      create: (args) => {
+        kioskCreateCalls.push(args);
+        return Promise.resolve(
+          kioskRow({
+            label: args.data.label,
+            hotelId: args.data.hotelId,
+            deviceType: args.data.deviceType,
+            status: args.data.status,
+            idleTimeoutSeconds: args.data.idleTimeoutSeconds,
+            enrollmentCode: null,
+            enrollmentExpiresAt: null,
+            tokenHash: null,
+            lastHeartbeatAt: null,
+            lastIp: null,
+            appVersion: null,
+            syncedManifestVersion: null,
+            storageFreeMb: null,
+          }),
+        );
       },
     },
     selection: {
@@ -90,8 +130,16 @@ function harness(initialRows: KioskRow[] = []): {
     rows,
     selections,
     selectionReads,
+    hotels,
+    kioskCreateCalls,
   };
 }
+
+const kioskInput: KioskCreate = {
+  label: 'Hall principal',
+  hotelId: HOTEL_A_ID,
+  deviceType: 'TOUCH_AND_HEADSET',
+};
 
 describe('toKioskResponse', () => {
   it('renvoie ONLINE avec heartbeat récent et manifeste synchronisé', () => {
@@ -151,6 +199,69 @@ describe('toKioskResponse', () => {
 });
 
 describe('KioskService', () => {
+  it('crée un kiosque ADMIN en PENDING avec les valeurs par défaut et sans secret', async () => {
+    const { service, kioskCreateCalls } = harness();
+
+    const kiosk = await service.create(admin, kioskInput);
+
+    expect(kiosk.status).toBe('PENDING');
+    expect(kiosk.connectionState).toBe('PENDING');
+    expect(kiosk.idleTimeoutSeconds).toBe(90);
+    expect(KioskSchema.parse(kiosk)).toEqual(kiosk);
+    expect(kiosk).not.toHaveProperty('tokenHash');
+    expect(kiosk).not.toHaveProperty('enrollmentCode');
+    expect(kiosk).not.toHaveProperty('lastIp');
+    expect(kioskCreateCalls).toHaveLength(1);
+    expect(kioskCreateCalls[0]).toEqual({
+      data: {
+        label: 'Hall principal',
+        hotelId: HOTEL_A_ID,
+        deviceType: 'TOUCH_AND_HEADSET',
+        status: 'PENDING',
+        idleTimeoutSeconds: 90,
+      },
+    });
+  });
+
+  it('respecte la valeur idleTimeoutSeconds fournie', async () => {
+    const { service } = harness();
+
+    const kiosk = await service.create(admin, {
+      ...kioskInput,
+      idleTimeoutSeconds: 180,
+    });
+
+    expect(kiosk.idleTimeoutSeconds).toBe(180);
+  });
+
+  it('refuse un gestionnaire sans créer de kiosque', async () => {
+    const { service, kioskCreateCalls } = harness();
+
+    await expect(service.create(managerHotelA, kioskInput)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(kioskCreateCalls).toHaveLength(0);
+  });
+
+  it('rejette un hôtel inconnu avec KIOSK_HOTEL_INVALID', async () => {
+    const { service } = harness();
+
+    await expect(
+      service.create(admin, {
+        ...kioskInput,
+        hotelId: '01990000-0000-7000-8000-000000000199',
+      }),
+    ).rejects.toMatchObject({ response: { error: { code: 'KIOSK_HOTEL_INVALID' } } });
+  });
+
+  it('rejette un hôtel supprimé avec KIOSK_HOTEL_INVALID', async () => {
+    const { service } = harness();
+
+    await expect(
+      service.create(admin, { ...kioskInput, hotelId: HOTEL_DELETED_ID }),
+    ).rejects.toMatchObject({ response: { error: { code: 'KIOSK_HOTEL_INVALID' } } });
+  });
+
   it('renvoie 404 si le kiosque appartient à un hôtel hors périmètre', async () => {
     const row = kioskRow({ hotelId: HOTEL_B_ID });
     const { service } = harness([row]);
