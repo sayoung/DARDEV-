@@ -1,15 +1,23 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  KioskCreateSchema,
   KioskSchema,
+  Role,
   type Kiosk,
+  type KioskCreate,
   type KioskDeviceType,
   type KioskStatus,
   type Principal,
 } from '@xplor/shared';
 
 import { canAccessHotel, scopeHotelIds } from '../auth/access-policy.js';
+import { referenceException } from '../catalog/catalog.errors.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { computeConnectionState } from './kiosk-state.js';
+import {
+  KIOSK_HOTEL_INVALID,
+  KIOSK_HOTEL_INVALID_MESSAGE,
+} from './kiosks.errors.js';
 
 export interface KioskRow {
   id: string;
@@ -32,6 +40,11 @@ export interface KioskRow {
 }
 
 export interface KioskPrismaClient {
+  hotel: {
+    findFirst(args: {
+      where: { id: string; deletedAt: null };
+    }): Promise<{ id: string } | null>;
+  };
   kiosk: {
     findMany(args: {
       where: {
@@ -43,6 +56,15 @@ export interface KioskPrismaClient {
     findFirst(args: {
       where: { id: string; deletedAt: null };
     }): Promise<KioskRow | null>;
+    create(args: {
+      data: {
+        label: string;
+        hotelId: string;
+        deviceType: KioskDeviceType;
+        status: 'PENDING';
+        idleTimeoutSeconds: number;
+      };
+    }): Promise<KioskRow>;
   };
   selection: {
     findUnique(args: {
@@ -58,6 +80,29 @@ export class KioskService {
     @Inject(PrismaService) private readonly prisma: KioskPrismaClient,
   ) {}
 
+  async create(principal: Principal, input: KioskCreate): Promise<Kiosk> {
+    if (principal.role !== Role.ADMIN) {
+      throw new ForbiddenException();
+    }
+    const valid = KioskCreateSchema.parse(input);
+    const hotel = await this.prisma.hotel.findFirst({
+      where: { id: valid.hotelId, deletedAt: null },
+    });
+    if (hotel === null) {
+      throw referenceException(KIOSK_HOTEL_INVALID, KIOSK_HOTEL_INVALID_MESSAGE);
+    }
+    const row = await this.prisma.kiosk.create({
+      data: {
+        label: valid.label,
+        hotelId: valid.hotelId,
+        deviceType: valid.deviceType,
+        status: 'PENDING',
+        idleTimeoutSeconds: valid.idleTimeoutSeconds ?? 90,
+      },
+    });
+    return toKioskResponse(row, await this.expectedManifestVersion(row.hotelId), new Date());
+  }
+
   async get(principal: Principal, id: string): Promise<Kiosk> {
     const row = await this.prisma.kiosk.findFirst({
       where: { id, deletedAt: null },
@@ -66,14 +111,11 @@ export class KioskService {
       throw new NotFoundException();
     }
 
-    const selection = await this.prisma.selection.findUnique({
-      where: { hotelId: row.hotelId },
-      select: { version: true },
-    });
-    const expectedManifestVersion =
-      selection === null ? null : String(selection.version);
-
-    return toKioskResponse(row, expectedManifestVersion, new Date());
+    return toKioskResponse(
+      row,
+      await this.expectedManifestVersion(row.hotelId),
+      new Date(),
+    );
   }
 
   async list(principal: Principal): Promise<Kiosk[]> {
@@ -88,13 +130,9 @@ export class KioskService {
 
     const hotelIds = [...new Set(rows.map((row) => row.hotelId))];
     const selections = await Promise.all(
-      hotelIds.map(async (hotelId) => {
-        const selection = await this.prisma.selection.findUnique({
-          where: { hotelId },
-          select: { version: true },
-        });
-        return [hotelId, selection === null ? null : String(selection.version)] as const;
-      }),
+      hotelIds.map(async (hotelId) =>
+        [hotelId, await this.expectedManifestVersion(hotelId)] as const,
+      ),
     );
     const expectedVersions = new Map(selections);
     const now = new Date();
@@ -102,6 +140,14 @@ export class KioskService {
     return rows.map((row) =>
       toKioskResponse(row, expectedVersions.get(row.hotelId) ?? null, now),
     );
+  }
+
+  private async expectedManifestVersion(hotelId: string): Promise<string | null> {
+    const selection = await this.prisma.selection.findUnique({
+      where: { hotelId },
+      select: { version: true },
+    });
+    return selection === null ? null : String(selection.version);
   }
 }
 
