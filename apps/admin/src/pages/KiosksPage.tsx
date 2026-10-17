@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { type Kiosk, type KioskConnectionState } from '@xplor/shared';
 import { useTranslation } from 'react-i18next';
 import { listHotels } from '../api/hotels.js';
-import { listKiosks } from '../api/kiosks.js';
+import { disableKiosk, forceSyncKiosk, listKiosks } from '../api/kiosks.js';
 import { Alert } from '../components/ui/Alert.js';
+import { Button } from '../components/ui/Button.js';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table.js';
 import { PageHeader } from '../components/PageHeader.js';
 
@@ -21,23 +22,39 @@ export function KiosksPage() {
   const [hotelNames, setHotelNames] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
+  const [actionError, setActionError] = useState(false);
+  const [actingKioskId, setActingKioskId] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setFetchError(false);
+      const [kioskResponse, hotels] = await Promise.all([listKiosks(), listHotels()]);
+      setKiosks(kioskResponse.items);
+      setHotelNames(new Map(hotels.map((hotel) => [hotel.id, hotel.name])));
+    } catch {
+      setFetchError(true);
+      throw new Error('Kiosk list refresh failed');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setFetchError(false);
-        const [kioskResponse, hotels] = await Promise.all([listKiosks(), listHotels()]);
-        setKiosks(kioskResponse.items);
-        setHotelNames(new Map(hotels.map((hotel) => [hotel.id, hotel.name])));
-      } catch {
-        setFetchError(true);
-      } finally {
-        setLoading(false);
-      }
-    }
+    void fetchData().catch(() => undefined);
+  }, [fetchData]);
 
-    void fetchData();
-  }, []);
+  async function runAction(kioskId: string, action: () => Promise<unknown>) {
+    setActionError(false);
+    setActingKioskId(kioskId);
+    try {
+      await action();
+      await fetchData();
+    } catch {
+      setActionError(true);
+    } finally {
+      setActingKioskId(null);
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -59,6 +76,7 @@ export function KiosksPage() {
               <TableHead>{t('page.kiosks.columns.lastHeartbeat')}</TableHead>
               <TableHead>{t('page.kiosks.columns.version')}</TableHead>
               <TableHead>{t('page.kiosks.columns.freeSpace')}</TableHead>
+              <TableHead>{t('page.kiosks.columns.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -78,11 +96,42 @@ export function KiosksPage() {
                     ? t('page.kiosks.notAvailable')
                     : t('page.kiosks.freeSpaceValue', { mb: kiosk.storageFreeMb })}
                 </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-2">
+                    {kiosk.status !== 'DISABLED' ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={actingKioskId !== null}
+                        onClick={() => {
+                          if (window.confirm(t('page.kiosks.confirmDisable'))) {
+                            void runAction(kiosk.id, () => disableKiosk(kiosk.id));
+                          }
+                        }}
+                      >
+                        {t('page.kiosks.actions.disable')}
+                      </Button>
+                    ) : null}
+                    {kiosk.status !== 'DISABLED' && kiosk.status !== 'PENDING' ? (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={actingKioskId !== null}
+                        onClick={() => void runAction(kiosk.id, () => forceSyncKiosk(kiosk.id))}
+                      >
+                        {t('page.kiosks.actions.forceSync')}
+                      </Button>
+                    ) : null}
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
+      {actionError ? (
+        <Alert variant="destructive" role="alert">{t('page.kiosks.actionError')}</Alert>
+      ) : null}
     </div>
   );
 }
