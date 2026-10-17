@@ -176,4 +176,26 @@ export {
   type SelectionResponse,
   type SelectionUpdate,
 } from './selection.js';
+export {
+  EnrollmentCodeResponseSchema,
+  KioskConnectionStateSchema,
+  KioskCreateSchema,
+  KioskDeviceTypeSchema,
+  KioskEnrollRequestSchema,
+  KioskEnrollResponseSchema,
+  KioskListResponseSchema,
+  KioskSchema,
+  KioskStatusSchema,
+  KioskUpdateSchema,
+  type EnrollmentCodeResponse,
+  type Kiosk,
+  type KioskConnectionState,
+  type KioskCreate,
+  type KioskDeviceType,
+  type KioskEnrollRequest,
+  type KioskEnrollResponse,
+  type KioskListResponse,
+  type KioskStatus,
+  type KioskUpdate,
+} from './kiosk.js';
 
