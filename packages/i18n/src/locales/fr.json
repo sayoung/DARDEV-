@@ -460,7 +460,13 @@
       "form": {
         "label": "Nom du kiosque",
         "hotel": "Hôtel",
+        "selectHotel": "Sélectionner un hôtel",
         "deviceType": "Type d'appareil",
+        "deviceTypes": {
+          "TOUCH_SCREEN": "Écran tactile",
+          "VR_HEADSET": "Casque VR",
+          "TOUCH_AND_HEADSET": "Écran tactile et casque VR"
+        },
         "idleTimeout": "Délai avant le mode veille (secondes)",
         "submit": "Créer le kiosque",
         "cancel": "Annuler",
