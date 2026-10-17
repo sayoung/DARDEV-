@@ -18,6 +18,7 @@ describe('router', () => {
       expect(parsePathname('/tours/456')).toEqual({ name: 'tour-detail', id: '456' });
       expect(parsePathname('/hotels')).toEqual({ name: 'hotels' });
       expect(parsePathname('/hotels/789/selection')).toEqual({ name: 'hotel-selection', id: '789' });
+      expect(parsePathname('/kiosks')).toEqual({ name: 'kiosks' });
       expect(parsePathname('/media')).toEqual({ name: 'media' });
     });
 
@@ -42,6 +43,7 @@ describe('router', () => {
 
       expect(hrefFor('/hotels')).toBe('/hotels?lang=fr');
       expect(hrefFor('/hotels/789/selection')).toBe('/hotels/789/selection?lang=fr');
+      expect(hrefFor('/kiosks')).toBe('/kiosks?lang=fr');
     });
   });
 });
