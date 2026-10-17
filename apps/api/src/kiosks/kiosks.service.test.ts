@@ -1,16 +1,39 @@
 import { KioskSchema } from '@xplor/shared';
+import { NotFoundException } from '@nestjs/common';
+import { Role, type Principal } from '@xplor/shared';
 import { describe, expect, it } from 'vitest';
 
-import { toKioskResponse, type KioskRow } from './kiosks.service.js';
+import {
+  KioskService,
+  toKioskResponse,
+  type KioskPrismaClient,
+  type KioskRow,
+} from './kiosks.service.js';
 
 const NOW = new Date('2026-10-17T12:00:00.000Z');
 const MANIFEST_VERSION = 'manifest-v3';
+const HOTEL_A_ID = '01990000-0000-7000-8000-000000000101';
+const HOTEL_B_ID = '01990000-0000-7000-8000-000000000102';
+const KIOSK_A_ID = '01990000-0000-7000-8000-000000000301';
+const KIOSK_B_ID = '01990000-0000-7000-8000-000000000302';
+
+const admin: Principal = {
+  userId: '01990000-0000-7000-8000-000000000201',
+  role: Role.ADMIN,
+  hotelIds: [],
+};
+
+const managerHotelA: Principal = {
+  userId: '01990000-0000-7000-8000-000000000202',
+  role: Role.HOTEL_MANAGER,
+  hotelIds: [HOTEL_A_ID],
+};
 
 function kioskRow(overrides: Partial<KioskRow> = {}): KioskRow {
   return {
-    id: '01990000-0000-7000-8000-000000000301',
+    id: KIOSK_A_ID,
     label: 'Hall principal',
-    hotelId: '01990000-0000-7000-8000-000000000101',
+    hotelId: HOTEL_A_ID,
     deviceType: 'TOUCH_AND_HEADSET',
     status: 'ACTIVE',
     enrollmentCode: 'AB12CD34',
@@ -26,6 +49,47 @@ function kioskRow(overrides: Partial<KioskRow> = {}): KioskRow {
     createdAt: new Date('2026-10-01T08:30:00.000Z'),
     updatedAt: new Date('2026-10-17T11:59:00.000Z'),
     ...overrides,
+  };
+}
+
+function harness(initialRows: KioskRow[] = []): {
+  service: KioskService;
+  rows: Map<string, KioskRow>;
+  selections: Map<string, number>;
+  selectionReads: string[];
+} {
+  const rows = new Map(initialRows.map((row) => [row.id, row]));
+  const selections = new Map<string, number>();
+  const selectionReads: string[] = [];
+  const prisma: KioskPrismaClient = {
+    kiosk: {
+      findMany: (args) => {
+        let result = [...rows.values()].filter((row) => row.deletedAt === null);
+        if (args.where.hotelId !== undefined) {
+          result = result.filter((row) => args.where.hotelId?.in.includes(row.hotelId));
+        }
+        return Promise.resolve(
+          result.sort((left, right) => left.label.localeCompare(right.label)),
+        );
+      },
+      findFirst: (args) => {
+        const row = rows.get(args.where.id);
+        return Promise.resolve(row?.deletedAt === null ? row : null);
+      },
+    },
+    selection: {
+      findUnique: (args) => {
+        selectionReads.push(args.where.hotelId);
+        const version = selections.get(args.where.hotelId);
+        return Promise.resolve(version === undefined ? null : { version });
+      },
+    },
+  };
+  return {
+    service: new KioskService(prisma),
+    rows,
+    selections,
+    selectionReads,
   };
 }
 
@@ -83,5 +147,93 @@ describe('toKioskResponse', () => {
     );
 
     expect(response.lastHeartbeatAt).toBeNull();
+  });
+});
+
+describe('KioskService', () => {
+  it('renvoie 404 si le kiosque appartient à un hôtel hors périmètre', async () => {
+    const row = kioskRow({ hotelId: HOTEL_B_ID });
+    const { service } = harness([row]);
+
+    await expect(service.get(managerHotelA, row.id)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
+  it('renvoie 404 pour un kiosque inconnu ou supprimé', async () => {
+    const deleted = kioskRow({ id: KIOSK_B_ID, deletedAt: new Date() });
+    const { service } = harness([deleted]);
+
+    await expect(service.get(admin, 'unknown-kiosk')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.get(admin, deleted.id)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
+  it('compare au numéro de version attendu et signale un kiosque en retard', async () => {
+    const row = kioskRow({
+      syncedManifestVersion: '2',
+      lastHeartbeatAt: new Date(),
+    });
+    const { service, selections } = harness([row]);
+    selections.set(HOTEL_A_ID, 3);
+
+    const kiosk = await service.get(managerHotelA, row.id);
+
+    expect(kiosk.connectionState).toBe('DESYNCHRONIZED');
+  });
+
+  it('renvoie une version attendue nulle en l’absence de sélection', async () => {
+    const row = kioskRow({
+      syncedManifestVersion: '2',
+      lastHeartbeatAt: new Date(),
+    });
+    const { service } = harness([row]);
+
+    const kiosk = await service.get(managerHotelA, row.id);
+
+    expect(kiosk.connectionState).toBe('ONLINE');
+    expect(kiosk.syncedManifestVersion).toBe('2');
+  });
+
+  it('un gestionnaire de l’hôtel A ne voit pas les kiosques de l’hôtel B', async () => {
+    const kioskA = kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID, label: 'A' });
+    const kioskB = kioskRow({ id: KIOSK_B_ID, hotelId: HOTEL_B_ID, label: 'B' });
+    const { service } = harness([kioskA, kioskB]);
+
+    const kiosks = await service.list(managerHotelA);
+
+    expect(kiosks.map((kiosk) => kiosk.id)).toEqual([KIOSK_A_ID]);
+    expect(kiosks.some((kiosk) => kiosk.hotelId === HOTEL_B_ID)).toBe(false);
+  });
+
+  it('ADMIN voit tous les kiosques', async () => {
+    const { service } = harness([
+      kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID, label: 'A hall' }),
+      kioskRow({ id: KIOSK_B_ID, hotelId: HOTEL_B_ID, label: 'B hall' }),
+    ]);
+
+    const kiosks = await service.list(admin);
+
+    expect(kiosks.map((kiosk) => kiosk.id)).toEqual([KIOSK_A_ID, KIOSK_B_ID]);
+  });
+
+  it('ne renvoie aucun secret ni adresse IP et lit chaque sélection une fois', async () => {
+    const { service, selections, selectionReads } = harness([
+      kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID, label: 'A' }),
+      kioskRow({ id: KIOSK_B_ID, hotelId: HOTEL_A_ID, label: 'B' }),
+    ]);
+    selections.set(HOTEL_A_ID, 3);
+
+    const kiosks = await service.list(admin);
+
+    expect(selectionReads).toEqual([HOTEL_A_ID]);
+    for (const kiosk of kiosks) {
+      expect(kiosk).not.toHaveProperty('tokenHash');
+      expect(kiosk).not.toHaveProperty('enrollmentCode');
+      expect(kiosk).not.toHaveProperty('lastIp');
+    }
   });
 });
