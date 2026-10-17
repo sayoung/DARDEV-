@@ -1,4 +1,4 @@
-import { ForbiddenException, HttpException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import {
   KioskCreateSchema,
   KioskSchema,
@@ -10,6 +10,8 @@ import {
   type KioskDeviceType,
   type KioskStatus,
   type EnrollmentCodeResponse,
+  type KioskEnrollRequest,
+  type KioskEnrollResponse,
   type Principal,
 } from '@xplor/shared';
 
@@ -24,10 +26,17 @@ import { computeConnectionState } from './kiosk-state.js';
 import {
   KIOSK_HOTEL_INVALID,
   KIOSK_HOTEL_INVALID_MESSAGE,
+  KIOSK_ENROLLMENT_INVALID,
+  KIOSK_ENROLLMENT_INVALID_MESSAGE,
   KIOSK_NOT_FOUND,
   KIOSK_NOT_FOUND_MESSAGE,
 } from './kiosks.errors.js';
-import { computeEnrollmentExpiry, generateEnrollmentCode } from './kiosk-secrets.js';
+import {
+  computeEnrollmentExpiry,
+  generateDeviceToken,
+  generateEnrollmentCode,
+  hashDeviceToken,
+} from './kiosk-secrets.js';
 
 export interface KioskRow {
   id: string;
@@ -64,7 +73,13 @@ export interface KioskPrismaClient {
       orderBy: { label: 'asc' };
     }): Promise<KioskRow[]>;
     findFirst(args: {
-      where: { id: string; deletedAt: null };
+      where: {
+        id?: string;
+        deletedAt: null;
+        status?: 'PENDING';
+        enrollmentCode?: string;
+        enrollmentExpiresAt?: { gt: Date };
+      };
     }): Promise<KioskRow | null>;
     create(args: {
       data: {
@@ -86,8 +101,25 @@ export interface KioskPrismaClient {
         | 'tokenHash'
         | 'enrollmentCode'
         | 'enrollmentExpiresAt'
+        | 'lastIp'
       >>;
     }): Promise<KioskRow>;
+    updateMany(args: {
+      where: {
+        id: string;
+        deletedAt: null;
+        status: 'PENDING';
+        enrollmentCode: string;
+        enrollmentExpiresAt: { gt: Date };
+      };
+      data: {
+        status: 'ACTIVE';
+        tokenHash: string;
+        enrollmentCode: null;
+        enrollmentExpiresAt: null;
+        lastIp: string | null;
+      };
+    }): Promise<{ count: number }>;
   };
   selection: {
     findUnique(args: {
@@ -224,6 +256,43 @@ export class KioskService {
     return { code, expiresAt: expiresAt.toISOString() };
   }
 
+  async enroll(request: KioskEnrollRequest, ip: string | null): Promise<KioskEnrollResponse> {
+    const now = new Date();
+    const kiosk = await this.prisma.kiosk.findFirst({
+      where: {
+        deletedAt: null,
+        status: 'PENDING',
+        enrollmentCode: request.code,
+        enrollmentExpiresAt: { gt: now },
+      },
+    });
+    if (kiosk === null) {
+      throw this.enrollmentInvalid();
+    }
+
+    const token = generateDeviceToken();
+    const result = await this.prisma.kiosk.updateMany({
+      where: {
+        id: kiosk.id,
+        deletedAt: null,
+        status: 'PENDING',
+        enrollmentCode: request.code,
+        enrollmentExpiresAt: { gt: now },
+      },
+      data: {
+        status: 'ACTIVE',
+        tokenHash: hashDeviceToken(token),
+        enrollmentCode: null,
+        enrollmentExpiresAt: null,
+        lastIp: ip,
+      },
+    });
+    if (result.count === 0) {
+      throw this.enrollmentInvalid();
+    }
+    return { kioskId: kiosk.id, token };
+  }
+
   async disable(principal: Principal, id: string): Promise<Kiosk> {
     this.assertAdmin(principal);
     const existing = await this.findActive(id);
@@ -262,6 +331,12 @@ export class KioskService {
 
   private notFound(): HttpException {
     return missingException(KIOSK_NOT_FOUND, KIOSK_NOT_FOUND_MESSAGE);
+  }
+
+  private enrollmentInvalid(): UnauthorizedException {
+    return new UnauthorizedException({
+      error: { code: KIOSK_ENROLLMENT_INVALID, message: KIOSK_ENROLLMENT_INVALID_MESSAGE },
+    });
   }
 
   private async expectedManifestVersion(hotelId: string): Promise<string | null> {
