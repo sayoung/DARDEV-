@@ -11,6 +11,7 @@ export type AppRoute =
   | { name: 'tour-detail'; id: string }
   | { name: 'hotels' }
   | { name: 'hotel-selection'; id: string }
+  | { name: 'kiosks' }
   | { name: 'scene-detail'; tourId: string; sceneId: string }
   | { name: 'hotspots'; tourId: string; sceneId: string }
   | { name: 'hotspot-new'; tourId: string; sceneId: string }
@@ -35,6 +36,7 @@ export function parsePathname(pathname: string): AppRoute {
   if (pathname === '/categories') return { name: 'categories' };
   if (pathname === '/tours') return { name: 'tours' };
   if (pathname === '/hotels') return { name: 'hotels' };
+  if (pathname === '/kiosks') return { name: 'kiosks' };
   if (pathname === '/tours/new') return { name: 'tour-new' };
   if (pathname === '/media') return { name: 'media' };
   if (pathname === '/') return { name: 'home' };

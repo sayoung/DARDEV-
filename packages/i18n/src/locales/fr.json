@@ -340,7 +340,8 @@
     "cities": "Villes",
     "categories": "Catégories",
     "media": "Médias",
-    "hotels": "Hôtels"
+    "hotels": "Hôtels",
+    "kiosks": "Kiosques"
   },
   "media": {
     "title": "Médiathèque",
@@ -439,6 +440,29 @@
       "selection": "Sélection",
       "empty": "Aucun hôtel trouvé.",
       "loadError": "Impossible de charger les hôtels."
+    },
+    "kiosks": {
+      "title": "Kiosques",
+      "columns": {
+        "hotel": "Hôtel",
+        "state": "État",
+        "lastHeartbeat": "Dernier signal",
+        "version": "Version",
+        "freeSpace": "Espace libre"
+      },
+      "actions": {
+        "disable": "Désactiver",
+        "forceSync": "Forcer la synchronisation",
+        "newKiosk": "Nouveau kiosque",
+        "enrollmentCode": "Code d’enrôlement"
+      },
+      "status": {
+        "online": "En ligne",
+        "offline": "Hors ligne",
+        "outOfSync": "Désynchronisé",
+        "pending": "En attente",
+        "disabled": "Désactivé"
+      }
     },
     "hotelSelection": {
       "title": "Sélection des visites",
