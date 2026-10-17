@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 17/10/2026 — M5 F-52 (kiosques 1/4) Schémas Zod partagés. Dans packages/shared/src/kiosk.ts (même style que hotel.ts), exporter : KioskDeviceTypeSchema = enum TOUCH_SCREEN|V… — Schémas Zod kiosque conformes à la spécification, avec les exports, les tests demandés, et lint/typecheck au vert. (bdee25f)
 - 17/10/2026 — M5 F-51 (UI 6/6) : dans SelectionPage.tsx, ajouter le panneau « catalogue publié » : recherche texte et filtres ville/catégorie via listTours (status PUBLISHED,… — Panneau catalogue publié (recherche, filtres ville/catégorie, ajout sans doublon) implémenté avec tests, clés i18n fr et décision D-118 consignée ; lint/typecheck/test OK. (48597ad)
 - 17/10/2026 — M5 F-51 (UI 5/6) : créer apps/admin/src/pages/SelectionPage.tsx : charge la sélection via getHotelSelection (id de la route), la convertit avec fromResponse, af… — SelectionPage conforme à la tâche : chargement, réordonnancement, mise en avant, veille, enregistrement, erreurs, route branchée, tests et contrôles OK. (f485c15)
 - 17/10/2026 — M5 F-51 (UI 4/6) : créer apps/admin/src/pages/HotelsPage.tsx (liste des hôtels via listHotels, tableau avec composants shadcn existants de components/ui, lien v… — Page HotelsPage, route, lien de navigation et tests conformes à la tâche ; clés i18n fr présentes, lint/typecheck/tests verts. (2781b88)
