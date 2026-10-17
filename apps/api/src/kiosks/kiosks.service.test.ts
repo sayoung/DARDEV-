@@ -53,6 +53,7 @@ function kioskRow(overrides: Partial<KioskRow> = {}): KioskRow {
     syncedManifestVersion: MANIFEST_VERSION,
     storageFreeMb: 2048,
     idleTimeoutSeconds: 90,
+    forceSyncRequestedAt: null,
     deletedAt: null,
     createdAt: new Date('2026-10-01T08:30:00.000Z'),
     updatedAt: new Date('2026-10-17T11:59:00.000Z'),
@@ -435,6 +436,7 @@ describe('KioskService', () => {
     ['remove', (service: KioskService) => service.remove(managerHotelA, KIOSK_A_ID)],
     ['issueEnrollmentCode', (service: KioskService) => service.issueEnrollmentCode(managerHotelA, KIOSK_A_ID)],
     ['disable', (service: KioskService) => service.disable(managerHotelA, KIOSK_A_ID)],
+    ['forceSync', (service: KioskService) => service.forceSync(managerHotelA, KIOSK_A_ID)],
   ])('%s est réservé à ADMIN', async (_method, invoke) => {
     const { service, kioskUpdateCalls } = harness([kioskRow()]);
 
@@ -494,6 +496,22 @@ describe('KioskService', () => {
         enrollmentCode: null,
       },
     });
+  });
+
+  it('ADMIN peut demander une resynchronisation sans exposer le marqueur', async () => {
+    const { service, rows, kioskUpdateCalls } = harness([kioskRow()]);
+
+    const kiosk = await service.forceSync(admin, KIOSK_A_ID);
+    const requestedAt = rows.get(KIOSK_A_ID)?.forceSyncRequestedAt;
+
+    expect(requestedAt).toBeInstanceOf(Date);
+    expect(requestedAt?.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(requestedAt?.getTime()).toBeGreaterThan(Date.now() - 5_000);
+    expect(kioskUpdateCalls[0]).toMatchObject({
+      where: { id: KIOSK_A_ID },
+      data: { forceSyncRequestedAt: requestedAt },
+    });
+    expect(kiosk).not.toHaveProperty('forceSyncRequestedAt');
   });
 
   it('enrôle le kiosque, stocke uniquement le hash du jeton et mémorise l’IP', async () => {
@@ -585,5 +603,6 @@ describe('KioskService', () => {
     await expectNotFound(service.remove(admin, id));
     await expectNotFound(service.issueEnrollmentCode(admin, id));
     await expectNotFound(service.disable(admin, id));
+    await expectNotFound(service.forceSync(admin, id));
   });
 });

@@ -53,6 +53,7 @@ export interface KioskRow {
   syncedManifestVersion: string | null;
   storageFreeMb: number | null;
   idleTimeoutSeconds: number;
+  forceSyncRequestedAt: Date | null;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -103,6 +104,7 @@ export interface KioskPrismaClient {
         | 'enrollmentCode'
         | 'enrollmentExpiresAt'
         | 'lastIp'
+        | 'forceSyncRequestedAt'
       >>;
     }): Promise<KioskRow>;
     updateMany(args: {
@@ -316,6 +318,23 @@ export class KioskService {
           enrollmentCode: null,
           enrollmentExpiresAt: null,
         },
+      });
+      return toKioskResponse(row, await this.expectedManifestVersion(existing.hotelId), new Date());
+    } catch (error: unknown) {
+      if (isRecordMissing(error)) {
+        throw this.notFound();
+      }
+      throw error;
+    }
+  }
+
+  async forceSync(principal: Principal, id: string): Promise<Kiosk> {
+    this.assertAdmin(principal);
+    const existing = await this.findActive(id);
+    try {
+      const row = await this.prisma.kiosk.update({
+        where: { id },
+        data: { forceSyncRequestedAt: new Date() },
       });
       return toKioskResponse(row, await this.expectedManifestVersion(existing.hotelId), new Date());
     } catch (error: unknown) {
