@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 17/10/2026 — M5 F-51 (UI 3/6) : ajouter dans packages/i18n les clés fr (obligatoires ; ar/en non requis, repli sur fr, voir la décision du 30/09 / D-03 exception temporaire)… — Les clés fr pour nav.hotels, page.hotels et page.hotelSelection sont ajoutées proprement, sans suppression ni modification de PROGRESS.md, et les contrôles passent. (80b8774)
 - 17/10/2026 — M5 F-51 (UI 2/6) : dans apps/admin/src/router.ts, ajouter les routes 'hotels' (/hotels) et 'hotel-selection' (/hotels/:id/selection, avec l'id dans la route) en… — Routes 'hotels' et 'hotel-selection' ajoutées au routeur avec décodage de l'id, tests parsePathname et hrefFor complets, contrôles verts, périmètre respecté. (6c5b0e4)
 - 17/10/2026 — M5 F-51 (UI 1/6) : dans apps/admin/src/api/hotels.ts, ajouter listHotels(): Promise<HotelListResponse> appelant GET /admin/hotels via le client existant, avec v… — listHotels() ajouté avec validation Zod via HotelListResponseSchema et deux tests (URL/méthode, réponse invalide); route et schéma existants, contrôles verts. (026c9a2)
 - 17/10/2026 — M5 F-51 (sélection 8a/8, logique pure) : créer apps/admin/src/pages/selectionDraft.ts, fonctions pures sans React et leur test selectionDraft.test.ts : addTour(… — Fonctions pures addTour/removeTour/moveTour/setFeatured/toggleAttract/fromResponse conformes à la spec et au schéma, bien testées, contrôles verts. (3006364)
