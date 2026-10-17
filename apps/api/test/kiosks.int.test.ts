@@ -42,6 +42,8 @@ const MISSING_REDIS_URL =
   "REDIS_URL est absent. Les tests HTTP des kiosques ont besoin de Redis (voir .env.example et docs/INSTALL.md).";
 
 const ADMIN_EMAIL = 'admin@xplor.local';
+const MANAGER_EMAIL = 'manager@xplor.local';
+const EDITOR_EMAIL = 'editor@xplor.local';
 const UNKNOWN_HOTEL_ID = '01990000-0000-7000-8000-000000000999';
 
 const ErrorResponseSchema = z.object({
@@ -201,6 +203,81 @@ describe('kiosques HTTP (API-27, F-52)', () => {
     expect(afterDeleteRes.statusCode).toBe(404);
   });
 
+  it('cloisonne la lecture des kiosques par hôtel et réserve les mutations à ADMIN', async () => {
+    const admin = await login();
+    const hotelA = await createHotel(admin);
+    const hotelB = await createHotel(admin);
+    const kioskA = await createKiosk(admin, hotelA.id, 'Kiosque hôtel A');
+    const kioskB = await createKiosk(admin, hotelB.id, 'Kiosque hôtel B');
+
+    const manager = await login(MANAGER_EMAIL);
+    await prisma.userHotel.create({
+      data: { userId: manager.userId, hotelId: hotelA.id },
+    });
+
+    const getARes = await application().inject({
+      method: 'GET',
+      url: `/api/v1/admin/kiosks/${kioskA.id}`,
+      headers: { cookie: sessionCookie(manager.sessionId) },
+    });
+    expect(getARes.statusCode).toBe(200);
+    expect(KioskSchema.parse(parseJson(getARes.body)).id).toBe(kioskA.id);
+
+    const getBRes = await application().inject({
+      method: 'GET',
+      url: `/api/v1/admin/kiosks/${kioskB.id}`,
+      headers: { cookie: sessionCookie(manager.sessionId) },
+    });
+    expect(getBRes.statusCode).toBe(404);
+
+    const listRes = await application().inject({
+      method: 'GET',
+      url: '/api/v1/admin/kiosks',
+      headers: { cookie: sessionCookie(manager.sessionId) },
+    });
+    expect(listRes.statusCode).toBe(200);
+    const listed: unknown = parseJson(listRes.body);
+    expect(Array.isArray(listed)).toBe(true);
+    const listedIds = (listed as unknown[]).map((item) => KioskSchema.parse(item).id);
+    expect(listedIds).toContain(kioskA.id);
+    expect(listedIds).not.toContain(kioskB.id);
+
+    expect(
+      (await send('POST', '/api/v1/admin/kiosks', manager, buildKioskCreate(hotelA.id)))
+        .statusCode,
+    ).toBe(403);
+    expect(
+      (
+        await send('PATCH', `/api/v1/admin/kiosks/${kioskA.id}`, manager, {
+          label: 'Modification refusée',
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect((await send('DELETE', `/api/v1/admin/kiosks/${kioskA.id}`, manager)).statusCode).toBe(
+      403,
+    );
+    expect(
+      (
+        await send(
+          'POST',
+          `/api/v1/admin/kiosks/${kioskA.id}/enrollment-code`,
+          manager,
+        )
+      ).statusCode,
+    ).toBe(403);
+    expect(
+      (await send('POST', `/api/v1/admin/kiosks/${kioskA.id}/disable`, manager)).statusCode,
+    ).toBe(403);
+
+    const editor = await login(EDITOR_EMAIL);
+    const editorGetARes = await application().inject({
+      method: 'GET',
+      url: `/api/v1/admin/kiosks/${kioskA.id}`,
+      headers: { cookie: sessionCookie(editor.sessionId) },
+    });
+    expect(editorGetARes.statusCode).toBe(404);
+  });
+
   it('répond 422 KIOSK_HOTEL_INVALID pour un hôtel inconnu', async () => {
     const admin = await login();
     const response = await send(
@@ -260,6 +337,15 @@ async function createHotel(admin: Session): Promise<{ id: string }> {
   const response = await send('POST', '/api/v1/admin/hotels', admin, buildHotelCreate(cityId));
   expect(response.statusCode).toBe(201);
   return HotelResponseSchema.parse(parseJson(response.body));
+}
+
+async function createKiosk(admin: Session, hotelId: string, label: string): Promise<{ id: string }> {
+  const response = await send('POST', '/api/v1/admin/kiosks', admin, {
+    ...buildKioskCreate(hotelId),
+    label,
+  });
+  expect(response.statusCode).toBe(201);
+  return KioskSchema.parse(parseJson(response.body));
 }
 
 async function startApplication(): Promise<NestFastifyApplication> {
