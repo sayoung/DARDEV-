@@ -1,23 +1,33 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   KioskCreateSchema,
   KioskSchema,
+  KioskUpdateSchema,
   Role,
   type Kiosk,
   type KioskCreate,
+  type KioskUpdate,
   type KioskDeviceType,
   type KioskStatus,
+  type EnrollmentCodeResponse,
   type Principal,
 } from '@xplor/shared';
 
 import { canAccessHotel, scopeHotelIds } from '../auth/access-policy.js';
-import { referenceException } from '../catalog/catalog.errors.js';
+import {
+  isRecordMissing,
+  missingException,
+  referenceException,
+} from '../catalog/catalog.errors.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { computeConnectionState } from './kiosk-state.js';
 import {
   KIOSK_HOTEL_INVALID,
   KIOSK_HOTEL_INVALID_MESSAGE,
+  KIOSK_NOT_FOUND,
+  KIOSK_NOT_FOUND_MESSAGE,
 } from './kiosks.errors.js';
+import { computeEnrollmentExpiry, generateEnrollmentCode } from './kiosk-secrets.js';
 
 export interface KioskRow {
   id: string;
@@ -64,6 +74,19 @@ export interface KioskPrismaClient {
         status: 'PENDING';
         idleTimeoutSeconds: number;
       };
+    }): Promise<KioskRow>;
+    update(args: {
+      where: { id: string };
+      data: Partial<Pick<KioskRow,
+        | 'label'
+        | 'deviceType'
+        | 'idleTimeoutSeconds'
+        | 'deletedAt'
+        | 'status'
+        | 'tokenHash'
+        | 'enrollmentCode'
+        | 'enrollmentExpiresAt'
+      >>;
     }): Promise<KioskRow>;
   };
   selection: {
@@ -142,6 +165,105 @@ export class KioskService {
     );
   }
 
+  async update(principal: Principal, id: string, input: KioskUpdate): Promise<Kiosk> {
+    this.assertAdmin(principal);
+    const valid = KioskUpdateSchema.parse(input);
+    const existing = await this.findActive(id);
+    try {
+      const row = await this.prisma.kiosk.update({
+        where: { id },
+        data: kioskUpdateData(valid),
+      });
+      return toKioskResponse(row, await this.expectedManifestVersion(existing.hotelId), new Date());
+    } catch (error: unknown) {
+      if (isRecordMissing(error)) {
+        throw this.notFound();
+      }
+      throw error;
+    }
+  }
+
+  async remove(principal: Principal, id: string): Promise<void> {
+    this.assertAdmin(principal);
+    await this.findActive(id);
+    try {
+      await this.prisma.kiosk.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    } catch (error: unknown) {
+      if (isRecordMissing(error)) {
+        throw this.notFound();
+      }
+      throw error;
+    }
+  }
+
+  async issueEnrollmentCode(principal: Principal, id: string): Promise<EnrollmentCodeResponse> {
+    this.assertAdmin(principal);
+    await this.findActive(id);
+    const now = new Date();
+    const code = generateEnrollmentCode();
+    const expiresAt = computeEnrollmentExpiry(now);
+    try {
+      await this.prisma.kiosk.update({
+        where: { id },
+        data: {
+          status: 'PENDING',
+          tokenHash: null,
+          enrollmentCode: code,
+          enrollmentExpiresAt: expiresAt,
+        },
+      });
+    } catch (error: unknown) {
+      if (isRecordMissing(error)) {
+        throw this.notFound();
+      }
+      throw error;
+    }
+    return { code, expiresAt: expiresAt.toISOString() };
+  }
+
+  async disable(principal: Principal, id: string): Promise<Kiosk> {
+    this.assertAdmin(principal);
+    const existing = await this.findActive(id);
+    try {
+      const row = await this.prisma.kiosk.update({
+        where: { id },
+        data: {
+          status: 'DISABLED',
+          tokenHash: null,
+          enrollmentCode: null,
+          enrollmentExpiresAt: null,
+        },
+      });
+      return toKioskResponse(row, await this.expectedManifestVersion(existing.hotelId), new Date());
+    } catch (error: unknown) {
+      if (isRecordMissing(error)) {
+        throw this.notFound();
+      }
+      throw error;
+    }
+  }
+
+  private assertAdmin(principal: Principal): void {
+    if (principal.role !== Role.ADMIN) {
+      throw new ForbiddenException();
+    }
+  }
+
+  private async findActive(id: string): Promise<KioskRow> {
+    const row = await this.prisma.kiosk.findFirst({ where: { id, deletedAt: null } });
+    if (row === null) {
+      throw this.notFound();
+    }
+    return row;
+  }
+
+  private notFound(): HttpException {
+    return missingException(KIOSK_NOT_FOUND, KIOSK_NOT_FOUND_MESSAGE);
+  }
+
   private async expectedManifestVersion(hotelId: string): Promise<string | null> {
     const selection = await this.prisma.selection.findUnique({
       where: { hotelId },
@@ -149,6 +271,16 @@ export class KioskService {
     });
     return selection === null ? null : String(selection.version);
   }
+}
+
+function kioskUpdateData(input: KioskUpdate): Partial<Pick<KioskRow,
+  'label' | 'deviceType' | 'idleTimeoutSeconds'
+>> {
+  const data: Partial<Pick<KioskRow, 'label' | 'deviceType' | 'idleTimeoutSeconds'>> = {};
+  if (input.label !== undefined) data.label = input.label;
+  if (input.deviceType !== undefined) data.deviceType = input.deviceType;
+  if (input.idleTimeoutSeconds !== undefined) data.idleTimeoutSeconds = input.idleTimeoutSeconds;
+  return data;
 }
 
 export function toKioskResponse(

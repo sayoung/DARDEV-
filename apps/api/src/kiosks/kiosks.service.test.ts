@@ -1,5 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import {
+  EnrollmentCodeResponseSchema,
   KioskSchema,
   Role,
   type KioskCreate,
@@ -64,6 +65,7 @@ function harness(initialRows: KioskRow[] = []): {
   selectionReads: string[];
   hotels: Map<string, Date | null>;
   kioskCreateCalls: unknown[];
+  kioskUpdateCalls: unknown[];
 } {
   const rows = new Map(initialRows.map((row) => [row.id, row]));
   const selections = new Map<string, number>();
@@ -73,6 +75,7 @@ function harness(initialRows: KioskRow[] = []): {
     [HOTEL_DELETED_ID, new Date('2026-10-10T00:00:00.000Z')],
   ]);
   const kioskCreateCalls: unknown[] = [];
+  const kioskUpdateCalls: unknown[] = [];
   const prisma: KioskPrismaClient = {
     hotel: {
       findFirst: (args) =>
@@ -116,6 +119,16 @@ function harness(initialRows: KioskRow[] = []): {
           }),
         );
       },
+      update: (args) => {
+        kioskUpdateCalls.push(args);
+        const row = rows.get(args.where.id);
+        if (row === undefined || row.deletedAt !== null) {
+          return Promise.reject(new Error('KIOSK_ROW_MISSING'));
+        }
+        const updated = { ...row, ...args.data, updatedAt: new Date() };
+        rows.set(row.id, updated);
+        return Promise.resolve(updated);
+      },
     },
     selection: {
       findUnique: (args) => {
@@ -132,6 +145,7 @@ function harness(initialRows: KioskRow[] = []): {
     selectionReads,
     hotels,
     kioskCreateCalls,
+    kioskUpdateCalls,
   };
 }
 
@@ -346,5 +360,105 @@ describe('KioskService', () => {
       expect(kiosk).not.toHaveProperty('enrollmentCode');
       expect(kiosk).not.toHaveProperty('lastIp');
     }
+  });
+
+  it('met à jour les seuls champs modifiables et renvoie le kiosque', async () => {
+    const { service, kioskUpdateCalls } = harness([kioskRow()]);
+
+    const kiosk = await service.update(admin, KIOSK_A_ID, {
+      label: 'Entrée principale',
+      idleTimeoutSeconds: 120,
+    });
+
+    expect(kiosk.label).toBe('Entrée principale');
+    expect(kiosk.idleTimeoutSeconds).toBe(120);
+    expect(kioskUpdateCalls[0]).toEqual({
+      where: { id: KIOSK_A_ID },
+      data: { label: 'Entrée principale', idleTimeoutSeconds: 120 },
+    });
+  });
+
+  it.each([
+    ['update', (service: KioskService) => service.update(managerHotelA, KIOSK_A_ID, {})],
+    ['remove', (service: KioskService) => service.remove(managerHotelA, KIOSK_A_ID)],
+    ['issueEnrollmentCode', (service: KioskService) => service.issueEnrollmentCode(managerHotelA, KIOSK_A_ID)],
+    ['disable', (service: KioskService) => service.disable(managerHotelA, KIOSK_A_ID)],
+  ])('%s est réservé à ADMIN', async (_method, invoke) => {
+    const { service, kioskUpdateCalls } = harness([kioskRow()]);
+
+    await expect(invoke(service)).rejects.toBeInstanceOf(ForbiddenException);
+    expect(kioskUpdateCalls).toHaveLength(0);
+  });
+
+  it('supprime logiquement le kiosque', async () => {
+    const { service, rows } = harness([kioskRow()]);
+
+    await service.remove(admin, KIOSK_A_ID);
+
+    expect(rows.get(KIOSK_A_ID)?.deletedAt).toBeInstanceOf(Date);
+  });
+
+  it('émet un code d’enrôlement conforme expirant dans 60 minutes', async () => {
+    const { service, rows, kioskUpdateCalls } = harness([kioskRow({ status: 'ACTIVE' })]);
+
+    const response = await service.issueEnrollmentCode(admin, KIOSK_A_ID);
+
+    expect(EnrollmentCodeResponseSchema.parse(response)).toEqual(response);
+    expect(response.code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/);
+    expect(new Date(response.expiresAt).getTime() - Date.now()).toBeGreaterThanOrEqual(
+      60 * 60 * 1000 - 100,
+    );
+    expect(new Date(response.expiresAt).getTime() - Date.now()).toBeLessThanOrEqual(
+      60 * 60 * 1000,
+    );
+    expect(rows.get(KIOSK_A_ID)).toMatchObject({
+      status: 'PENDING',
+      tokenHash: null,
+      enrollmentCode: response.code,
+      enrollmentExpiresAt: new Date(response.expiresAt),
+    });
+    expect(kioskUpdateCalls[0]).toMatchObject({
+      where: { id: KIOSK_A_ID },
+      data: { status: 'PENDING', tokenHash: null, enrollmentCode: response.code },
+    });
+  });
+
+  it('désactive le kiosque et révoque les secrets', async () => {
+    const { service, rows, kioskUpdateCalls } = harness([kioskRow()]);
+
+    const kiosk = await service.disable(admin, KIOSK_A_ID);
+
+    expect(kiosk.status).toBe('DISABLED');
+    expect(rows.get(KIOSK_A_ID)).toMatchObject({
+      status: 'DISABLED',
+      tokenHash: null,
+      enrollmentCode: null,
+      enrollmentExpiresAt: null,
+    });
+    expect(kioskUpdateCalls[0]).toMatchObject({
+      data: {
+        status: 'DISABLED',
+        tokenHash: null,
+        enrollmentCode: null,
+      },
+    });
+  });
+
+  it.each([
+    ['inconnu', 'missing-kiosk'],
+    ['supprimé', KIOSK_B_ID],
+  ])('renvoie KIOSK_NOT_FOUND pour un kiosque %s lors de chaque mutation', async (_label, id) => {
+    const initial = id === KIOSK_B_ID ? [kioskRow({ id, deletedAt: new Date() })] : [];
+    const { service } = harness(initial);
+    const expectNotFound = (promise: Promise<unknown>) =>
+      expect(promise).rejects.toMatchObject({
+        status: 404,
+        response: { error: { code: 'KIOSK_NOT_FOUND' } },
+      });
+
+    await expectNotFound(service.update(admin, id, {}));
+    await expectNotFound(service.remove(admin, id));
+    await expectNotFound(service.issueEnrollmentCode(admin, id));
+    await expectNotFound(service.disable(admin, id));
   });
 });
