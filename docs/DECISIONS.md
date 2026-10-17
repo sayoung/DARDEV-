@@ -944,3 +944,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** ajouter un compteur de synchronisation dédié ou envoyer une commande via une file temps réel.
 - **À valider :** oui
 
+## D-121 — Taille des visites dans le manifeste kiosque (M5 API-02)
+
+- **Date :** 17/10/2026
+- **Décision :** `sizeBytes` vaut temporairement `0` dans le manifeste API-02 ; le calcul réel est reporté à M5 PWA.
+- **Alternatives :** calculer la taille des médias synchronisables dès la génération du manifeste.
+- **À valider :** oui
+
