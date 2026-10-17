@@ -75,6 +75,7 @@ export interface KioskPrismaClient {
     findFirst(args: {
       where: {
         id?: string;
+        tokenHash?: string;
         deletedAt: null;
         status?: 'PENDING';
         enrollmentCode?: string;
@@ -134,6 +135,16 @@ export class KioskService {
   constructor(
     @Inject(PrismaService) private readonly prisma: KioskPrismaClient,
   ) {}
+
+  async authenticateDevice(token: string): Promise<Pick<KioskRow, 'id' | 'hotelId' | 'status'> | null> {
+    const kiosk = await this.prisma.kiosk.findFirst({
+      where: { tokenHash: hashDeviceToken(token), deletedAt: null },
+    });
+    if (kiosk === null) {
+      return null;
+    }
+    return { id: kiosk.id, hotelId: kiosk.hotelId, status: kiosk.status };
+  }
 
   async create(principal: Principal, input: KioskCreate): Promise<Kiosk> {
     if (principal.role !== Role.ADMIN) {
