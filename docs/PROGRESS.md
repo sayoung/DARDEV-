@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 17/10/2026 — M5 F-51 (sélection 4/8) Contrôleur : dans hotels.controller.ts (ou un nouveau selection.controller.ts déclaré dans hotels.module.ts), ajouter GET admin/hotels/:… — Routes GET/PUT admin/hotels/:id/selection ajoutées avec gardes, validation Zod et service injecté dans le module, tests et D-117 présents, lint/typecheck/test OK. (a7c9667)
 - 17/10/2026 — M5 F-51 (sélection 3c/8) Méthode replace : dans apps/api/src/hotels/selection.service.ts, ajouter `async replace(principal: Principal, hotelId: string, input: S… — replace est présent et conforme à la consigne (diff vide car déjà intégré via le commit de récupération), lint et typecheck passent ; seuls featured et attract sont validés comme publiés, tourIds ne l… (aa5d158)
 - 17/10/2026 — Récupération du travail non commité — SelectionService.replace est correct (accès, validation des visites publiées, upsert + items en transaction, version incrémentée) et cohérent avec le découpage F-51 ; lint/typecheck/test verts. (b185a1e)
 - 16/10/2026 — M5 F-51 (sélection 3b/8) Client Prisma typé : dans apps/api/src/hotels/selection.service.ts, élargir l'interface SelectionPrismaClient (sans toucher à la méthod… — SelectionPrismaClient étendu (tour.findMany, selection.upsert, $transaction) et SelectionTx exportée conformément à la demande, test complété sans changer d'assertion, lint/typecheck/test OK. (0adfe46)
