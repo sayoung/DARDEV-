@@ -34,6 +34,8 @@ const ROUTES = [
   { path: '/api/v1/admin/kiosks/{id}/disable', method: 'post' },
   { path: '/api/v1/admin/kiosks/{id}/force-sync', method: 'post' },
   { path: '/api/v1/kiosk/enroll', method: 'post' },
+  { path: '/api/v1/kiosk/manifest', method: 'get' },
+  { path: '/api/v1/kiosk/heartbeat', method: 'post' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'get' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'put' },
   { path: '/api/v1/admin/categories', method: 'get' },
@@ -75,6 +77,7 @@ describe('document OpenAPI', () => {
     const schemes = JSON.stringify(doc.components?.securitySchemes);
     expect(schemes).toContain('xplor_sid');
     expect(schemes).toContain('X-CSRF-Token');
+    expect(schemes).toContain('kioskBearer');
 
     const body = JSON.stringify(doc);
     expect(body).toContain('INVALID_CREDENTIALS');
@@ -251,6 +254,23 @@ describe('document OpenAPI', () => {
     expect(enroll?.responses?.['401']).toBeDefined();
     expect(enroll?.responses?.['429']).toBeDefined();
     expect(enroll?.security).toBeUndefined();
+
+    const manifest = doc.paths?.['/api/v1/kiosk/manifest']?.get;
+    expect(manifest?.security).toEqual([{ kioskBearer: [] }]);
+    expect(manifest?.responses?.['200']).toBeDefined();
+    expect(JSON.stringify(manifest?.responses?.['200'])).toContain('manifestVersion');
+    expect(JSON.stringify(manifest?.responses?.['200'])).toContain('maintenancePinHash');
+    expect(manifest?.responses?.['401']).toBeDefined();
+    expect(manifest?.responses?.['403']).toBeDefined();
+
+    const heartbeat = doc.paths?.['/api/v1/kiosk/heartbeat']?.post;
+    expect(heartbeat?.security).toEqual([{ kioskBearer: [] }]);
+    expect(heartbeat?.requestBody).toBeDefined();
+    expect(JSON.stringify(heartbeat?.requestBody)).toContain('syncedManifestVersion');
+    expect(JSON.stringify(heartbeat?.requestBody)).toContain('recentErrors');
+    expect(heartbeat?.responses?.['200']).toBeDefined();
+    expect(JSON.stringify(heartbeat?.responses?.['200'])).toContain('forceSync');
+    expect(JSON.stringify(heartbeat?.responses?.['200'])).toContain('serverTime');
   });
 
   it('est identique à docs/openapi.json', () => {

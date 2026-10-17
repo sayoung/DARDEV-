@@ -18,6 +18,11 @@
         "in": "header",
         "name": "X-CSRF-Token",
         "description": "Jeton CSRF de la session courante. Exigé pour toute méthode autre que GET, HEAD ou OPTIONS."
+      },
+      "kioskBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Jeton d’appareil kiosque remis lors de l’enrôlement."
       }
     },
     "schemas": {},
@@ -6265,6 +6270,445 @@
           },
           "429": {
             "description": "Plus de 10 requêtes par minute pour cette adresse IP."
+          }
+        }
+      }
+    },
+    "/api/v1/kiosk/manifest": {
+      "get": {
+        "summary": "Obtenir le manifeste du kiosque",
+        "tags": [
+          "Kiosque"
+        ],
+        "security": [
+          {
+            "kioskBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuration et visites à synchroniser.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "manifestVersion": {
+                      "type": "string"
+                    },
+                    "kiosk": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "idleTimeoutSeconds": {
+                          "type": "integer"
+                        },
+                        "deviceType": {
+                          "type": "string",
+                          "enum": [
+                            "TOUCH_SCREEN",
+                            "VR_HEADSET",
+                            "TOUCH_AND_HEADSET"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "label",
+                        "idleTimeoutSeconds",
+                        "deviceType"
+                      ]
+                    },
+                    "hotel": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "brandColor": {
+                          "type": "string"
+                        },
+                        "languages": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "fr",
+                              "ar",
+                              "en"
+                            ]
+                          },
+                          "minItems": 1
+                        },
+                        "serviceActive": {
+                          "type": "boolean"
+                        },
+                        "maintenancePinHash": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "logoUrl",
+                        "brandColor",
+                        "languages",
+                        "serviceActive",
+                        "maintenancePinHash"
+                      ]
+                    },
+                    "selection": {
+                      "type": "object",
+                      "properties": {
+                        "featuredTourId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "attractTourIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "tours": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "contentVersion": {
+                                "type": "integer"
+                              },
+                              "sizeBytes": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "url": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "contentVersion",
+                              "sizeBytes",
+                              "url"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "featuredTourId",
+                        "attractTourIds",
+                        "tours"
+                      ]
+                    },
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "object",
+                            "properties": {
+                              "fr": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "ar": {
+                                "type": "string"
+                              },
+                              "en": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "fr"
+                            ]
+                          },
+                          "icon": {
+                            "type": "string"
+                          },
+                          "color": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "icon",
+                          "color"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "manifestVersion",
+                    "kiosk",
+                    "hotel",
+                    "selection",
+                    "categories"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Jeton kiosque absent ou invalide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kiosque désactivé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/kiosk/heartbeat": {
+      "post": {
+        "summary": "Envoyer un heartbeat du kiosque",
+        "tags": [
+          "Kiosque"
+        ],
+        "security": [
+          {
+            "kioskBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "État et version synchronisée du kiosque.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "appVersion": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "syncedManifestVersion": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 100
+                  },
+                  "storageFreeMb": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "recentErrors": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 300
+                    },
+                    "maxItems": 10,
+                    "default": []
+                  }
+                },
+                "required": [
+                  "appVersion",
+                  "syncedManifestVersion",
+                  "storageFreeMb"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "État de synchronisation et heure serveur.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "forceSync": {
+                      "type": "boolean"
+                    },
+                    "serverTime": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "forceSync",
+                    "serverTime"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corps refusé par KioskHeartbeatRequestSchema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        400
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Jeton kiosque absent ou invalide.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        401
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kiosque désactivé.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "enum": [
+                        403
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ]
+                }
+              }
+            }
           }
         }
       }

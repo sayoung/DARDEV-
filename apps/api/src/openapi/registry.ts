@@ -41,6 +41,9 @@ import {
   HotspotUpdateSchema,
   InviteUserRequestSchema,
   InviteUserResponseSchema,
+  KioskHeartbeatRequestSchema,
+  KioskHeartbeatResponseSchema,
+  KioskManifestSchema,
   LoginRequestSchema,
   MeResponseSchema,
   PaginatedAssetResponseSchema,
@@ -88,9 +91,11 @@ import type { HealthBody } from '../health/health.service.js';
 
 const SESSION_COOKIE = 'sessionCookie';
 const CSRF_HEADER = 'csrfToken';
+const KIOSK_BEARER = 'kioskBearer';
 
 const sessionSecurity = [{ [SESSION_COOKIE]: [] }];
 const sessionAndCsrfSecurity = [{ [SESSION_COOKIE]: [], [CSRF_HEADER]: [] }];
+const kioskBearerSecurity = [{ [KIOSK_BEARER]: [] }];
 
 /** Corps `{ status, checks }` de `GET /api/health` (D-38). */
 const healthStatusSchema = z.enum(['ok', 'error']);
@@ -254,6 +259,12 @@ registry.registerComponent('securitySchemes', CSRF_HEADER, {
   name: 'X-CSRF-Token',
   description:
     'Jeton CSRF de la session courante. Exigé pour toute méthode autre que GET, HEAD ou OPTIONS.',
+});
+
+registry.registerComponent('securitySchemes', KIOSK_BEARER, {
+  type: 'http',
+  scheme: 'bearer',
+  description: 'Jeton d’appareil kiosque remis lors de l’enrôlement.',
 });
 
 registry.registerPath({
@@ -775,6 +786,36 @@ function registerKiosks(): void {
       '400': jsonResponse('Corps refusé par KioskEnrollRequestSchema.', badRequestError),
       '401': jsonResponse('Code invalide, expiré ou déjà utilisé.', unauthorizedError),
       '429': kioskEnrollmentRateLimit,
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: '/api/v1/kiosk/manifest',
+    summary: 'Obtenir le manifeste du kiosque',
+    tags: ['Kiosque'],
+    security: kioskBearerSecurity,
+    responses: {
+      '200': jsonResponse('Configuration et visites à synchroniser.', KioskManifestSchema),
+      '401': jsonResponse('Jeton kiosque absent ou invalide.', unauthorizedError),
+      '403': jsonResponse('Kiosque désactivé.', forbiddenError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/kiosk/heartbeat',
+    summary: 'Envoyer un heartbeat du kiosque',
+    tags: ['Kiosque'],
+    security: kioskBearerSecurity,
+    request: {
+      body: jsonBody(KioskHeartbeatRequestSchema, 'État et version synchronisée du kiosque.'),
+    },
+    responses: {
+      '200': jsonResponse('État de synchronisation et heure serveur.', KioskHeartbeatResponseSchema),
+      '400': jsonResponse('Corps refusé par KioskHeartbeatRequestSchema.', badRequestError),
+      '401': jsonResponse('Jeton kiosque absent ou invalide.', unauthorizedError),
+      '403': jsonResponse('Kiosque désactivé.', forbiddenError),
     },
   });
 }
