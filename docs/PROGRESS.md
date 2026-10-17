@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 17/10/2026 — M5 F-51 (sélection 7/8, client admin) : dans apps/admin/src/api/catalog.ts (ou un nouveau apps/admin/src/api/hotels.ts dans le même style que catalog.ts), ajout… — Client admin getHotelSelection/saveHotelSelection ajouté dans hotels.ts, avec validation Zod via requestJson et tests couvrant URL, méthode, corps, CSRF et réponse invalide ; lint, typecheck et tests… (7b75237)
 - 17/10/2026 — M5 F-51 (sélection 6/8, test d'intégration cloisonnement) : compléter apps/api/test/selection.int.test.ts avec : (a) PUT contenant une visite DRAFT → erreur SEL… — Tests (a)-(f) ajoutés, et le correctif de src (validation de tourIds, bug réel révélé par (a)/(b)) est justifié; contrôles verts. (793ad26)
 - 17/10/2026 — M5 F-51 (sélection 5/8, test d'intégration) : créer apps/api/test/selection.int.test.ts en copiant l'infrastructure de apps/api/test/hotel-managers.int.test.ts… — Test d'intégration de la sélection conforme à la demande (401, 403 CSRF, défaut version 1, PUT avec 2 visites publiées puis GET), sans modification de src ; lint et typecheck passent. (07f50e0)
 - 17/10/2026 — M5 F-51 (sélection 4/8) Contrôleur : dans hotels.controller.ts (ou un nouveau selection.controller.ts déclaré dans hotels.module.ts), ajouter GET admin/hotels/:… — Routes GET/PUT admin/hotels/:id/selection ajoutées avec gardes, validation Zod et service injecté dans le module, tests et D-117 présents, lint/typecheck/test OK. (a7c9667)
