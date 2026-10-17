@@ -571,5 +571,9 @@
   "editor": {
     "sceneAriaLabel": "Éditeur de panorama 360",
     "moveMode": "Déplacer"
+  },
+  "kiosk": {
+    "unavailable": "Service momentanément indisponible",
+    "touchToExplore": "Touchez l'écran pour explorer"
   }
 }

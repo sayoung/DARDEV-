@@ -92,6 +92,11 @@ describe('clés i18n', () => {
       expect(label.trim().length).toBeGreaterThan(0);
     }
   });
+
+  it('définit les clés kiosque en français', () => {
+    expect(resources.fr.kiosk.unavailable).toBe('Service momentanément indisponible');
+    expect(resources.fr.kiosk.touchToExplore).toBe("Touchez l'écran pour explorer");
+  });
 });
 
 describe('isRtl / dir', () => {
