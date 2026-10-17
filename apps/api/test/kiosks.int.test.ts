@@ -189,6 +189,10 @@ describe('kiosques HTTP (API-27, F-52)', () => {
       /^[A-Z0-9]{8}$/,
     );
 
+    const forceSyncRes = await send('POST', `/api/v1/admin/kiosks/${created.id}/force-sync`, admin);
+    expect(forceSyncRes.statusCode).toBe(204);
+    expect(forceSyncRes.body).toBe('');
+
     const disableRes = await send('POST', `/api/v1/admin/kiosks/${created.id}/disable`, admin);
     expect(disableRes.statusCode).toBe(200);
     expect(KioskSchema.parse(parseJson(disableRes.body)).status).toBe('DISABLED');
@@ -268,6 +272,13 @@ describe('kiosques HTTP (API-27, F-52)', () => {
     expect(
       (await send('POST', `/api/v1/admin/kiosks/${kioskA.id}/disable`, manager)).statusCode,
     ).toBe(403);
+    expect(
+      (await send('POST', `/api/v1/admin/kiosks/${kioskA.id}/force-sync`, manager)).statusCode,
+    ).toBe(403);
+    expect(
+      (await send('POST', '/api/v1/admin/kiosks/01990000-0000-7000-8000-0000000000aa/force-sync', admin))
+        .statusCode,
+    ).toBe(404);
 
     const editor = await login(EDITOR_EMAIL);
     const editorGetARes = await application().inject({

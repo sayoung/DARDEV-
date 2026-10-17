@@ -748,6 +748,22 @@ function registerKiosks(): void {
 
   registry.registerPath({
     method: 'post',
+    path: `${item}/force-sync`,
+    summary: 'Demander une synchronisation immédiate du kiosque',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: { params: idParam },
+    responses: {
+      '204': { description: 'Synchronisation demandée. Corps vide.' },
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(adminOnly, forbiddenError),
+      '404': jsonResponse('Kiosque introuvable.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
     path: '/api/v1/kiosk/enroll',
     summary: 'Enrôler un kiosque',
     tags: ['Kiosque'],
