@@ -30,6 +30,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ### Fait
 
+- 17/10/2026 — M5 F-51 (sélection 8a/8, logique pure) : créer apps/admin/src/pages/selectionDraft.ts, fonctions pures sans React et leur test selectionDraft.test.ts : addTour(… — Fonctions pures addTour/removeTour/moveTour/setFeatured/toggleAttract/fromResponse conformes à la spec et au schéma, bien testées, contrôles verts. (3006364)
 - 17/10/2026 — M5 F-51 (sélection 7/8, client admin) : dans apps/admin/src/api/catalog.ts (ou un nouveau apps/admin/src/api/hotels.ts dans le même style que catalog.ts), ajout… — Client admin getHotelSelection/saveHotelSelection ajouté dans hotels.ts, avec validation Zod via requestJson et tests couvrant URL, méthode, corps, CSRF et réponse invalide ; lint, typecheck et tests… (7b75237)
 - 17/10/2026 — M5 F-51 (sélection 6/8, test d'intégration cloisonnement) : compléter apps/api/test/selection.int.test.ts avec : (a) PUT contenant une visite DRAFT → erreur SEL… — Tests (a)-(f) ajoutés, et le correctif de src (validation de tourIds, bug réel révélé par (a)/(b)) est justifié; contrôles verts. (793ad26)
 - 17/10/2026 — M5 F-51 (sélection 5/8, test d'intégration) : créer apps/api/test/selection.int.test.ts en copiant l'infrastructure de apps/api/test/hotel-managers.int.test.ts… — Test d'intégration de la sélection conforme à la demande (401, 403 CSRF, défaut version 1, PUT avec 2 visites publiées puis GET), sans modification de src ; lint et typecheck passent. (07f50e0)
