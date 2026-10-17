@@ -339,7 +339,8 @@
     "tours": "Visites",
     "cities": "Villes",
     "categories": "Catégories",
-    "media": "Médias"
+    "media": "Médias",
+    "hotels": "Hôtels"
   },
   "media": {
     "title": "Médiathèque",
@@ -428,6 +429,31 @@
     },
     "tourDetail": {
       "title": "Détails de la visite"
+    },
+    "hotels": {
+      "title": "Hôtels",
+      "columns": {
+        "name": "Nom",
+        "city": "Ville"
+      },
+      "selection": "Sélection",
+      "empty": "Aucun hôtel trouvé.",
+      "loadError": "Impossible de charger les hôtels."
+    },
+    "hotelSelection": {
+      "title": "Sélection des visites",
+      "selectedTours": "Visites sélectionnées",
+      "catalog": "Catalogue des visites",
+      "add": "Ajouter",
+      "remove": "Retirer",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "featured": "Mise en avant",
+      "attract": "Mode veille",
+      "save": "Enregistrer",
+      "saved": "Sélection enregistrée.",
+      "error": "Impossible d'enregistrer la sélection.",
+      "version": "Version {{version}}"
     }
   },
   "tour": {
