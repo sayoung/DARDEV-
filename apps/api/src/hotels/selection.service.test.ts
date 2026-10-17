@@ -67,6 +67,7 @@ function harness(): {
   service: SelectionService;
   hotels: Map<string, HotelSummaryRow>;
   selections: Map<string, SelectionRow>;
+  tours: Map<string, { id: string; status: 'PUBLISHED' | 'DRAFT'; deletedAt: Date | null }>;
 } {
   const hotels = new Map<string, HotelSummaryRow>([
     [HOTEL_A_ID, { id: HOTEL_A_ID, createdAt: HOTEL_A_CREATED_AT, deletedAt: null }],
@@ -109,6 +110,16 @@ function harness(): {
         items: [{ tourId: TOUR_4_ID, position: 0 }],
       },
     ],
+  ]);
+
+  const tours = new Map<
+    string,
+    { id: string; status: 'PUBLISHED' | 'DRAFT'; deletedAt: Date | null }
+  >([
+    [TOUR_1_ID, { id: TOUR_1_ID, status: 'PUBLISHED', deletedAt: null }],
+    [TOUR_2_ID, { id: TOUR_2_ID, status: 'PUBLISHED', deletedAt: null }],
+    [TOUR_3_ID, { id: TOUR_3_ID, status: 'PUBLISHED', deletedAt: null }],
+    [TOUR_4_ID, { id: TOUR_4_ID, status: 'PUBLISHED', deletedAt: null }],
   ]);
 
   const prisma: SelectionPrismaClient = {
@@ -156,7 +167,25 @@ function harness(): {
     },
 
     tour: {
-      findMany: () => Promise.resolve([]),
+      findMany: (args: { where: Prisma.TourWhereInput }): Promise<{ id: string }[]> => {
+        let result = [...tours.values()];
+        const idFilter = args.where.id;
+        if (
+          typeof idFilter === 'object' &&
+          'in' in idFilter &&
+          Array.isArray(idFilter.in)
+        ) {
+          const ids: readonly string[] = idFilter.in;
+          result = result.filter((tour) => ids.includes(tour.id));
+        }
+        if (args.where.deletedAt === null) {
+          result = result.filter((tour) => tour.deletedAt === null);
+        }
+        if (args.where.status === 'PUBLISHED') {
+          result = result.filter((tour) => tour.status === 'PUBLISHED');
+        }
+        return Promise.resolve(result.map((tour) => ({ id: tour.id })));
+      },
     },
 
     $transaction: <T>(fn: (tx: SelectionTx) => Promise<T>): Promise<T> => {
@@ -177,6 +206,7 @@ function harness(): {
     service: new SelectionService(prisma),
     hotels,
     selections,
+    tours,
   };
 }
 
