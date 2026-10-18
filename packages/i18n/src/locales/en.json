@@ -354,7 +354,25 @@
       "clear": "Clear",
       "error": "Incorrect PIN code.",
       "tooShort": "The PIN code must be at least 4 digits.",
-      "keypadLabel": "Numeric touch keypad"
+      "keypadLabel": "Numeric touch keypad",
+      "statusTitle": "Kiosk status",
+      "statusSubtitle": "System information and maintenance operations.",
+      "appVersion": "Application version",
+      "manifestVersion": "Manifest version",
+      "lastSync": "Last synchronization",
+      "none": "None",
+      "never": "Never",
+      "syncStatus": "Synchronization status",
+      "syncStatusSuccess": "Synchronized",
+      "syncStatusError": "Synchronization errors",
+      "failedTours": "Failed tours",
+      "noFailedTours": "No failed tours",
+      "actions": "Actions",
+      "forceSync": "Force synchronization",
+      "forceSyncing": "Synchronizing...",
+      "reenroll": "Re-enroll",
+      "confirmReenroll": "Are you sure you want to re-enroll this kiosk? All local data will be reset.",
+      "close": "Close"
     }
   }
 }

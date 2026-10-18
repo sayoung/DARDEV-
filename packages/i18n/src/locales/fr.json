@@ -606,7 +606,25 @@
       "clear": "Effacer",
       "error": "Code PIN incorrect.",
       "tooShort": "Le code PIN doit comporter au moins 4 chiffres.",
-      "keypadLabel": "Clavier numérique tactile"
+      "keypadLabel": "Clavier numérique tactile",
+      "statusTitle": "État du kiosque",
+      "statusSubtitle": "Informations système et opérations de maintenance.",
+      "appVersion": "Version de l'application",
+      "manifestVersion": "Version du manifeste",
+      "lastSync": "Dernière synchronisation",
+      "none": "Aucun",
+      "never": "Jamais",
+      "syncStatus": "État de la synchronisation",
+      "syncStatusSuccess": "Synchronisé",
+      "syncStatusError": "Erreurs de synchronisation",
+      "failedTours": "Visites en échec",
+      "noFailedTours": "Aucune visite en échec",
+      "actions": "Actions",
+      "forceSync": "Forcer la synchronisation",
+      "forceSyncing": "Synchronisation en cours...",
+      "reenroll": "Réenrôler",
+      "confirmReenroll": "Voulez-vous vraiment réenrôler ce kiosque ? Toutes les données locales seront réinitialisées.",
+      "close": "Fermer"
     }
   }
 }

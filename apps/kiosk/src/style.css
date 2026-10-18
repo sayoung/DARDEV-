@@ -687,3 +687,158 @@ button:disabled {
   color: var(--text-primary);
 }
 
+/* Écran technique d'état de maintenance (F-67 2/2) */
+.kiosk-maintenance-status-container {
+  max-width: 520px;
+}
+
+.kiosk-maintenance-status-card {
+  text-align: start;
+}
+
+.kiosk-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-block: 1rem 1.5rem;
+  margin-inline: 0;
+  padding-block: 0;
+  padding-inline: 0;
+}
+
+.kiosk-status-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 0.5rem;
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.kiosk-status-row-failed {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.kiosk-status-dt {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kiosk-status-dd {
+  margin-inline-start: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: end;
+}
+
+.kiosk-status-row-failed .kiosk-status-dd {
+  width: 100%;
+  text-align: start;
+}
+
+.kiosk-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding-block: 0.25rem;
+  padding-inline: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.kiosk-status-badge-success {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.kiosk-status-badge-error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+.kiosk-status-empty {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.kiosk-status-failed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-block: 0.25rem 0;
+  margin-inline: 0;
+  padding-inline-start: 1.25rem;
+  font-size: 0.85rem;
+  color: #dc3545;
+}
+
+.kiosk-status-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-block-start: 1rem;
+}
+
+.kiosk-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding-block: 0.75rem;
+  padding-inline: 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.kiosk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kiosk-btn-primary {
+  color: #FFFFFF;
+  background-color: var(--brand-color);
+  border: 1px solid var(--brand-color);
+}
+
+.kiosk-btn-primary:hover:not(:disabled) {
+  background-color: var(--brand-dark);
+  border-color: var(--brand-dark);
+}
+
+.kiosk-btn-destructive {
+  color: #dc3545;
+  background-color: #fff5f5;
+  border: 1px solid #f5c6cb;
+}
+
+.kiosk-btn-destructive:hover:not(:disabled) {
+  color: #FFFFFF;
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.kiosk-btn-secondary {
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  border: 1px solid var(--border-subtle);
+}
+
+.kiosk-btn-secondary:hover:not(:disabled) {
+  background-color: #e9ecef;
+}
+
+
