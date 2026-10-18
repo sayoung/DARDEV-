@@ -107,6 +107,14 @@ describe('clés i18n', () => {
     expect(resources.fr.kiosk.home.noTours).toBe(
       'Aucune visite disponible dans cette catégorie.',
     );
+    expect(resources.fr.kiosk.maintenance.title).toBe('Maintenance');
+    expect(resources.fr.kiosk.maintenance.submit).toBe('Valider');
+    expect(resources.fr.kiosk.maintenance.cancel).toBe('Annuler');
+    expect(resources.fr.kiosk.maintenance.clear).toBe('Effacer');
+    expect(resources.fr.kiosk.maintenance.error).toBe('Code PIN incorrect.');
+    expect(resources.fr.kiosk.maintenance.tooShort).toBe(
+      'Le code PIN doit comporter au moins 4 chiffres.',
+    );
   });
 });
 

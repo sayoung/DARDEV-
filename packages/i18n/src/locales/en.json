@@ -342,6 +342,20 @@
       "toursList": "Our virtual tours",
       "explore": "Explore tour",
       "noTours": "No tours available in this category."
+    },
+    "maintenance": {
+      "title": "Maintenance",
+      "subtitle": "Enter the hotel PIN code to unlock the technical screen.",
+      "pinLabel": "PIN code",
+      "pinPlaceholder": "••••",
+      "submit": "Validate",
+      "submitting": "Verifying...",
+      "cancel": "Cancel",
+      "clear": "Clear",
+      "error": "Incorrect PIN code.",
+      "tooShort": "The PIN code must be at least 4 digits.",
+      "keypadLabel": "Numeric touch keypad"
     }
   }
 }
+

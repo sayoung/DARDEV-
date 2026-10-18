@@ -594,6 +594,20 @@
       "toursList": "Nos visites virtuelles",
       "explore": "Explorer la visite",
       "noTours": "Aucune visite disponible dans cette catégorie."
+    },
+    "maintenance": {
+      "title": "Maintenance",
+      "subtitle": "Saisissez le code PIN de l'hôtel pour déverrouiller l'écran technique.",
+      "pinLabel": "Code PIN",
+      "pinPlaceholder": "••••",
+      "submit": "Valider",
+      "submitting": "Vérification...",
+      "cancel": "Annuler",
+      "clear": "Effacer",
+      "error": "Code PIN incorrect.",
+      "tooShort": "Le code PIN doit comporter au moins 4 chiffres.",
+      "keypadLabel": "Clavier numérique tactile"
     }
   }
 }
+
