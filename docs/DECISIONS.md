@@ -958,3 +958,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Répéter l'alerte à chaque exécution du job périodique (toutes les 15 min), ou relancer une alerte toutes les 2 h d'inactivité.
 - **À valider :** oui
 
+## D-123 — Option de vérification du PIN technique kiosque (M5 F-67)
+
+- **Date :** 18/10/2026
+- **Décision :** L'algorithme de hachage de l'API pour les mots de passe et le PIN technique (`maintenancePinHash`) est Argon2id (D-37, spécification section 5.6). Argon2 n'est pas supporté nativement par l'API Web Crypto du navigateur (`SubtleCrypto` ne propose que SHA, HMAC, PBKDF2) et nécessiterait l'ajout d'une dépendance WebAssembly lourde (`argon2-browser` ou `hash-wasm`). L'option retenue pour F-67 est donc une route API de vérification du PIN côté serveur plutôt que la vérification du hash Argon2 en cache hors-ligne. Côté kiosque, nous formalisons le type du contrat pour la vérification (`MaintenancePinVerifier` / `MaintenancePinVerifierContract`).
+- **Alternatives :** Embarquer un paquet npm WebAssembly Argon2 dans l'application kiosque ; modifier le modèle de données API pour utiliser un algorithme compatible Web Crypto (PBKDF2/SHA-256).
+- **À valider :** oui
+
+
