@@ -1,5 +1,14 @@
 import { resources } from '@xplor/i18n';
-import type { KioskManifest, Lang } from '@xplor/shared';
+import {
+  TourGraphSchema,
+  type KioskManifest,
+  type Lang,
+  type TourGraph,
+} from '@xplor/shared';
+import {
+  fetchTourGraph,
+  mountViewer as coreMountViewer,
+} from '@xplor/viewer-core';
 
 import { resolveApiUrl } from './api-url.js';
 import { createAppState, type AppState, type AppStore } from './app-state.js';
@@ -8,6 +17,7 @@ import {
   type AppView,
   type AppViewDeps,
   type RenderTourCallback,
+  type RenderTourHandle,
 } from './app-view.js';
 import {
   createKioskLoopsApi,
@@ -43,7 +53,14 @@ import { registerServiceWorker } from './register-sw.js';
 import type { ConfirmFn } from './render-maintenance-status.js';
 import { renderScreen } from './render-screen.js';
 import {
+  renderTour,
+  type LoadTourFn,
+  type MountViewerFn,
+  type ViewerInstance,
+} from './render-tour.js';
+import {
   createTourCache,
+  getTourCacheName,
   type CacheEntryLike,
   type CacheStorageLike,
   type TourCache,
@@ -67,11 +84,51 @@ export interface BootstrapKioskOptions {
   appVersion?: string;
   root?: HTMLElement;
   renderTour?: RenderTourCallback;
+  mountViewer?: MountViewerFn;
+  loadTour?: LoadTourFn;
   getAttractTourUrl?: (state: AppState) => string | null;
   verifyMaintenancePin?: MaintenancePinVerifier;
   confirmFn?: ConfirmFn;
   navigator?: unknown;
   registerServiceWorker?: (nav: unknown) => Promise<unknown>;
+}
+
+interface ResponseWithJson {
+  json(): Promise<unknown>;
+  clone?: () => unknown;
+}
+
+function isResponseWithJson(value: unknown): value is ResponseWithJson {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  return 'json' in value && typeof value.json === 'function';
+}
+
+async function extractTourGraphFromResponse(
+  response: unknown,
+): Promise<TourGraph | null> {
+  if (isResponseWithJson(response)) {
+    try {
+      const candidate =
+        typeof response.clone === 'function' ? response.clone() : response;
+      const target = isResponseWithJson(candidate) ? candidate : response;
+      const data = await target.json();
+      const parsed = TourGraphSchema.safeParse(data);
+      if (parsed.success) {
+        return parsed.data;
+      }
+    } catch {
+      // Ignorer l'erreur et tenter le parsing direct
+    }
+  }
+
+  const directParsed = TourGraphSchema.safeParse(response);
+  if (directParsed.success) {
+    return directParsed.data;
+  }
+
+  return null;
 }
 
 export interface KioskBootstrapInstance {
@@ -319,7 +376,13 @@ export function bootstrapKiosk(
     }
   };
 
+  let currentTourHandle: RenderTourHandle | null = null;
+
   const handleReenroll = (): Promise<void> => {
+    if (currentTourHandle !== null) {
+      currentTourHandle.destroy();
+      currentTourHandle = null;
+    }
     if (loopsControl !== null) {
       loopsControl.stop();
       loopsControl = null;
@@ -352,12 +415,106 @@ export function bootstrapKiosk(
     return verifier(pin);
   };
 
+  const defaultMountViewer: MountViewerFn =
+    options?.mountViewer ??
+    ((container: HTMLElement, graph: TourGraph): ViewerInstance => {
+      if (typeof ShadowRoot === 'undefined') {
+        return { destroy(): void {} };
+      }
+      try {
+        return coreMountViewer(container, graph);
+      } catch {
+        return { destroy(): void {} };
+      }
+    });
+
+  const defaultLoadTour: LoadTourFn =
+    options?.loadTour ??
+    (async (tourId: string): Promise<TourGraph> => {
+      const currentLang = state.getState().lang;
+      const tourClientBaseUrl = apiUrl.endsWith('/api/v1')
+        ? apiUrl
+        : `${apiUrl}/api/v1`;
+
+      try {
+        return await fetchTourGraph(
+          tourClientBaseUrl,
+          tourId,
+          currentLang,
+          fetchFn,
+        );
+      } catch (error: unknown) {
+        // Repli sur le cache
+        try {
+          const cacheName = getTourCacheName(tourId);
+          const cache = await cacheStorage.open(cacheName);
+          const urls = await urlsForTour(tourId);
+
+          if (typeof cache.match === 'function') {
+            for (const url of urls) {
+              const matched = await cache.match(url);
+              if (matched !== undefined) {
+                const graph = await extractTourGraphFromResponse(matched);
+                if (graph !== null) {
+                  return graph;
+                }
+              }
+            }
+
+            const keys = await cache.keys();
+            for (const key of keys) {
+              const matched = await cache.match(key);
+              if (matched !== undefined) {
+                const graph = await extractTourGraphFromResponse(matched);
+                if (graph !== null) {
+                  return graph;
+                }
+              }
+            }
+          }
+        } catch {
+          // Si la lecture du cache échoue, on propage l'erreur d'origine
+        }
+
+        throw error;
+      }
+    });
+
+  const actualRenderTour: RenderTourCallback = (
+    tourRoot: HTMLElement,
+    tourId: string,
+    onBack?: () => void,
+  ): RenderTourHandle | undefined => {
+    if (currentTourHandle !== null) {
+      currentTourHandle.destroy();
+      currentTourHandle = null;
+    }
+
+    const handle =
+      options?.renderTour !== undefined
+        ? options.renderTour(tourRoot, tourId, onBack)
+        : renderTour(doc, tourRoot, {
+            tourId,
+            lang: state.getState().lang,
+            onClose: (): void => {
+              if (onBack !== undefined) {
+                onBack();
+              }
+            },
+            loadTour: defaultLoadTour,
+            mountViewer: defaultMountViewer,
+          });
+
+    currentTourHandle = handle ?? null;
+    return handle;
+  };
+
   const appViewDeps: AppViewDeps = {
     onEnroll: handleEnroll,
     onForceSync: handleForceSync,
     onReenroll: handleReenroll,
     verifyMaintenancePin,
-    renderTour: options?.renderTour,
+    renderTour: actualRenderTour,
     getAttractTourUrl: options?.getAttractTourUrl,
     confirmFn: options?.confirmFn,
     appVersion: options?.appVersion,
@@ -368,6 +525,17 @@ export function bootstrapKiosk(
     root,
     state,
     deps: appViewDeps,
+  });
+
+  let previousScreen = state.getState().screen;
+  const unsubscribeTour = state.subscribe((nextState) => {
+    if (previousScreen === 'TOUR' && nextState.screen !== 'TOUR') {
+      if (currentTourHandle !== null) {
+        currentTourHandle.destroy();
+        currentTourHandle = null;
+      }
+    }
+    previousScreen = nextState.screen;
   });
 
   const wiring = wireInteractions({
@@ -390,6 +558,11 @@ export function bootstrapKiosk(
   }
 
   const dispose = (): void => {
+    unsubscribeTour();
+    if (currentTourHandle !== null) {
+      currentTourHandle.destroy();
+      currentTourHandle = null;
+    }
     if (loopsControl !== null) {
       loopsControl.stop();
       loopsControl = null;
