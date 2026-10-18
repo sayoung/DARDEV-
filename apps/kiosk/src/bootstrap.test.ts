@@ -1,9 +1,11 @@
 import { resources } from '@xplor/i18n';
 import {
   KioskManifestSchema,
+  TourGraphSchema,
   type KioskManifest,
   type KioskManifestCategory,
   type KioskManifestTour,
+  type TourGraph,
 } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -16,6 +18,8 @@ import {
   type KioskCredentials,
   type Storage,
 } from './credentials.js';
+import type { CacheEntryLike, CacheStorageLike } from './tour-cache.js';
+import { collectUrlsFromTourGraph } from './urls-for-tour.js';
 
 class FakeLocalStorage implements Storage {
   private readonly map = new Map<string, string>();
@@ -92,6 +96,81 @@ const validCredentials: KioskCredentials = {
   kioskId: '01990000-0000-7000-8000-000000000001',
   token: 'valid-secret-token-1234',
 };
+
+class FakeCacheEntry implements CacheEntryLike {
+  private readonly map = new Map<string, unknown>();
+
+  put(url: string, response: unknown): Promise<void> {
+    this.map.set(url, response);
+    return Promise.resolve();
+  }
+
+  delete(url: string): Promise<boolean> {
+    return Promise.resolve(this.map.delete(url));
+  }
+
+  keys(): Promise<string[]> {
+    return Promise.resolve(Array.from(this.map.keys()));
+  }
+
+  match(url: string): Promise<unknown> {
+    return Promise.resolve(this.map.get(url));
+  }
+}
+
+class FakeCacheStorage implements CacheStorageLike {
+  public readonly caches = new Map<string, FakeCacheEntry>();
+
+  open(name: string): Promise<FakeCacheEntry> {
+    let cache = this.caches.get(name);
+    if (cache === undefined) {
+      cache = new FakeCacheEntry();
+      this.caches.set(name, cache);
+    }
+    return Promise.resolve(cache);
+  }
+
+  delete(name: string): Promise<boolean> {
+    return Promise.resolve(this.caches.delete(name));
+  }
+}
+
+const testTourGraph: TourGraph = TourGraphSchema.parse({
+  id: testTour.id,
+  contentVersion: testTour.contentVersion,
+  lang: 'fr',
+  title: 'Visite de démonstration',
+  summary: 'Une superbe visite pour tester la collecte des URLs',
+  city: 'Rabat',
+  categories: ['Monuments'],
+  coverUrl: 'https://media.test/tours/tour-1/cover.jpg',
+  practicalInfo: 'Ouvert tous les jours.',
+  location: { lat: 34.02, lng: -6.83 },
+  startSceneId: 'scene-1',
+  scenes: [
+    {
+      id: 'scene-1',
+      title: 'Entrée principale',
+      caption: 'La porte Bab',
+      panorama: {
+        preview: 'https://media.test/tours/tour-1/scene-1/preview.jpg',
+        web: 'https://media.test/tours/tour-1/scene-1/web.jpg',
+        tiles: {
+          width: 8192,
+          cols: 1,
+          rows: 1,
+          baseUrl: 'https://media.test/tours/tour-1/scene-1/tiles/{col}_{row}.jpg',
+        },
+      },
+      initialView: { yaw: 0.1, pitch: -0.05, zoom: 50 },
+      narrationUrl: 'https://media.test/tours/tour-1/scene-1/narration.mp3',
+      ambientUrl: 'https://media.test/shared/wind.mp3',
+      thumb: 'https://media.test/tours/tour-1/scene-1/thumb.jpg',
+      hotspots: [],
+    },
+  ],
+  linkedTours: [],
+});
 
 describe('bootstrapKiosk (M5 F-60)', () => {
   let fakeStorage: FakeLocalStorage;
@@ -728,5 +807,118 @@ describe('bootstrapKiosk (M5 F-60)', () => {
     expect(destroy1).toHaveBeenCalledTimes(1);
     expect(fakeRenderTour).toHaveBeenCalledTimes(2);
     expect(destroy2).not.toHaveBeenCalled();
+  });
+
+  it('sans options.urlsForTour, downloadTour appelle l’API du graphe (?lang=fr puis ?lang=ar) et met en cache les URLs collectées', async () => {
+    const fakeCacheStorage = new FakeCacheStorage();
+    const testApiUrl = 'http://api.kiosk.test';
+    const capturedFetchedUrls: string[] = [];
+
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      capturedFetchedUrls.push(url);
+
+      if (url.includes(`/api/v1/public/tours/${testTour.id}`)) {
+        const lang = url.includes('lang=ar') ? 'ar' : 'fr';
+        return Promise.resolve(
+          new Response(JSON.stringify({ ...testTourGraph, lang }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response('asset-content', {
+          status: 200,
+          headers: { 'Content-Type': 'application/octet-stream' },
+        }),
+      );
+    });
+
+    activeInstance = bootstrapKiosk(window, document, {
+      apiUrl: testApiUrl,
+      manifest: validManifest,
+      cacheStorage: fakeCacheStorage,
+      fetchFn: fetchMock,
+    });
+
+    // 1. Appel en fr par défaut
+    await activeInstance.tourCache.downloadTour(testTour.id);
+
+    const expectedGraphUrlFr = `${testApiUrl}/api/v1/public/tours/${encodeURIComponent(testTour.id)}?lang=fr`;
+    expect(capturedFetchedUrls).toContain(expectedGraphUrlFr);
+
+    // 2. Vérifie la mise en cache des URLs collectées
+    const expectedCollectedUrls = collectUrlsFromTourGraph(testTourGraph, testTour.url);
+    for (const assetUrl of expectedCollectedUrls) {
+      expect(capturedFetchedUrls).toContain(assetUrl);
+    }
+
+    const stagingCache = fakeCacheStorage.caches.get(`tour-${testTour.id}-staging`);
+    expect(stagingCache).toBeDefined();
+    if (stagingCache !== undefined) {
+      const keys = await stagingCache.keys();
+      expect(keys.sort()).toEqual(expectedCollectedUrls.sort());
+    }
+
+    // 3. Appel en ar après changement de langue de l'état
+    activeInstance.state.dispatch({ type: 'SELECT_LANG', lang: 'ar' });
+    expect(activeInstance.state.getState().lang).toBe('ar');
+
+    await activeInstance.tourCache.downloadTour(testTour.id);
+
+    const expectedGraphUrlAr = `${testApiUrl}/api/v1/public/tours/${encodeURIComponent(testTour.id)}?lang=ar`;
+    expect(capturedFetchedUrls).toContain(expectedGraphUrlAr);
+  });
+
+  it('options.urlsForTour fourni reste prioritaire et n’appelle pas le fetch du graphe', async () => {
+    const fakeCacheStorage = new FakeCacheStorage();
+    const customAssetUrl = 'https://custom.test/panorama.jpg';
+    const customUrlsForTour = vi.fn().mockResolvedValue([customAssetUrl]);
+    const capturedFetchedUrls: string[] = [];
+
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      capturedFetchedUrls.push(url);
+      return Promise.resolve(
+        new Response('asset-content', {
+          status: 200,
+          headers: { 'Content-Type': 'application/octet-stream' },
+        }),
+      );
+    });
+
+    activeInstance = bootstrapKiosk(window, document, {
+      manifest: validManifest,
+      cacheStorage: fakeCacheStorage,
+      fetchFn: fetchMock,
+      urlsForTour: customUrlsForTour,
+    });
+
+    await activeInstance.tourCache.downloadTour(testTour.id);
+
+    expect(customUrlsForTour).toHaveBeenCalledWith(testTour.id);
+    expect(capturedFetchedUrls).toEqual([customAssetUrl]);
+    expect(capturedFetchedUrls.some((u) => u.includes('/api/v1/public/tours/'))).toBe(false);
+
+    const stagingCache = fakeCacheStorage.caches.get(`tour-${testTour.id}-staging`);
+    expect(stagingCache).toBeDefined();
+    if (stagingCache !== undefined) {
+      const keys = await stagingCache.keys();
+      expect(keys).toEqual([customAssetUrl]);
+    }
   });
 });
