@@ -256,6 +256,9 @@ importers:
       '@xplor/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@xplor/viewer-core':
+        specifier: workspace:*
+        version: link:../../packages/viewer-core
     devDependencies:
       typescript:
         specifier: ^5.9.3
