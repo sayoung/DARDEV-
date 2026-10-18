@@ -424,3 +424,75 @@ button:disabled {
   background-color: var(--brand-dark);
 }
 
+/* Mode veille (attract screen) — F-63 */
+.kiosk-screen-attract {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  padding-block: 0;
+  padding-inline: 0;
+  overflow: hidden;
+  background-color: #000000;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.kiosk-attract-preview {
+  position: absolute;
+  inset-block-start: 0;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.kiosk-attract-overlay {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  max-width: 90%;
+  padding-block: 1.75rem;
+  padding-inline: 2.5rem;
+  background-color: rgba(26, 26, 36, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  pointer-events: none;
+}
+
+.kiosk-attract-message {
+  margin-block: 0;
+  margin-inline: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  animation: kiosk-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes kiosk-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.88;
+  }
+}
+
