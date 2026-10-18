@@ -1,3 +1,3 @@
-import { mount } from './mount.js';
+import { bootstrapKiosk } from './bootstrap.js';
 
-mount(window.location.search, document);
+bootstrapKiosk(window, document);

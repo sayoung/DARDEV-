@@ -3,6 +3,9 @@ import { LANGS, type Lang } from '@xplor/shared';
 
 const APP_NAME_SLOT_ID = 'app-name';
 
+export { dir };
+export type { Lang };
+
 export function resolveLang(search: string): Lang {
   const requested = new URLSearchParams(search).get('lang');
   for (const lang of LANGS) {
@@ -13,13 +16,19 @@ export function resolveLang(search: string): Lang {
   return 'fr';
 }
 
-export function mount(search: string, doc: Document): void {
-  const lang = resolveLang(search);
-  const label = resources[lang].common.appName;
+export function applyDocumentLanguage(doc: Document, lang: Lang): void {
   doc.documentElement.setAttribute('lang', lang);
   doc.documentElement.setAttribute('dir', dir(lang));
-  doc.title = label;
+  doc.title = resources[lang].common.appName;
+}
 
+export const applyDocumentLang = applyDocumentLanguage;
+
+export function mount(search: string, doc: Document): void {
+  const lang = resolveLang(search);
+  applyDocumentLanguage(doc, lang);
+
+  const label = resources[lang].common.appName;
   const existing = doc.getElementById(APP_NAME_SLOT_ID);
   const slot = existing ?? doc.createElement('p');
   if (existing === null) {
