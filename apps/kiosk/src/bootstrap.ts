@@ -39,6 +39,7 @@ import {
   type MaintenancePinVerifier,
 } from './maintenance-pin.js';
 import { applyDocumentLanguage, resolveLang } from './mount.js';
+import { registerServiceWorker } from './register-sw.js';
 import type { ConfirmFn } from './render-maintenance-status.js';
 import { renderScreen } from './render-screen.js';
 import {
@@ -69,6 +70,8 @@ export interface BootstrapKioskOptions {
   getAttractTourUrl?: (state: AppState) => string | null;
   verifyMaintenancePin?: MaintenancePinVerifier;
   confirmFn?: ConfirmFn;
+  navigator?: unknown;
+  registerServiceWorker?: (nav: unknown) => Promise<unknown>;
 }
 
 export interface KioskBootstrapInstance {
@@ -375,6 +378,12 @@ export function bootstrapKiosk(
   });
 
   const lockdown = installKioskLockdown(doc);
+
+  const nav: unknown = options?.navigator ?? win.navigator;
+  if (typeof nav === 'object' && nav !== null && 'serviceWorker' in nav) {
+    const registerFn = options?.registerServiceWorker ?? registerServiceWorker;
+    void registerFn(nav);
+  }
 
   if (enrolled) {
     startLoops();

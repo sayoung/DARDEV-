@@ -563,4 +563,44 @@ describe('bootstrapKiosk (M5 F-60)', () => {
     document.dispatchEvent(afterCtxEvent);
     expect(afterCtxEvent.defaultPrevented).toBe(false);
   });
+
+  it('enregistre le service worker si serviceWorker in navigator', () => {
+    const registerMock = vi.fn().mockResolvedValue({ scope: '/' });
+    const fakeNav = {
+      serviceWorker: {
+        register: registerMock,
+      },
+    };
+
+    activeInstance = bootstrapKiosk(window, document, {
+      navigator: fakeNav,
+    });
+
+    expect(registerMock).toHaveBeenCalledWith('/sw.js');
+  });
+
+  it('n’enregistre pas le service worker si serviceWorker n’est pas dans navigator', () => {
+    const registerMock = vi.fn();
+    const fakeNav = {
+      userAgent: 'LegacyBrowser',
+    };
+
+    activeInstance = bootstrapKiosk(window, document, {
+      navigator: fakeNav,
+      registerServiceWorker: registerMock,
+    });
+
+    expect(registerMock).not.toHaveBeenCalled();
+  });
+
+  it('n’enregistre pas le service worker si navigator est null ou non-objet', () => {
+    const registerMock = vi.fn();
+
+    activeInstance = bootstrapKiosk(window, document, {
+      navigator: null,
+      registerServiceWorker: registerMock,
+    });
+
+    expect(registerMock).not.toHaveBeenCalled();
+  });
 });

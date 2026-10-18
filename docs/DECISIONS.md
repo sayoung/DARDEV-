@@ -984,6 +984,14 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Conteneur applicatif dédié (Electron/Tauri) avec verrouillage système natif ; verrouillage géré uniquement au niveau du système d'exploitation / profil restreint Kiosk OS sans verrouillage dans la PWA.
 - **À valider :** oui
 
+## D-126 — Service worker manuel sans Workbox (M5 F-62)
+
+- **Date :** 18/10/2026
+- **Décision :** le service worker du kiosque (`apps/kiosk/public/sw.js`) est écrit à la main en JavaScript vanilla sans la dépendance Workbox. Il gère le précache du shell applicatif (`index.html` et assets), la stratégie Cache-First sur les visites mises en cache (`tour-<id>`) gérées par `tour-cache.ts`, et le repli réseau vers cache pour les autres requêtes. Workbox ajouté seulement si un test montre un besoin.
+- **Alternatives :** installer et configurer la suite de bibliothèques Workbox (`workbox-precaching`, `workbox-routing`, `workbox-strategies`).
+- **À valider :** oui
+
+
 
 
 

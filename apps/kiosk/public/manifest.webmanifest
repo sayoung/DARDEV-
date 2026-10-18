@@ -1,0 +1,17 @@
+{
+  "name": "Xplor Kiosque",
+  "short_name": "Xplor Kiosque",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "theme_color": "#6958A5",
+  "background_color": "#F8F9FA",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
