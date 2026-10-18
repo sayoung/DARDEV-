@@ -10,6 +10,8 @@ export const KioskManifestTourSchema = z.object({
   contentVersion: z.number().int(),
   sizeBytes: z.number().int().min(0),
   url: z.string(),
+  categoryId: z.uuid().nullable().optional(),
+  categoryIds: z.array(z.uuid()).optional(),
 });
 
 /** Catégorie utilisée par le catalogue du kiosque (API-02). */

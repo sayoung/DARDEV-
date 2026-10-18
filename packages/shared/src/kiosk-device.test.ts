@@ -60,6 +60,23 @@ describe('KioskManifestSchema', () => {
     };
     expect(KioskManifestSchema.safeParse(invalid).success).toBe(false);
   });
+
+  it('accepte categoryId et categoryIds sur les visites du manifeste', () => {
+    const withCategories = {
+      ...validManifest,
+      selection: {
+        ...validManifest.selection,
+        tours: [
+          {
+            ...validManifest.selection.tours[0],
+            categoryId: '01990000-0000-7000-8000-000000000004',
+            categoryIds: ['01990000-0000-7000-8000-000000000004'],
+          },
+        ],
+      },
+    };
+    expect(KioskManifestSchema.parse(withCategories)).toEqual(withCategories);
+  });
 });
 
 describe('KioskHeartbeatRequestSchema', () => {
