@@ -11,6 +11,14 @@ import { startPanoramaWorker } from './panorama.worker.js';
 import { generateFlatDerivatives } from './derivatives/panorama.derivatives.js';
 import { generateTiles } from './derivatives/panorama.tiles.js';
 
+import { createSmtpSender } from './smtp-sender.js';
+import { createPrismaKioskOfflineStore } from './kiosk-offline-repository.js';
+import {
+  runKioskOfflineCheck,
+  type KioskOfflineMailMessage,
+} from './kiosk-offline-check.js';
+import { startKioskOfflineJob } from './kiosk-offline.job.js';
+
 function loadLocalEnvFile(): void {
   const path = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
   if (!existsSync(path)) {
@@ -22,11 +30,14 @@ function loadLocalEnvFile(): void {
 export interface BootFactories {
   createPrisma: () => PrismaClient;
   startWorker: typeof startPanoramaWorker;
+  startKioskOfflineJob: typeof startKioskOfflineJob;
+  createSmtpSender?: typeof createSmtpSender;
 }
 
 const defaultFactories: BootFactories = {
   createPrisma: () => new PrismaClient(),
   startWorker: startPanoramaWorker,
+  startKioskOfflineJob,
 };
 
 export async function boot(
@@ -43,12 +54,18 @@ export async function boot(
   const s3Client = createS3Client(env);
   const storage = new S3WorkerStorage(s3Client, env.S3_BUCKET);
 
+  const senderFactory = factories.createSmtpSender ?? createSmtpSender;
+  const smtpSender = senderFactory(env);
+
   const prisma = factories.createPrisma();
+
+  let worker: { close(): Promise<void> } | undefined;
+  let kioskOfflineJob: { close(): Promise<void> } | undefined;
 
   try {
     const repo = new PrismaAssetRepository(prisma);
 
-    const worker = factories.startWorker({
+    worker = factories.startWorker({
       redisUrl: env.REDIS_URL,
       deps: {
         repo,
@@ -61,12 +78,52 @@ export async function boot(
 
     log(`worker prêt (file ${PANORAMA_QUEUE_NAME}, concurrence ${String(PANORAMA_WORKER_CONCURRENCY)})`);
 
+    const store = createPrismaKioskOfflineStore(prisma);
+    const sendMail = (mail: KioskOfflineMailMessage): Promise<void> =>
+      smtpSender.sendMail(mail);
+
+    kioskOfflineJob = await factories.startKioskOfflineJob({
+      redisUrl: env.REDIS_URL,
+      check: () => runKioskOfflineCheck({ ...store, sendMail }, new Date()),
+      log,
+    });
+
+    const activeWorker = worker;
+    const activeKioskJob = kioskOfflineJob;
+
     return async () => {
-      await worker.close();
-      await prisma.$disconnect();
+      try {
+        await activeKioskJob.close();
+      } finally {
+        try {
+          await activeWorker.close();
+        } finally {
+          try {
+            smtpSender.close();
+          } finally {
+            await prisma.$disconnect();
+          }
+        }
+      }
     };
   } catch (error) {
-    await prisma.$disconnect();
+    try {
+      if (kioskOfflineJob !== undefined) {
+        await kioskOfflineJob.close();
+      }
+    } finally {
+      try {
+        if (worker !== undefined) {
+          await worker.close();
+        }
+      } finally {
+        try {
+          smtpSender.close();
+        } finally {
+          await prisma.$disconnect();
+        }
+      }
+    }
     throw error;
   }
 }
