@@ -96,6 +96,13 @@ describe('clés i18n', () => {
   it('définit les clés kiosque en français', () => {
     expect(resources.fr.kiosk.unavailable).toBe('Service momentanément indisponible');
     expect(resources.fr.kiosk.touchToExplore).toBe("Touchez l'écran pour explorer");
+    expect(resources.fr.kiosk.home.allCategories).toBe('Toutes les catégories');
+    expect(resources.fr.kiosk.home.featured).toBe('À la une');
+    expect(resources.fr.kiosk.home.explore).toBe('Explorer la visite');
+    expect(resources.fr.kiosk.home.toursList).toBe('Nos visites virtuelles');
+    expect(resources.fr.kiosk.home.noTours).toBe(
+      'Aucune visite disponible dans cette catégorie.',
+    );
   });
 });
 

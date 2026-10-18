@@ -319,5 +319,19 @@
   "editor": {
     "sceneAriaLabel": "Éditeur de panorama 360",
     "moveMode": "نقل"
+  },
+  "kiosk": {
+    "unavailable": "الخدمة غير متوفرة حالياً",
+    "touchToExplore": "المس الشاشة للاستكشاف",
+    "home": {
+      "hotelFallback": "فندق",
+      "languagesLabel": "اختيار اللغة",
+      "featured": "في الواجهة",
+      "categoriesLabel": "تصفية حسب الفئة",
+      "allCategories": "جميع الفئات",
+      "toursList": "جولاتنا الافتراضية",
+      "explore": "استكشاف الجولة",
+      "noTours": "لا توجد جولات متوفرة في هذه الفئة."
+    }
   }
 }

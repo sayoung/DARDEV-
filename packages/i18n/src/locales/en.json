@@ -319,5 +319,19 @@
   "editor": {
     "sceneAriaLabel": "Éditeur de panorama 360",
     "moveMode": "Move"
+  },
+  "kiosk": {
+    "unavailable": "Service temporarily unavailable",
+    "touchToExplore": "Touch screen to explore",
+    "home": {
+      "hotelFallback": "Hotel",
+      "languagesLabel": "Language selection",
+      "featured": "Featured",
+      "categoriesLabel": "Category filters",
+      "allCategories": "All categories",
+      "toursList": "Our virtual tours",
+      "explore": "Explore tour",
+      "noTours": "No tours available in this category."
+    }
   }
 }
