@@ -1,13 +1,21 @@
 import { dir, resources } from '@xplor/i18n';
-import type { Lang } from '@xplor/shared';
+import type { KioskManifest, Lang } from '@xplor/shared';
 
 import { resolveApiUrl } from './api-url.js';
-import { createAppState, type AppStore } from './app-state.js';
+import { createAppState, type AppState, type AppStore } from './app-state.js';
 import {
   createAppView,
   type AppView,
   type AppViewDeps,
+  type RenderTourCallback,
 } from './app-view.js';
+import {
+  createKioskLoopsApi,
+  startKioskLoops,
+  type ClearIntervalFn,
+  type KioskLoopsControl,
+  type SetIntervalFn,
+} from './boot-loop.js';
 import {
   loadCredentials,
   type KioskCredentials,
@@ -15,33 +23,66 @@ import {
 } from './credentials.js';
 import { enrollKiosk, resetEnrollment } from './enroll-flow.js';
 import {
+  buildHeartbeat,
+  type StorageEstimateProvider,
+} from './heartbeat.js';
+import {
   wireInteractions,
   type InteractionWiring,
 } from './interaction-wiring.js';
-import type { MaintenancePinVerifier } from './maintenance-pin.js';
+import {
+  createApiPinVerifier,
+  type MaintenancePinVerifier,
+} from './maintenance-pin.js';
 import { resolveLang } from './mount.js';
 import type { ConfirmFn } from './render-maintenance-status.js';
 import { renderScreen } from './render-screen.js';
+import {
+  createTourCache,
+  type CacheEntryLike,
+  type CacheStorageLike,
+  type TourCache,
+  type UrlsForTour,
+} from './tour-cache.js';
+import { createTourCacheIndex } from './tour-cache-index.js';
 
 export interface BootstrapKioskOptions {
   apiUrl?: string;
   lang?: Lang;
+  manifest?: KioskManifest | null;
   storage?: Storage;
   fetchFn?: typeof fetch;
-  root?: HTMLElement;
+  cacheStorage?: CacheStorageLike;
+  urlsForTour?: UrlsForTour;
+  setInterval?: SetIntervalFn;
+  clearInterval?: ClearIntervalFn;
   setTimeout?: (callback: () => void, delayMs: number) => unknown;
   clearTimeout?: (handle: unknown) => void;
+  storageEstimateProvider?: StorageEstimateProvider;
+  appVersion?: string;
+  root?: HTMLElement;
+  renderTour?: RenderTourCallback;
+  getAttractTourUrl?: (state: AppState) => string | null;
   verifyMaintenancePin?: MaintenancePinVerifier;
   confirmFn?: ConfirmFn;
-  appVersion?: string;
 }
 
 export interface KioskBootstrapInstance {
   readonly state: AppStore;
   readonly view: AppView;
   readonly wiring: InteractionWiring;
+  readonly tourCache: TourCache;
+  getLoops: () => KioskLoopsControl | null;
+  syncNow: () => Promise<void>;
   resetEnrollment: () => Promise<void>;
   dispose: () => void;
+}
+
+function resolveKioskApiUrl(customUrl?: string): string {
+  if (typeof customUrl === 'string' && customUrl.trim().length > 0) {
+    return resolveApiUrl({ VITE_API_URL: customUrl });
+  }
+  return resolveApiUrl(import.meta.env);
 }
 
 function resolveRoot(doc: Document, customRoot?: HTMLElement): HTMLElement {
@@ -58,27 +99,90 @@ function resolveRoot(doc: Document, customRoot?: HTMLElement): HTMLElement {
   return newApp;
 }
 
+function wrapCacheStorage(nativeCaches: CacheStorage): CacheStorageLike {
+  return {
+    async open(name: string): Promise<CacheEntryLike> {
+      const cache = await nativeCaches.open(name);
+      return {
+        async put(url: string, response: unknown): Promise<void> {
+          if (typeof Response !== 'undefined' && response instanceof Response) {
+            await cache.put(url, response);
+          }
+        },
+        async delete(url: string): Promise<boolean> {
+          return cache.delete(url);
+        },
+        async keys(): Promise<string[]> {
+          const requests = await cache.keys();
+          return requests.map((req) => req.url);
+        },
+        async match(url: string): Promise<unknown> {
+          return cache.match(url);
+        },
+      };
+    },
+    async delete(name: string): Promise<boolean> {
+      return nativeCaches.delete(name);
+    },
+  };
+}
+
+function resolveCacheStorage(
+  win: Window,
+  custom?: CacheStorageLike,
+): CacheStorageLike {
+  if (custom !== undefined) {
+    return custom;
+  }
+  if ('caches' in win && typeof win.caches === 'object') {
+    return wrapCacheStorage(win.caches);
+  }
+  return {
+    open(): Promise<CacheEntryLike> {
+      return Promise.resolve({
+        put(): Promise<void> {
+          return Promise.resolve();
+        },
+        delete(): Promise<boolean> {
+          return Promise.resolve(false);
+        },
+        keys(): Promise<string[]> {
+          return Promise.resolve([]);
+        },
+        match(): Promise<unknown> {
+          return Promise.resolve(undefined);
+        },
+      });
+    },
+    delete(): Promise<boolean> {
+      return Promise.resolve(false);
+    },
+  };
+}
+
 function resolveFetchFn(win: Window, custom?: typeof fetch): typeof fetch {
   if (typeof custom === 'function') {
     return custom;
   }
-  if (typeof win.fetch === 'function') {
+  if ('fetch' in win && typeof win.fetch === 'function') {
     return win.fetch.bind(win);
   }
   return globalThis.fetch;
 }
 
 /**
- * Assemblage et démarrage minimal du kiosque Xplor (M5 F-60 assemblage 2/4).
+ * Assemblage et démarrage de l'application kiosque Xplor (F-60 / F-62 / F-65 / F-67).
  *
  * 1. Initialise le stockage local et charge les identifiants éventuels (loadCredentials).
- * 2. Si loadCredentials renvoie null, l'état initial est à l'écran ENROLL.
+ * 2. Si loadCredentials renvoie null, l'écran initial est ENROLL.
  * 3. Initialise le store d'état applicatif (createAppState).
- * 4. Câble les interactions globales et la détection d'inactivité (wireInteractions).
- * 5. Instancie la vue orchestratrice (createAppView).
- * 6. En cas d'enrôlement (onEnroll), appelle enrollKiosk avec l'URL de resolveApiUrl(import.meta.env)
- *    puis dispatche ENROLLED.
- * 7. En cas de réenrôlement (« Réenrôler »), appelle resetEnrollment puis réaffiche l'écran ENROLL.
+ * 4. Crée le cache hors-ligne des visites (createTourCache).
+ * 5. Câble les interactions globales et la détection d'inactivité (wireInteractions).
+ * 6. Instancie la vue orchestratrice (createAppView).
+ * 7. Si le kiosque est déjà enrôlé, démarre les boucles d'arrière-plan (startKioskLoops).
+ * 8. En cas d'enrôlement (onEnroll), dispatche ENROLLED puis démarre les boucles d'arrière-plan.
+ * 9. Le bouton « Forcer la synchro » appelle syncNow.
+ * 10. « Réenrôler » arrête les boucles si possible, appelle resetEnrollment puis recharge l'écran ENROLL.
  */
 export function bootstrapKiosk(
   win: Window,
@@ -86,8 +190,9 @@ export function bootstrapKiosk(
   options?: BootstrapKioskOptions,
 ): KioskBootstrapInstance {
   const storage: Storage = options?.storage ?? win.localStorage;
-  const apiUrl = options?.apiUrl ?? resolveApiUrl(import.meta.env);
+  const apiUrl = resolveKioskApiUrl(options?.apiUrl);
   const fetchFn = resolveFetchFn(win, options?.fetchFn);
+  const cacheStorage = resolveCacheStorage(win, options?.cacheStorage);
 
   const initialCredentials: KioskCredentials | null = loadCredentials(storage);
   const enrolled = initialCredentials !== null;
@@ -104,8 +209,82 @@ export function bootstrapKiosk(
   const state = createAppState({
     lang: initialLang,
     enrolled,
-    manifest: null,
+    manifest: options?.manifest ?? null,
   });
+
+  const tourCacheIndex = createTourCacheIndex(storage);
+  const defaultUrlsForTour: UrlsForTour = (tourId: string): string[] => {
+    const manifest = state.getState().manifest;
+    if (manifest !== null) {
+      for (const tour of manifest.selection.tours) {
+        if (tour.id === tourId && typeof tour.url === 'string' && tour.url.length > 0) {
+          return [tour.url];
+        }
+      }
+    }
+    return [];
+  };
+  const urlsForTour = options?.urlsForTour ?? defaultUrlsForTour;
+
+  const tourCache = createTourCache({
+    index: tourCacheIndex,
+    cacheStorage,
+    fetchFn,
+    urlsForTour,
+  });
+
+  const loopsApi = createKioskLoopsApi({
+    fetchFn,
+    baseUrl: apiUrl,
+  });
+
+  const setIntervalFn: SetIntervalFn =
+    options?.setInterval ??
+    ((callback: () => void, delayMs: number): unknown => {
+      return win.setInterval(callback, delayMs);
+    });
+
+  const clearIntervalFn: ClearIntervalFn =
+    options?.clearInterval ??
+    ((handle: unknown): void => {
+      if (typeof handle === 'number') {
+        win.clearInterval(handle);
+      }
+    });
+
+  const setTimeoutFn =
+    options?.setTimeout ??
+    ((callback: () => void, delayMs: number): unknown => {
+      return win.setTimeout(callback, delayMs);
+    });
+
+  const clearTimeoutFn =
+    options?.clearTimeout ??
+    ((handle: unknown): void => {
+      if (typeof handle === 'number') {
+        win.clearTimeout(handle);
+      }
+    });
+
+  let loopsControl: KioskLoopsControl | null = null;
+
+  function startLoops(): KioskLoopsControl {
+    if (loopsControl !== null) {
+      return loopsControl;
+    }
+    loopsControl = startKioskLoops({
+      api: loopsApi,
+      credentials: () => loadCredentials(storage),
+      state,
+      sync: { cache: tourCache },
+      buildHeartbeat,
+      setInterval: setIntervalFn,
+      clearInterval: clearIntervalFn,
+      storage: options?.storageEstimateProvider,
+      appVersion: options?.appVersion,
+    });
+    return loopsControl;
+  }
 
   const handleEnroll = async (code: string): Promise<void> => {
     const enrollResult = await enrollKiosk({
@@ -125,21 +304,55 @@ export function bootstrapKiosk(
     }
 
     state.dispatch({ type: 'ENROLLED' });
+    startLoops();
+  };
+
+  const handleForceSync = async (): Promise<void> => {
+    if (loopsControl !== null) {
+      await loopsControl.syncNow();
+    }
   };
 
   const handleReenroll = (): Promise<void> => {
+    if (loopsControl !== null) {
+      loopsControl.stop();
+      loopsControl = null;
+    }
     resetEnrollment(storage);
-    win.location.reload();
+    if (typeof win.location.reload === 'function') {
+      win.location.reload();
+    }
     renderScreen(doc, root, 'ENROLL', state.getState().lang, {
       onEnroll: handleEnroll,
     });
     return Promise.resolve();
   };
 
+  const verifyMaintenancePin: MaintenancePinVerifier = async (
+    pin: string,
+  ): Promise<boolean> => {
+    if (options?.verifyMaintenancePin !== undefined) {
+      return options.verifyMaintenancePin(pin);
+    }
+    const currentCreds = loadCredentials(storage);
+    if (currentCreds === null) {
+      return false;
+    }
+    const verifier = createApiPinVerifier({
+      fetchFn,
+      baseUrl: apiUrl,
+      token: currentCreds.token,
+    });
+    return verifier(pin);
+  };
+
   const appViewDeps: AppViewDeps = {
     onEnroll: handleEnroll,
+    onForceSync: handleForceSync,
     onReenroll: handleReenroll,
-    verifyMaintenancePin: options?.verifyMaintenancePin,
+    verifyMaintenancePin,
+    renderTour: options?.renderTour,
+    getAttractTourUrl: options?.getAttractTourUrl,
     confirmFn: options?.confirmFn,
     appVersion: options?.appVersion,
   };
@@ -151,20 +364,6 @@ export function bootstrapKiosk(
     deps: appViewDeps,
   });
 
-  const setTimeoutFn =
-    options?.setTimeout ??
-    ((callback: () => void, delayMs: number): unknown => {
-      return win.setTimeout(callback, delayMs);
-    });
-
-  const clearTimeoutFn =
-    options?.clearTimeout ??
-    ((handle: unknown): void => {
-      if (typeof handle === 'number') {
-        win.clearTimeout(handle);
-      }
-    });
-
   const wiring = wireInteractions({
     doc,
     state,
@@ -172,7 +371,15 @@ export function bootstrapKiosk(
     clearTimeout: clearTimeoutFn,
   });
 
+  if (enrolled) {
+    startLoops();
+  }
+
   const dispose = (): void => {
+    if (loopsControl !== null) {
+      loopsControl.stop();
+      loopsControl = null;
+    }
     wiring.dispose();
     view.dispose();
   };
@@ -181,6 +388,9 @@ export function bootstrapKiosk(
     state,
     view,
     wiring,
+    tourCache,
+    getLoops: () => loopsControl,
+    syncNow: handleForceSync,
     resetEnrollment: handleReenroll,
     dispose,
   };
