@@ -373,7 +373,9 @@ model Kiosk {
   syncedManifestVersion String?
   storageFreeMb         Int?
   idleTimeoutSeconds    Int             @default(90)
-  forceSyncRequestedAt DateTime?
+  forceSyncRequestedAt  DateTime?
+  /// Date de la dernière alerte hors-ligne envoyée, F-54.
+  lastOfflineAlertAt    DateTime?
   deletedAt             DateTime?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
