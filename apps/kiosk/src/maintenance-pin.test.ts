@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { KioskApiError } from './api/kiosk-api.js';
 import {
   createApiPinVerifier,
+  createCachedPinVerifier,
   verifyPinWithContract,
+  type MaintenancePinCache,
   type MaintenancePinVerifier,
   type MaintenancePinVerifierContract,
 } from './maintenance-pin.js';
@@ -100,32 +103,29 @@ describe('createApiPinVerifier : fabrique de vérificateur connecté à l’API 
     expect(result).toBe(false);
   });
 
-  it('renvoie false en cas d’erreur réseau sans lever d’exception', async () => {
+  it('propage l’erreur en cas d’erreur réseau', async () => {
     const fetchFn = vi.fn<typeof fetch>().mockRejectedValue(new TypeError('Failed to fetch'));
     const verifier = createApiPinVerifier({ baseUrl, token, fetchFn });
 
-    const result = await verifier('1234');
-    expect(result).toBe(false);
+    await expect(verifier('1234')).rejects.toThrow(KioskApiError);
   });
 
   it.each([
     [401, 'non autorisé (jeton invalide)'],
     [403, 'kiosque désactivé'],
     [500, 'erreur interne du serveur'],
-  ])('renvoie false en cas d’erreur HTTP %i (%s) sans lever d’exception', async (status) => {
+  ])('propage l’erreur en cas d’erreur HTTP %i (%s)', async (status) => {
     const fetchFn = fetchMock(new Response(null, { status }));
     const verifier = createApiPinVerifier({ baseUrl, token, fetchFn });
 
-    const result = await verifier('1234');
-    expect(result).toBe(false);
+    await expect(verifier('1234')).rejects.toThrow(KioskApiError);
   });
 
-  it('renvoie false sans lever d’exception lorsque la réponse de l’API est malformée', async () => {
+  it('propage l’erreur lorsque la réponse de l’API est malformée', async () => {
     const fetchFn = fetchMock(jsonResponse({ unexpected: 'payload' }));
     const verifier = createApiPinVerifier({ baseUrl, token, fetchFn });
 
-    const result = await verifier('1234');
-    expect(result).toBe(false);
+    await expect(verifier('1234')).rejects.toThrow(KioskApiError);
   });
 
   it('renvoie false sans appeler l’API lorsque le format du PIN est invalide', async () => {
@@ -150,5 +150,132 @@ describe('createApiPinVerifier : fabrique de vérificateur connecté à l’API 
     const fetchOffline = vi.fn<typeof fetch>().mockRejectedValue(new TypeError('Network offline'));
     const verifierOffline = createApiPinVerifier({ baseUrl, token, fetchFn: fetchOffline });
     expect(await verifyPinWithContract(verifierOffline, '1234')).toBe(false);
+  });
+});
+
+describe('createCachedPinVerifier : vérificateur avec cache hors-ligne (F-67)', () => {
+  it('succès mémorise : appelle online, mémorise le code dans le cache et renvoie true', async () => {
+    const online = vi.fn<(pin: string) => Promise<boolean>>().mockResolvedValue(true);
+    const remember = vi.fn<(pin: string) => Promise<void>>().mockResolvedValue(undefined);
+    const verify = vi.fn<(pin: string) => Promise<boolean>>().mockResolvedValue(false);
+    const cache: MaintenancePinCache = { remember, verify };
+
+    const verifier = createCachedPinVerifier({ online, cache });
+
+    const result = await verifier('1234');
+    expect(result).toBe(true);
+    expect(online).toHaveBeenCalledTimes(1);
+    expect(online).toHaveBeenCalledWith('1234');
+    expect(remember).toHaveBeenCalledTimes(1);
+    expect(remember).toHaveBeenCalledWith('1234');
+    expect(verify).not.toHaveBeenCalled();
+  });
+
+  it('refus ne passe pas par le cache : renvoie false sans mémoriser ni vérifier dans le cache quand online refuse', async () => {
+    const online = vi.fn<(pin: string) => Promise<boolean>>().mockResolvedValue(false);
+    const remember = vi.fn<(pin: string) => Promise<void>>().mockResolvedValue(undefined);
+    const verify = vi.fn<(pin: string) => Promise<boolean>>().mockResolvedValue(true);
+    const cache: MaintenancePinCache = { remember, verify };
+
+    const verifier = createCachedPinVerifier({ online, cache });
+
+    const result = await verifier('9999');
+    expect(result).toBe(false);
+    expect(online).toHaveBeenCalledTimes(1);
+    expect(online).toHaveBeenCalledWith('9999');
+    expect(remember).not.toHaveBeenCalled();
+    expect(verify).not.toHaveBeenCalled();
+  });
+
+  it('panne réseau bascule sur le cache : bascule sur cache.verify et renvoie true si le cache valide le code', async () => {
+    const online = vi.fn<(pin: string) => Promise<boolean>>().mockRejectedValue(
+      new KioskApiError('NETWORK', 'Impossible de joindre le serveur kiosque.'),
+    );
+    const remember = vi.fn<(pin: string) => Promise<void>>().mockResolvedValue(undefined);
+    const verify = vi.fn<(pin: string) => Promise<boolean>>().mockResolvedValue(true);
+    const cache: MaintenancePinCache = { remember, verify };
+
+    const verifier = createCachedPinVerifier({ online, cache });
+
+    const result = await verifier('1234');
+    expect(result).toBe(true);
+    expect(online).toHaveBeenCalledTimes(1);
+    expect(online).toHaveBeenCalledWith('1234');
+    expect(remember).not.toHaveBeenCalled();
+    expect(verify).toHaveBeenCalledTimes(1);
+    expect(verify).toHaveBeenCalledWith('1234');
+  });
+
+  it('panne réseau bascule sur le cache : bascule sur cache.verify et renvoie false si le cache rejette le code', async () => {
+    const online = vi.fn<(pin: string) => Promise<boolean>>().mockRejectedValue(
+      new TypeError('Failed to fetch'),
+    );
+    const remember = vi.fn<(pin: string) => Promise<void>>().mockResolvedValue(undefined);
+    const verify = vi.fn<(pin: string) => Promise<boolean>>().mockResolvedValue(false);
+    const cache: MaintenancePinCache = { remember, verify };
+
+    const verifier = createCachedPinVerifier({ online, cache });
+
+    const result = await verifier('0000');
+    expect(result).toBe(false);
+    expect(online).toHaveBeenCalledTimes(1);
+    expect(online).toHaveBeenCalledWith('0000');
+    expect(remember).not.toHaveBeenCalled();
+    expect(verify).toHaveBeenCalledTimes(1);
+    expect(verify).toHaveBeenCalledWith('0000');
+  });
+
+  it('s’intègre avec createApiPinVerifier et un cache pour un scénario complet (en ligne, panne, retour en ligne)', async () => {
+    const baseUrl = 'https://api.example.test/';
+    const token = 'device-token';
+
+    let isOffline = false;
+    const fetchFn = vi.fn<typeof fetch>().mockImplementation((_url, init) => {
+      if (isOffline) {
+        return Promise.reject(new TypeError('Network offline'));
+      }
+      const bodyText = typeof init?.body === 'string' ? init.body : '{}';
+      const bodyParsed: unknown = JSON.parse(bodyText);
+      const isCorrect =
+        typeof bodyParsed === 'object' &&
+        bodyParsed !== null &&
+        'pin' in bodyParsed &&
+        bodyParsed.pin === '1234';
+      return Promise.resolve(
+        new Response(JSON.stringify({ valid: isCorrect }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    });
+
+    let storedPin: string | null = null;
+    const cache: MaintenancePinCache = {
+      remember: (pin) => {
+        storedPin = pin;
+        return Promise.resolve();
+      },
+      verify: (pin) => Promise.resolve(storedPin !== null && storedPin === pin),
+    };
+
+    const onlineVerifier = createApiPinVerifier({ baseUrl, token, fetchFn });
+    const cachedVerifier = createCachedPinVerifier({ online: onlineVerifier, cache });
+
+    // 1. Succès en ligne : mémorise et valide
+    expect(await cachedVerifier('1234')).toBe(true);
+    expect(storedPin).toBe('1234');
+
+    // 2. Refus en ligne : ne touche pas au cache et renvoie false
+    expect(await cachedVerifier('9999')).toBe(false);
+    expect(storedPin).toBe('1234');
+
+    // 3. Panne réseau : bascule sur le cache
+    isOffline = true;
+    expect(await cachedVerifier('1234')).toBe(true);
+    expect(await cachedVerifier('9999')).toBe(false);
+
+    // 4. Intégration avec verifyPinWithContract en mode hors-ligne
+    expect(await verifyPinWithContract(cachedVerifier, '1234')).toBe(true);
+    expect(await verifyPinWithContract(cachedVerifier, '9999')).toBe(false);
   });
 });
