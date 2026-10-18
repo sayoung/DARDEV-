@@ -63,6 +63,10 @@ import {
   type ViewerInstance,
 } from './render-tour.js';
 import {
+  createSessionManager,
+  type SessionManager,
+} from './session.js';
+import {
   createTourCache,
   getTourCacheName,
   type CacheEntryLike,
@@ -97,6 +101,8 @@ export interface BootstrapKioskOptions {
   confirmFn?: ConfirmFn;
   navigator?: unknown;
   registerServiceWorker?: (nav: unknown) => Promise<unknown>;
+  onSessionEnd?: (sessionId: string) => void;
+  session?: SessionManager;
 }
 
 interface ResponseWithJson {
@@ -143,6 +149,7 @@ export interface KioskBootstrapInstance {
   readonly wiring: InteractionWiring;
   readonly tourCache: TourCache;
   readonly lockdown: KioskLockdownInstance;
+  readonly session: SessionManager;
   getLoops: () => KioskLoopsControl | null;
   syncNow: () => Promise<void>;
   resetEnrollment: () => Promise<void>;
@@ -287,18 +294,19 @@ function isSafeTourUrl(url: string, win: Window, apiUrl: string): boolean {
 }
 
 /**
- * Assemblage et démarrage de l'application kiosque Xplor (F-60 / F-62 / F-65 / F-67).
+ * Assemblage et démarrage de l'application kiosque Xplor (F-60 / F-62 / F-64 / F-65 / F-67).
  *
  * 1. Initialise le stockage local et charge les identifiants éventuels (loadCredentials).
  * 2. Si loadCredentials renvoie null, l'écran initial est ENROLL.
- * 3. Initialise le store d'état applicatif (createAppState).
- * 4. Crée le cache hors-ligne des visites (createTourCache).
- * 5. Câble les interactions globales et la détection d'inactivité (wireInteractions).
- * 6. Instancie la vue orchestratrice (createAppView).
- * 7. Si le kiosque est déjà enrôlé, démarre les boucles d'arrière-plan (startKioskLoops).
- * 8. En cas d'enrôlement (onEnroll), dispatche ENROLLED puis démarre les boucles d'arrière-plan.
- * 9. Le bouton « Forcer la synchro » appelle syncNow.
- * 10. « Réenrôler » arrête les boucles si possible, appelle resetEnrollment puis recharge l'écran ENROLL.
+ * 3. Initialise le gestionnaire de session anonyme (createSessionManager) (F-64).
+ * 4. Initialise le store d'état applicatif (createAppState).
+ * 5. Crée le cache hors-ligne des visites (createTourCache).
+ * 6. Câble les interactions globales et la détection d'inactivité (wireInteractions).
+ * 7. Instancie la vue orchestratrice (createAppView).
+ * 8. Si le kiosque est déjà enrôlé, démarre les boucles d'arrière-plan (startKioskLoops).
+ * 9. En cas d'enrôlement (onEnroll), dispatche ENROLLED puis démarre les boucles d'arrière-plan.
+ * 10. Le bouton « Forcer la synchro » appelle syncNow.
+ * 11. « Réenrôler » arrête les boucles si possible, appelle resetEnrollment puis recharge l'écran ENROLL.
  */
 export function bootstrapKiosk(
   win: Window,
@@ -320,11 +328,22 @@ export function bootstrapKiosk(
 
   const root = resolveRoot(doc, options?.root);
 
+  const session: SessionManager =
+    options?.session ?? createSessionManager();
+
   const state = createAppState({
     lang: initialLang,
     enrolled,
     manifest: options?.manifest ?? null,
   });
+
+  let hasDisplayedHome = false;
+  if (state.getState().screen === 'HOME') {
+    hasDisplayedHome = true;
+    // Démarrage de la session initiale au premier affichage de HOME (F-64).
+    // Le branchement des événements SESSION_START / SESSION_END vers l'API est reporté à M7 F-80.
+    session.start();
+  }
 
   const tourClientBaseUrl = apiUrl.endsWith('/api/v1')
     ? apiUrl
@@ -686,6 +705,30 @@ export function bootstrapKiosk(
     }
   });
 
+  let previousSessionScreen = state.getState().screen;
+  const unsubscribeSession = state.subscribe((nextState) => {
+    const nextScreen = nextState.screen;
+
+    if (nextScreen === 'ATTRACT' && previousSessionScreen !== 'ATTRACT') {
+      // Clôture de la session lors du passage en veille ATTRACT (action IDLE) (F-64).
+      // Le branchement des événements SESSION_START / SESSION_END vers l'API est reporté à M7 F-80.
+      const endedSessionId = session.end();
+      if (endedSessionId !== null && options?.onSessionEnd !== undefined) {
+        options.onSessionEnd(endedSessionId);
+      }
+    } else if (
+      (previousSessionScreen === 'ATTRACT' && nextScreen === 'HOME') ||
+      (!hasDisplayedHome && nextScreen === 'HOME')
+    ) {
+      hasDisplayedHome = true;
+      // Démarrage de session lors de la sortie de veille vers HOME (action WAKE) ou au premier affichage de HOME (F-64).
+      // Le branchement des événements SESSION_START / SESSION_END vers l'API est reporté à M7 F-80.
+      session.start();
+    }
+
+    previousSessionScreen = nextScreen;
+  });
+
   const lockdown = installKioskLockdown(doc);
 
   const nav: unknown = options?.navigator ?? win.navigator;
@@ -701,6 +744,7 @@ export function bootstrapKiosk(
   const dispose = (): void => {
     unsubscribeTour();
     unsubscribeManifest();
+    unsubscribeSession();
     attractRotation = null;
     currentRotationManifest = null;
     if (currentTourHandle !== null) {
@@ -722,6 +766,7 @@ export function bootstrapKiosk(
     wiring,
     tourCache,
     lockdown,
+    session,
     getLoops: () => loopsControl,
     syncNow: handleForceSync,
     resetEnrollment: handleReenroll,
