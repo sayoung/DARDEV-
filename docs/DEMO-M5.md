@@ -159,6 +159,8 @@ pnpm --filter @xplor/kiosk dev
 | 4 | **Autonomie hors-ligne F-62** | Réseau coupé (DevTools Offline), le rechargement de la page affiche l'accueil et la visite se lit depuis le cache. |
 | 5 | **Mode veille F-63** | Inactivité de 15 s → passage en mode veille avec invitation « Touchez l'écran pour explorer », réveil au premier contact. |
 | 6 | **Geste caché & PIN F-67** | 5 appuis rapides sur l'en-tête ouvrent la saisie du PIN ; après déverrouillage, l'écran technique affiche le statut et les actions. |
+| 7 | **Sessions du kiosque F-64** | Une session démarre au premier contact sur l'accueil (sortie de veille) et se termine au passage en veille ; le retour à l'accueil depuis une visite ne la termine pas, et chaque nouveau réveil crée un nouvel identifiant de session. |
+| 8 | **Kiosque désactivé F-66** | Un kiosque avec kiosk.status === 'DISABLED' reçoit 403 KIOSK_DISABLED au manifeste ou au heartbeat (kiosk-token.guard.ts). Le kiosque affiche alors l'écran UNAVAILABLE « Service momentanément indisponible » et aucune visite n'est accessible. |
 
 ---
 
