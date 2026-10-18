@@ -951,3 +951,10 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** calculer la taille des médias synchronisables dès la génération du manifeste.
 - **À valider :** oui
 
+## D-122 — Anti-répétition des alertes kiosque hors ligne (M5 F-54)
+
+- **Date :** 17/10/2026
+- **Décision :** Alerte envoyée aux administrateurs si un kiosque actif est hors ligne depuis plus de 2 h, uniquement entre 8 h et 22 h (fuseau `Africa/Casablanca`). Pour éviter la saturation des boîtes mail, une règle d'anti-répétition de 24 h est appliquée : aucune alerte n'est envoyée si une alerte a déjà été émise depuis moins de 24 h pour ce kiosque.
+- **Alternatives :** Répéter l'alerte à chaque exécution du job périodique (toutes les 15 min), ou relancer une alerte toutes les 2 h d'inactivité.
+- **À valider :** oui
+
