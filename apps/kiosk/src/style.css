@@ -852,4 +852,72 @@ button:disabled {
   background-color: #e9ecef;
 }
 
+/* Affichage d'une visite 360 (F-62/F-61) */
+.kiosk-tour-view {
+  position: relative;
+  inline-size: 100%;
+  block-size: 100vh;
+  overflow: hidden;
+  background-color: #000000;
+}
 
+.kiosk-tour-viewer {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.kiosk-tour-status {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  color: #FFFFFF;
+  background-color: rgba(0, 0, 0, 0.75);
+  padding-block: 1rem;
+  padding-inline: 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.kiosk-tour-back-btn {
+  position: absolute;
+  inset-block-start: 1.5rem;
+  inset-inline-start: 1.5rem;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 48px;
+  padding-block: 0.75rem;
+  padding-inline: 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: var(--brand-color);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  user-select: none;
+}
+
+.kiosk-tour-back-btn:hover:not(:disabled) {
+  background-color: var(--brand-dark);
+}
+
+.kiosk-tour-back-btn:focus-visible {
+  outline: 3px solid var(--brand-light);
+  outline-offset: 2px;
+}
+
+.kiosk-tour-back-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
