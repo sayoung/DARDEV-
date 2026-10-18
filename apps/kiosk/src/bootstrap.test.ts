@@ -19,6 +19,10 @@ import {
   type Storage,
 } from './credentials.js';
 import type { CacheEntryLike, CacheStorageLike } from './tour-cache.js';
+import type {
+  MountViewerFn,
+  ViewerInstance,
+} from './render-tour.js';
 import { collectUrlsFromTourGraph } from './urls-for-tour.js';
 
 class FakeLocalStorage implements Storage {
@@ -920,5 +924,194 @@ describe('bootstrapKiosk (M5 F-60)', () => {
       const keys = await stagingCache.keys();
       expect(keys).toEqual([customAssetUrl]);
     }
+  });
+
+  it('scénario de bout en bout : bootstrap ouvre une visite, la visionneuse factice est montée, Retour la détruit et ramène à HOME', async () => {
+    saveCredentials(fakeStorage, validCredentials);
+
+    const destroyViewerSpy = vi.fn();
+    const fakeViewer: ViewerInstance = {
+      destroy: destroyViewerSpy,
+    };
+    const mountViewerMock: MountViewerFn = vi.fn(() => fakeViewer);
+
+    const testApiUrl = 'http://api.kiosk.test';
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (url.includes(`/api/v1/public/tours/${testTour.id}`)) {
+        return Promise.resolve(
+          new Response(JSON.stringify(testTourGraph), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      if (url.includes('/api/v1/kiosk/manifest')) {
+        return Promise.resolve(
+          new Response(JSON.stringify(validManifest), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    });
+
+    activeInstance = bootstrapKiosk(window, document, {
+      apiUrl: testApiUrl,
+      manifest: validManifest,
+      fetchFn: fetchMock,
+      mountViewer: mountViewerMock,
+    });
+
+    const loops = activeInstance.getLoops();
+    if (loops !== null && loops.ready !== undefined) {
+      await loops.ready;
+    }
+
+    // 1. Démarrage sur HOME avec le manifeste chargé
+    expect(activeInstance.state.getState().screen).toBe('HOME');
+    expect(document.querySelector('.kiosk-home')).not.toBeNull();
+    expect(document.querySelector('.kiosk-tour-view')).toBeNull();
+
+    // 2. L'utilisateur clique sur le bouton explorer de la visite mise en avant
+    const featuredBtn = document.querySelector('button[data-testid="featured-tour-button"]');
+    expect(featuredBtn).toBeInstanceOf(HTMLButtonElement);
+    if (featuredBtn instanceof HTMLButtonElement) {
+      featuredBtn.click();
+    }
+
+    // 3. L'application bascule sur l'écran TOUR
+    expect(activeInstance.state.getState().screen).toBe('TOUR');
+    expect(activeInstance.state.getState().tourId).toBe(testTour.id);
+
+    const tourView = document.querySelector('.kiosk-tour-view');
+    expect(tourView).not.toBeNull();
+
+    const viewerContainer = document.querySelector('[data-testid="kiosk-tour-viewer"]');
+    expect(viewerContainer).toBeInstanceOf(HTMLDivElement);
+
+    const backBtn = document.querySelector('button[data-testid="kiosk-tour-back-btn"]');
+    expect(backBtn).toBeInstanceOf(HTMLButtonElement);
+
+    // 4. La visite est chargée depuis l'API et la visionneuse factice est montée
+    await vi.waitFor(() => {
+      expect(mountViewerMock).toHaveBeenCalledTimes(1);
+    });
+
+    if (viewerContainer instanceof HTMLDivElement) {
+      expect(mountViewerMock).toHaveBeenCalledWith(
+        viewerContainer,
+        expect.objectContaining({ id: testTour.id, title: testTourGraph.title }),
+      );
+    }
+    expect(destroyViewerSpy).not.toHaveBeenCalled();
+
+    // 5. Clic sur le bouton « Retour »
+    if (backBtn instanceof HTMLButtonElement) {
+      backBtn.click();
+    }
+
+    // 6. La visionneuse factice est détruite et l'application revient à HOME
+    expect(destroyViewerSpy).toHaveBeenCalledTimes(1);
+    expect(activeInstance.state.getState().screen).toBe('HOME');
+    expect(activeInstance.state.getState().tourId).toBeNull();
+    expect(document.querySelector('.kiosk-home')).not.toBeNull();
+    expect(document.querySelector('.kiosk-tour-view')).toBeNull();
+  });
+
+  it('scénario de bout en bout avec touche Échap : bootstrap ouvre une visite, la visionneuse factice est montée, Échap la détruit et ramène à HOME', async () => {
+    saveCredentials(fakeStorage, validCredentials);
+
+    const destroyViewerSpy = vi.fn();
+    const fakeViewer: ViewerInstance = {
+      destroy: destroyViewerSpy,
+    };
+    const mountViewerMock: MountViewerFn = vi.fn(() => fakeViewer);
+
+    const testApiUrl = 'http://api.kiosk.test';
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (url.includes(`/api/v1/public/tours/${testTour.id}`)) {
+        return Promise.resolve(
+          new Response(JSON.stringify(testTourGraph), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      if (url.includes('/api/v1/kiosk/manifest')) {
+        return Promise.resolve(
+          new Response(JSON.stringify(validManifest), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    });
+
+    activeInstance = bootstrapKiosk(window, document, {
+      apiUrl: testApiUrl,
+      manifest: validManifest,
+      fetchFn: fetchMock,
+      mountViewer: mountViewerMock,
+    });
+
+    const loops = activeInstance.getLoops();
+    if (loops !== null && loops.ready !== undefined) {
+      await loops.ready;
+    }
+
+    // 1. Ouvrir la visite via action SELECT_TOUR
+    activeInstance.state.dispatch({ type: 'SELECT_TOUR', tourId: testTour.id });
+    expect(activeInstance.state.getState().screen).toBe('TOUR');
+
+    // 2. Attendre que la visionneuse factice soit montée
+    await vi.waitFor(() => {
+      expect(mountViewerMock).toHaveBeenCalledTimes(1);
+    });
+    expect(destroyViewerSpy).not.toHaveBeenCalled();
+
+    // 3. Déclencher la touche Échap
+    const escapeEvent = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(escapeEvent);
+
+    // 4. La visionneuse factice est détruite et retour à HOME
+    expect(destroyViewerSpy).toHaveBeenCalledTimes(1);
+    expect(activeInstance.state.getState().screen).toBe('HOME');
+    expect(activeInstance.state.getState().tourId).toBeNull();
+    expect(document.querySelector('.kiosk-home')).not.toBeNull();
+    expect(document.querySelector('.kiosk-tour-view')).toBeNull();
   });
 });
