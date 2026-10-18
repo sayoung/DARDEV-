@@ -1,4 +1,5 @@
 import { ForbiddenException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { verify as argon2Verify } from '@node-rs/argon2';
 import {
   KioskCreateSchema,
   KioskSchema,
@@ -321,6 +322,32 @@ export class KioskService {
       forceSync: updated.forceSyncRequestedAt !== null,
       serverTime: now.toISOString(),
     };
+  }
+
+  async verifyMaintenancePin(device: KioskDevice, pin: string): Promise<boolean> {
+    const kiosk = await this.prisma.kiosk.findUnique({
+      where: { id: device.kioskId, deletedAt: null },
+    });
+    if (kiosk === null || kiosk.hotelId !== device.hotelId) {
+      return false;
+    }
+
+    const hotel = await this.prisma.hotel.findFirst({
+      where: { id: device.hotelId, deletedAt: null },
+    });
+    if (hotel === null || hotel.maintenancePinHash === null || hotel.maintenancePinHash.length === 0) {
+      return false;
+    }
+
+    if (typeof pin !== 'string' || pin.length === 0) {
+      return false;
+    }
+
+    try {
+      return await argon2Verify(hotel.maintenancePinHash, pin);
+    } catch {
+      return false;
+    }
   }
 
   async create(principal: Principal, input: KioskCreate): Promise<Kiosk> {
