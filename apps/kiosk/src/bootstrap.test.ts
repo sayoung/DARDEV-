@@ -1,6 +1,7 @@
 import { resources } from '@xplor/i18n';
 import {
   KioskManifestSchema,
+  KioskPinVerifyRequestSchema,
   TourGraphSchema,
   type KioskManifest,
   type KioskManifestCategory,
@@ -18,6 +19,7 @@ import {
   type KioskCredentials,
   type Storage,
 } from './credentials.js';
+import { KIOSK_PIN_CACHE_KEY } from './pin-cache.js';
 import type { CacheEntryLike, CacheStorageLike } from './tour-cache.js';
 import type {
   MountViewerFn,
@@ -1708,6 +1710,154 @@ describe('bootstrapKiosk (M5 F-60)', () => {
 
       expect(activeInstance.state.getState().screen).toBe('ENROLL');
       expect(activeInstance.session.current()).toBeNull();
+    });
+  });
+
+  describe('PIN technique hors-ligne (M5 F-67)', () => {
+    it('PIN validé en ligne puis fetch en erreur réseau : le même PIN est accepté et un autre refusé', async () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      let isOffline = false;
+      const fetchFn = vi.fn<typeof fetch>().mockImplementation((input, init) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (url.includes('/api/v1/kiosk/manifest')) {
+          return Promise.resolve(
+            new Response(JSON.stringify(validManifest), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+
+        if (isOffline) {
+          return Promise.reject(new TypeError('Network offline'));
+        }
+
+        if (url.includes('/api/v1/kiosk/maintenance/verify-pin')) {
+          const bodyText = typeof init?.body === 'string' ? init.body : '{}';
+          let parsedBody: unknown;
+          try {
+            parsedBody = JSON.parse(bodyText);
+          } catch {
+            parsedBody = null;
+          }
+          const parseResult = KioskPinVerifyRequestSchema.safeParse(parsedBody);
+          const isCorrect = parseResult.success && parseResult.data.pin === '1234';
+          return Promise.resolve(
+            new Response(JSON.stringify({ valid: isCorrect }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+
+        return Promise.resolve(
+          new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      });
+
+      activeInstance = bootstrapKiosk(window, document, {
+        fetchFn,
+        manifest: validManifest,
+      });
+
+      // 1. PIN validé en ligne -> stocké dans le cache local
+      const onlineValid = await activeInstance.verifyMaintenancePin('1234');
+      expect(onlineValid).toBe(true);
+      expect(fakeStorage.getItem(KIOSK_PIN_CACHE_KEY)).not.toBeNull();
+
+      // 2. Panne réseau
+      isOffline = true;
+
+      // 3. Même PIN accepté hors-ligne via le cache local
+      const offlineValid = await activeInstance.verifyMaintenancePin('1234');
+      expect(offlineValid).toBe(true);
+
+      // 4. Autre PIN refusé hors-ligne
+      const offlineWrong = await activeInstance.verifyMaintenancePin('9999');
+      expect(offlineWrong).toBe(false);
+    });
+
+    it('après réenrôlement le cache de PIN est vidé', async () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      let isOffline = false;
+      const fetchFn = vi.fn<typeof fetch>().mockImplementation((input, init) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (url.includes('/api/v1/kiosk/manifest')) {
+          return Promise.resolve(
+            new Response(JSON.stringify(validManifest), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+
+        if (isOffline) {
+          return Promise.reject(new TypeError('Network offline'));
+        }
+
+        if (url.includes('/api/v1/kiosk/maintenance/verify-pin')) {
+          const bodyText = typeof init?.body === 'string' ? init.body : '{}';
+          let parsedBody: unknown;
+          try {
+            parsedBody = JSON.parse(bodyText);
+          } catch {
+            parsedBody = null;
+          }
+          const parseResult = KioskPinVerifyRequestSchema.safeParse(parsedBody);
+          const isCorrect = parseResult.success && parseResult.data.pin === '1234';
+          return Promise.resolve(
+            new Response(JSON.stringify({ valid: isCorrect }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+
+        return Promise.resolve(
+          new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      });
+
+      activeInstance = bootstrapKiosk(window, document, {
+        fetchFn,
+        manifest: validManifest,
+      });
+
+      // PIN validé en ligne -> présent dans le cache
+      const onlineValid = await activeInstance.verifyMaintenancePin('1234');
+      expect(onlineValid).toBe(true);
+      expect(fakeStorage.getItem(KIOSK_PIN_CACHE_KEY)).not.toBeNull();
+
+      // Réenrôlement
+      await activeInstance.resetEnrollment();
+
+      // Cache vidé
+      expect(fakeStorage.getItem(KIOSK_PIN_CACHE_KEY)).toBeNull();
+
+      // En panne réseau après réenrôlement, l'ancien PIN est refusé
+      isOffline = true;
+      const offlineAfterReset = await activeInstance.verifyMaintenancePin('1234');
+      expect(offlineAfterReset).toBe(false);
     });
   });
 });

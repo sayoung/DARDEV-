@@ -991,6 +991,14 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** installer et configurer la suite de bibliothèques Workbox (`workbox-precaching`, `workbox-routing`, `workbox-strategies`).
 - **À valider :** oui
 
+## D-127 — Cache local du PIN technique hors-ligne (M5 F-67)
+
+- **Date :** 18/10/2026
+- **Décision :** hash SHA-256 salé local mémorisé après une validation en ligne réussie (stocké dans le storage local sous `xplor.kiosk.pinCache`). En cas de coupure réseau ou d'indisponibilité du serveur (fetch en erreur), la vérification du code PIN de maintenance bascule sur ce cache local pour permettre l'accès à l'écran technique en mode hors-ligne. Le cache de PIN est vidé lors de la réinitialisation de l'enrôlement ou du reset des identifiants du kiosque.
+- **Alternatives :** hash Argon2id dans le manifeste (écartée : l'API Web Crypto du navigateur ne supporte pas Argon2id nativement et exigerait une dépendance WebAssembly lourde ou exposerait inutilement un condensat sensible dans le manifeste public du kiosque).
+- **À valider :** oui
+
+
 
 
 
