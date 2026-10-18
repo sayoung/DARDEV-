@@ -204,10 +204,14 @@ export {
   KioskManifestCategorySchema,
   KioskManifestSchema,
   KioskManifestTourSchema,
+  KioskPinVerifyRequestSchema,
+  KioskPinVerifyResponseSchema,
   type KioskHeartbeatRequest,
   type KioskHeartbeatResponse,
   type KioskManifest,
   type KioskManifestCategory,
   type KioskManifestTour,
+  type KioskPinVerifyRequest,
+  type KioskPinVerifyResponse,
 } from './kiosk-device.js';
 

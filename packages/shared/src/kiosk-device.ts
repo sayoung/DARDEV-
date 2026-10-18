@@ -69,3 +69,17 @@ export const KioskHeartbeatResponseSchema = z.object({
 });
 
 export type KioskHeartbeatResponse = z.infer<typeof KioskHeartbeatResponseSchema>;
+
+/** Demande de vérification du code PIN de maintenance d'un hôtel (F-67). */
+export const KioskPinVerifyRequestSchema = z.object({
+  pin: z.string().regex(/^\d{4,12}$/),
+});
+
+export type KioskPinVerifyRequest = z.infer<typeof KioskPinVerifyRequestSchema>;
+
+/** Réponse de vérification du code PIN de maintenance (F-67). */
+export const KioskPinVerifyResponseSchema = z.object({
+  valid: z.boolean(),
+});
+
+export type KioskPinVerifyResponse = z.infer<typeof KioskPinVerifyResponseSchema>;

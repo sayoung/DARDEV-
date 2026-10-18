@@ -1,4 +1,5 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Algorithm, hash as argon2Hash } from '@node-rs/argon2';
 import {
   EnrollmentCodeResponseSchema,
   KioskSchema,
@@ -70,6 +71,7 @@ function harness(initialRows: KioskRow[] = []): {
   selections: Map<string, number>;
   selectionReads: string[];
   hotels: Map<string, Date | null>;
+  hotelPins: Map<string, string | null>;
   kioskCreateCalls: unknown[];
   kioskUpdateCalls: unknown[];
   manifestSelections: Map<string, {
@@ -90,6 +92,7 @@ function harness(initialRows: KioskRow[] = []): {
     [HOTEL_A_ID, null],
     [HOTEL_DELETED_ID, new Date('2026-10-10T00:00:00.000Z')],
   ]);
+  const hotelPins = new Map<string, string | null>();
   const kioskCreateCalls: unknown[] = [];
   const kioskUpdateCalls: unknown[] = [];
   const manifestSelections = new Map<string, {
@@ -113,7 +116,7 @@ function harness(initialRows: KioskRow[] = []): {
               languages: ['fr'],
               active: true,
               logoAssetId: null,
-              maintenancePinHash: null,
+              maintenancePinHash: hotelPins.get(args.where.id) ?? null,
               logoAsset: null,
             }
           : null,
@@ -213,6 +216,7 @@ function harness(initialRows: KioskRow[] = []): {
     selections,
     selectionReads,
     hotels,
+    hotelPins,
     kioskCreateCalls,
     kioskUpdateCalls,
     manifestSelections,
@@ -766,5 +770,93 @@ describe('KioskService', () => {
     await expectNotFound(service.issueEnrollmentCode(admin, id));
     await expectNotFound(service.disable(admin, id));
     await expectNotFound(service.forceSync(admin, id));
+  });
+
+  describe('verifyMaintenancePin', () => {
+    const PIN_CORRECT = '4321';
+    const PIN_ERRONE = '9999';
+
+    it('valide le bon PIN lorsque le code correspond au hash argon2 de l’hôtel (bon PIN)', async () => {
+      const pinHash = await argon2Hash(PIN_CORRECT, { algorithm: Algorithm.Argon2id });
+      const { service, hotelPins } = harness([kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID })]);
+      hotelPins.set(HOTEL_A_ID, pinHash);
+
+      const result = await service.verifyMaintenancePin(
+        { kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID },
+        PIN_CORRECT,
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it('refuse un PIN erroné face au hash argon2 de l’hôtel (mauvais PIN)', async () => {
+      const pinHash = await argon2Hash(PIN_CORRECT, { algorithm: Algorithm.Argon2id });
+      const { service, hotelPins } = harness([kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID })]);
+      hotelPins.set(HOTEL_A_ID, pinHash);
+
+      const result = await service.verifyMaintenancePin(
+        { kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID },
+        PIN_ERRONE,
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it('renvoie false lorsqu’aucun PIN n’est défini sur l’hôtel (PIN non défini)', async () => {
+      const { service, hotelPins } = harness([kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID })]);
+      hotelPins.set(HOTEL_A_ID, null);
+
+      const result = await service.verifyMaintenancePin(
+        { kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID },
+        PIN_CORRECT,
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it.each([
+      ['kiosque inexistant', '01990000-0000-7000-8000-000000000999', HOTEL_A_ID],
+      ['kiosque supprimé', KIOSK_B_ID, HOTEL_A_ID],
+      ['mismatch hôtel du device', KIOSK_A_ID, HOTEL_B_ID],
+    ])('renvoie false si le kiosque est %s (kiosque inconnu)', async (_label, kioskId, hotelId) => {
+      const pinHash = await argon2Hash(PIN_CORRECT, { algorithm: Algorithm.Argon2id });
+      const { service, hotelPins } = harness([
+        kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID }),
+        kioskRow({ id: KIOSK_B_ID, hotelId: HOTEL_A_ID, deletedAt: new Date() }),
+      ]);
+      hotelPins.set(HOTEL_A_ID, pinHash);
+
+      const result = await service.verifyMaintenancePin(
+        { kioskId, hotelId },
+        PIN_CORRECT,
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it('renvoie false si l’hôtel du kiosque est supprimé ou introuvable', async () => {
+      const pinHash = await argon2Hash(PIN_CORRECT, { algorithm: Algorithm.Argon2id });
+      const { service, hotelPins } = harness([kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_DELETED_ID })]);
+      hotelPins.set(HOTEL_DELETED_ID, pinHash);
+
+      const result = await service.verifyMaintenancePin(
+        { kioskId: KIOSK_A_ID, hotelId: HOTEL_DELETED_ID },
+        PIN_CORRECT,
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it('renvoie false si le hash en base est malformé sans lever d’exception', async () => {
+      const { service, hotelPins } = harness([kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID })]);
+      hotelPins.set(HOTEL_A_ID, 'hash-corrompu-non-argon2');
+
+      const result = await service.verifyMaintenancePin(
+        { kioskId: KIOSK_A_ID, hotelId: HOTEL_A_ID },
+        PIN_CORRECT,
+      );
+
+      expect(result).toBe(false);
+    });
   });
 });
