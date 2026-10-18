@@ -50,9 +50,11 @@ import {
 } from './kiosk-lockdown.js';
 import {
   createApiPinVerifier,
+  createCachedPinVerifier,
   type MaintenancePinVerifier,
 } from './maintenance-pin.js';
 import { applyDocumentLanguage, resolveLang } from './mount.js';
+import { createPinCache } from './pin-cache.js';
 import { registerServiceWorker } from './register-sw.js';
 import type { ConfirmFn } from './render-maintenance-status.js';
 import { renderScreen } from './render-screen.js';
@@ -150,6 +152,7 @@ export interface KioskBootstrapInstance {
   readonly tourCache: TourCache;
   readonly lockdown: KioskLockdownInstance;
   readonly session: SessionManager;
+  readonly verifyMaintenancePin: MaintenancePinVerifier;
   getLoops: () => KioskLoopsControl | null;
   syncNow: () => Promise<void>;
   resetEnrollment: () => Promise<void>;
@@ -318,6 +321,12 @@ export function bootstrapKiosk(
   const fetchFn = resolveFetchFn(win, options?.fetchFn);
   const cacheStorage = resolveCacheStorage(win, options?.cacheStorage);
 
+  const pinCache = createPinCache(
+    storage,
+    win.crypto.subtle,
+    (n: number): Uint8Array => win.crypto.getRandomValues(new Uint8Array(n)),
+  );
+
   const initialCredentials: KioskCredentials | null = loadCredentials(storage);
   const enrolled = initialCredentials !== null;
 
@@ -468,6 +477,7 @@ export function bootstrapKiosk(
       loopsControl = null;
     }
     resetEnrollment(storage);
+    pinCache.clear();
     if (typeof win.location.reload === 'function') {
       win.location.reload();
     }
@@ -477,12 +487,7 @@ export function bootstrapKiosk(
     return Promise.resolve();
   };
 
-  const verifyMaintenancePin: MaintenancePinVerifier = async (
-    pin: string,
-  ): Promise<boolean> => {
-    if (options?.verifyMaintenancePin !== undefined) {
-      return options.verifyMaintenancePin(pin);
-    }
+  const defaultOnlineVerifier = async (pin: string): Promise<boolean> => {
     const currentCreds = loadCredentials(storage);
     if (currentCreds === null) {
       return false;
@@ -493,6 +498,20 @@ export function bootstrapKiosk(
       token: currentCreds.token,
     });
     return verifier(pin);
+  };
+
+  const defaultCachedVerifier = createCachedPinVerifier({
+    online: defaultOnlineVerifier,
+    cache: pinCache,
+  });
+
+  const verifyMaintenancePin: MaintenancePinVerifier = async (
+    pin: string,
+  ): Promise<boolean> => {
+    if (options?.verifyMaintenancePin !== undefined) {
+      return options.verifyMaintenancePin(pin);
+    }
+    return defaultCachedVerifier(pin);
   };
 
   const defaultMountViewer: MountViewerFn =
@@ -767,6 +786,7 @@ export function bootstrapKiosk(
     tourCache,
     lockdown,
     session,
+    verifyMaintenancePin,
     getLoops: () => loopsControl,
     syncNow: handleForceSync,
     resetEnrollment: handleReenroll,
