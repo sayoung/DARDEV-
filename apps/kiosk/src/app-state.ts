@@ -202,10 +202,11 @@ export function reduce(state: AppState, action: AppAction): AppState {
 
     case 'IDLE': {
       if (
-        state.screen === 'MAINTENANCE' ||
-        state.screen === 'MAINTENANCE_PIN' ||
+        state.screen === 'LOADING' ||
+        state.screen === 'ENROLL' ||
         state.screen === 'UNAVAILABLE' ||
-        state.screen === 'ENROLL'
+        state.screen === 'MAINTENANCE' ||
+        state.screen === 'MAINTENANCE_PIN'
       ) {
         return state;
       }
@@ -230,6 +231,9 @@ export function reduce(state: AppState, action: AppAction): AppState {
     }
 
     case 'OPEN_MAINTENANCE': {
+      if (state.screen !== 'HOME' && state.screen !== 'ATTRACT') {
+        return state;
+      }
       return {
         ...state,
         screen: 'MAINTENANCE_PIN',
@@ -237,6 +241,9 @@ export function reduce(state: AppState, action: AppAction): AppState {
     }
 
     case 'UNLOCK': {
+      if (state.screen !== 'MAINTENANCE_PIN') {
+        return state;
+      }
       return {
         ...state,
         screen: 'MAINTENANCE',

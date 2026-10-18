@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createAppState,
   reduce,
+  type AppScreen,
   type AppState,
 } from './app-state.js';
 
@@ -436,6 +437,7 @@ describe('apps/kiosk/src/app-state', () => {
 
         const nextState = reduce(initialState, { type: 'IDLE' });
 
+        expect(nextState).toBe(initialState);
         expect(nextState.screen).toBe('UNAVAILABLE');
       });
 
@@ -447,7 +449,20 @@ describe('apps/kiosk/src/app-state', () => {
 
         const nextState = reduce(initialState, { type: 'IDLE' });
 
+        expect(nextState).toBe(initialState);
         expect(nextState.screen).toBe('ENROLL');
+      });
+
+      it('ignore IDLE si l écran courant est LOADING', () => {
+        const initialState = createBaseState({
+          screen: 'LOADING',
+          enrolled: true,
+        });
+
+        const nextState = reduce(initialState, { type: 'IDLE' });
+
+        expect(nextState).toBe(initialState);
+        expect(nextState.screen).toBe('LOADING');
       });
     });
 
@@ -484,7 +499,7 @@ describe('apps/kiosk/src/app-state', () => {
     });
 
     describe('OPEN_MAINTENANCE', () => {
-      it('bascule vers l écran de saisie du PIN de maintenance', () => {
+      it('bascule vers l écran de saisie du PIN de maintenance depuis HOME', () => {
         const initialState = createBaseState({
           screen: 'HOME',
           enrolled: true,
@@ -494,10 +509,44 @@ describe('apps/kiosk/src/app-state', () => {
 
         expect(nextState.screen).toBe('MAINTENANCE_PIN');
       });
+
+      it('bascule vers l écran de saisie du PIN de maintenance depuis ATTRACT', () => {
+        const initialState = createBaseState({
+          screen: 'ATTRACT',
+          enrolled: true,
+        });
+
+        const nextState = reduce(initialState, { type: 'OPEN_MAINTENANCE' });
+
+        expect(nextState.screen).toBe('MAINTENANCE_PIN');
+      });
+
+      it('ignore OPEN_MAINTENANCE si l écran courant n est ni HOME ni ATTRACT', () => {
+        const disallowedScreens: AppScreen[] = [
+          'LOADING',
+          'ENROLL',
+          'UNAVAILABLE',
+          'MAINTENANCE',
+          'MAINTENANCE_PIN',
+          'TOUR',
+        ];
+
+        for (const screen of disallowedScreens) {
+          const initialState = createBaseState({
+            screen,
+            enrolled: true,
+          });
+
+          const nextState = reduce(initialState, { type: 'OPEN_MAINTENANCE' });
+
+          expect(nextState).toBe(initialState);
+          expect(nextState.screen).toBe(screen);
+        }
+      });
     });
 
     describe('UNLOCK', () => {
-      it('déverrouille l écran technique de maintenance', () => {
+      it('déverrouille l écran technique de maintenance depuis MAINTENANCE_PIN', () => {
         const initialState = createBaseState({
           screen: 'MAINTENANCE_PIN',
           enrolled: true,
@@ -506,6 +555,30 @@ describe('apps/kiosk/src/app-state', () => {
         const nextState = reduce(initialState, { type: 'UNLOCK' });
 
         expect(nextState.screen).toBe('MAINTENANCE');
+      });
+
+      it('ignore UNLOCK si l écran courant n est pas MAINTENANCE_PIN', () => {
+        const invalidScreens: AppScreen[] = [
+          'HOME',
+          'ATTRACT',
+          'TOUR',
+          'LOADING',
+          'ENROLL',
+          'UNAVAILABLE',
+          'MAINTENANCE',
+        ];
+
+        for (const screen of invalidScreens) {
+          const initialState = createBaseState({
+            screen,
+            enrolled: true,
+          });
+
+          const nextState = reduce(initialState, { type: 'UNLOCK' });
+
+          expect(nextState).toBe(initialState);
+          expect(nextState.screen).toBe(screen);
+        }
       });
     });
 
