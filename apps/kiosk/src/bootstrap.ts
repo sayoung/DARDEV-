@@ -67,6 +67,7 @@ import {
   type UrlsForTour,
 } from './tour-cache.js';
 import { createTourCacheIndex } from './tour-cache-index.js';
+import { createUrlsForTour } from './urls-for-tour.js';
 
 export interface BootstrapKioskOptions {
   apiUrl?: string;
@@ -275,18 +276,28 @@ export function bootstrapKiosk(
     manifest: options?.manifest ?? null,
   });
 
+  const tourClientBaseUrl = apiUrl.endsWith('/api/v1')
+    ? apiUrl
+    : `${apiUrl}/api/v1`;
+
   const tourCacheIndex = createTourCacheIndex(storage);
-  const defaultUrlsForTour: UrlsForTour = (tourId: string): string[] => {
+  const manifestUrlFor = (tourId: string): string | undefined => {
     const manifest = state.getState().manifest;
     if (manifest !== null) {
       for (const tour of manifest.selection.tours) {
         if (tour.id === tourId && typeof tour.url === 'string' && tour.url.length > 0) {
-          return [tour.url];
+          return tour.url;
         }
       }
     }
-    return [];
+    return undefined;
   };
+  const defaultUrlsForTour: UrlsForTour = createUrlsForTour({
+    baseUrl: tourClientBaseUrl,
+    lang: () => state.getState().lang,
+    fetchFn,
+    manifestUrlFor,
+  });
   const urlsForTour = options?.urlsForTour ?? defaultUrlsForTour;
 
   const tourCache = createTourCache({
@@ -432,9 +443,6 @@ export function bootstrapKiosk(
     options?.loadTour ??
     (async (tourId: string): Promise<TourGraph> => {
       const currentLang = state.getState().lang;
-      const tourClientBaseUrl = apiUrl.endsWith('/api/v1')
-        ? apiUrl
-        : `${apiUrl}/api/v1`;
 
       try {
         return await fetchTourGraph(
