@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { enroll, fetchManifest, sendHeartbeat } from './kiosk-api.js';
+import { enroll, fetchManifest, sendHeartbeat, verifyMaintenancePin } from './kiosk-api.js';
 
 const baseUrl = 'https://api.example.test/';
 const token = 'device-token';
@@ -108,6 +108,63 @@ describe('client API du kiosque', () => {
     const fetchFn = vi.fn<typeof fetch>().mockRejectedValue(new TypeError('offline'));
 
     await expect(fetchManifest(fetchFn, baseUrl, token)).rejects.toMatchObject({
+      name: 'KioskApiError',
+      code: 'NETWORK',
+    });
+  });
+
+  it('verifyMaintenancePin poste le code PIN avec le jeton Bearer sur /api/v1/kiosk/maintenance/verify-pin et valide la réponse true', async () => {
+    const fetchFn = fetchMock(jsonResponse({ valid: true }));
+
+    await expect(verifyMaintenancePin('1234', { fetchFn, baseUrl, token })).resolves.toBe(true);
+    const call = fetchFn.mock.calls[0];
+    expect(call?.[0]).toBe('https://api.example.test/api/v1/kiosk/maintenance/verify-pin');
+    expect(call?.[1]?.method).toBe('POST');
+    expect(call?.[1]?.body).toBe(JSON.stringify({ pin: '1234' }));
+    const headers = new Headers(call?.[1]?.headers);
+    expect(headers.get('Accept')).toBe('application/json');
+    expect(headers.get('Authorization')).toBe(`Bearer ${token}`);
+    expect(headers.get('Content-Type')).toBe('application/json');
+  });
+
+  it('verifyMaintenancePin renvoie false lorsque l’API indique que le PIN est invalide', async () => {
+    const fetchFn = fetchMock(jsonResponse({ valid: false }));
+
+    await expect(verifyMaintenancePin('9999', { fetchFn, baseUrl, token })).resolves.toBe(false);
+  });
+
+  it('verifyMaintenancePin rejette un code PIN non conforme au schéma de requête', async () => {
+    const fetchFn = fetchMock(jsonResponse({ valid: true }));
+
+    await expect(verifyMaintenancePin('12', { fetchFn, baseUrl, token })).rejects.toThrow();
+    await expect(verifyMaintenancePin('abcd', { fetchFn, baseUrl, token })).rejects.toThrow();
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('verifyMaintenancePin rejette une réponse qui ne correspond pas au schéma partagé', async () => {
+    const fetchFn = fetchMock(jsonResponse({ valid: 'invalid-type' }));
+
+    await expect(verifyMaintenancePin('1234', { fetchFn, baseUrl, token })).rejects.toMatchObject({
+      name: 'KioskApiError',
+      code: 'INVALID_RESPONSE',
+    });
+  });
+
+  it.each([
+    [401, 'UNAUTHORIZED'],
+    [403, 'KIOSK_DISABLED'],
+    [500, 'HTTP_ERROR'],
+  ] as const)('verifyMaintenancePin traduit HTTP %i en erreur typée %s', async (status, code) => {
+    const fetchFn = fetchMock(new Response(null, { status }));
+
+    const request = verifyMaintenancePin('1234', { fetchFn, baseUrl, token });
+    await expect(request).rejects.toMatchObject({ code, status });
+  });
+
+  it('verifyMaintenancePin traduit une erreur réseau en NETWORK', async () => {
+    const fetchFn = vi.fn<typeof fetch>().mockRejectedValue(new TypeError('offline'));
+
+    await expect(verifyMaintenancePin('1234', { fetchFn, baseUrl, token })).rejects.toMatchObject({
       name: 'KioskApiError',
       code: 'NETWORK',
     });

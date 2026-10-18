@@ -9,8 +9,17 @@
  * Le module exporte :
  * - Le type fonctionnel du contrat de vérification (`MaintenancePinVerifier`).
  * - L'interface orientée objet du contrat de vérification (`MaintenancePinVerifierContract`).
+ * - La fabrique `createApiPinVerifier` renvoyant un `MaintenancePinVerifier` connecté à l'API.
  * - La fonction utilitaire `verifyPinWithContract`.
  */
+
+import { verifyMaintenancePin } from './api/kiosk-api.js';
+
+export interface ApiPinVerifierDeps {
+  baseUrl: string;
+  token: string;
+  fetchFn?: typeof fetch;
+}
 
 /** Signature fonctionnelle du contrat de vérification du code PIN via route API (sans hash en cache). */
 export type MaintenancePinVerifier = (pin: string) => Promise<boolean>;
@@ -46,4 +55,23 @@ export async function verifyPinWithContract(
   } catch {
     return false;
   }
+}
+
+/**
+ * Fabrique d'un vérificateur de code PIN de maintenance connecté à l'API (F-67).
+ * Renvoie une fonction respectant le contrat `MaintenancePinVerifier`.
+ * En cas d'erreur réseau ou d'indisponibilité du serveur, renvoie false sans propager d'exception.
+ */
+export function createApiPinVerifier(deps: ApiPinVerifierDeps): MaintenancePinVerifier {
+  return async (pin: string): Promise<boolean> => {
+    try {
+      return await verifyMaintenancePin(pin, {
+        fetchFn: deps.fetchFn ?? fetch,
+        baseUrl: deps.baseUrl,
+        token: deps.token,
+      });
+    } catch {
+      return false;
+    }
+  };
 }
