@@ -99,12 +99,15 @@ describe('manifest-cache (M5 F-62)', () => {
   });
 
   it('refuse de sauvegarder un manifeste invalide', () => {
-    const invalidCandidate = {
-      manifestVersion: '',
+    const invalidCandidate: KioskManifest = {
+      ...validManifest,
+      kiosk: {
+        ...validManifest.kiosk,
+        id: 'not-a-valid-uuid',
+      },
     };
     expect(() => {
-      // safeParse échoue, validation stricte
-      KioskManifestSchema.parse(invalidCandidate);
+      saveManifest(storage, invalidCandidate);
     }).toThrow();
   });
 });
