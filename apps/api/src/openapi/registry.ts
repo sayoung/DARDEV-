@@ -65,6 +65,8 @@ import {
   TourGraphSchema,
   TourLinkMapSchema,
   PreviewTokenResponseSchema,
+  SelectionResponseSchema,
+  SelectionUpdateSchema,
   LANGS,
 } from '@xplor/shared';
 import { z, type ZodType } from 'zod';
@@ -447,6 +449,7 @@ registerCatalogCrud({
 });
 
 registerHotelManagers();
+registerHotelSelection();
 registerKiosks();
 
 registerAssetReads();
@@ -628,6 +631,51 @@ function registerHotelManagers(): void {
       '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN.', forbiddenError),
       '404': jsonResponse('Hôtel introuvable.', notFoundError),
       '422': jsonResponse('Utilisateur introuvable ou invalide.', referenceError),
+    },
+  });
+}
+
+function registerHotelSelection(): void {
+  const collection = '/api/v1/admin/hotels/{id}/selection';
+  const idParam = z.object({ id: z.uuidv7() });
+
+  registry.registerPath({
+    method: 'get',
+    path: collection,
+    summary: 'Lire la sélection d’un hôtel',
+    tags: ['Catalogue'],
+    security: sessionSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse(
+        'Sélection de l’hôtel. Filtrée par AccessPolicy selon le principal : un gestionnaire ne voit que son hôtel (404 hors périmètre).',
+        SelectionResponseSchema,
+      ),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '404': jsonResponse('Hôtel introuvable ou hors périmètre.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: collection,
+    summary: 'Remplacer la sélection d’un hôtel',
+    tags: ['Catalogue'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(
+        SelectionUpdateSchema,
+        'Visites de la sélection, visite à la une et visites de veille.',
+      ),
+    },
+    responses: {
+      '200': jsonResponse('Sélection de l’hôtel mise à jour.', SelectionResponseSchema),
+      '400': jsonResponse('Identifiant ou corps refusé.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle non autorisé.', forbiddenError),
+      '404': jsonResponse('Hôtel introuvable ou hors périmètre.', notFoundError),
+      '422': jsonResponse('Visite hors périmètre ou non publiée.', referenceError),
     },
   });
 }
