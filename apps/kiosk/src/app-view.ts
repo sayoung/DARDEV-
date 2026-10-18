@@ -14,11 +14,13 @@ import {
 } from './render-maintenance-status.js';
 import { renderScreen, type OnEnrollCallback } from './render-screen.js';
 
+export type RenderTourHandle = { destroy(): void };
+
 export type RenderTourCallback = (
   root: HTMLElement,
   tourId: string,
   onBack?: () => void,
-) => void;
+) => RenderTourHandle | undefined;
 
 export interface AppViewDeps {
   onEnroll?: OnEnrollCallback;
