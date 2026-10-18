@@ -18,6 +18,7 @@ export interface HomeModel {
   featured: KioskManifestTour | null;
   categories: HomeCategoryItem[];
   tours: KioskManifestTour[];
+  selectedCategoryId: string | null;
 }
 
 function tourMatchesCategory(tour: KioskManifestTour, categoryId: string): boolean {
@@ -87,5 +88,6 @@ export function buildHomeModel(
     featured,
     categories,
     tours,
+    selectedCategoryId: categoryId,
   };
 }

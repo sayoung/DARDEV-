@@ -574,6 +574,16 @@
   },
   "kiosk": {
     "unavailable": "Service momentanément indisponible",
-    "touchToExplore": "Touchez l'écran pour explorer"
+    "touchToExplore": "Touchez l'écran pour explorer",
+    "home": {
+      "hotelFallback": "Hôtel",
+      "languagesLabel": "Choix de la langue",
+      "featured": "À la une",
+      "categoriesLabel": "Filtres de catégories",
+      "allCategories": "Toutes les catégories",
+      "toursList": "Nos visites virtuelles",
+      "explore": "Explorer la visite",
+      "noTours": "Aucune visite disponible dans cette catégorie."
+    }
   }
 }

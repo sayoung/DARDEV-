@@ -126,6 +126,7 @@ describe('buildHomeModel', () => {
       { id: categoryMuseums.id, label: 'Musées' },
       { id: categoryGardens.id, label: 'Jardins' },
     ]);
+    expect(model.selectedCategoryId).toBeNull();
   });
 
   it('avec filtre : renvoie uniquement les visites de la catégorie demandée dans l’ordre du manifeste', () => {
@@ -140,6 +141,7 @@ describe('buildHomeModel', () => {
       { id: categoryMuseums.id, label: 'Musées' },
       { id: categoryGardens.id, label: 'Jardins' },
     ]);
+    expect(model.selectedCategoryId).toBe(categoryMuseums.id);
   });
 
   it('avec filtre multi-catégories via categoryIds : inclut les visites rattachées', () => {
