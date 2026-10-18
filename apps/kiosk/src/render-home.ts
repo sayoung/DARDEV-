@@ -84,6 +84,7 @@ export function renderHome(
 
   const hotelTitle = doc.createElement('h1');
   hotelTitle.className = 'kiosk-hotel-name';
+  hotelTitle.setAttribute('data-logo', '');
   hotelTitle.textContent = model.hotelName;
   brandingDiv.appendChild(hotelTitle);
 
