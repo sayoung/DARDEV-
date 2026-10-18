@@ -115,6 +115,24 @@ describe('clés i18n', () => {
     expect(resources.fr.kiosk.maintenance.tooShort).toBe(
       'Le code PIN doit comporter au moins 4 chiffres.',
     );
+    expect(resources.fr.kiosk.maintenance.statusTitle).toBe('État du kiosque');
+    expect(resources.fr.kiosk.maintenance.appVersion).toBe("Version de l'application");
+    expect(resources.fr.kiosk.maintenance.manifestVersion).toBe('Version du manifeste');
+    expect(resources.fr.kiosk.maintenance.lastSync).toBe('Dernière synchronisation');
+    expect(resources.fr.kiosk.maintenance.none).toBe('Aucun');
+    expect(resources.fr.kiosk.maintenance.never).toBe('Jamais');
+    expect(resources.fr.kiosk.maintenance.syncStatus).toBe('État de la synchronisation');
+    expect(resources.fr.kiosk.maintenance.syncStatusSuccess).toBe('Synchronisé');
+    expect(resources.fr.kiosk.maintenance.syncStatusError).toBe('Erreurs de synchronisation');
+    expect(resources.fr.kiosk.maintenance.failedTours).toBe('Visites en échec');
+    expect(resources.fr.kiosk.maintenance.noFailedTours).toBe('Aucune visite en échec');
+    expect(resources.fr.kiosk.maintenance.forceSync).toBe('Forcer la synchronisation');
+    expect(resources.fr.kiosk.maintenance.forceSyncing).toBe('Synchronisation en cours...');
+    expect(resources.fr.kiosk.maintenance.reenroll).toBe('Réenrôler');
+    expect(resources.fr.kiosk.maintenance.confirmReenroll).toBe(
+      'Voulez-vous vraiment réenrôler ce kiosque ? Toutes les données locales seront réinitialisées.',
+    );
+    expect(resources.fr.kiosk.maintenance.close).toBe('Fermer');
   });
 });
 

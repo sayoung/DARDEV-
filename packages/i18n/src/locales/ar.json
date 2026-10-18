@@ -354,7 +354,25 @@
       "clear": "مسح",
       "error": "رمز PIN غير صحيح.",
       "tooShort": "يجب أن يتكون رمز PIN من 4 أرقام على الأقل.",
-      "keypadLabel": "لوحة مفاتيح رقمية تعمل باللمس"
+      "keypadLabel": "لوحة مفاتيح رقمية تعمل باللمس",
+      "statusTitle": "حالة الكشك",
+      "statusSubtitle": "معلومات النظام وعمليات الصيانة.",
+      "appVersion": "إصدار التطبيق",
+      "manifestVersion": "إصدار البيان",
+      "lastSync": "آخر مزامنة",
+      "none": "لا يوجد",
+      "never": "أبداً",
+      "syncStatus": "حالة المزامنة",
+      "syncStatusSuccess": "تمت المزامنة",
+      "syncStatusError": "أخطاء في المزامنة",
+      "failedTours": "الجولات المتعثرة",
+      "noFailedTours": "لا توجد جولات متعثرة",
+      "actions": "الإجراءات",
+      "forceSync": "فرض المزامنة",
+      "forceSyncing": "جارٍ المزامنة...",
+      "reenroll": "إعادة التسجيل",
+      "confirmReenroll": "هل تريد بالتأكيد إعادة تسجيل هذا الكشك؟ ستتم إعادة ضبط جميع البيانات المحلية.",
+      "close": "إغلاق"
     }
   }
 }
