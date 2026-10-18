@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveApiUrl } from './api-url.js';
+import type { RenderTourCallback, RenderTourHandle } from './app-view.js';
 import { bootstrapKiosk, type KioskBootstrapInstance } from './bootstrap.js';
 import {
   loadCredentials,
@@ -602,5 +603,130 @@ describe('bootstrapKiosk (M5 F-60)', () => {
     });
 
     expect(registerMock).not.toHaveBeenCalled();
+  });
+
+  it('passage de TOUR vers ATTRACT sans clic Retour appelle destroy() une fois, et Échap n’a plus d’effet ensuite', () => {
+    saveCredentials(fakeStorage, validCredentials);
+    let handleDestroy: ReturnType<typeof vi.fn> = vi.fn();
+
+    const fakeRenderTour: RenderTourCallback = vi.fn(
+      (_root: HTMLElement, _tourId: string, onBack?: () => void): RenderTourHandle => {
+        const handleKeyDown = (event: KeyboardEvent): void => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            onBack?.();
+          }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        handleDestroy = vi.fn((): void => {
+          document.removeEventListener('keydown', handleKeyDown);
+        });
+        return { destroy: handleDestroy };
+      },
+    );
+
+    activeInstance = bootstrapKiosk(window, document, {
+      manifest: validManifest,
+      renderTour: fakeRenderTour,
+    });
+
+    activeInstance.state.dispatch({ type: 'SELECT_TOUR', tourId: testTour.id });
+    expect(activeInstance.state.getState().screen).toBe('TOUR');
+    expect(fakeRenderTour).toHaveBeenCalledTimes(1);
+    expect(handleDestroy).not.toHaveBeenCalled();
+
+    activeInstance.state.dispatch({ type: 'IDLE' });
+    expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+    expect(handleDestroy).toHaveBeenCalledTimes(1);
+
+    const escapeEvent = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(escapeEvent);
+
+    expect(escapeEvent.defaultPrevented).toBe(false);
+    expect(handleDestroy).toHaveBeenCalledTimes(1);
+    expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+  });
+
+  it('passage de TOUR vers HOME sans clic Retour appelle destroy() une fois, et Échap n’a plus d’effet ensuite', () => {
+    saveCredentials(fakeStorage, validCredentials);
+    let handleDestroy: ReturnType<typeof vi.fn> = vi.fn();
+
+    const fakeRenderTour: RenderTourCallback = vi.fn(
+      (_root: HTMLElement, _tourId: string, onBack?: () => void): RenderTourHandle => {
+        const handleKeyDown = (event: KeyboardEvent): void => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            onBack?.();
+          }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        handleDestroy = vi.fn((): void => {
+          document.removeEventListener('keydown', handleKeyDown);
+        });
+        return { destroy: handleDestroy };
+      },
+    );
+
+    activeInstance = bootstrapKiosk(window, document, {
+      manifest: validManifest,
+      renderTour: fakeRenderTour,
+    });
+
+    activeInstance.state.dispatch({ type: 'SELECT_TOUR', tourId: testTour.id });
+    expect(activeInstance.state.getState().screen).toBe('TOUR');
+    expect(fakeRenderTour).toHaveBeenCalledTimes(1);
+    expect(handleDestroy).not.toHaveBeenCalled();
+
+    activeInstance.state.dispatch({ type: 'BACK_HOME' });
+    expect(activeInstance.state.getState().screen).toBe('HOME');
+    expect(handleDestroy).toHaveBeenCalledTimes(1);
+
+    const escapeEvent = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(escapeEvent);
+
+    expect(escapeEvent.defaultPrevented).toBe(false);
+    expect(handleDestroy).toHaveBeenCalledTimes(1);
+    expect(activeInstance.state.getState().screen).toBe('HOME');
+  });
+
+  it('un nouveau rendu de TOUR détruit d’abord le handle précédent', () => {
+    saveCredentials(fakeStorage, validCredentials);
+    const destroy1 = vi.fn();
+    const destroy2 = vi.fn();
+
+    let renderCount = 0;
+    const fakeRenderTour: RenderTourCallback = vi.fn(
+      (): RenderTourHandle => {
+        renderCount += 1;
+        if (renderCount === 1) {
+          return { destroy: destroy1 };
+        }
+        expect(destroy1).toHaveBeenCalledTimes(1);
+        return { destroy: destroy2 };
+      },
+    );
+
+    activeInstance = bootstrapKiosk(window, document, {
+      manifest: validManifest,
+      renderTour: fakeRenderTour,
+    });
+
+    activeInstance.state.dispatch({ type: 'SELECT_TOUR', tourId: 'tour-1' });
+    expect(activeInstance.state.getState().screen).toBe('TOUR');
+    expect(fakeRenderTour).toHaveBeenCalledTimes(1);
+    expect(destroy1).not.toHaveBeenCalled();
+
+    activeInstance.state.dispatch({ type: 'SELECT_TOUR', tourId: 'tour-2' });
+    expect(destroy1).toHaveBeenCalledTimes(1);
+    expect(fakeRenderTour).toHaveBeenCalledTimes(2);
+    expect(destroy2).not.toHaveBeenCalled();
   });
 });
