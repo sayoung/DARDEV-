@@ -77,6 +77,7 @@ describe('KioskDeviceController', () => {
   const enrollMock = vi.fn<KioskService['enroll']>();
   const getManifestMock = vi.fn<KioskService['getManifest']>();
   const heartbeatMock = vi.fn<KioskService['heartbeat']>();
+  const verifyMaintenancePinMock = vi.fn<KioskService['verifyMaintenancePin']>();
   let controller: KioskDeviceController;
 
   beforeEach(() => {
@@ -85,6 +86,7 @@ describe('KioskDeviceController', () => {
       enroll: enrollMock,
       getManifest: getManifestMock,
       heartbeat: heartbeatMock,
+      verifyMaintenancePin: verifyMaintenancePinMock,
     } as unknown as KioskService);
   });
 
@@ -173,6 +175,63 @@ describe('KioskDeviceController', () => {
     expect(guards).toContain(KioskTokenGuard);
     expect(guards).toContain(ThrottlerGuard);
     expect(Reflect.getMetadata('THROTTLER:LIMITdefault', handler)).toBe(30);
+    expect(Reflect.getMetadata('THROTTLER:TTLdefault', handler)).toBe(60_000);
+    expect(Reflect.getMetadata('__httpCode__', handler)).toBe(HttpStatus.OK);
+  });
+
+  it('appelle KioskService.verifyMaintenancePin et renvoie { valid: true } en cas de code PIN correct', async () => {
+    verifyMaintenancePinMock.mockResolvedValue(true);
+    const request = { kioskDevice: device } as KioskDeviceRequest;
+
+    const result = await controller.verifyMaintenancePin({ pin: '1234' }, request);
+
+    expect(result).toEqual({ valid: true });
+    expect(verifyMaintenancePinMock).toHaveBeenCalledWith(device, '1234');
+  });
+
+  it('appelle KioskService.verifyMaintenancePin et renvoie { valid: false } en cas de code PIN erroné', async () => {
+    verifyMaintenancePinMock.mockResolvedValue(false);
+    const request = { kioskDevice: device } as KioskDeviceRequest;
+
+    const result = await controller.verifyMaintenancePin({ pin: '9999' }, request);
+
+    expect(result).toEqual({ valid: false });
+    expect(verifyMaintenancePinMock).toHaveBeenCalledWith(device, '9999');
+  });
+
+  it.each([
+    ['PIN non numérique', { pin: 'abcd' }],
+    ['PIN trop court (3 chiffres)', { pin: '123' }],
+    ['PIN trop long (13 chiffres)', { pin: '1234567890123' }],
+    ['PIN vide', { pin: '' }],
+    ['propriété pin manquante', {}],
+    ['type non chaîne', { pin: 1234 }],
+  ])('rejette un corps invalide (%s) avec 400 sans appeler le service', async (_label, invalidBody) => {
+    const request = { kioskDevice: device } as KioskDeviceRequest;
+
+    await expect(controller.verifyMaintenancePin(invalidBody, request)).rejects.toThrow(BadRequestException);
+    expect(verifyMaintenancePinMock).not.toHaveBeenCalled();
+  });
+
+  it('refuse la vérification avec 401 si le guard n’a pas attaché l’appareil (sans jeton)', async () => {
+    const request = {} as KioskDeviceRequest;
+
+    await expect(controller.verifyMaintenancePin({ pin: '1234' }, request)).rejects.toThrow(UnauthorizedException);
+    expect(verifyMaintenancePinMock).not.toHaveBeenCalled();
+  });
+
+  it('protège verifyMaintenancePin par jeton et le limite à 5 requêtes par minute', () => {
+    const handler: unknown = Object.getOwnPropertyDescriptor(
+      KioskDeviceController.prototype,
+      'verifyMaintenancePin',
+    )?.value;
+    if (typeof handler !== 'function') throw new Error('Méthode absente : verifyMaintenancePin');
+    const rawGuards: unknown = Reflect.getMetadata('__guards__', handler);
+    const guards = Array.isArray(rawGuards) ? rawGuards : [];
+
+    expect(guards).toContain(KioskTokenGuard);
+    expect(guards).toContain(ThrottlerGuard);
+    expect(Reflect.getMetadata('THROTTLER:LIMITdefault', handler)).toBe(5);
     expect(Reflect.getMetadata('THROTTLER:TTLdefault', handler)).toBe(60_000);
     expect(Reflect.getMetadata('__httpCode__', handler)).toBe(HttpStatus.OK);
   });

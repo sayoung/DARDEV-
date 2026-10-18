@@ -6,6 +6,8 @@ import {
   KioskEnrollRequestSchema,
   type KioskEnrollResponse,
   type KioskManifest,
+  KioskPinVerifyRequestSchema,
+  type KioskPinVerifyResponse,
 } from '@xplor/shared';
 import type { FastifyRequest } from 'fastify';
 
@@ -13,6 +15,7 @@ import { parseBody } from '../catalog/catalog-http.js';
 import { KioskTokenGuard, type KioskDeviceRequest } from './kiosk-token.guard.js';
 import { KioskService } from './kiosks.service.js';
 
+const FIVE_PER_MINUTE = { default: { limit: 5, ttl: 60_000 } };
 const TEN_PER_MINUTE = { default: { limit: 10, ttl: 60_000 } };
 const THIRTY_PER_MINUTE = { default: { limit: 30, ttl: 60_000 } };
 
@@ -50,5 +53,22 @@ export class KioskDeviceController {
     }
     const input = parseBody(KioskHeartbeatRequestSchema, body);
     return this.kiosks.heartbeat(device, input, request.ip || null);
+  }
+
+  @Post('maintenance/verify-pin')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(FIVE_PER_MINUTE)
+  @UseGuards(KioskTokenGuard, ThrottlerGuard)
+  async verifyMaintenancePin(
+    @Body() body: unknown,
+    @Req() request: KioskDeviceRequest,
+  ): Promise<KioskPinVerifyResponse> {
+    const device = request.kioskDevice;
+    if (!device) {
+      throw new UnauthorizedException();
+    }
+    const input = parseBody(KioskPinVerifyRequestSchema, body);
+    const valid = await this.kiosks.verifyMaintenancePin(device, input.pin);
+    return { valid };
   }
 }
