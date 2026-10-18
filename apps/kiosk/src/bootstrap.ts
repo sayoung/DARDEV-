@@ -1,4 +1,4 @@
-import { dir, resources } from '@xplor/i18n';
+import { resources } from '@xplor/i18n';
 import type { KioskManifest, Lang } from '@xplor/shared';
 
 import { resolveApiUrl } from './api-url.js';
@@ -34,7 +34,7 @@ import {
   createApiPinVerifier,
   type MaintenancePinVerifier,
 } from './maintenance-pin.js';
-import { resolveLang } from './mount.js';
+import { applyDocumentLanguage, resolveLang } from './mount.js';
 import type { ConfirmFn } from './render-maintenance-status.js';
 import { renderScreen } from './render-screen.js';
 import {
@@ -200,9 +200,7 @@ export function bootstrapKiosk(
   const search = win.location.search;
   const initialLang: Lang = options?.lang ?? resolveLang(search);
 
-  doc.documentElement.setAttribute('lang', initialLang);
-  doc.documentElement.setAttribute('dir', dir(initialLang));
-  doc.title = resources[initialLang].common.appName;
+  applyDocumentLanguage(doc, initialLang);
 
   const root = resolveRoot(doc, options?.root);
 
