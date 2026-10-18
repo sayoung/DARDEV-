@@ -1528,4 +1528,186 @@ describe('bootstrapKiosk (M5 F-60)', () => {
       }
     });
   });
+
+  describe('sessions du kiosque (M5 F-64)', () => {
+    it('nouvel identifiant à chaque sortie de veille', () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: validManifest,
+      });
+
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+      const firstSessionId = activeInstance.session.current();
+      expect(typeof firstSessionId).toBe('string');
+      expect(firstSessionId).not.toBeNull();
+
+      // Passage en veille
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      expect(activeInstance.session.current()).toBeNull();
+
+      // Première sortie de veille (WAKE) -> nouvel identifiant
+      activeInstance.state.dispatch({ type: 'WAKE' });
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+      const secondSessionId = activeInstance.session.current();
+      expect(typeof secondSessionId).toBe('string');
+      expect(secondSessionId).not.toBeNull();
+      expect(secondSessionId).not.toBe(firstSessionId);
+
+      // Nouveau passage en veille
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      expect(activeInstance.session.current()).toBeNull();
+
+      // Deuxième sortie de veille (WAKE) -> encore un nouvel identifiant
+      activeInstance.state.dispatch({ type: 'WAKE' });
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+      const thirdSessionId = activeInstance.session.current();
+      expect(typeof thirdSessionId).toBe('string');
+      expect(thirdSessionId).not.toBeNull();
+      expect(thirdSessionId).not.toBe(secondSessionId);
+      expect(thirdSessionId).not.toBe(firstSessionId);
+    });
+
+    it('onSessionEnd appelé avec l\'ancien identifiant', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const onSessionEnd = vi.fn();
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: validManifest,
+        onSessionEnd,
+      });
+
+      const firstSessionId = activeInstance.session.current();
+      expect(typeof firstSessionId).toBe('string');
+      expect(onSessionEnd).not.toHaveBeenCalled();
+
+      // Passage en veille -> clôture et notification avec l'identifiant de la session terminée
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      expect(onSessionEnd).toHaveBeenCalledTimes(1);
+      expect(onSessionEnd).toHaveBeenCalledWith(firstSessionId);
+
+      // Sortie de veille
+      activeInstance.state.dispatch({ type: 'WAKE' });
+      const secondSessionId = activeInstance.session.current();
+      expect(typeof secondSessionId).toBe('string');
+      expect(onSessionEnd).toHaveBeenCalledTimes(1);
+
+      // Second passage en veille -> notification avec le second identifiant
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      expect(onSessionEnd).toHaveBeenCalledTimes(2);
+      expect(onSessionEnd).toHaveBeenLastCalledWith(secondSessionId);
+    });
+
+    it('aucun identifiant en ATTRACT', () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: validManifest,
+      });
+
+      expect(activeInstance.session.current()).not.toBeNull();
+
+      // Passage en veille
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      expect(activeInstance.session.current()).toBeNull();
+
+      // Deuxième action IDLE consécutive : reste null sans effet indésirable
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      expect(activeInstance.session.current()).toBeNull();
+    });
+
+    it('démarrage d’une session au premier affichage de HOME lors d’un chargement asynchrone du manifeste', () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: null,
+      });
+
+      // Initialement en LOADING : aucune session active
+      expect(activeInstance.state.getState().screen).toBe('LOADING');
+      expect(activeInstance.session.current()).toBeNull();
+
+      // Chargement du manifeste -> passage à HOME pour la première fois
+      activeInstance.state.dispatch({
+        type: 'MANIFEST_LOADED',
+        manifest: validManifest,
+      });
+
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+      const sessionId = activeInstance.session.current();
+      expect(typeof sessionId).toBe('string');
+      expect(sessionId).not.toBeNull();
+    });
+
+    it('la session active est conservée lors de la consultation d’une visite puis retour à HOME', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const onSessionEnd = vi.fn();
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: validManifest,
+        onSessionEnd,
+      });
+
+      const sessionId = activeInstance.session.current();
+      expect(typeof sessionId).toBe('string');
+
+      // Sélection d'une visite -> écran TOUR
+      activeInstance.state.dispatch({
+        type: 'SELECT_TOUR',
+        tourId: testTour.id,
+      });
+      expect(activeInstance.state.getState().screen).toBe('TOUR');
+      expect(activeInstance.session.current()).toBe(sessionId);
+      expect(onSessionEnd).not.toHaveBeenCalled();
+
+      // Retour à l'accueil -> écran HOME
+      activeInstance.state.dispatch({ type: 'BACK_HOME' });
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+      expect(activeInstance.session.current()).toBe(sessionId);
+      expect(onSessionEnd).not.toHaveBeenCalled();
+    });
+
+    it('la session est clôturée lorsque le passage en veille (IDLE) survient depuis l’écran TOUR', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const onSessionEnd = vi.fn();
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: validManifest,
+        onSessionEnd,
+      });
+
+      const sessionId = activeInstance.session.current();
+      expect(typeof sessionId).toBe('string');
+
+      // Entrée dans une visite
+      activeInstance.state.dispatch({
+        type: 'SELECT_TOUR',
+        tourId: testTour.id,
+      });
+      expect(activeInstance.state.getState().screen).toBe('TOUR');
+
+      // Inactivité pendant la visite -> passage en ATTRACT
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      expect(activeInstance.session.current()).toBeNull();
+      expect(onSessionEnd).toHaveBeenCalledTimes(1);
+      expect(onSessionEnd).toHaveBeenCalledWith(sessionId);
+    });
+
+    it('aucune session n’est active en écran ENROLL', () => {
+      // Pas d'identifiants
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: null,
+      });
+
+      expect(activeInstance.state.getState().screen).toBe('ENROLL');
+      expect(activeInstance.session.current()).toBeNull();
+    });
+  });
 });
