@@ -20,6 +20,10 @@ import {
   type RenderTourHandle,
 } from './app-view.js';
 import {
+  createAttractRotation,
+  type AttractRotation,
+} from './attract-rotation.js';
+import {
   createKioskLoopsApi,
   startKioskLoops,
   type ClearIntervalFn,
@@ -235,6 +239,51 @@ function resolveFetchFn(win: Window, custom?: typeof fetch): typeof fetch {
     return win.fetch.bind(win);
   }
   return globalThis.fetch;
+}
+
+function isSafeTourUrl(url: string, win: Window, apiUrl: string): boolean {
+  if (url.startsWith('//')) {
+    return false;
+  }
+
+  if (url.startsWith('/')) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return false;
+    }
+
+    const allowedOrigins = new Set<string>();
+
+    let windowOrigin: unknown;
+    try {
+      windowOrigin = win.location.origin;
+    } catch {
+      // Ignorer si win.location est inaccessible
+    }
+
+    if (
+      typeof windowOrigin === 'string' &&
+      windowOrigin !== 'null' &&
+      windowOrigin.length > 0
+    ) {
+      allowedOrigins.add(windowOrigin);
+    }
+
+    try {
+      const apiOrigin = new URL(apiUrl, 'http://localhost').origin;
+      allowedOrigins.add(apiOrigin);
+    } catch {
+      // Ignorer si apiUrl est invalide
+    }
+
+    return allowedOrigins.has(parsed.origin);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -518,13 +567,61 @@ export function bootstrapKiosk(
     return handle;
   };
 
+  let currentRotationManifest: KioskManifest | null = state.getState().manifest;
+  let attractRotation: AttractRotation | null =
+    currentRotationManifest !== null
+      ? createAttractRotation(currentRotationManifest)
+      : null;
+
+  const defaultGetAttractTourUrl = (currentState: AppState): string | null => {
+    const manifest = currentState.manifest;
+    if (manifest === null) {
+      currentRotationManifest = null;
+      attractRotation = null;
+      return null;
+    }
+
+    if (currentRotationManifest !== manifest || attractRotation === null) {
+      currentRotationManifest = manifest;
+      attractRotation = createAttractRotation(manifest);
+    }
+
+    const nextTourId = attractRotation.next();
+    if (nextTourId === null) {
+      return null;
+    }
+
+    const matchingTour = manifest.selection.tours.find(
+      (tour) => tour.id === nextTourId,
+    );
+    if (matchingTour === undefined) {
+      return null;
+    }
+
+    const rawUrl = matchingTour.url;
+    if (typeof rawUrl !== 'string') {
+      return null;
+    }
+
+    const trimmedUrl = rawUrl.trim();
+    if (trimmedUrl.length === 0) {
+      return null;
+    }
+
+    if (!isSafeTourUrl(trimmedUrl, win, apiUrl)) {
+      return null;
+    }
+
+    return trimmedUrl;
+  };
+
   const appViewDeps: AppViewDeps = {
     onEnroll: handleEnroll,
     onForceSync: handleForceSync,
     onReenroll: handleReenroll,
     verifyMaintenancePin,
     renderTour: actualRenderTour,
-    getAttractTourUrl: options?.getAttractTourUrl,
+    getAttractTourUrl: options?.getAttractTourUrl ?? defaultGetAttractTourUrl,
     confirmFn: options?.confirmFn,
     appVersion: options?.appVersion,
   };
@@ -581,6 +678,11 @@ export function bootstrapKiosk(
     if (nextState.manifest !== previousManifest) {
       previousManifest = nextState.manifest;
       applyManifestIdleTimeout(nextState.manifest);
+      currentRotationManifest = nextState.manifest;
+      attractRotation =
+        nextState.manifest !== null
+          ? createAttractRotation(nextState.manifest)
+          : null;
     }
   });
 
@@ -599,6 +701,8 @@ export function bootstrapKiosk(
   const dispose = (): void => {
     unsubscribeTour();
     unsubscribeManifest();
+    attractRotation = null;
+    currentRotationManifest = null;
     if (currentTourHandle !== null) {
       currentTourHandle.destroy();
       currentTourHandle = null;
