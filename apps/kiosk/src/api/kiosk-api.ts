@@ -4,6 +4,8 @@ import {
   KioskHeartbeatRequestSchema,
   KioskHeartbeatResponseSchema,
   KioskManifestSchema,
+  KioskPinVerifyRequestSchema,
+  KioskPinVerifyResponseSchema,
   type KioskEnrollRequest,
   type KioskEnrollResponse,
   type KioskHeartbeatRequest,
@@ -72,6 +74,30 @@ export async function sendHeartbeat(
       body: JSON.stringify(validBody),
     },
   );
+}
+
+export interface VerifyMaintenancePinOptions {
+  fetchFn: typeof fetch;
+  baseUrl: string;
+  token: string;
+}
+
+export async function verifyMaintenancePin(
+  pin: string,
+  { fetchFn, baseUrl, token }: VerifyMaintenancePinOptions,
+): Promise<boolean> {
+  const body = KioskPinVerifyRequestSchema.parse({ pin });
+  const response = await requestJson(
+    fetchFn,
+    apiUrl(baseUrl, '/api/v1/kiosk/maintenance/verify-pin'),
+    KioskPinVerifyResponseSchema,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    },
+  );
+  return response.valid;
 }
 
 async function requestJson<T>(
