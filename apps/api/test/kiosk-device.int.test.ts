@@ -183,22 +183,140 @@ describe('manifeste et heartbeat kiosque HTTP (API-02/03)', () => {
       });
     }
   });
+
+  it("un kiosque de l'hôtel A ne reçoit que les visites de la sélection de l'hôtel A", async () => {
+    const admin = await login();
+
+    const hotelA = await createEnrolledKiosk(admin, {
+      hotelName: 'Hôtel A Rabat',
+      hotelEmail: 'contact@hotel-a.ma',
+      kioskLabel: 'Kiosque Hôtel A',
+      tourTitles: ['Visite A1 des Oudayas', 'Visite A2 du Chellah'],
+    });
+
+    const hotelB = await createEnrolledKiosk(admin, {
+      hotelName: 'Hôtel B Casablanca',
+      hotelEmail: 'contact@hotel-b.ma',
+      kioskLabel: 'Kiosque Hôtel B',
+      tourTitles: ['Visite B1 de la Corniche', 'Visite B2 des Habous'],
+    });
+
+    const creator = await prisma.user.findUniqueOrThrow({ where: { id: admin.userId } });
+    const cityC = await prisma.city.create({
+      data: { name: { fr: 'Fès' }, region: 'Fès-Meknès', lat: 34.03, lng: -5.0 },
+    });
+    const coverC = await prisma.asset.create({
+      data: {
+        kind: 'IMAGE',
+        originalKey: 'kiosk-device-test/unselected-cover-c.jpg',
+        mimeType: 'image/jpeg',
+        sizeBytes: 2048,
+        width: 100,
+        height: 50,
+        contentHash: 'kiosk-device-test-unselected-cover-hash-c',
+        processingStatus: 'READY',
+      },
+    });
+    const tourC = await prisma.tour.create({
+      data: {
+        title: { fr: 'Visite Hors Sélection C' },
+        summary: { fr: 'Visite non sélectionnée' },
+        cityId: cityC.id,
+        coverAssetId: coverC.id,
+        createdById: creator.id,
+        contentVersion: 1,
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-10-01T00:00:00.000Z'),
+      },
+    });
+
+    // Erreur : requête avec jeton d'autorisation invalide
+    const unauthorizedResponse = await application().inject({
+      method: 'GET',
+      url: '/api/v1/kiosk/manifest',
+      headers: { authorization: 'Bearer faux-jeton-cloisonnement' },
+    });
+    expect(unauthorizedResponse.statusCode).toBe(401);
+
+    // Kiosque A : récupère uniquement la sélection de l'hôtel A
+    const responseA = await manifest(hotelA.token);
+    expect(responseA.statusCode).toBe(200);
+    const manifestA = KioskManifestSchema.parse(parseJson(responseA.body));
+
+    expect(manifestA.hotel.id).toBe(hotelA.hotelId);
+    expect(manifestA.hotel.name).toBe('Hôtel A Rabat');
+    const manifestTourIdsA = manifestA.selection.tours.map((tour) => tour.id);
+    expect(manifestTourIdsA).toHaveLength(hotelA.tourIds.length);
+    for (const expectedTourId of hotelA.tourIds) {
+      expect(manifestTourIdsA).toContain(expectedTourId);
+    }
+    for (const forbiddenTourId of hotelB.tourIds) {
+      expect(manifestTourIdsA).not.toContain(forbiddenTourId);
+    }
+    expect(manifestTourIdsA).not.toContain(tourC.id);
+    expect(manifestA.selection.featuredTourId).toBe(hotelA.tourId);
+    expect(hotelB.tourIds).not.toContain(manifestA.selection.featuredTourId);
+    for (const attractId of manifestA.selection.attractTourIds) {
+      expect(hotelA.tourIds).toContain(attractId);
+      expect(hotelB.tourIds).not.toContain(attractId);
+    }
+
+    // Kiosque B : récupère uniquement la sélection de l'hôtel B
+    const responseB = await manifest(hotelB.token);
+    expect(responseB.statusCode).toBe(200);
+    const manifestB = KioskManifestSchema.parse(parseJson(responseB.body));
+
+    expect(manifestB.hotel.id).toBe(hotelB.hotelId);
+    expect(manifestB.hotel.name).toBe('Hôtel B Casablanca');
+    const manifestTourIdsB = manifestB.selection.tours.map((tour) => tour.id);
+    expect(manifestTourIdsB).toHaveLength(hotelB.tourIds.length);
+    for (const expectedTourId of hotelB.tourIds) {
+      expect(manifestTourIdsB).toContain(expectedTourId);
+    }
+    for (const forbiddenTourId of hotelA.tourIds) {
+      expect(manifestTourIdsB).not.toContain(forbiddenTourId);
+    }
+    expect(manifestTourIdsB).not.toContain(tourC.id);
+    expect(manifestB.selection.featuredTourId).toBe(hotelB.tourId);
+    expect(hotelA.tourIds).not.toContain(manifestB.selection.featuredTourId);
+    for (const attractId of manifestB.selection.attractTourIds) {
+      expect(hotelB.tourIds).toContain(attractId);
+      expect(hotelA.tourIds).not.toContain(attractId);
+    }
+  });
 });
 
-async function createEnrolledKiosk(admin: Session): Promise<{
+interface CreateEnrolledKioskOptions {
+  hotelName?: string;
+  hotelEmail?: string;
+  kioskLabel?: string;
+  tourTitles?: string[];
+}
+
+async function createEnrolledKiosk(
+  admin: Session,
+  options?: CreateEnrolledKioskOptions,
+): Promise<{
   hotelId: string;
+  hotelName: string;
   kioskId: string;
   token: string;
   tourId: string;
+  tourIds: string[];
 }> {
+  const hotelName = options?.hotelName ?? 'Hôtel API-02/03';
+  const hotelEmail = options?.hotelEmail ?? 'contact@oudayas.ma';
+  const kioskLabel = options?.kioskLabel ?? 'Kiosque API-02/03';
+  const tourTitles = options?.tourTitles ?? ['Kasbah des Oudayas'];
+
   const city = await prisma.city.create({
     data: { name: { fr: 'Rabat' }, region: 'Rabat-Salé-Kénitra', lat: 34.02, lng: -6.84 },
   });
-  const hotelResponse = await send('POST', '/api/v1/admin/hotels', admin, buildHotelCreate(city.id));
+  const hotelResponse = await send('POST', '/api/v1/admin/hotels', admin, buildHotelCreate(city.id, hotelName, hotelEmail));
   expect(hotelResponse.statusCode).toBe(201);
   const hotel = HotelResponseSchema.parse(parseJson(hotelResponse.body));
   const kioskResponse = await send('POST', '/api/v1/admin/kiosks', admin, {
-    label: 'Kiosque API-02/03', hotelId: hotel.id, deviceType: 'TOUCH_AND_HEADSET',
+    label: kioskLabel, hotelId: hotel.id, deviceType: 'TOUCH_AND_HEADSET',
   });
   expect(kioskResponse.statusCode).toBe(201);
   const kioskId = KioskSchema.parse(parseJson(kioskResponse.body)).id;
@@ -218,35 +336,73 @@ async function createEnrolledKiosk(admin: Session): Promise<{
     .resolves.toEqual({ tokenHash: createHash('sha256').update(enrolled.token).digest('hex') });
 
   const creator = await prisma.user.findUniqueOrThrow({ where: { id: admin.userId } });
-  const cover = await prisma.asset.create({
-    data: {
-      kind: 'IMAGE', originalKey: 'kiosk-device-test/cover.jpg', mimeType: 'image/jpeg', sizeBytes: 2048,
-      width: 100, height: 50, contentHash: 'kiosk-device-test-cover-hash', processingStatus: 'READY',
-    },
-  });
-  const tour = await prisma.tour.create({
-    data: {
-      title: { fr: 'Kasbah des Oudayas' }, summary: { fr: 'Visite de test kiosque' }, cityId: city.id,
-      coverAssetId: cover.id, createdById: creator.id, contentVersion: 3, status: 'PUBLISHED',
-      publishedAt: new Date('2026-10-01T00:00:00.000Z'),
-    },
-  });
+  const createdTours: Array<{ id: string }> = [];
+  for (let index = 0; index < tourTitles.length; index += 1) {
+    const title = tourTitles[index];
+    if (title === undefined) {
+      continue;
+    }
+    const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const cover = await prisma.asset.create({
+      data: {
+        kind: 'IMAGE',
+        originalKey: `kiosk-device-test/${slug}-${String(index)}-cover.jpg`,
+        mimeType: 'image/jpeg',
+        sizeBytes: 2048,
+        width: 100,
+        height: 50,
+        contentHash: `kiosk-device-test-cover-${slug}-${String(index)}`,
+        processingStatus: 'READY',
+      },
+    });
+    const tour = await prisma.tour.create({
+      data: {
+        title: { fr: title },
+        summary: { fr: `Visite de test ${title}` },
+        cityId: city.id,
+        coverAssetId: cover.id,
+        createdById: creator.id,
+        contentVersion: 3,
+        status: 'PUBLISHED',
+        publishedAt: new Date('2026-10-01T00:00:00.000Z'),
+      },
+    });
+    createdTours.push({ id: tour.id });
+  }
+
+  const primaryTour = createdTours.find((_, index) => index === 0);
+  if (primaryTour === undefined) {
+    throw new Error('Au moins une visite est requise pour la sélection');
+  }
+
   await prisma.selection.create({
     data: {
       hotelId: hotel.id,
-      featuredTourId: tour.id,
-      attractTourIds: [tour.id],
+      featuredTourId: primaryTour.id,
+      attractTourIds: createdTours.map((tour) => tour.id),
       version: 5,
-      items: { create: [{ tourId: tour.id, position: 0 }] },
+      items: {
+        create: createdTours.map((tour, index) => ({
+          tourId: tour.id,
+          position: index,
+        })),
+      },
     },
   });
-  return { hotelId: hotel.id, kioskId, token: enrolled.token, tourId: tour.id };
+  return {
+    hotelId: hotel.id,
+    hotelName: hotel.name,
+    kioskId,
+    token: enrolled.token,
+    tourId: primaryTour.id,
+    tourIds: createdTours.map((tour) => tour.id),
+  };
 }
 
-function buildHotelCreate(cityId: string): HotelCreate {
+function buildHotelCreate(cityId: string, name = 'Hôtel API-02/03', email = 'contact@oudayas.ma'): HotelCreate {
   return {
-    name: 'Hôtel API-02/03', stars: HotelStars.FIVE, cityId, address: '1 avenue des Oudayas, Rabat',
-    phone: '+212537000001', email: 'contact@oudayas.ma', logoAssetId: null, brandColor: '#6958A5',
+    name, stars: HotelStars.FIVE, cityId, address: '1 avenue des Oudayas, Rabat',
+    phone: '+212537000001', email, logoAssetId: null, brandColor: '#6958A5',
     languages: ['fr', 'ar', 'en'], contractType: ContractType.RENTAL,
     contractStart: '2026-01-01T00:00:00.000Z', contractEnd: '2027-01-01T00:00:00.000Z', active: true,
   };
