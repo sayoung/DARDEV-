@@ -10,6 +10,10 @@
   --border-subtle: #E6E7E9;
 }
 
+html {
+  overscroll-behavior: none;
+}
+
 body {
   margin-block: 0;
   margin-inline: 0;
@@ -19,6 +23,11 @@ body {
   color: var(--text-primary);
   background-color: var(--bg-page);
   text-align: start;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 #app-name {
@@ -389,6 +398,8 @@ button:disabled {
   border-radius: 0.5rem;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .kiosk-enroll-input:focus {

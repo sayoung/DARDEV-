@@ -31,6 +31,10 @@ import {
   type InteractionWiring,
 } from './interaction-wiring.js';
 import {
+  installKioskLockdown,
+  type KioskLockdownInstance,
+} from './kiosk-lockdown.js';
+import {
   createApiPinVerifier,
   type MaintenancePinVerifier,
 } from './maintenance-pin.js';
@@ -72,6 +76,7 @@ export interface KioskBootstrapInstance {
   readonly view: AppView;
   readonly wiring: InteractionWiring;
   readonly tourCache: TourCache;
+  readonly lockdown: KioskLockdownInstance;
   getLoops: () => KioskLoopsControl | null;
   syncNow: () => Promise<void>;
   resetEnrollment: () => Promise<void>;
@@ -369,6 +374,8 @@ export function bootstrapKiosk(
     clearTimeout: clearTimeoutFn,
   });
 
+  const lockdown = installKioskLockdown(doc);
+
   if (enrolled) {
     startLoops();
   }
@@ -378,6 +385,7 @@ export function bootstrapKiosk(
       loopsControl.stop();
       loopsControl = null;
     }
+    lockdown.dispose();
     wiring.dispose();
     view.dispose();
   };
@@ -387,6 +395,7 @@ export function bootstrapKiosk(
     view,
     wiring,
     tourCache,
+    lockdown,
     getLoops: () => loopsControl,
     syncNow: handleForceSync,
     resetEnrollment: handleReenroll,

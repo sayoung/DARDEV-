@@ -505,4 +505,62 @@ describe('bootstrapKiosk (M5 F-60)', () => {
       activeInstance?.dispose();
     }).not.toThrow();
   });
+
+  it('active le verrouillage F-60 : contextmenu et dragstart sont annulés, liens externes interceptés, et champ d’enrôlement reste utilisable', () => {
+    activeInstance = bootstrapKiosk(window, document);
+
+    // 1. contextmenu est annulé sur le document
+    const ctxEvent = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(ctxEvent);
+    expect(ctxEvent.defaultPrevented).toBe(true);
+
+    // 2. dragstart est annulé sur le document
+    const dragEvent = new DragEvent('dragstart', {
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(dragEvent);
+    expect(dragEvent.defaultPrevented).toBe(true);
+
+    // 3. Les liens sortants a[href^=http] sont interceptés
+    const externalLink = document.createElement('a');
+    externalLink.setAttribute('href', 'https://example.com/external');
+    document.body.appendChild(externalLink);
+
+    const clickEvent = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+    });
+    externalLink.dispatchEvent(clickEvent);
+    expect(clickEvent.defaultPrevented).toBe(true);
+
+    // 4. Le champ d'enrôlement reste présent et utilisable
+    const input = document.getElementById('kiosk-enroll-code');
+    expect(input).toBeInstanceOf(HTMLInputElement);
+    if (input instanceof HTMLInputElement) {
+      expect(input.disabled).toBe(false);
+      input.focus();
+      expect(document.activeElement).toBe(input);
+
+      input.value = 'ABCD1234';
+      const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+      input.dispatchEvent(inputEvent);
+      expect(input.value).toBe('ABCD1234');
+      expect(inputEvent.defaultPrevented).toBe(false);
+    }
+
+    // 5. dispose() désactive le verrouillage
+    activeInstance.dispose();
+    activeInstance = null;
+
+    const afterCtxEvent = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(afterCtxEvent);
+    expect(afterCtxEvent.defaultPrevented).toBe(false);
+  });
 });

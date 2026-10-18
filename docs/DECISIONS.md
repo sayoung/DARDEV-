@@ -977,5 +977,13 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | nodemailer | Envoi du courriel d'alerte hors-ligne | MIT-0 (licence MIT-0/EUPL déjà acceptée côté API) |
 | @types/nodemailer | Déclarations TypeScript de nodemailer | MIT |
 
+## D-125 — Mode plein écran kiosque et hypothèse matérielle (M5 F-60)
+
+- **Date :** 18/10/2026
+- **Décision :** l'application kiosque s'exécute en mode plein écran sans barre d'adresse ni sortie possible vers le web ou le système hôte. L'exécution repose sur le mode `--kiosk` de Google Chrome (ou Chromium) déployé sur mini-PC connecté à un écran tactile [HYPOTHÈSE matériel]. L'application désactive la sélection de texte (`user-select: none`), le surlignage tactile (`-webkit-tap-highlight-color: transparent`), le défilement élastique (`overscroll-behavior: none`), le menu contextuel (`contextmenu`), le glisser-déposer (`dragstart`) et intercepte les clics vers des liens externes (`a[href^=http]`) par `preventDefault()`. Le champ de saisie du code d'enrôlement (`.kiosk-enroll-input`) conserve la sélection de texte (`user-select: text`) pour la configuration technique.
+- **Alternatives :** Conteneur applicatif dédié (Electron/Tauri) avec verrouillage système natif ; verrouillage géré uniquement au niveau du système d'exploitation / profil restreint Kiosk OS sans verrouillage dans la PWA.
+- **À valider :** oui
+
+
 
 
