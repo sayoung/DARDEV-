@@ -44,6 +44,8 @@ import {
   KioskHeartbeatRequestSchema,
   KioskHeartbeatResponseSchema,
   KioskManifestSchema,
+  KioskPinVerifyRequestSchema,
+  KioskPinVerifyResponseSchema,
   LoginRequestSchema,
   MeResponseSchema,
   PaginatedAssetResponseSchema,
@@ -816,6 +818,27 @@ function registerKiosks(): void {
       '400': jsonResponse('Corps refusé par KioskHeartbeatRequestSchema.', badRequestError),
       '401': jsonResponse('Jeton kiosque absent ou invalide.', unauthorizedError),
       '403': jsonResponse('Kiosque désactivé.', forbiddenError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'post',
+    path: '/api/v1/kiosk/maintenance/verify-pin',
+    summary: 'Vérifier le code PIN de maintenance d’un hôtel',
+    tags: ['Kiosque'],
+    security: kioskBearerSecurity,
+    request: {
+      body: jsonBody(
+        KioskPinVerifyRequestSchema,
+        'Code PIN saisi pour accéder aux réglages de maintenance.',
+      ),
+    },
+    responses: {
+      '200': jsonResponse('Résultat de la vérification du code PIN.', KioskPinVerifyResponseSchema),
+      '400': jsonResponse('Corps refusé par KioskPinVerifyRequestSchema.', badRequestError),
+      '401': jsonResponse('Jeton kiosque absent ou invalide.', unauthorizedError),
+      '403': jsonResponse('Kiosque désactivé.', forbiddenError),
+      '429': tooManyRequests,
     },
   });
 }

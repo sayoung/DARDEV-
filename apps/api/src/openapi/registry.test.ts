@@ -36,6 +36,7 @@ const ROUTES = [
   { path: '/api/v1/kiosk/enroll', method: 'post' },
   { path: '/api/v1/kiosk/manifest', method: 'get' },
   { path: '/api/v1/kiosk/heartbeat', method: 'post' },
+  { path: '/api/v1/kiosk/maintenance/verify-pin', method: 'post' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'get' },
   { path: '/api/v1/admin/hotels/{id}/managers', method: 'put' },
   { path: '/api/v1/admin/categories', method: 'get' },
@@ -271,6 +272,17 @@ describe('document OpenAPI', () => {
     expect(heartbeat?.responses?.['200']).toBeDefined();
     expect(JSON.stringify(heartbeat?.responses?.['200'])).toContain('forceSync');
     expect(JSON.stringify(heartbeat?.responses?.['200'])).toContain('serverTime');
+
+    const verifyPin = doc.paths?.['/api/v1/kiosk/maintenance/verify-pin']?.post;
+    expect(verifyPin?.security).toEqual([{ kioskBearer: [] }]);
+    expect(verifyPin?.requestBody).toBeDefined();
+    expect(JSON.stringify(verifyPin?.requestBody)).toContain('pin');
+    expect(verifyPin?.responses?.['200']).toBeDefined();
+    expect(JSON.stringify(verifyPin?.responses?.['200'])).toContain('valid');
+    expect(verifyPin?.responses?.['400']).toBeDefined();
+    expect(verifyPin?.responses?.['401']).toBeDefined();
+    expect(verifyPin?.responses?.['403']).toBeDefined();
+    expect(verifyPin?.responses?.['429']).toBeDefined();
   });
 
   it('est identique à docs/openapi.json', () => {
