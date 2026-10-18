@@ -6,6 +6,7 @@ import {
 
 import { enroll, KioskApiError } from './api/kiosk-api.js';
 import { clearCredentials, saveCredentials, type Storage } from './credentials.js';
+import { KIOSK_MANIFEST_KEY } from './manifest-cache.js';
 import { KIOSK_PIN_CACHE_KEY } from './pin-cache.js';
 
 export type EnrollKioskFailureReason = 'INVALID_CODE' | 'NETWORK';
@@ -93,4 +94,5 @@ export async function enrollKiosk({
 export function resetEnrollment(storage: Storage): void {
   clearCredentials(storage);
   storage.removeItem(KIOSK_PIN_CACHE_KEY);
+  storage.removeItem(KIOSK_MANIFEST_KEY);
 }
