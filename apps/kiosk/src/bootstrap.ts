@@ -54,6 +54,7 @@ import {
   type MaintenancePinVerifier,
 } from './maintenance-pin.js';
 import { applyDocumentLanguage, resolveLang } from './mount.js';
+import { clearManifest, loadManifest, saveManifest } from './manifest-cache.js';
 import { createPinCache } from './pin-cache.js';
 import { registerServiceWorker } from './register-sw.js';
 import type { ConfirmFn } from './render-maintenance-status.js';
@@ -340,10 +341,17 @@ export function bootstrapKiosk(
   const session: SessionManager =
     options?.session ?? createSessionManager();
 
+  const initialManifest: KioskManifest | null =
+    options?.manifest !== undefined
+      ? options.manifest
+      : enrolled
+        ? loadManifest(storage)
+        : null;
+
   const state = createAppState({
     lang: initialLang,
     enrolled,
-    manifest: options?.manifest ?? null,
+    manifest: initialManifest,
   });
 
   let hasDisplayedHome = false;
@@ -477,6 +485,7 @@ export function bootstrapKiosk(
       loopsControl = null;
     }
     resetEnrollment(storage);
+    clearManifest(storage);
     pinCache.clear();
     if (typeof win.location.reload === 'function') {
       win.location.reload();
@@ -544,19 +553,19 @@ export function bootstrapKiosk(
         try {
           const cacheName = getTourCacheName(tourId);
           const cache = await cacheStorage.open(cacheName);
-          const urls = await urlsForTour(tourId);
 
-          if (typeof cache.match === 'function') {
-            for (const url of urls) {
-              const matched = await cache.match(url);
-              if (matched !== undefined) {
-                const graph = await extractTourGraphFromResponse(matched);
-                if (graph !== null) {
-                  return graph;
-                }
+          const manifestUrl = manifestUrlFor(tourId);
+          if (manifestUrl !== undefined && typeof cache.match === 'function') {
+            const matched = await cache.match(manifestUrl);
+            if (matched !== undefined) {
+              const graph = await extractTourGraphFromResponse(matched);
+              if (graph !== null) {
+                return graph;
               }
             }
+          }
 
+          if (typeof cache.keys === 'function' && typeof cache.match === 'function') {
             const keys = await cache.keys();
             for (const key of keys) {
               const matched = await cache.match(key);
@@ -566,6 +575,23 @@ export function bootstrapKiosk(
                   return graph;
                 }
               }
+            }
+          }
+
+          if (typeof cache.match === 'function') {
+            try {
+              const urls = await urlsForTour(tourId);
+              for (const url of urls) {
+                const matched = await cache.match(url);
+                if (matched !== undefined) {
+                  const graph = await extractTourGraphFromResponse(matched);
+                  if (graph !== null) {
+                    return graph;
+                  }
+                }
+              }
+            } catch {
+              // urlsForTour peut échouer hors-ligne, ce qui est normal
             }
           }
         } catch {
@@ -715,6 +741,9 @@ export function bootstrapKiosk(
   const unsubscribeManifest = state.subscribe((nextState) => {
     if (nextState.manifest !== previousManifest) {
       previousManifest = nextState.manifest;
+      if (nextState.manifest !== null) {
+        saveManifest(storage, nextState.manifest);
+      }
       applyManifestIdleTimeout(nextState.manifest);
       currentRotationManifest = nextState.manifest;
       attractRotation =
