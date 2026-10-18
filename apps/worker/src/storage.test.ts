@@ -60,6 +60,8 @@ describe('createS3Client', () => {
       S3_SECRET_KEY: 'test-secret',
       S3_BUCKET: 'test-bucket',
       STORAGE_PROVIDER: 's3',
+      SMTP_HOST: 'localhost',
+      SMTP_PORT: 1025,
     };
 
     const client = createS3Client(env);

@@ -14,6 +14,8 @@ describe('boot', () => {
     S3_ACCESS_KEY: 'xplor',
     S3_SECRET_KEY: 'xplor-dev-secret',
     S3_BUCKET: 'xplor',
+    SMTP_HOST: 'localhost',
+    SMTP_PORT: '1025',
   };
 
   it("valide l'environnement puis journalise worker prêt", async () => {
@@ -76,7 +78,7 @@ describe('boot', () => {
     const messages: string[] = [];
     await expect(boot({}, (message) => {
       messages.push(message);
-    })).rejects.toThrow('Invalid environment variables: REDIS_URL, DATABASE_URL, S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET');
+    })).rejects.toThrow('Invalid environment variables: REDIS_URL, DATABASE_URL, S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET, SMTP_HOST, SMTP_PORT');
     expect(messages).toEqual([]);
   });
 
