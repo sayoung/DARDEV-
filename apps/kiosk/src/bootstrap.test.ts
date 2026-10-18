@@ -1323,5 +1323,209 @@ describe('bootstrapKiosk (M5 F-60)', () => {
       timers.advanceBy(1);
       expect(activeInstance.state.getState().screen).toBe('ATTRACT');
     });
+
+    it('deux entrées successives en ATTRACT passent à la visite suivante ; manifeste sans attractTourIds donne null', () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      const tourA: KioskManifestTour = {
+        id: '01990000-0000-7000-8000-000000000201',
+        contentVersion: 1,
+        sizeBytes: 50_000_000,
+        url: '/api/v1/tours/01990000-0000-7000-8000-000000000201',
+      };
+
+      const tourB: KioskManifestTour = {
+        id: '01990000-0000-7000-8000-000000000202',
+        contentVersion: 2,
+        sizeBytes: 60_000_000,
+        url: '/api/v1/tours/01990000-0000-7000-8000-000000000202',
+      };
+
+      const manifestWithTwoTours: KioskManifest = {
+        ...validManifest,
+        selection: {
+          ...validManifest.selection,
+          attractTourIds: [tourA.id, tourB.id],
+          tours: [tourA, tourB],
+        },
+      };
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: manifestWithTwoTours,
+      });
+
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      // 1. Première entrée dans l'écran ATTRACT -> première visite
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      const preview1 = document.querySelector(
+        '[data-testid="kiosk-attract-preview"]',
+      );
+      expect(preview1).toBeInstanceOf(HTMLDivElement);
+      if (preview1 instanceof HTMLDivElement) {
+        expect(preview1.getAttribute('data-tour-url')).toBe(tourA.url);
+      }
+
+      // Sortie vers HOME
+      activeInstance.state.dispatch({ type: 'WAKE' });
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      // 2. Deuxième entrée dans l'écran ATTRACT -> visite suivante
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      const preview2 = document.querySelector(
+        '[data-testid="kiosk-attract-preview"]',
+      );
+      expect(preview2).toBeInstanceOf(HTMLDivElement);
+      if (preview2 instanceof HTMLDivElement) {
+        expect(preview2.getAttribute('data-tour-url')).toBe(tourB.url);
+      }
+
+      // 3. Manifeste sans attractTourIds donne null
+      activeInstance.dispose();
+
+      const manifestWithoutAttract: KioskManifest = {
+        ...validManifest,
+        selection: {
+          ...validManifest.selection,
+          attractTourIds: [],
+          tours: [tourA, tourB],
+        },
+      };
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: manifestWithoutAttract,
+      });
+
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      const previewWithoutAttract = document.querySelector(
+        '[data-testid="kiosk-attract-preview"]',
+      );
+      expect(previewWithoutAttract).toBeInstanceOf(HTMLDivElement);
+      if (previewWithoutAttract instanceof HTMLDivElement) {
+        expect(previewWithoutAttract.getAttribute('data-tour-url')).toBeNull();
+      }
+    });
+
+    it('rotation de veille : ignore les liens externes hors domaine et les URLs vides en renvoyant null', () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      const tourExternal: KioskManifestTour = {
+        id: '01990000-0000-7000-8000-000000000203',
+        contentVersion: 1,
+        sizeBytes: 50_000_000,
+        url: 'https://evil.external-domain.com/tour',
+      };
+
+      const tourEmpty: KioskManifestTour = {
+        id: '01990000-0000-7000-8000-000000000204',
+        contentVersion: 1,
+        sizeBytes: 50_000_000,
+        url: '   ',
+      };
+
+      const manifestWithInvalidUrls: KioskManifest = {
+        ...validManifest,
+        selection: {
+          ...validManifest.selection,
+          attractTourIds: [tourExternal.id, tourEmpty.id],
+          tours: [tourExternal, tourEmpty],
+        },
+      };
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: manifestWithInvalidUrls,
+      });
+
+      // Première entrée : URL externe -> rejetée (null)
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+      const preview1 = document.querySelector(
+        '[data-testid="kiosk-attract-preview"]',
+      );
+      expect(preview1).toBeInstanceOf(HTMLDivElement);
+      if (preview1 instanceof HTMLDivElement) {
+        expect(preview1.getAttribute('data-tour-url')).toBeNull();
+      }
+
+      // Deuxième entrée : URL vide -> rejetée (null)
+      activeInstance.state.dispatch({ type: 'WAKE' });
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      const preview2 = document.querySelector(
+        '[data-testid="kiosk-attract-preview"]',
+      );
+      expect(preview2).toBeInstanceOf(HTMLDivElement);
+      if (preview2 instanceof HTMLDivElement) {
+        expect(preview2.getAttribute('data-tour-url')).toBeNull();
+      }
+    });
+
+    it('rotation de veille : la rotation est recréée lors du chargement d’un nouveau manifeste (MANIFEST_LOADED)', () => {
+      saveCredentials(fakeStorage, validCredentials);
+
+      const tour1: KioskManifestTour = {
+        id: '01990000-0000-7000-8000-000000000211',
+        contentVersion: 1,
+        sizeBytes: 50_000_000,
+        url: '/api/v1/tours/01990000-0000-7000-8000-000000000211',
+      };
+
+      const tour2: KioskManifestTour = {
+        id: '01990000-0000-7000-8000-000000000212',
+        contentVersion: 1,
+        sizeBytes: 50_000_000,
+        url: '/api/v1/tours/01990000-0000-7000-8000-000000000212',
+      };
+
+      const initialManifest: KioskManifest = {
+        ...validManifest,
+        selection: {
+          ...validManifest.selection,
+          attractTourIds: [tour1.id],
+          tours: [tour1],
+        },
+      };
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: initialManifest,
+      });
+
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      const preview1 = document.querySelector(
+        '[data-testid="kiosk-attract-preview"]',
+      );
+      expect(preview1).toBeInstanceOf(HTMLDivElement);
+      if (preview1 instanceof HTMLDivElement) {
+        expect(preview1.getAttribute('data-tour-url')).toBe(tour1.url);
+      }
+
+      // Nouveau manifeste avec tour2
+      const updatedManifest: KioskManifest = {
+        ...validManifest,
+        selection: {
+          ...validManifest.selection,
+          attractTourIds: [tour2.id],
+          tours: [tour2],
+        },
+      };
+
+      activeInstance.state.dispatch({
+        type: 'MANIFEST_LOADED',
+        manifest: updatedManifest,
+      });
+
+      activeInstance.state.dispatch({ type: 'WAKE' });
+      activeInstance.state.dispatch({ type: 'IDLE' });
+
+      const preview2 = document.querySelector(
+        '[data-testid="kiosk-attract-preview"]',
+      );
+      expect(preview2).toBeInstanceOf(HTMLDivElement);
+      if (preview2 instanceof HTMLDivElement) {
+        expect(preview2.getAttribute('data-tour-url')).toBe(tour2.url);
+      }
+    });
   });
 });
