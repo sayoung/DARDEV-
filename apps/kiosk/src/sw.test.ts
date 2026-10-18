@@ -288,6 +288,36 @@ describe('PWA Manifest & Service Worker (M5 F-62)', () => {
       }
     });
 
+    it('extrait les balises <script type="module" src="/assets/index-abc.js"> et <link rel="stylesheet" href="/assets/index-abc.css">', () => {
+      const swCode = fs.readFileSync(swPath, 'utf-8');
+      const cacheRegistry = new Map<string, MockCache>();
+      const swContext = loadSwContext(
+        swCode,
+        cacheRegistry,
+        () => Promise.resolve(new Response('')),
+      );
+      const extract = swContext.extractAssetUrlsFromHtml;
+      expect(extract).toBeDefined();
+
+      if (extract) {
+        const html = `
+          <!doctype html>
+          <html>
+            <head>
+              <script type="module" src="/assets/index-abc.js"></script>
+              <link rel="stylesheet" href="/assets/index-abc.css">
+            </head>
+            <body></body>
+          </html>
+        `;
+
+        const extracted = extract(html);
+        expect(extracted).toContain('/assets/index-abc.js');
+        expect(extracted).toContain('/assets/index-abc.css');
+        expect(extracted).not.toContain('/src/style.css');
+      }
+    });
+
     it('gère l’inversion de l’ordre des attributs rel et href', () => {
       const swCode = fs.readFileSync(swPath, 'utf-8');
       const cacheRegistry = new Map<string, MockCache>();
@@ -411,6 +441,72 @@ describe('PWA Manifest & Service Worker (M5 F-62)', () => {
         expect(cachedKeys).toContain('/assets/style-hash456.css');
         expect(cachedKeys).toContain('/manifest.webmanifest');
         expect(cachedKeys).toContain('/icon.svg');
+      }
+    });
+
+    it('à l’installation : avec <script type="module" src="/assets/index-abc.js"> et <link rel="stylesheet" href="/assets/index-abc.css"> dans index.html, précache ces deux assets avec index.html, le manifeste et l’icône, et exclut /src/style.css', async () => {
+      const swCode = fs.readFileSync(swPath, 'utf-8');
+      const cacheRegistry = new Map<string, MockCache>();
+
+      const mockIndexHtml = `
+        <!doctype html>
+        <html>
+          <head>
+            <script type="module" src="/assets/index-abc.js"></script>
+            <link rel="stylesheet" href="/assets/index-abc.css">
+          </head>
+          <body></body>
+        </html>
+      `;
+
+      const fetchedUrls: string[] = [];
+
+      const fetchMock = (input: string | Request): Promise<Response> => {
+        const url = typeof input === 'string' ? input : input.url;
+        fetchedUrls.push(url);
+        if (url === '/index.html') {
+          return Promise.resolve(
+            new Response(mockIndexHtml, { status: 200, statusText: 'OK' }),
+          );
+        }
+        return Promise.resolve(
+          new Response('dummy-content', { status: 200, statusText: 'OK' }),
+        );
+      };
+
+      const swContext = loadSwContext(swCode, cacheRegistry, fetchMock);
+      const installListeners = swContext.getListeners('install');
+      expect(installListeners.length).toBeGreaterThan(0);
+
+      const installEvent = createInstallEvent();
+      const listener = installListeners[0];
+      if (listener) {
+        listener(installEvent);
+      }
+
+      await installEvent.getPromise();
+
+      // Vérifie les assets requis précachés
+      expect(fetchedUrls).toContain('/index.html');
+      expect(fetchedUrls).toContain('/manifest.webmanifest');
+      expect(fetchedUrls).toContain('/icon.svg');
+      expect(fetchedUrls).toContain('/assets/index-abc.js');
+      expect(fetchedUrls).toContain('/assets/index-abc.css');
+
+      // Vérifie que /src/style.css n'est pas précaché ni demandé
+      expect(fetchedUrls).not.toContain('/src/style.css');
+
+      // Vérifie le contenu du cache kiosk-shell-v1
+      const shellCache = cacheRegistry.get('kiosk-shell-v1');
+      expect(shellCache).toBeDefined();
+      if (shellCache) {
+        const cachedKeys = Array.from(shellCache.entries().keys());
+        expect(cachedKeys).toContain('/index.html');
+        expect(cachedKeys).toContain('/manifest.webmanifest');
+        expect(cachedKeys).toContain('/icon.svg');
+        expect(cachedKeys).toContain('/assets/index-abc.js');
+        expect(cachedKeys).toContain('/assets/index-abc.css');
+        expect(cachedKeys).not.toContain('/src/style.css');
       }
     });
 
