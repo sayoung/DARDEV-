@@ -965,4 +965,17 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Embarquer un paquet npm WebAssembly Argon2 dans l'application kiosque ; modifier le modèle de données API pour utiliser un algorithme compatible Web Crypto (PBKDF2/SHA-256).
 - **À valider :** oui
 
+## D-124 — Dépendance nodemailer pour le worker (M5 F-54)
+
+- **Date :** 18/10/2026
+- **Décision :** ajout de la dépendance `nodemailer` (^10.0.12) et `@types/nodemailer` (^8.0.2) au package `apps/worker` pour l'envoi du courriel d'alerte des kiosques hors-ligne aux administrateurs.
+- **Alternatives :** déléguer l'envoi à l'API via une file BullMQ dédiée, ou utiliser un client HTTP externe.
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| nodemailer | Envoi du courriel d'alerte hors-ligne | MIT-0 (licence MIT-0/EUPL déjà acceptée côté API) |
+| @types/nodemailer | Déclarations TypeScript de nodemailer | MIT |
+
+
 
