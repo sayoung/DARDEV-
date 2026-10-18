@@ -4,11 +4,36 @@ import type { AppState, AppStore } from './app-state.js';
 import { buildHomeModel } from './home-model.js';
 import { renderAttract } from './render-attract.js';
 import { renderHome } from './render-home.js';
+import {
+  renderMaintenancePin,
+  type MaintenancePinVerifier,
+} from './render-maintenance.js';
+import {
+  renderMaintenanceStatus,
+  type ConfirmFn,
+} from './render-maintenance-status.js';
 import { renderScreen, type OnEnrollCallback } from './render-screen.js';
+
+export type RenderTourCallback = (
+  root: HTMLElement,
+  tourId: string,
+  onBack?: () => void,
+) => void;
 
 export interface AppViewDeps {
   onEnroll?: OnEnrollCallback;
   getAttractTourUrl?: (state: AppState) => string | null;
+  verifyPin?: MaintenancePinVerifier;
+  verifyMaintenancePin?: MaintenancePinVerifier;
+  appVersion?: string;
+  syncedManifestVersion?: string | null;
+  lastSyncAt?: Date | null;
+  failedTours?: string[];
+  onForceSync?: () => void | Promise<void>;
+  onReenroll?: () => void | Promise<void>;
+  confirmFn?: ConfirmFn;
+  renderTour?: RenderTourCallback;
+  onBackHome?: () => void;
 }
 
 export interface CreateAppViewOptions {
@@ -23,17 +48,24 @@ export interface AppView {
   destroy(): void;
 }
 
+function assertUnreachable(value: never): never {
+  throw new Error(`Unhandled screen: ${String(value)}`);
+}
+
 /**
  * Vue orchestratrice de l'application kiosque (F-60 / F-61).
  *
- * Étape 2/3 (écrans HOME et ATTRACT) :
+ * Étape 3/3 (orchestration complète de tous les écrans du kiosque) :
  * - S'abonne au store et restitue l'affichage courant puis réagit à chaque mise à jour.
  * - Vide `root` avant d'appeler la fonction de rendu.
  * - Délègue les écrans ENROLL, LOADING et UNAVAILABLE à `renderScreen`.
  * - Délègue l'écran HOME à `renderHome` avec le modèle issu de `buildHomeModel`.
  * - Relie les interactions de l'écran HOME aux actions `SELECT_TOUR`, `SELECT_CATEGORY` et `SELECT_LANG`.
  * - Délègue l'écran ATTRACT à `renderAttract` et relie le réveil à l'action `WAKE`.
- * - Assure un repli sûr (root vidé) pour les autres écrans en attendant l'étape 3/3.
+ * - Délègue l'écran MAINTENANCE_PIN à `renderMaintenancePin` (succès -> `UNLOCK`, annulation -> `BACK_HOME`).
+ * - Délègue l'écran MAINTENANCE à `renderMaintenanceStatus` (fermeture -> `CLOSE_MAINTENANCE`).
+ * - Délègue l'écran TOUR au callback `deps.renderTour(root, tourId, onBack)` (retour -> `BACK_HOME`).
+ * - Garantit la couverture exhaustive de l'ensemble des états d'écran (`never`).
  * - Renvoie un objet exposant `dispose()` qui résilie l'abonnement et arrête les rendus.
  */
 export function createAppView({
@@ -116,10 +148,65 @@ export function createAppView({
         break;
       }
 
-      default: {
+      case 'MAINTENANCE_PIN': {
+        const verify =
+          deps?.verifyMaintenancePin ??
+          deps?.verifyPin ??
+          ((): Promise<boolean> => Promise.resolve(false));
+
+        renderMaintenancePin(doc, root, {
+          verify,
+          onUnlock(): void {
+            state.dispatch({ type: 'UNLOCK' });
+          },
+          onCancel(): void {
+            deps?.onBackHome?.();
+            state.dispatch({ type: 'BACK_HOME' });
+          },
+          lang: currentState.lang,
+        });
+        break;
+      }
+
+      case 'MAINTENANCE': {
+        renderMaintenanceStatus(
+          doc,
+          root,
+          {
+            appVersion: deps?.appVersion ?? '1.0.0',
+            syncedManifestVersion:
+              deps?.syncedManifestVersion !== undefined
+                ? deps.syncedManifestVersion
+                : (currentState.manifest?.manifestVersion ?? null),
+            lastSyncAt: deps?.lastSyncAt ?? null,
+            failedTours: deps?.failedTours ?? [],
+            lang: currentState.lang,
+            onForceSync: deps?.onForceSync ?? ((): void => undefined),
+            onReenroll: deps?.onReenroll ?? ((): void => undefined),
+            onClose(): void {
+              state.dispatch({ type: 'CLOSE_MAINTENANCE' });
+            },
+            confirmFn: deps?.confirmFn,
+          },
+          deps?.confirmFn,
+        );
+        break;
+      }
+
+      case 'TOUR': {
         root.replaceChildren();
         root.className = '';
+        if (currentState.tourId !== null && deps?.renderTour !== undefined) {
+          deps.renderTour(root, currentState.tourId, (): void => {
+            deps.onBackHome?.();
+            state.dispatch({ type: 'BACK_HOME' });
+          });
+        }
         break;
+      }
+
+      default: {
+        assertUnreachable(currentState.screen);
       }
     }
   }

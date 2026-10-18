@@ -10,11 +10,10 @@ import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   createAppState,
   type AppAction,
-  type AppScreen,
   type AppState,
   type AppStore,
 } from './app-state.js';
-import { createAppView } from './app-view.js';
+import { createAppView, type RenderTourCallback } from './app-view.js';
 
 const testCategoryMonuments: KioskManifestCategory = {
   id: '01990000-0000-7000-8000-000000000010',
@@ -715,39 +714,526 @@ describe('apps/kiosk/src/app-view (F-60 / F-61)', () => {
 
       view.dispose();
     });
+
+    it('applique la direction RTL et les libellés traduits en arabe pour MAINTENANCE_PIN et MAINTENANCE', () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'ar' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      expect(document.documentElement.getAttribute('lang')).toBe('ar');
+      expect(document.documentElement.getAttribute('dir')).toBe('rtl');
+      expect(root.getAttribute('dir')).toBe('rtl');
+
+      const pinTitle = root.querySelector('#kiosk-maintenance-title');
+      expect(pinTitle).toBeInstanceOf(HTMLHeadingElement);
+      if (pinTitle instanceof HTMLHeadingElement) {
+        expect(pinTitle.textContent).toBe(resources.ar.kiosk.maintenance.title);
+      }
+
+      store.setState(createFakeState({ screen: 'MAINTENANCE', lang: 'ar' }));
+
+      expect(root.getAttribute('dir')).toBe('rtl');
+      const statusTitle = root.querySelector('#kiosk-maintenance-status-title');
+      expect(statusTitle).toBeInstanceOf(HTMLHeadingElement);
+      if (statusTitle instanceof HTMLHeadingElement) {
+        expect(statusTitle.textContent).toBe(resources.ar.kiosk.maintenance.statusTitle);
+      }
+
+      view.dispose();
+    });
+
+    it('applique la direction LTR et les libellés traduits en anglais pour MAINTENANCE_PIN et MAINTENANCE', () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'en' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      expect(document.documentElement.getAttribute('lang')).toBe('en');
+      expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+      expect(root.getAttribute('dir')).toBe('ltr');
+
+      const pinTitle = root.querySelector('#kiosk-maintenance-title');
+      expect(pinTitle).toBeInstanceOf(HTMLHeadingElement);
+      if (pinTitle instanceof HTMLHeadingElement) {
+        expect(pinTitle.textContent).toBe(resources.en.kiosk.maintenance.title);
+      }
+
+      store.setState(createFakeState({ screen: 'MAINTENANCE', lang: 'en' }));
+
+      expect(root.getAttribute('dir')).toBe('ltr');
+      const statusTitle = root.querySelector('#kiosk-maintenance-status-title');
+      expect(statusTitle).toBeInstanceOf(HTMLHeadingElement);
+      if (statusTitle instanceof HTMLHeadingElement) {
+        expect(statusTitle.textContent).toBe(resources.en.kiosk.maintenance.statusTitle);
+      }
+
+      view.dispose();
+    });
   });
 
-  describe('Repli sûr pour les autres écrans', () => {
-    const screensNotHandledInStepTwo: AppScreen[] = [
-      'MAINTENANCE_PIN',
-      'MAINTENANCE',
-      'TOUR',
-    ];
+  describe('Écran MAINTENANCE_PIN (F-67) et interactions', () => {
+    it('rend l’écran MAINTENANCE_PIN avec formulaire, clavier tactile et libellés i18n', () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'fr' });
+      const store = createFakeStore(fakeState);
 
-    it.each(screensNotHandledInStepTwo)(
-      'vide root pour l’écran non encore branché %s',
-      (screen) => {
-        // Préremplissage de root pour vérifier que le conteneur est bien vidé
-        const dummyChild = document.createElement('div');
-        dummyChild.className = 'dummy-child';
-        root.appendChild(dummyChild);
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
 
-        const fakeState = createFakeState({ screen, lang: 'fr' });
-        const store = createFakeStore(fakeState);
+      expect(root.classList.contains('kiosk-screen-maintenance')).toBe(true);
 
+      const title = root.querySelector('#kiosk-maintenance-title');
+      expect(title).toBeInstanceOf(HTMLHeadingElement);
+      if (title instanceof HTMLHeadingElement) {
+        expect(title.textContent).toBe(resources.fr.kiosk.maintenance.title);
+      }
+
+      const input = root.querySelector('.kiosk-pin-input');
+      expect(input).toBeInstanceOf(HTMLInputElement);
+
+      const keypad = root.querySelector('.kiosk-pin-keypad');
+      expect(keypad).toBeInstanceOf(HTMLDivElement);
+
+      const submitBtn = root.querySelector('[data-testid="kiosk-pin-submit"]');
+      expect(submitBtn).toBeInstanceOf(HTMLButtonElement);
+
+      const cancelBtn = root.querySelector('[data-testid="kiosk-pin-cancel"]');
+      expect(cancelBtn).toBeInstanceOf(HTMLButtonElement);
+
+      view.dispose();
+    });
+
+    it('la soumission d’un code PIN valide appelle verify et dispatche UNLOCK', async () => {
+      const verify = vi.fn().mockImplementation(() => Promise.resolve(true));
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { verifyPin: verify },
+      });
+
+      const btn1 = root.querySelector('[data-testid="kiosk-pin-digit-1"]');
+      const btn2 = root.querySelector('[data-testid="kiosk-pin-digit-2"]');
+      const btn3 = root.querySelector('[data-testid="kiosk-pin-digit-3"]');
+      const btn4 = root.querySelector('[data-testid="kiosk-pin-digit-4"]');
+      const submitBtn = root.querySelector('[data-testid="kiosk-pin-submit"]');
+
+      expect(btn1).toBeInstanceOf(HTMLButtonElement);
+      expect(btn2).toBeInstanceOf(HTMLButtonElement);
+      expect(btn3).toBeInstanceOf(HTMLButtonElement);
+      expect(btn4).toBeInstanceOf(HTMLButtonElement);
+      expect(submitBtn).toBeInstanceOf(HTMLButtonElement);
+
+      if (
+        btn1 instanceof HTMLButtonElement &&
+        btn2 instanceof HTMLButtonElement &&
+        btn3 instanceof HTMLButtonElement &&
+        btn4 instanceof HTMLButtonElement &&
+        submitBtn instanceof HTMLButtonElement
+      ) {
+        btn1.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        btn2.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        btn3.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        btn4.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        submitBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(verify).toHaveBeenCalledTimes(1);
+        expect(verify).toHaveBeenCalledWith('1234');
+        expect(store.dispatch).toHaveBeenCalledWith({ type: 'UNLOCK' });
+      }
+
+      view.dispose();
+    });
+
+    it('la soumission d’un mauvais code PIN affiche l’erreur i18n et ne dispatche pas UNLOCK', async () => {
+      const verify = vi.fn().mockImplementation(() => Promise.resolve(false));
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { verifyPin: verify },
+      });
+
+      const input = root.querySelector('.kiosk-pin-input');
+      const submitBtn = root.querySelector('[data-testid="kiosk-pin-submit"]');
+      const errorDiv = root.querySelector('#kiosk-pin-error');
+
+      expect(input).toBeInstanceOf(HTMLInputElement);
+      expect(submitBtn).toBeInstanceOf(HTMLButtonElement);
+      expect(errorDiv).toBeInstanceOf(HTMLDivElement);
+
+      if (
+        input instanceof HTMLInputElement &&
+        submitBtn instanceof HTMLButtonElement &&
+        errorDiv instanceof HTMLDivElement
+      ) {
+        input.value = '9999';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        submitBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(verify).toHaveBeenCalledTimes(1);
+        expect(verify).toHaveBeenCalledWith('9999');
+        expect(store.dispatch).not.toHaveBeenCalledWith({ type: 'UNLOCK' });
+        expect(errorDiv.hidden).toBe(false);
+        expect(errorDiv.textContent).toBe(resources.fr.kiosk.maintenance.error);
+      }
+
+      view.dispose();
+    });
+
+    it('un clic sur le bouton Annuler dispatche BACK_HOME', () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      const cancelBtn = root.querySelector('[data-testid="kiosk-pin-cancel"]');
+      expect(cancelBtn).toBeInstanceOf(HTMLButtonElement);
+      if (cancelBtn instanceof HTMLButtonElement) {
+        cancelBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(store.dispatch).toHaveBeenCalledTimes(1);
+        expect(store.dispatch).toHaveBeenCalledWith({ type: 'BACK_HOME' });
+      }
+
+      view.dispose();
+    });
+
+    it('l’appui sur Échap depuis l’écran MAINTENANCE_PIN dispatche BACK_HOME', () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(store.dispatch).toHaveBeenCalledTimes(1);
+      expect(store.dispatch).toHaveBeenCalledWith({ type: 'BACK_HOME' });
+
+      view.dispose();
+    });
+
+    it('utilise un repli par défaut sans erreur si aucun verifyPin n’est fourni', async () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE_PIN', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      const input = root.querySelector('.kiosk-pin-input');
+      const submitBtn = root.querySelector('[data-testid="kiosk-pin-submit"]');
+      const errorDiv = root.querySelector('#kiosk-pin-error');
+
+      expect(input).toBeInstanceOf(HTMLInputElement);
+      expect(submitBtn).toBeInstanceOf(HTMLButtonElement);
+      expect(errorDiv).toBeInstanceOf(HTMLDivElement);
+
+      if (
+        input instanceof HTMLInputElement &&
+        submitBtn instanceof HTMLButtonElement &&
+        errorDiv instanceof HTMLDivElement
+      ) {
+        input.value = '1234';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        submitBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(store.dispatch).not.toHaveBeenCalledWith({ type: 'UNLOCK' });
+        expect(errorDiv.hidden).toBe(false);
+        expect(errorDiv.textContent).toBe(resources.fr.kiosk.maintenance.error);
+      }
+
+      view.dispose();
+    });
+  });
+
+  describe('Écran MAINTENANCE (F-67 2/2) et interactions', () => {
+    it('rend l’écran MAINTENANCE avec les informations système et d’état', () => {
+      const lastSyncAt = new Date('2026-10-18T05:00:00.000Z');
+      const fakeState = createFakeState({
+        screen: 'MAINTENANCE',
+        lang: 'fr',
+        manifest: createTestManifest(),
+      });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: {
+          appVersion: '2.5.0',
+          syncedManifestVersion: 'm-20261018-99',
+          lastSyncAt,
+          failedTours: ['tour-err-1', 'tour-err-2'],
+        },
+      });
+
+      expect(root.classList.contains('kiosk-screen-maintenance-status')).toBe(true);
+
+      const title = root.querySelector('#kiosk-maintenance-status-title');
+      expect(title).toBeInstanceOf(HTMLHeadingElement);
+      if (title instanceof HTMLHeadingElement) {
+        expect(title.textContent).toBe(resources.fr.kiosk.maintenance.statusTitle);
+      }
+
+      const versionEl = root.querySelector('[data-testid="kiosk-status-app-version"]');
+      expect(versionEl).toBeInstanceOf(HTMLElement);
+      if (versionEl instanceof HTMLElement) {
+        expect(versionEl.textContent).toBe('2.5.0');
+      }
+
+      const manifestEl = root.querySelector('[data-testid="kiosk-status-manifest-version"]');
+      expect(manifestEl).toBeInstanceOf(HTMLElement);
+      if (manifestEl instanceof HTMLElement) {
+        expect(manifestEl.textContent).toBe('m-20261018-99');
+      }
+
+      const syncStateEl = root.querySelector('[data-testid="kiosk-status-sync-state"]');
+      expect(syncStateEl).toBeInstanceOf(HTMLElement);
+      if (syncStateEl instanceof HTMLElement) {
+        expect(syncStateEl.textContent).toContain(resources.fr.kiosk.maintenance.syncStatusError);
+      }
+
+      const failedItem = root.querySelector('[data-tour-id="tour-err-1"]');
+      expect(failedItem).toBeInstanceOf(HTMLLIElement);
+
+      view.dispose();
+    });
+
+    it('un clic sur le bouton Fermer dispatche CLOSE_MAINTENANCE', () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      const closeBtn = root.querySelector('[data-testid="kiosk-status-close"]');
+      expect(closeBtn).toBeInstanceOf(HTMLButtonElement);
+      if (closeBtn instanceof HTMLButtonElement) {
+        closeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(store.dispatch).toHaveBeenCalledTimes(1);
+        expect(store.dispatch).toHaveBeenCalledWith({ type: 'CLOSE_MAINTENANCE' });
+      }
+
+      view.dispose();
+    });
+
+    it('l’appui sur Échap depuis l’écran MAINTENANCE dispatche CLOSE_MAINTENANCE', () => {
+      const fakeState = createFakeState({ screen: 'MAINTENANCE', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      root.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(store.dispatch).toHaveBeenCalledTimes(1);
+      expect(store.dispatch).toHaveBeenCalledWith({ type: 'CLOSE_MAINTENANCE' });
+
+      view.dispose();
+    });
+
+    it('déclenche onForceSync lors d’un clic sur Forcer la synchronisation', async () => {
+      const onForceSync = vi.fn().mockImplementation(() => Promise.resolve());
+      const fakeState = createFakeState({ screen: 'MAINTENANCE', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { onForceSync },
+      });
+
+      const forceSyncBtn = root.querySelector('[data-testid="kiosk-status-force-sync"]');
+      expect(forceSyncBtn).toBeInstanceOf(HTMLButtonElement);
+      if (forceSyncBtn instanceof HTMLButtonElement) {
+        forceSyncBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await Promise.resolve();
+        expect(onForceSync).toHaveBeenCalledTimes(1);
+      }
+
+      view.dispose();
+    });
+
+    it('déclenche onReenroll après confirmation confirmFn', async () => {
+      const onReenroll = vi.fn().mockImplementation(() => Promise.resolve());
+      const confirmFn = vi.fn().mockReturnValue(true);
+      const fakeState = createFakeState({ screen: 'MAINTENANCE', lang: 'fr' });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { onReenroll, confirmFn },
+      });
+
+      const reenrollBtn = root.querySelector('[data-testid="kiosk-status-reenroll"]');
+      expect(reenrollBtn).toBeInstanceOf(HTMLButtonElement);
+      if (reenrollBtn instanceof HTMLButtonElement) {
+        reenrollBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await Promise.resolve();
+        expect(confirmFn).toHaveBeenCalledTimes(1);
+        expect(onReenroll).toHaveBeenCalledTimes(1);
+      }
+
+      view.dispose();
+    });
+  });
+
+  describe('Écran TOUR (F-60 / F-61) et callback renderTour', () => {
+    it('vide root puis appelle deps.renderTour avec root, l’identifiant de visite et le callback onBack', () => {
+      const dummyChild = document.createElement('div');
+      dummyChild.className = 'dummy-child';
+      root.appendChild(dummyChild);
+
+      const renderTour = vi.fn();
+      const fakeState = createFakeState({
+        screen: 'TOUR',
+        tourId: testTourOudayas.id,
+        lang: 'fr',
+      });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { renderTour },
+      });
+
+      expect(root.querySelector('.dummy-child')).toBeNull();
+      expect(renderTour).toHaveBeenCalledTimes(1);
+      const callArgs = renderTour.mock.calls[0];
+      expect(callArgs).toBeDefined();
+      if (callArgs !== undefined) {
+        expect(callArgs[0]).toBe(root);
+        expect(callArgs[1]).toBe(testTourOudayas.id);
+        expect(typeof callArgs[2]).toBe('function');
+      }
+
+      view.dispose();
+    });
+
+    it('l’appel du callback de retour passé à renderTour dispatche BACK_HOME', () => {
+      let capturedOnBack: (() => void) | undefined;
+      const renderTour: Mock<RenderTourCallback> = vi.fn(
+        (_root: HTMLElement, _tourId: string, onBack?: () => void): void => {
+          capturedOnBack = onBack;
+        },
+      );
+
+      const fakeState = createFakeState({
+        screen: 'TOUR',
+        tourId: testTourOudayas.id,
+        lang: 'fr',
+      });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { renderTour },
+      });
+
+      expect(capturedOnBack).toBeDefined();
+      if (capturedOnBack !== undefined) {
+        capturedOnBack();
+        expect(store.dispatch).toHaveBeenCalledTimes(1);
+        expect(store.dispatch).toHaveBeenCalledWith({ type: 'BACK_HOME' });
+      }
+
+      view.dispose();
+    });
+
+    it('vide root et n’appelle pas renderTour si tourId est null', () => {
+      const renderTour = vi.fn();
+      const fakeState = createFakeState({
+        screen: 'TOUR',
+        tourId: null,
+        lang: 'fr',
+      });
+      const store = createFakeStore(fakeState);
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { renderTour },
+      });
+
+      expect(root.children.length).toBe(0);
+      expect(root.className).toBe('');
+      expect(renderTour).not.toHaveBeenCalled();
+
+      view.dispose();
+    });
+
+    it('vide root sans lever d’erreur si deps.renderTour n’est pas défini', () => {
+      const fakeState = createFakeState({
+        screen: 'TOUR',
+        tourId: testTourOudayas.id,
+        lang: 'fr',
+      });
+      const store = createFakeStore(fakeState);
+
+      expect(() => {
         const view = createAppView({
           doc: document,
           root,
           state: store,
         });
-
-        expect(root.children.length).toBe(0);
-        expect(root.textContent).toBe('');
-        expect(root.className).toBe('');
-
         view.dispose();
-      },
-    );
+      }).not.toThrow();
+
+      expect(root.children.length).toBe(0);
+      expect(root.className).toBe('');
+    });
   });
 
   describe('Transitions réactives et nettoyage entre écrans', () => {
@@ -1001,6 +1487,156 @@ describe('apps/kiosk/src/app-view (F-60 / F-61)', () => {
       expect(store.getState().lang).toBe('ar');
       expect(root.getAttribute('dir')).toBe('rtl');
       expect(root.getAttribute('lang')).toBe('ar');
+
+      view.dispose();
+    });
+
+    it('enchaîne le cycle complet de maintenance (OPEN_MAINTENANCE -> UNLOCK -> CLOSE_MAINTENANCE) sur le store réel', async () => {
+      const manifest = createTestManifest();
+      const store = createAppState({
+        screen: 'HOME',
+        manifest,
+        enrolled: true,
+        disabled: false,
+      });
+
+      const verifyPin = vi.fn().mockImplementation(() => Promise.resolve(true));
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { verifyPin },
+      });
+
+      expect(store.getState().screen).toBe('HOME');
+      expect(root.classList.contains('kiosk-home')).toBe(true);
+
+      // 1. Déclenchement de OPEN_MAINTENANCE
+      store.dispatch({ type: 'OPEN_MAINTENANCE' });
+
+      expect(store.getState().screen).toBe('MAINTENANCE_PIN');
+      expect(root.classList.contains('kiosk-screen-maintenance')).toBe(true);
+      expect(root.querySelector('#kiosk-maintenance-title')).toBeInstanceOf(HTMLHeadingElement);
+
+      // 2. Saisie du PIN et soumission -> UNLOCK
+      const input = root.querySelector('.kiosk-pin-input');
+      const submitBtn = root.querySelector('[data-testid="kiosk-pin-submit"]');
+      expect(input).toBeInstanceOf(HTMLInputElement);
+      expect(submitBtn).toBeInstanceOf(HTMLButtonElement);
+
+      if (input instanceof HTMLInputElement && submitBtn instanceof HTMLButtonElement) {
+        input.value = '1234';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        submitBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+        await Promise.resolve();
+        await Promise.resolve();
+      }
+
+      expect(store.getState().screen).toBe('MAINTENANCE');
+      expect(root.classList.contains('kiosk-screen-maintenance-status')).toBe(true);
+      expect(root.querySelector('#kiosk-maintenance-status-title')).toBeInstanceOf(HTMLHeadingElement);
+
+      // 3. Fermeture de l'écran technique -> CLOSE_MAINTENANCE -> HOME
+      const closeBtn = root.querySelector('[data-testid="kiosk-status-close"]');
+      expect(closeBtn).toBeInstanceOf(HTMLButtonElement);
+      if (closeBtn instanceof HTMLButtonElement) {
+        closeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      }
+
+      expect(store.getState().screen).toBe('HOME');
+      expect(root.classList.contains('kiosk-home')).toBe(true);
+
+      view.dispose();
+    });
+
+    it('permet d’annuler la saisie du PIN vers l’accueil (OPEN_MAINTENANCE -> BACK_HOME) sur le store réel', () => {
+      const manifest = createTestManifest();
+      const store = createAppState({
+        screen: 'HOME',
+        manifest,
+        enrolled: true,
+        disabled: false,
+      });
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+      });
+
+      expect(store.getState().screen).toBe('HOME');
+
+      store.dispatch({ type: 'OPEN_MAINTENANCE' });
+      expect(store.getState().screen).toBe('MAINTENANCE_PIN');
+
+      const cancelBtn = root.querySelector('[data-testid="kiosk-pin-cancel"]');
+      expect(cancelBtn).toBeInstanceOf(HTMLButtonElement);
+      if (cancelBtn instanceof HTMLButtonElement) {
+        cancelBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      }
+
+      expect(store.getState().screen).toBe('HOME');
+      expect(root.classList.contains('kiosk-home')).toBe(true);
+
+      view.dispose();
+    });
+
+    it('enchaîne l’ouverture et le retour depuis une visite (SELECT_TOUR -> BACK_HOME) sur le store réel', () => {
+      const manifest = createTestManifest();
+      const store = createAppState({
+        screen: 'HOME',
+        manifest,
+        enrolled: true,
+        disabled: false,
+      });
+
+      let capturedOnBack: (() => void) | undefined;
+      const renderTour: Mock<RenderTourCallback> = vi.fn(
+        (_root: HTMLElement, _tourId: string, onBack?: () => void): void => {
+          capturedOnBack = onBack;
+        },
+      );
+
+      const view = createAppView({
+        doc: document,
+        root,
+        state: store,
+        deps: { renderTour },
+      });
+
+      expect(store.getState().screen).toBe('HOME');
+
+      // Sélection d'une visite
+      const tourBtn = root.querySelector(
+        `.kiosk-tour-card[data-tour-id="${testTourOudayas.id}"]`,
+      );
+      expect(tourBtn).toBeInstanceOf(HTMLButtonElement);
+      if (tourBtn instanceof HTMLButtonElement) {
+        tourBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      }
+
+      expect(store.getState().screen).toBe('TOUR');
+      expect(store.getState().tourId).toBe(testTourOudayas.id);
+      expect(renderTour).toHaveBeenCalledTimes(1);
+      const tourCallArgs = renderTour.mock.calls[0];
+      expect(tourCallArgs).toBeDefined();
+      if (tourCallArgs !== undefined) {
+        expect(tourCallArgs[0]).toBe(root);
+        expect(tourCallArgs[1]).toBe(testTourOudayas.id);
+        expect(typeof tourCallArgs[2]).toBe('function');
+      }
+
+      // Retour à l'accueil via callback
+      expect(capturedOnBack).toBeDefined();
+      if (capturedOnBack !== undefined) {
+        capturedOnBack();
+      }
+
+      expect(store.getState().screen).toBe('HOME');
+      expect(store.getState().tourId).toBeNull();
+      expect(root.classList.contains('kiosk-home')).toBe(true);
 
       view.dispose();
     });
