@@ -110,4 +110,124 @@ describe('createIdleController', () => {
     expect(controller.getState()).toBe('IDLE');
     expect(idleCalls).toBe(1);
   });
+
+  it('réarme le minuteur lors d’un changement de durée avant échéance', () => {
+    const timers = new FakeTimers();
+    let idleCalls = 0;
+    const controller = createController(timers, () => idleCalls++);
+
+    timers.advanceBy(6_000);
+    expect(controller.getState()).toBe('ACTIVE');
+    expect(idleCalls).toBe(0);
+
+    controller.setIdleTimeoutSeconds(15);
+    expect(controller.getState()).toBe('ACTIVE');
+
+    timers.advanceBy(14_999);
+    expect(controller.getState()).toBe('ACTIVE');
+    expect(idleCalls).toBe(0);
+
+    timers.advanceBy(1);
+    expect(controller.getState()).toBe('IDLE');
+    expect(idleCalls).toBe(1);
+  });
+
+  it('raccourcit le délai lors d’un changement de durée avant échéance', () => {
+    const timers = new FakeTimers();
+    let idleCalls = 0;
+    const controller = createController(timers, () => idleCalls++);
+
+    timers.advanceBy(4_000);
+    expect(controller.getState()).toBe('ACTIVE');
+
+    controller.setIdleTimeoutSeconds(3);
+    timers.advanceBy(2_999);
+    expect(controller.getState()).toBe('ACTIVE');
+    expect(idleCalls).toBe(0);
+
+    timers.advanceBy(1);
+    expect(controller.getState()).toBe('IDLE');
+    expect(idleCalls).toBe(1);
+  });
+
+  it('rejette les valeurs de durée invalides sans corrompre le minuteur en cours', () => {
+    const timers = new FakeTimers();
+    let idleCalls = 0;
+    const controller = createController(timers, () => idleCalls++);
+
+    expect(() => {
+      controller.setIdleTimeoutSeconds(0);
+    }).toThrow(RangeError);
+    expect(() => {
+      controller.setIdleTimeoutSeconds(-5);
+    }).toThrow(RangeError);
+    expect(() => {
+      controller.setIdleTimeoutSeconds(Number.NaN);
+    }).toThrow(RangeError);
+    expect(() => {
+      controller.setIdleTimeoutSeconds(Number.POSITIVE_INFINITY);
+    }).toThrow(RangeError);
+    expect(() => {
+      controller.setIdleTimeoutSeconds(Number.NEGATIVE_INFINITY);
+    }).toThrow(RangeError);
+
+    expect(() =>
+      createIdleController({
+        idleTimeoutSeconds: 0,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+        onIdle: () => undefined,
+        onWake: () => undefined,
+      }),
+    ).toThrow(RangeError);
+
+    timers.advanceBy(9_999);
+    expect(controller.getState()).toBe('ACTIVE');
+    expect(idleCalls).toBe(0);
+
+    timers.advanceBy(1);
+    expect(controller.getState()).toBe('IDLE');
+    expect(idleCalls).toBe(1);
+  });
+
+  it('conserve l’état veille lors d’un changement de durée en mode IDLE et applique le nouveau délai au réveil', () => {
+    const timers = new FakeTimers();
+    let idleCalls = 0;
+    let wakeCalls = 0;
+    const controller = createController(
+      timers,
+      () => idleCalls++,
+      () => wakeCalls++,
+    );
+
+    timers.advanceBy(10_000);
+    expect(controller.getState()).toBe('IDLE');
+    expect(idleCalls).toBe(1);
+    expect(wakeCalls).toBe(0);
+
+    controller.setIdleTimeoutSeconds(20);
+    expect(controller.getState()).toBe('IDLE');
+    expect(idleCalls).toBe(1);
+    expect(wakeCalls).toBe(0);
+
+    timers.advanceBy(50_000);
+    expect(controller.getState()).toBe('IDLE');
+    expect(idleCalls).toBe(1);
+    expect(wakeCalls).toBe(0);
+
+    controller.notifyInteraction();
+    expect(controller.getState()).toBe('ACTIVE');
+    expect(idleCalls).toBe(1);
+    expect(wakeCalls).toBe(1);
+
+    timers.advanceBy(19_999);
+    expect(controller.getState()).toBe('ACTIVE');
+    expect(idleCalls).toBe(1);
+
+    timers.advanceBy(1);
+    expect(controller.getState()).toBe('IDLE');
+    expect(idleCalls).toBe(2);
+  });
 });
+

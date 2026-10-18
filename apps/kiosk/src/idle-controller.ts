@@ -12,6 +12,7 @@ export interface IdleControllerOptions {
 export interface IdleController {
   getState: () => IdleControllerState;
   notifyInteraction: () => void;
+  setIdleTimeoutSeconds: (seconds: number) => void;
 }
 
 export function createIdleController({
@@ -26,7 +27,7 @@ export function createIdleController({
     throw new RangeError('idleTimeoutSeconds must be a positive finite number');
   }
 
-  const timeoutMs = idleTimeoutSeconds * 1000;
+  let timeoutMs = idleTimeoutSeconds * 1000;
   let state: IdleControllerState = 'ACTIVE';
   let timer: unknown;
   let deadline = now() + timeoutMs;
@@ -60,10 +61,25 @@ export function createIdleController({
     scheduleTimeout();
   };
 
+  const setIdleTimeoutSeconds = (seconds: number): void => {
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+      throw new RangeError('idleTimeoutSeconds must be a positive finite number');
+    }
+
+    timeoutMs = seconds * 1000;
+
+    if (state === 'ACTIVE') {
+      clearTimeout(timer);
+      deadline = now() + timeoutMs;
+      scheduleTimeout();
+    }
+  };
+
   scheduleTimeout();
 
   return {
     getState: () => state,
     notifyInteraction,
+    setIdleTimeoutSeconds,
   };
 }
