@@ -25,6 +25,46 @@ import type {
 } from './render-tour.js';
 import { collectUrlsFromTourGraph } from './urls-for-tour.js';
 
+class FakeTimers {
+  time = 0;
+  nextId = 0;
+  readonly timers = new Map<number, { at: number; callback: () => void }>();
+
+  readonly now = (): number => this.time;
+
+  readonly setTimeout = (callback: () => void, delayMs: number): number => {
+    const id = this.nextId;
+    this.nextId += 1;
+    this.timers.set(id, { at: this.time + delayMs, callback });
+    return id;
+  };
+
+  readonly clearTimeout = (handle: unknown): void => {
+    if (typeof handle === 'number') {
+      this.timers.delete(handle);
+    }
+  };
+
+  advanceBy(milliseconds: number): void {
+    const target = this.time + milliseconds;
+    for (;;) {
+      const candidates = [...this.timers.entries()]
+        .filter(([, timer]) => timer.at <= target)
+        .sort(([, left], [, right]) => left.at - right.at);
+      const next = candidates[0];
+      if (next === undefined) {
+        break;
+      }
+
+      const [id, timer] = next;
+      this.timers.delete(id);
+      this.time = timer.at;
+      timer.callback();
+    }
+    this.time = target;
+  }
+}
+
 class FakeLocalStorage implements Storage {
   private readonly map = new Map<string, string>();
 
@@ -1113,5 +1153,175 @@ describe('bootstrapKiosk (M5 F-60)', () => {
     expect(activeInstance.state.getState().tourId).toBeNull();
     expect(document.querySelector('.kiosk-home')).not.toBeNull();
     expect(document.querySelector('.kiosk-tour-view')).toBeNull();
+  });
+
+  describe('veille et durée d’inactivité configurable (M5 F-63)', () => {
+    it('manifeste avec idleTimeoutSeconds=30 : la veille se déclenche après 30 s avec les minuteurs factices', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const timers = new FakeTimers();
+
+      const manifestWith30s: KioskManifest = {
+        ...validManifest,
+        kiosk: {
+          ...validManifest.kiosk,
+          idleTimeoutSeconds: 30,
+        },
+      };
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: manifestWith30s,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+      });
+
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      // À 29,999 s : toujours sur HOME
+      timers.advanceBy(29_999);
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      // À 30 s : passage en veille (ATTRACT)
+      timers.advanceBy(1);
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+    });
+
+    it('met à jour la durée de veille lors d’un changement de manifeste via le store (MANIFEST_LOADED)', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const timers = new FakeTimers();
+
+      const initialManifest: KioskManifest = {
+        ...validManifest,
+        kiosk: {
+          ...validManifest.kiosk,
+          idleTimeoutSeconds: 60,
+        },
+      };
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: initialManifest,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+      });
+
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      // Un nouveau manifeste arrive avec 30 s
+      const updatedManifest: KioskManifest = {
+        ...validManifest,
+        kiosk: {
+          ...validManifest.kiosk,
+          idleTimeoutSeconds: 30,
+        },
+      };
+
+      activeInstance.state.dispatch({
+        type: 'MANIFEST_LOADED',
+        manifest: updatedManifest,
+      });
+
+      // À 29,999 s depuis la mise à jour : toujours HOME
+      timers.advanceBy(29_999);
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      // À 30 s : bascule en ATTRACT
+      timers.advanceBy(1);
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+    });
+
+    it('ignore les valeurs négatives ou nulles d’idleTimeoutSeconds lors d’un changement de manifeste sans lever d’erreur', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const timers = new FakeTimers();
+
+      const initialManifest: KioskManifest = {
+        ...validManifest,
+        kiosk: {
+          ...validManifest.kiosk,
+          idleTimeoutSeconds: 30,
+        },
+      };
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: initialManifest,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+      });
+
+      // Manifeste avec valeur négative (<= 0)
+      const negativeManifest: KioskManifest = {
+        ...validManifest,
+        kiosk: {
+          ...validManifest.kiosk,
+          idleTimeoutSeconds: -5,
+        },
+      };
+
+      expect(() => {
+        activeInstance?.state.dispatch({
+          type: 'MANIFEST_LOADED',
+          manifest: negativeManifest,
+        });
+      }).not.toThrow();
+
+      // Manifeste avec valeur zéro
+      const zeroManifest: KioskManifest = {
+        ...validManifest,
+        kiosk: {
+          ...validManifest.kiosk,
+          idleTimeoutSeconds: 0,
+        },
+      };
+
+      expect(() => {
+        activeInstance?.state.dispatch({
+          type: 'MANIFEST_LOADED',
+          manifest: zeroManifest,
+        });
+      }).not.toThrow();
+
+      // La durée initiale de 30 s reste effective
+      timers.advanceBy(29_999);
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      timers.advanceBy(1);
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+    });
+
+    it('démarrage sans manifeste puis chargement ultérieur applique la durée configurée (30 s)', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const timers = new FakeTimers();
+
+      activeInstance = bootstrapKiosk(window, document, {
+        manifest: null,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+      });
+
+      // Chargement ultérieur d'un manifeste avec 30 s
+      const manifestWith30s: KioskManifest = {
+        ...validManifest,
+        kiosk: {
+          ...validManifest.kiosk,
+          idleTimeoutSeconds: 30,
+        },
+      };
+
+      activeInstance.state.dispatch({
+        type: 'MANIFEST_LOADED',
+        manifest: manifestWith30s,
+      });
+
+      // L'écran est HOME après chargement du manifeste
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      timers.advanceBy(29_999);
+      expect(activeInstance.state.getState().screen).toBe('HOME');
+
+      timers.advanceBy(1);
+      expect(activeInstance.state.getState().screen).toBe('ATTRACT');
+    });
   });
 });

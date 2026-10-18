@@ -745,6 +745,119 @@ describe('wireInteractions (F-63 / F-67)', () => {
     });
   });
 
+  describe('setIdleTimeoutSeconds (F-63)', () => {
+    it('modifie la durée d’inactivité dynamiquement', () => {
+      const timers = new FakeTimers();
+      const dispatchedActions: AppAction[] = [];
+      const state = {
+        dispatch: (action: AppAction): void => {
+          dispatchedActions.push(action);
+        },
+      };
+
+      const wiring = wireInteractions({
+        doc: document,
+        state,
+        idleTimeoutSeconds: 10,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+      });
+
+      // Augmente le délai à 25 s
+      wiring.setIdleTimeoutSeconds(25);
+
+      timers.advanceBy(24_999);
+      expect(dispatchedActions).toEqual([]);
+
+      timers.advanceBy(1);
+      expect(dispatchedActions).toEqual([{ type: 'IDLE' }]);
+
+      wiring.dispose();
+    });
+
+    it('raccourcit la durée d’inactivité dynamiquement', () => {
+      const timers = new FakeTimers();
+      const dispatchedActions: AppAction[] = [];
+      const state = {
+        dispatch: (action: AppAction): void => {
+          dispatchedActions.push(action);
+        },
+      };
+
+      const wiring = wireInteractions({
+        doc: document,
+        state,
+        idleTimeoutSeconds: 60,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+      });
+
+      // Raccourcit le délai à 15 s
+      wiring.setIdleTimeoutSeconds(15);
+
+      timers.advanceBy(14_999);
+      expect(dispatchedActions).toEqual([]);
+
+      timers.advanceBy(1);
+      expect(dispatchedActions).toEqual([{ type: 'IDLE' }]);
+
+      wiring.dispose();
+    });
+
+    it('délègue à getIdleController().setIdleTimeoutSeconds', () => {
+      const timers = new FakeTimers();
+      const state = {
+        dispatch: (): void => undefined,
+      };
+
+      const wiring = wireInteractions({
+        doc: document,
+        state,
+        idleTimeoutSeconds: 10,
+        now: timers.now,
+        setTimeout: timers.setTimeout,
+        clearTimeout: timers.clearTimeout,
+      });
+
+      const idleController = wiring.getIdleController();
+      const spy = vi.spyOn(idleController, 'setIdleTimeoutSeconds');
+
+      wiring.setIdleTimeoutSeconds(42);
+      expect(spy).toHaveBeenCalledWith(42);
+
+      wiring.dispose();
+    });
+
+    it('lève une RangeError si la durée est invalide (<= 0 ou non finie)', () => {
+      const state = {
+        dispatch: (): void => undefined,
+      };
+
+      const wiring = wireInteractions({
+        doc: document,
+        state,
+        idleTimeoutSeconds: 10,
+      });
+
+      expect(() => {
+        wiring.setIdleTimeoutSeconds(0);
+      }).toThrow(RangeError);
+      expect(() => {
+        wiring.setIdleTimeoutSeconds(-10);
+      }).toThrow(RangeError);
+      expect(() => {
+        wiring.setIdleTimeoutSeconds(Number.NaN);
+      }).toThrow(RangeError);
+      expect(() => {
+        wiring.setIdleTimeoutSeconds(Number.POSITIVE_INFINITY);
+      }).toThrow(RangeError);
+
+      wiring.dispose();
+    });
+  });
+
   describe('intégration complète avec renderHome dans le DOM réel', () => {
     it('déclenche OPEN_MAINTENANCE lors de 5 appuis sur le logo rendu par renderHome', () => {
       const timers = new FakeTimers();

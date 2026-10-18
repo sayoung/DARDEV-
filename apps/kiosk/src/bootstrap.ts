@@ -81,6 +81,7 @@ export interface BootstrapKioskOptions {
   clearInterval?: ClearIntervalFn;
   setTimeout?: (callback: () => void, delayMs: number) => unknown;
   clearTimeout?: (handle: unknown) => void;
+  now?: () => number;
   storageEstimateProvider?: StorageEstimateProvider;
   appVersion?: string;
   root?: HTMLElement;
@@ -549,8 +550,38 @@ export function bootstrapKiosk(
   const wiring = wireInteractions({
     doc,
     state,
+    now: options?.now,
     setTimeout: setTimeoutFn,
     clearTimeout: clearTimeoutFn,
+  });
+
+  const applyManifestIdleTimeout = (
+    manifest: KioskManifest | null,
+  ): void => {
+    if (manifest === null) {
+      return;
+    }
+    const timeoutSeconds = manifest.kiosk.idleTimeoutSeconds;
+    if (
+      Number.isFinite(timeoutSeconds) &&
+      timeoutSeconds > 0
+    ) {
+      try {
+        wiring.setIdleTimeoutSeconds(timeoutSeconds);
+      } catch {
+        // Ignorer les valeurs invalides
+      }
+    }
+  };
+
+  applyManifestIdleTimeout(state.getState().manifest);
+
+  let previousManifest = state.getState().manifest;
+  const unsubscribeManifest = state.subscribe((nextState) => {
+    if (nextState.manifest !== previousManifest) {
+      previousManifest = nextState.manifest;
+      applyManifestIdleTimeout(nextState.manifest);
+    }
   });
 
   const lockdown = installKioskLockdown(doc);
@@ -567,6 +598,7 @@ export function bootstrapKiosk(
 
   const dispose = (): void => {
     unsubscribeTour();
+    unsubscribeManifest();
     if (currentTourHandle !== null) {
       currentTourHandle.destroy();
       currentTourHandle = null;
