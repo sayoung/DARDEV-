@@ -13,3 +13,4 @@ export * from './hotspot-action.js';
 export * from './scene-editor.js';
 export * from './vr/vr-support.js';
 export * from './vr/gaze-selector.js';
+export * from './vr/vr-fade.js';
