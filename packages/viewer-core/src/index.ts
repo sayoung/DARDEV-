@@ -11,3 +11,4 @@ export * from './scene-audio.js';
 export * from './mount-viewer.js';
 export * from './hotspot-action.js';
 export * from './scene-editor.js';
+export * from './vr/vr-support.js';
