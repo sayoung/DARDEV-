@@ -99,6 +99,7 @@ describe('MediaPage', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
