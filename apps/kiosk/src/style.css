@@ -496,3 +496,194 @@ button:disabled {
   }
 }
 
+/* Écran technique de maintenance / Saisie PIN (F-67) */
+.kiosk-screen-maintenance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding-block: 2rem;
+  padding-inline: 1.5rem;
+  background-color: var(--bg-page);
+}
+
+.kiosk-maintenance-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 440px;
+}
+
+.kiosk-maintenance-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  padding-block: 2rem;
+  padding-inline: 2rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.kiosk-maintenance-title {
+  margin-block-start: 0;
+  margin-block-end: 0.5rem;
+  margin-inline: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--brand-color);
+}
+
+.kiosk-maintenance-subtitle {
+  margin-block-start: 0;
+  margin-block-end: 1.5rem;
+  margin-inline: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.kiosk-maintenance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.kiosk-pin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kiosk-pin-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: start;
+}
+
+.kiosk-pin-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding-block: 0.85rem;
+  padding-inline: 1rem;
+  font-size: 1.75rem;
+  letter-spacing: 0.5rem;
+  text-align: center;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kiosk-pin-input:focus {
+  border-color: var(--brand-color);
+  box-shadow: 0 0 0 3px var(--brand-light);
+}
+
+.kiosk-pin-input[aria-invalid="true"] {
+  border-color: #dc3545;
+}
+
+.kiosk-pin-error {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #dc3545;
+  text-align: start;
+  min-height: 1.25rem;
+}
+
+.kiosk-pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.kiosk-pin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 54px;
+  min-width: 48px;
+  padding-block: 0.75rem;
+  padding-inline: 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: all 0.15s ease;
+}
+
+.kiosk-pin-btn:hover:not(:disabled) {
+  border-color: var(--brand-color);
+  background-color: #ede9f6;
+  color: var(--brand-color);
+}
+
+.kiosk-pin-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.kiosk-pin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kiosk-pin-digit-btn {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.kiosk-pin-clear-btn {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kiosk-pin-submit-btn {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: var(--brand-color);
+  border-color: var(--brand-color);
+}
+
+.kiosk-pin-submit-btn:hover:not(:disabled) {
+  background-color: var(--brand-dark);
+  border-color: var(--brand-dark);
+  color: #FFFFFF;
+}
+
+.kiosk-pin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
+}
+
+.kiosk-pin-cancel-btn {
+  min-height: 48px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.kiosk-pin-cancel-btn:hover:not(:disabled) {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
