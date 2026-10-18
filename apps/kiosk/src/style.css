@@ -273,3 +273,154 @@ button:disabled {
   cursor: not-allowed;
   transform: none !important;
 }
+
+/* Écrans d'état kiosque (F-66) */
+.kiosk-screen {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-block: 2rem;
+  padding-inline: 2rem;
+  text-align: center;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+/* Écran indisponible neutre */
+.kiosk-screen-unavailable {
+  background-color: var(--bg-page);
+}
+
+.kiosk-unavailable-message {
+  margin-block: 0;
+  margin-inline: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 600px;
+}
+
+/* Écran de chargement */
+.kiosk-loading-text {
+  margin-block: 0;
+  margin-inline: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Écran d'enrôlement */
+.kiosk-screen-enroll {
+  background-color: var(--bg-page);
+}
+
+.kiosk-enroll-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.kiosk-enroll-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  padding-block: 2.5rem;
+  padding-inline: 2.5rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  text-align: start;
+}
+
+.kiosk-enroll-title {
+  margin-block: 0 0.5rem;
+  margin-inline: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--brand-color);
+}
+
+.kiosk-enroll-instruction {
+  margin-block: 0 1.5rem;
+  margin-inline: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.kiosk-enroll-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.kiosk-enroll-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kiosk-enroll-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.kiosk-enroll-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding-block: 0.85rem;
+  padding-inline: 1rem;
+  font-size: 1.6rem;
+  font-family: monospace;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kiosk-enroll-input:focus {
+  border-color: var(--brand-color);
+  box-shadow: 0 0 0 3px var(--brand-light);
+}
+
+.kiosk-enroll-input[aria-invalid="true"] {
+  border-color: #dc3545;
+}
+
+.kiosk-enroll-error {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #dc3545;
+  margin-block-start: -0.25rem;
+}
+
+.kiosk-enroll-btn {
+  padding-block: 0.9rem;
+  padding-inline: 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: var(--brand-color);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.kiosk-enroll-btn:hover:not(:disabled) {
+  background-color: var(--brand-dark);
+}
+

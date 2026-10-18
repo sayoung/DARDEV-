@@ -322,7 +322,17 @@
   },
   "kiosk": {
     "unavailable": "الخدمة غير متوفرة حالياً",
+    "loading": "جار التحميل...",
     "touchToExplore": "المس الشاشة للاستكشاف",
+    "enroll": {
+      "title": "تسجيل الكشك",
+      "instruction": "أدخل رمز التسجيل المكون من 8 أحرف لربط هذا الجهاز.",
+      "codeLabel": "رمز التسجيل",
+      "codePlaceholder": "XXXXXXXX",
+      "submit": "تسجيل الكشك",
+      "submitting": "جاري التسجيل...",
+      "invalidCode": "يجب أن يتكون رمز التسجيل من 8 أحرف كبيرة أو أرقام."
+    },
     "home": {
       "hotelFallback": "فندق",
       "languagesLabel": "اختيار اللغة",

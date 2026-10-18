@@ -574,7 +574,17 @@
   },
   "kiosk": {
     "unavailable": "Service momentanément indisponible",
+    "loading": "Chargement...",
     "touchToExplore": "Touchez l'écran pour explorer",
+    "enroll": {
+      "title": "Enrôlement du kiosque",
+      "instruction": "Saisissez le code d'enrôlement à 8 caractères pour associer cet appareil.",
+      "codeLabel": "Code d'enrôlement",
+      "codePlaceholder": "XXXXXXXX",
+      "submit": "Enrôler le kiosque",
+      "submitting": "Enrôlement en cours...",
+      "invalidCode": "Le code d'enrôlement doit comporter 8 caractères majuscules ou chiffres."
+    },
     "home": {
       "hotelFallback": "Hôtel",
       "languagesLabel": "Choix de la langue",

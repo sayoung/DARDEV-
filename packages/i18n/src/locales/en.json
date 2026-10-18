@@ -322,7 +322,17 @@
   },
   "kiosk": {
     "unavailable": "Service temporarily unavailable",
+    "loading": "Loading...",
     "touchToExplore": "Touch screen to explore",
+    "enroll": {
+      "title": "Kiosk enrollment",
+      "instruction": "Enter the 8-character enrollment code to associate this device.",
+      "codeLabel": "Enrollment code",
+      "codePlaceholder": "XXXXXXXX",
+      "submit": "Enroll kiosk",
+      "submitting": "Enrolling...",
+      "invalidCode": "The enrollment code must be 8 uppercase letters or digits."
+    },
     "home": {
       "hotelFallback": "Hotel",
       "languagesLabel": "Language selection",
