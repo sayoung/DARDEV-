@@ -27,6 +27,7 @@ export interface InteractionWiring {
   activity(): void;
   getIdleController(): IdleController;
   getTapDetector(): TapSequenceDetector;
+  setIdleTimeoutSeconds(seconds: number): void;
 }
 
 function isLogoElement(target: EventTarget | null): boolean {
@@ -180,5 +181,8 @@ export function wireInteractions({
     activity: notifyActivity,
     getIdleController: () => idleController,
     getTapDetector: () => tapDetector,
+    setIdleTimeoutSeconds: (seconds: number): void => {
+      idleController.setIdleTimeoutSeconds(seconds);
+    },
   };
 }
