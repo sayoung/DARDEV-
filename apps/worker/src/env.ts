@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const portSchema = z.coerce.number().int().min(1).max(65_535);
+
 const envSchema = z.object({
   REDIS_URL: z.string().min(1),
   DATABASE_URL: z.string().min(1),
@@ -8,13 +10,25 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string().min(1),
   S3_BUCKET: z.string().min(1),
   STORAGE_PROVIDER: z.enum(['s3', 'local']).optional().default('s3'),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: portSchema,
 });
 
 export type WorkerEnv = z.infer<typeof envSchema>;
 
 export function loadEnv(source: Record<string, string | undefined>): WorkerEnv {
   const picked: Record<string, string | undefined> = {};
-  const keys = ['REDIS_URL', 'DATABASE_URL', 'S3_ENDPOINT', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET', 'STORAGE_PROVIDER'] as const;
+  const keys = [
+    'REDIS_URL',
+    'DATABASE_URL',
+    'S3_ENDPOINT',
+    'S3_ACCESS_KEY',
+    'S3_SECRET_KEY',
+    'S3_BUCKET',
+    'STORAGE_PROVIDER',
+    'SMTP_HOST',
+    'SMTP_PORT',
+  ] as const;
   
   for (const key of keys) {
     const val = source[key];
