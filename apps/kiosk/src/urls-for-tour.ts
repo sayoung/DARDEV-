@@ -1,8 +1,12 @@
 import {
   HotspotType,
   TourGraphSchema,
+  type Lang,
   type TourGraph,
 } from '@xplor/shared';
+import { fetchTourGraph } from '@xplor/viewer-core';
+
+import type { UrlsForTour } from './tour-cache.js';
 
 /**
  * Extrait toutes les URLs associées à une visite 360° (manifeste, couverture,
@@ -103,4 +107,35 @@ export function collectUrlsFromTourGraph(
   }
 
   return Array.from(urls);
+}
+
+export interface CreateUrlsForTourDeps {
+  baseUrl: string;
+  lang: () => Lang;
+  fetchFn: typeof fetch;
+  manifestUrlFor?: (tourId: string) => string | undefined;
+}
+
+/**
+ * Fabrique la fonction `urlsForTour` consommée par le cache de visites (M5 F-62 / F-61).
+ *
+ * Elle appelle `fetchTourGraph(baseUrl, tourId, lang(), fetchFn)` de @xplor/viewer-core,
+ * puis renvoie `collectUrlsFromTourGraph(graph, manifestUrlFor?.(tourId))`.
+ */
+export function createUrlsForTour(deps: {
+  baseUrl: string;
+  lang: () => Lang;
+  fetchFn: typeof fetch;
+  manifestUrlFor?: (tourId: string) => string | undefined;
+}): UrlsForTour {
+  return async (tourId: string): Promise<string[]> => {
+    const graph = await fetchTourGraph(
+      deps.baseUrl,
+      tourId,
+      deps.lang(),
+      deps.fetchFn,
+    );
+    const manifestUrl = deps.manifestUrlFor?.(tourId);
+    return collectUrlsFromTourGraph(graph, manifestUrl);
+  };
 }

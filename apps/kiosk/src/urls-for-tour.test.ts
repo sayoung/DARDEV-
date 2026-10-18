@@ -1,7 +1,8 @@
-import { HotspotIcon, HotspotType, TourGraphSchema, type TourGraph } from '@xplor/shared';
+import { HotspotIcon, HotspotType, TourGraphSchema, type Lang, type TourGraph } from '@xplor/shared';
+import { TourLoadError, TourNotFoundError } from '@xplor/viewer-core';
 import { describe, expect, it } from 'vitest';
 
-import { collectUrlsFromTourGraph } from './urls-for-tour.js';
+import { collectUrlsFromTourGraph, createUrlsForTour } from './urls-for-tour.js';
 
 function createSampleGraph(): TourGraph {
   return TourGraphSchema.parse({
@@ -306,5 +307,248 @@ describe('collectUrlsFromTourGraph (M5 F-62 / F-61)', () => {
       // @ts-expect-error test explicite d'entrée invalide sans conversion forcée
       collectUrlsFromTourGraph(invalidData);
     }).toThrow();
+  });
+});
+
+function extractRequestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') {
+    return input;
+  }
+  if (input instanceof URL) {
+    return input.toString();
+  }
+  return input.url;
+}
+
+function createFakeFetch(
+  handler: (url: string, init?: RequestInit) => Promise<Response> | Response,
+): typeof fetch {
+  const fake: typeof fetch = (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
+    const url = extractRequestUrl(input);
+    return Promise.resolve(handler(url, init));
+  };
+  return fake;
+}
+
+function jsonResponse(body: unknown, status = 200, statusText = 'OK'): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    statusText,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+describe('createUrlsForTour (M5 F-62 / F-61)', () => {
+  it('télécharge le graphe via fetchTourGraph et renvoie toutes les URLs collectées (succès nominal)', async () => {
+    const graph = createSampleGraph();
+    const requestedUrls: string[] = [];
+    const fetchFn = createFakeFetch((url) => {
+      requestedUrls.push(url);
+      return jsonResponse(graph);
+    });
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    const urls = await urlsForTour('01990000-0000-7000-8000-000000000100');
+
+    expect(requestedUrls).toEqual([
+      'https://api.test/public/tours/01990000-0000-7000-8000-000000000100?lang=fr',
+    ]);
+    expect(urls).toEqual(collectUrlsFromTourGraph(graph));
+    expect(urls).toContain('https://media.test/tours/tour-1/cover.jpg');
+    expect(urls).toContain('https://media.test/tours/tour-1/scene-1/preview.jpg');
+    expect(urls).toContain('https://media.test/tours/tour-1/scene-1/tiles/0_0.jpg');
+  });
+
+  it('gère une baseUrl avec slash final', async () => {
+    const graph = createSampleGraph();
+    const requestedUrls: string[] = [];
+    const fetchFn = createFakeFetch((url) => {
+      requestedUrls.push(url);
+      return jsonResponse(graph);
+    });
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test/api/v1/',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    await urlsForTour('tour-slash');
+
+    expect(requestedUrls).toEqual([
+      'https://api.test/api/v1/public/tours/tour-slash?lang=fr',
+    ]);
+  });
+
+  it('inclut l’URL de manifeste lorsque manifestUrlFor renvoie une chaîne valide', async () => {
+    const graph = createSampleGraph();
+    const fetchFn = createFakeFetch(() => jsonResponse(graph));
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+      manifestUrlFor: (tourId) => `https://api.test/kiosk/manifests/${tourId}`,
+    });
+
+    const urls = await urlsForTour('01990000-0000-7000-8000-000000000100');
+
+    expect(urls).toEqual(
+      collectUrlsFromTourGraph(
+        graph,
+        'https://api.test/kiosk/manifests/01990000-0000-7000-8000-000000000100',
+      ),
+    );
+  });
+
+  it('gère manifestUrlFor renvoyant undefined', async () => {
+    const graph = createSampleGraph();
+    const fetchFn = createFakeFetch(() => jsonResponse(graph));
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+      manifestUrlFor: () => undefined,
+    });
+
+    const urls = await urlsForTour('01990000-0000-7000-8000-000000000100');
+
+    expect(urls).toEqual(collectUrlsFromTourGraph(graph));
+  });
+
+  it('fonctionne correctement sans fournir le paramètre optionnel manifestUrlFor', async () => {
+    const graph = createSampleGraph();
+    const fetchFn = createFakeFetch(() => jsonResponse(graph));
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    const urls = await urlsForTour('01990000-0000-7000-8000-000000000100');
+
+    expect(urls).toEqual(collectUrlsFromTourGraph(graph));
+  });
+
+  it('évalue la langue dynamiquement via lang() à chaque appel', async () => {
+    const graph = createSampleGraph();
+    const requestedUrls: string[] = [];
+    const fetchFn = createFakeFetch((url) => {
+      requestedUrls.push(url);
+      return jsonResponse(graph);
+    });
+
+    let currentLang: Lang = 'fr';
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => currentLang,
+      fetchFn,
+    });
+
+    await urlsForTour('tour-lang');
+    currentLang = 'ar';
+    await urlsForTour('tour-lang');
+    currentLang = 'en';
+    await urlsForTour('tour-lang');
+
+    expect(requestedUrls).toEqual([
+      'https://api.test/public/tours/tour-lang?lang=fr',
+      'https://api.test/public/tours/tour-lang?lang=ar',
+      'https://api.test/public/tours/tour-lang?lang=en',
+    ]);
+  });
+
+  it('propage l’erreur HTTP 404 comme TourNotFoundError', async () => {
+    const fetchFn = createFakeFetch(
+      () => new Response(null, { status: 404, statusText: 'Not Found' }),
+    );
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    await expect(urlsForTour('missing-tour')).rejects.toThrow(TourNotFoundError);
+  });
+
+  it('propage une erreur HTTP 500 comme TourLoadError', async () => {
+    const fetchFn = createFakeFetch(
+      () =>
+        new Response('Erreur interne', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        }),
+    );
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    await expect(urlsForTour('server-error-tour')).rejects.toThrow(TourLoadError);
+    await expect(urlsForTour('server-error-tour')).rejects.toThrow(
+      'Failed to fetch tour: 500 Internal Server Error',
+    );
+  });
+
+  it('propage une erreur réseau lorsque fetchFn rejette', async () => {
+    const fetchFn = createFakeFetch(() => {
+      throw new TypeError('Failed to fetch');
+    });
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    await expect(urlsForTour('network-error-tour')).rejects.toThrow(TourLoadError);
+    await expect(urlsForTour('network-error-tour')).rejects.toThrow(
+      'Network error: Failed to fetch',
+    );
+  });
+
+  it('propage une erreur lorsque la réponse HTTP n’est pas du JSON valide', async () => {
+    const fetchFn = createFakeFetch(
+      () =>
+        new Response('<html>not-json</html>', {
+          status: 200,
+          statusText: 'OK',
+        }),
+    );
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    await expect(urlsForTour('bad-json-tour')).rejects.toThrow(TourLoadError);
+    await expect(urlsForTour('bad-json-tour')).rejects.toThrow('Invalid JSON response');
+  });
+
+  it('propage une erreur lorsque le payload JSON ne respecte pas TourGraphSchema', async () => {
+    const fetchFn = createFakeFetch(() => jsonResponse({ invalid: 'payload' }));
+
+    const urlsForTour = createUrlsForTour({
+      baseUrl: 'https://api.test',
+      lang: () => 'fr',
+      fetchFn,
+    });
+
+    await expect(urlsForTour('invalid-schema-tour')).rejects.toThrow(TourLoadError);
+    await expect(urlsForTour('invalid-schema-tour')).rejects.toThrow(/Invalid tour data/);
   });
 });
