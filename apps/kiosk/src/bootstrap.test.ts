@@ -1,4 +1,10 @@
 import { resources } from '@xplor/i18n';
+import {
+  KioskManifestSchema,
+  type KioskManifest,
+  type KioskManifestCategory,
+  type KioskManifestTour,
+} from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveApiUrl } from './api-url.js';
@@ -41,12 +47,52 @@ class FakeLocalStorage implements Storage {
   }
 }
 
+const testCategory: KioskManifestCategory = {
+  id: '01990000-0000-7000-8000-000000000010',
+  name: { fr: 'Monuments', ar: 'معالم', en: 'Monuments' },
+  icon: 'landmark',
+  color: '#6958A5',
+};
+
+const testTour: KioskManifestTour = {
+  id: '01990000-0000-7000-8000-000000000100',
+  contentVersion: 1,
+  sizeBytes: 150000000,
+  url: '/api/v1/tours/01990000-0000-7000-8000-000000000100',
+  categoryId: testCategory.id,
+};
+
+const validManifest: KioskManifest = KioskManifestSchema.parse({
+  manifestVersion: '1.0.0',
+  kiosk: {
+    id: '01990000-0000-7000-8000-000000000001',
+    label: 'Kiosk Hall',
+    idleTimeoutSeconds: 90,
+    deviceType: 'TOUCH_SCREEN',
+  },
+  hotel: {
+    id: '01990000-0000-7000-8000-000000000002',
+    name: 'Hôtel Rabat',
+    logoUrl: null,
+    brandColor: '#6958A5',
+    languages: ['fr', 'ar', 'en'],
+    serviceActive: true,
+    maintenancePinHash: null,
+  },
+  selection: {
+    featuredTourId: testTour.id,
+    attractTourIds: [testTour.id],
+    tours: [testTour],
+  },
+  categories: [testCategory],
+});
+
 const validCredentials: KioskCredentials = {
   kioskId: '01990000-0000-7000-8000-000000000001',
   token: 'valid-secret-token-1234',
 };
 
-describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
+describe('bootstrapKiosk (M5 F-60)', () => {
   let fakeStorage: FakeLocalStorage;
   let activeInstance: KioskBootstrapInstance | null = null;
   let reloadCalledCount: number;
@@ -91,8 +137,16 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
     vi.restoreAllMocks();
   });
 
-  it('sans identifiants → démarre à l’écran ENROLL avec champ et bouton de validation', () => {
+  it('sans identifiants → affiche l’écran ENROLL (loadCredentials renvoie null)', () => {
     expect(loadCredentials(fakeStorage)).toBeNull();
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    window.fetch = fetchMock;
 
     activeInstance = bootstrapKiosk(window, document);
 
@@ -100,6 +154,7 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
     expect(state.enrolled).toBe(false);
     expect(state.screen).toBe('ENROLL');
     expect(state.lang).toBe('fr');
+    expect(activeInstance.getLoops()).toBeNull();
 
     expect(document.documentElement.getAttribute('lang')).toBe('fr');
     expect(document.documentElement.getAttribute('dir')).toBe('ltr');
@@ -110,13 +165,16 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
     const submitBtn = document.querySelector('button[data-testid="kiosk-enroll-submit"]');
     const errorDiv = document.getElementById('kiosk-enroll-error');
 
-    expect(input instanceof HTMLInputElement).toBe(true);
-    expect(form instanceof HTMLFormElement).toBe(true);
-    expect(submitBtn instanceof HTMLButtonElement).toBe(true);
-    expect(errorDiv instanceof HTMLDivElement).toBe(true);
+    expect(input).toBeInstanceOf(HTMLInputElement);
+    expect(form).toBeInstanceOf(HTMLFormElement);
+    expect(submitBtn).toBeInstanceOf(HTMLButtonElement);
+    expect(errorDiv).toBeInstanceOf(HTMLDivElement);
 
     if (errorDiv instanceof HTMLDivElement) {
       expect(errorDiv.hidden).toBe(true);
+    }
+    if (submitBtn instanceof HTMLButtonElement) {
+      expect(submitBtn.textContent).toBe(resources.fr.kiosk.enroll.submit);
     }
   });
 
@@ -141,9 +199,8 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
     expect(document.title).toBe(resources.ar.common.appName);
   });
 
-  it('onEnroll appelle enrollKiosk avec resolveApiUrl(import.meta.env), enregistre les identifiants et dispatche ENROLLED', async () => {
-    const expectedBaseUrl = resolveApiUrl(import.meta.env);
-    let capturedUrl = '';
+  it('avec identifiants et manifeste → affiche l’écran HOME', async () => {
+    saveCredentials(fakeStorage, validCredentials);
 
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url =
@@ -153,7 +210,54 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
             ? input.toString()
             : input.url;
 
-      capturedUrl = url;
+      if (url.includes('/api/v1/kiosk/manifest')) {
+        return Promise.resolve(
+          new Response(JSON.stringify(validManifest), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    });
+    window.fetch = fetchMock;
+
+    activeInstance = bootstrapKiosk(window, document);
+
+    expect(activeInstance.state.getState().enrolled).toBe(true);
+
+    const loops = activeInstance.getLoops();
+    expect(loops).not.toBeNull();
+    if (loops !== null && loops.ready !== undefined) {
+      await loops.ready;
+    }
+
+    expect(activeInstance.state.getState().screen).toBe('HOME');
+    expect(activeInstance.state.getState().manifest).not.toBeNull();
+
+    const homeRoot = document.querySelector('.kiosk-home');
+    expect(homeRoot).not.toBeNull();
+  });
+
+  it('onEnroll appelle enrollKiosk, dispatche ENROLLED et démarre les boucles vers HOME', async () => {
+    const expectedBaseUrl = resolveApiUrl(import.meta.env);
+    const capturedUrls: string[] = [];
+
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      capturedUrls.push(url);
 
       if (url.includes('/api/v1/kiosk/enroll')) {
         return Promise.resolve(
@@ -170,6 +274,15 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
         );
       }
 
+      if (url.includes('/api/v1/kiosk/manifest')) {
+        return Promise.resolve(
+          new Response(JSON.stringify(validManifest), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
       return Promise.resolve(
         new Response(JSON.stringify({ ok: true }), {
           status: 200,
@@ -180,13 +293,14 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
     window.fetch = fetchMock;
 
     activeInstance = bootstrapKiosk(window, document);
+    expect(activeInstance.getLoops()).toBeNull();
     expect(activeInstance.state.getState().screen).toBe('ENROLL');
 
     const input = document.getElementById('kiosk-enroll-code');
     const form = document.querySelector('form');
 
-    expect(input instanceof HTMLInputElement).toBe(true);
-    expect(form instanceof HTMLFormElement).toBe(true);
+    expect(input).toBeInstanceOf(HTMLInputElement);
+    expect(form).toBeInstanceOf(HTMLFormElement);
 
     if (input instanceof HTMLInputElement && form instanceof HTMLFormElement) {
       input.value = 'ABCDEF12';
@@ -199,16 +313,28 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
       });
 
       const creds = loadCredentials(fakeStorage);
-      expect(creds?.kioskId).toBe(validCredentials.kioskId);
-      expect(creds?.token).toBe(validCredentials.token);
+      if (creds !== null) {
+        expect(creds.kioskId).toBe(validCredentials.kioskId);
+        expect(creds.token).toBe(validCredentials.token);
+      }
 
-      expect(capturedUrl).toBe(`${expectedBaseUrl}/api/v1/kiosk/enroll`);
+      expect(capturedUrls).toContain(`${expectedBaseUrl}/api/v1/kiosk/enroll`);
       expect(activeInstance.state.getState().enrolled).toBe(true);
-      expect(activeInstance.state.getState().screen).toBe('LOADING');
+
+      const loops = activeInstance.getLoops();
+      expect(loops).not.toBeNull();
+      if (loops !== null && loops.ready !== undefined) {
+        await loops.ready;
+      }
+
+      await vi.waitFor(() => {
+        const currentState = activeInstance?.state.getState();
+        expect(currentState?.screen).toBe('HOME');
+      });
     }
   });
 
-  it('onEnroll en cas d’échec affiche l’erreur traduite et reste sur ENROLL sans sauvegarder d’identifiants', async () => {
+  it('onEnroll en cas d’échec affiche l’erreur traduite et reste sur ENROLL sans démarrer les boucles', async () => {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url =
         typeof input === 'string'
@@ -244,10 +370,10 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
     const errorDiv = document.getElementById('kiosk-enroll-error');
     const submitBtn = document.querySelector('button[data-testid="kiosk-enroll-submit"]');
 
-    expect(input instanceof HTMLInputElement).toBe(true);
-    expect(form instanceof HTMLFormElement).toBe(true);
-    expect(errorDiv instanceof HTMLDivElement).toBe(true);
-    expect(submitBtn instanceof HTMLButtonElement).toBe(true);
+    expect(input).toBeInstanceOf(HTMLInputElement);
+    expect(form).toBeInstanceOf(HTMLFormElement);
+    expect(errorDiv).toBeInstanceOf(HTMLDivElement);
+    expect(submitBtn).toBeInstanceOf(HTMLButtonElement);
 
     if (
       input instanceof HTMLInputElement &&
@@ -267,25 +393,110 @@ describe('bootstrapKiosk (M5 F-60 assemblage 2/4)', () => {
       expect(errorDiv.textContent).toBe(resources.fr.kiosk.enroll.invalidCode);
       expect(submitBtn.disabled).toBe(false);
       expect(loadCredentials(fakeStorage)).toBeNull();
+      expect(activeInstance.getLoops()).toBeNull();
       expect(activeInstance.state.getState().enrolled).toBe(false);
       expect(activeInstance.state.getState().screen).toBe('ENROLL');
     }
   });
 
-  it('« Réenrôler » appelle resetEnrollment, supprime les identifiants et réaffiche l’écran ENROLL', async () => {
+  it('le bouton « Forcer la synchro » appelle syncNow', async () => {
     saveCredentials(fakeStorage, validCredentials);
-    expect(loadCredentials(fakeStorage)).not.toBeNull();
+
+    let manifestFetchCount = 0;
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (url.includes('/api/v1/kiosk/manifest')) {
+        manifestFetchCount += 1;
+        return Promise.resolve(
+          new Response(JSON.stringify(validManifest), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    });
+    window.fetch = fetchMock;
 
     activeInstance = bootstrapKiosk(window, document);
-    expect(activeInstance.state.getState().enrolled).toBe(true);
+
+    const loops = activeInstance.getLoops();
+    if (loops !== null && loops.ready !== undefined) {
+      await loops.ready;
+    }
+    expect(manifestFetchCount).toBe(1);
+
+    await activeInstance.syncNow();
+    expect(manifestFetchCount).toBe(2);
+
+    // Vérifie également que le clic sur le bouton de maintenance « Forcer la synchro » appelle syncNow
+    activeInstance.state.dispatch({ type: 'OPEN_MAINTENANCE' });
+    activeInstance.state.dispatch({ type: 'UNLOCK' });
+    expect(activeInstance.state.getState().screen).toBe('MAINTENANCE');
+
+    const forceSyncBtn = document.querySelector('button[data-testid="kiosk-status-force-sync"]');
+    expect(forceSyncBtn).toBeInstanceOf(HTMLButtonElement);
+    if (forceSyncBtn instanceof HTMLButtonElement) {
+      forceSyncBtn.click();
+      await vi.waitFor(() => {
+        expect(manifestFetchCount).toBe(3);
+      });
+    }
+  });
+
+  it('« Réenrôler » arrête les boucles si possible, appelle resetEnrollment puis recharge l’écran ENROLL', async () => {
+    saveCredentials(fakeStorage, validCredentials);
+
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (url.includes('/api/v1/kiosk/manifest')) {
+        return Promise.resolve(
+          new Response(JSON.stringify(validManifest), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    });
+    window.fetch = fetchMock;
+
+    activeInstance = bootstrapKiosk(window, document);
+    expect(loadCredentials(fakeStorage)).not.toBeNull();
+    expect(activeInstance.getLoops()).not.toBeNull();
 
     await activeInstance.resetEnrollment();
 
     expect(loadCredentials(fakeStorage)).toBeNull();
+    expect(activeInstance.getLoops()).toBeNull();
     expect(reloadCalledCount).toBe(1);
 
     const input = document.getElementById('kiosk-enroll-code');
-    expect(input instanceof HTMLInputElement).toBe(true);
+    expect(input).toBeInstanceOf(HTMLInputElement);
   });
 
   it('dispose() résilie les abonnements sans erreur', () => {
