@@ -96,6 +96,10 @@ describe('clés i18n', () => {
   it('définit les clés kiosque en français', () => {
     expect(resources.fr.kiosk.unavailable).toBe('Service momentanément indisponible');
     expect(resources.fr.kiosk.touchToExplore).toBe("Touchez l'écran pour explorer");
+    expect(resources.fr.kiosk.loading).toBe('Chargement...');
+    expect(resources.fr.kiosk.enroll.title).toBe('Enrôlement du kiosque');
+    expect(resources.fr.kiosk.enroll.codeLabel).toBe("Code d'enrôlement");
+    expect(resources.fr.kiosk.enroll.submit).toBe('Enrôler le kiosque');
     expect(resources.fr.kiosk.home.allCategories).toBe('Toutes les catégories');
     expect(resources.fr.kiosk.home.featured).toBe('À la une');
     expect(resources.fr.kiosk.home.explore).toBe('Explorer la visite');
