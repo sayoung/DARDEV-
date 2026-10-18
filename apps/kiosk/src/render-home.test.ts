@@ -67,6 +67,7 @@ describe('renderHome', () => {
     expect(hotelHeading).toBeInstanceOf(HTMLHeadingElement);
     if (hotelHeading instanceof HTMLHeadingElement) {
       expect(hotelHeading.textContent).toBe('Hôtel La Tour Hassan Palace');
+      expect(hotelHeading.hasAttribute('data-logo')).toBe(true);
     }
 
     const langButtons = root.querySelectorAll('.kiosk-lang-btn');
@@ -394,5 +395,23 @@ describe('renderHome', () => {
     renderHome(document, root, model, handlers, 'ar');
     const featuredTitleAr = root.querySelector('.kiosk-featured-title');
     expect(featuredTitleAr?.textContent).toBe('قصبة الأوداية');
+  });
+
+  it('expose l’attribut data-logo sur le nom ou logo de l’hôtel (F-67)', () => {
+    const model = createMockModel();
+    const handlers = {
+      onSelectTour: vi.fn(),
+      onSelectCategory: vi.fn(),
+      onSelectLang: vi.fn(),
+    };
+
+    renderHome(document, root, model, handlers, 'fr');
+
+    const logoEl = root.querySelector('[data-logo]');
+    expect(logoEl).toBeInstanceOf(HTMLElement);
+    if (logoEl instanceof HTMLElement) {
+      expect(logoEl.classList.contains('kiosk-hotel-name')).toBe(true);
+      expect(logoEl.textContent).toBe('Hôtel La Tour Hassan Palace');
+    }
   });
 });
