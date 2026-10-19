@@ -64,6 +64,7 @@ function SceneEditorTab({
   const [hotspots, setHotspots] = useState<EditorMarker[]>([]);
 
   const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
+  const [isEditingHotspot, setIsEditingHotspot] = useState(false);
   const [isRelocating, setIsRelocating] = useState(false);
   const [draftPosition, setDraftPosition] = useState<{ yaw: number; pitch: number } | null>(null);
   const [currentTourScenes, setCurrentTourScenes] = useState<SceneResponse[]>([]);
@@ -71,6 +72,10 @@ function SceneEditorTab({
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [arrivalOrientationTargetId, setArrivalOrientationTargetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsEditingHotspot(false);
+  }, [selectedHotspotId]);
 
   const handleRef = useRef<SceneEditor360Handle>(null);
 
@@ -376,12 +381,14 @@ function SceneEditorTab({
             }
             setDraftPosition({ yaw, pitch });
             setSelectedHotspotId(null);
+            setIsEditingHotspot(false);
             setActionError(null);
           }}
           onMarkerSelect={(id) => {
             setSelectedHotspotId(id);
             setDraftPosition(null);
             setIsRelocating(false);
+            setIsEditingHotspot(false);
             setActionError(null);
           }}
           onMarkerMove={(id, yaw, pitch) => {
@@ -420,6 +427,42 @@ function SceneEditorTab({
             const hotspot = hotspots.find(h => h.id === selectedHotspotId);
             const rawHotspot = rawHotspots.find(h => h.id === selectedHotspotId);
             if (!hotspot || !rawHotspot) return null;
+            if (isEditingHotspot) {
+              return (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">{t('catalog.hotspots.edit')}</h3>
+                  {actionError && <Alert variant="destructive">{t(actionError)}</Alert>}
+                  <HotspotForm
+                    key={`edit-${rawHotspot.id}-${String(rawHotspot.yaw)}-${String(rawHotspot.pitch)}`}
+                    initialData={rawHotspot}
+                    currentTourScenes={currentTourScenes}
+                    currentSceneId={scene.id}
+                    isSubmitting={isSubmitting}
+                    onCancel={() => {
+                      setIsEditingHotspot(false);
+                      setActionError(null);
+                    }}
+                    onSubmit={async (data) => {
+                      setIsSubmitting(true);
+                      setActionError(null);
+                      try {
+                        await updateHotspot(rawHotspot.id, data);
+                        loadHotspots();
+                        setIsEditingHotspot(false);
+                      } catch (err: unknown) {
+                        if (err instanceof ApiError && err.status === 422) {
+                          setActionError('catalog.errors.invalidForm');
+                        } else {
+                          setActionError('common.error.generic');
+                        }
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }}
+                  />
+                </div>
+              );
+            }
             return (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">{hotspot.tooltip}</h3>
@@ -450,6 +493,16 @@ function SceneEditorTab({
                         {t('catalog.hotspots.editor.relocate')}
                       </Button>
                       <Button
+                        variant="outline"
+                        onClick={() => {
+                          setActionError(null);
+                          setIsEditingHotspot(true);
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        {t('catalog.hotspots.editor.edit')}
+                      </Button>
+                      <Button
                         variant="destructive"
                         onClick={() => {
                           if (window.confirm(t('catalog.hotspots.editor.confirmDelete'))) {
@@ -458,6 +511,7 @@ function SceneEditorTab({
                             deleteHotspot(selectedHotspotId)
                               .then(() => {
                                 setSelectedHotspotId(null);
+                                setIsEditingHotspot(false);
                                 loadHotspots();
                               })
                               .catch(() => {
@@ -474,7 +528,10 @@ function SceneEditorTab({
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => { setSelectedHotspotId(null); }}
+                        onClick={() => {
+                          setSelectedHotspotId(null);
+                          setIsEditingHotspot(false);
+                        }}
                         disabled={isSubmitting}
                       >
                         {t('common.actions.cancel')}
