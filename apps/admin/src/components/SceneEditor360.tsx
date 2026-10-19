@@ -36,7 +36,7 @@ export function SceneEditor360({
   useImperativeHandle(handleRef, () => ({
     getView: () => {
       if (!editorRef.current) {
-        return initialView;
+        return initialViewRef.current;
       }
       const view = editorRef.current.getView();
       return {
@@ -54,6 +54,9 @@ export function SceneEditor360({
   }, [onPanoramaClick, onMarkerSelect, onMarkerMove]);
 
   const initialViewRef = useRef(initialView);
+  useEffect(() => {
+    initialViewRef.current = initialView;
+  }, [initialView]);
 
   useEffect(() => {
     if (!containerRef.current) return;
