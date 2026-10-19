@@ -21,3 +21,4 @@ export * from './vr/vr-scene.js';
 export * from './vr/vr-info-panel-canvas.js';
 export * from './vr/vr-info-panel-mesh.js';
 export * from './vr/vr-session.js';
+export * from './vr/vr-interaction.js';
