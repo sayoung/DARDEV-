@@ -149,11 +149,11 @@ vi.mock('@photo-sphere-viewer/markers-plugin', () => ({
 vi.mock('@photo-sphere-viewer/equirectangular-tiles-adapter', () => ({
   EquirectangularTilesAdapter: vi.fn(),
 }));
-
 describe('mountSceneEditor', () => {
+  const mockBody = { tagName: 'BODY', closest: () => null };
   beforeEach(() => {
     vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-    vi.stubGlobal('document', { activeElement: null });
+    vi.stubGlobal('document', { activeElement: mockBody, body: mockBody });
   });
 
   afterEach(() => {
@@ -643,6 +643,51 @@ describe('mountSceneEditor', () => {
     mockMarkersPlugin.getMarker.mockReturnValue({ id: 'm1', config: { position: { yaw: 0, pitch: 0 } } });
     handleKeyDown({ key: 'ArrowLeft', shiftKey: true, preventDefault });
     expect(onMarkerMove).toHaveBeenCalledWith('m1', normalizeYaw(-5 * Math.PI / 180), 0);
+
+    // Quand le focus est sur un bouton hors éditeur, les flèches ne déplacent rien
+    const outsideBtn = {
+      tagName: 'BUTTON',
+      closest: (sel: string) => (sel.includes('button') ? outsideBtn : null),
+    };
+    vi.stubGlobal('document', {
+      body: mockBody,
+      activeElement: outsideBtn,
+    });
+    onMarkerMove.mockClear();
+    preventDefault.mockClear();
+    handleKeyDown({ key: 'ArrowRight', shiftKey: false, preventDefault });
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(onMarkerMove).not.toHaveBeenCalled();
+
+    // Ignore également input, textarea, select, a, [contenteditable], [role=textbox]
+    for (const tag of ['INPUT', 'TEXTAREA', 'SELECT', 'A']) {
+      const el = {
+        tagName: tag,
+        closest: (sel: string) => (sel.toLowerCase().includes(tag.toLowerCase()) ? el : null),
+      };
+      vi.stubGlobal('document', { body: mockBody, activeElement: el });
+      handleKeyDown({ key: 'ArrowRight', shiftKey: false, preventDefault });
+      expect(preventDefault).not.toHaveBeenCalled();
+      expect(onMarkerMove).not.toHaveBeenCalled();
+    }
+
+    const contentEditableEl = {
+      tagName: 'DIV',
+      closest: (sel: string) => (sel.includes('[contenteditable]') ? contentEditableEl : null),
+    };
+    vi.stubGlobal('document', { body: mockBody, activeElement: contentEditableEl });
+    handleKeyDown({ key: 'ArrowRight', shiftKey: false, preventDefault });
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(onMarkerMove).not.toHaveBeenCalled();
+
+    const roleTextboxEl = {
+      tagName: 'DIV',
+      closest: (sel: string) => (sel.includes('textbox') ? roleTextboxEl : null),
+    };
+    vi.stubGlobal('document', { body: mockBody, activeElement: roleTextboxEl });
+    handleKeyDown({ key: 'ArrowRight', shiftKey: false, preventDefault });
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(onMarkerMove).not.toHaveBeenCalled();
   });
 
   it('avec onMarkerMove, destroy retire les écouteurs ajoutés', () => {

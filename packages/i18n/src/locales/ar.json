@@ -83,7 +83,8 @@
   "catalog": {
     "tours": {
       "preview": {
-        "open": "اختبر الزيارة"
+        "open": "اختبر الزيارة",
+        "openLink": "فتح المعاينة"
       }
     },
     "asset": {

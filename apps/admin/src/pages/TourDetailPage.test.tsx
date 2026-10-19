@@ -54,11 +54,48 @@ describe('TourDetailPage', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('clic sur Tester la visite appelle createPreviewToken et window.open avec l\'URL', async () => {
-    window.history.replaceState(null, '', `/tours/${mockTour.id}`);
+  function createMockOpenedWindow(): { window: Window; getHref: () => string; getOpener: () => unknown; closeMock: ReturnType<typeof vi.fn> } {
+    let fakeHref = '';
+    let fakeOpener: unknown = window;
+    const closeMock = vi.fn();
+    const proxy = new Proxy(window, {
+      get(target, prop) {
+        if (prop === 'location') {
+          return {
+            get href() {
+              return fakeHref;
+            },
+            set href(val: string) {
+              fakeHref = val;
+            },
+          };
+        }
+        if (prop === 'opener') {
+          return fakeOpener;
+        }
+        if (prop === 'close') {
+          return closeMock;
+        }
+        const val: unknown = Reflect.get(target, prop);
+        return val;
+      },
+      set(target, prop, val: unknown) {
+        if (prop === 'opener') {
+          fakeOpener = val;
+          return true;
+        }
+        return Reflect.set(target, prop, val);
+      },
+    });
+    return {
+      window: proxy,
+      getHref: () => fakeHref,
+      getOpener: () => fakeOpener,
+      closeMock,
+    };
+  }
 
-    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
-
+  function mockDefaultFetch(previewTokenStatus = 201) {
     fetchMock.mockImplementation((input: unknown, init?: unknown) => {
       const url = requestUrl(input);
       const method = methodOf(input, init);
@@ -76,30 +113,85 @@ describe('TourDetailPage', () => {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
       if (url.includes(`/admin/tours/${mockTour.id}/preview-token`) && method === 'POST') {
-        return Promise.resolve(jsonResponse(201, { token: 'preview-token-123', expiresAt: Date.now() + 3600 }));
+        if (previewTokenStatus === 201) {
+          return Promise.resolve(jsonResponse(201, { token: 'preview-token-123', expiresAt: Date.now() + 3600 }));
+        }
+        return Promise.resolve(jsonResponse(previewTokenStatus, { message: 'Preview token error' }));
       }
       return Promise.resolve(jsonResponse(404, {}));
     });
+  }
+
+  it('clic sur Tester la visite ouvre window.open de façon synchrone puis assigne opener=null et location.href', async () => {
+    window.history.replaceState(null, '', `/tours/${mockTour.id}`);
+
+    const opened = createMockOpenedWindow();
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(opened.window);
+
+    mockDefaultFetch(201);
 
     render(<App />);
 
     const previewBtn = await screen.findByRole('button', { name: resources.fr.catalog.tours.preview.open });
     fireEvent.click(previewBtn);
 
+    expect(openSpy).toHaveBeenCalledWith('', '_blank');
+
     await waitFor(() => {
       const posts = recordedCalls().filter(c => c.method === 'POST' && c.url.endsWith(`/admin/tours/${mockTour.id}/preview-token`));
       expect(posts).toHaveLength(1);
     });
 
-    expect(openSpy).toHaveBeenCalled();
-    const callArgs = openSpy.mock.calls[0];
-    expect(callArgs).toBeDefined();
-    if (callArgs) {
-      const [url, target, features] = callArgs;
-      expect(url).toContain('/v/preview/preview-token-123?lang=fr');
-      expect(target).toBe('_blank');
-      expect(features).toBe('noopener');
-    }
+    expect(opened.getOpener()).toBeNull();
+    expect(opened.getHref()).toContain('/v/preview/preview-token-123?lang=fr');
+  });
+
+  it('si window.open renvoie null (bloqué), affiche un lien Ouvrir l\'aperçu cliquable vers l\'URL', async () => {
+    window.history.replaceState(null, '', `/tours/${mockTour.id}`);
+
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
+
+    mockDefaultFetch(201);
+
+    render(<App />);
+
+    const previewBtn = await screen.findByRole('button', { name: resources.fr.catalog.tours.preview.open });
+    fireEvent.click(previewBtn);
+
+    expect(openSpy).toHaveBeenCalledWith('', '_blank');
+
+    await waitFor(() => {
+      const posts = recordedCalls().filter(c => c.method === 'POST' && c.url.endsWith(`/admin/tours/${mockTour.id}/preview-token`));
+      expect(posts).toHaveLength(1);
+    });
+
+    const fallbackLink = await screen.findByRole('link', { name: resources.fr.catalog.tours.preview.openLink });
+    expect(fallbackLink.getAttribute('href')).toContain('/v/preview/preview-token-123?lang=fr');
+    expect(fallbackLink.getAttribute('target')).toBe('_blank');
+    expect(fallbackLink.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('si createPreviewToken échoue, ferme la fenêtre ouverte et affiche l\'erreur', async () => {
+    window.history.replaceState(null, '', `/tours/${mockTour.id}`);
+
+    const opened = createMockOpenedWindow();
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(opened.window);
+
+    mockDefaultFetch(500);
+
+    render(<App />);
+
+    const previewBtn = await screen.findByRole('button', { name: resources.fr.catalog.tours.preview.open });
+    fireEvent.click(previewBtn);
+
+    expect(openSpy).toHaveBeenCalledWith('', '_blank');
+
+    await waitFor(() => {
+      expect(opened.closeMock).toHaveBeenCalled();
+    });
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toBeDefined();
   });
 
   it('affiche le titre Carte des liens dans le panel TourLinkMap', async () => {
