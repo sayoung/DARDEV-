@@ -214,4 +214,18 @@ export {
   type KioskPinVerifyRequest,
   type KioskPinVerifyResponse,
 } from './kiosk-device.js';
+export {
+  EVENT_CHANNELS,
+  EVENT_TYPES,
+  EventChannelSchema,
+  EventTypeSchema,
+  eventSchema,
+  eventsBatchSchema,
+  EventSchema,
+  EventsBatchSchema,
+  type Event,
+  type EventsBatch,
+  type EventChannel,
+  type EventType,
+} from './events.js';
 
