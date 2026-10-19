@@ -203,7 +203,9 @@
       }
     },
     "hotspots": {
+      "edit": "Edit hotspot",
       "editor": {
+        "edit": "Edit",
         "status": {
           "pending": "Pending changes…",
           "saving": "Saving…",

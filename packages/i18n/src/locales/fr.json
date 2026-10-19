@@ -242,6 +242,7 @@
       "editor": {
         "newTitle": "Nouveau hotspot",
         "hint": "Cliquez sur le panorama pour placer un hotspot.",
+        "edit": "Modifier",
         "delete": "Supprimer",
         "confirmDelete": "Supprimer ce hotspot ?",
         "undo": "Annuler",
