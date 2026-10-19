@@ -1,7 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { Role, SelectionResponseSchema, type Principal } from '@xplor/shared';
-import { describe, expect, it } from 'vitest';
+import {
+  Role,
+  SelectionResponseSchema,
+  SelectionUpdateSchema,
+  type Principal,
+  type SelectionUpdate,
+} from '@xplor/shared';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   SelectionService,
@@ -68,6 +74,15 @@ function harness(): {
   hotels: Map<string, HotelSummaryRow>;
   selections: Map<string, SelectionRow>;
   tours: Map<string, { id: string; status: 'PUBLISHED' | 'DRAFT'; deletedAt: Date | null }>;
+  upsertMock: ReturnType<
+    typeof vi.fn<(args: Prisma.SelectionUpsertArgs) => Promise<{ id: string }>>
+  >;
+  deleteManyMock: ReturnType<
+    typeof vi.fn<(args: Prisma.SelectionItemDeleteManyArgs) => Promise<unknown>>
+  >;
+  createManyMock: ReturnType<
+    typeof vi.fn<(args: Prisma.SelectionItemCreateManyArgs) => Promise<unknown>>
+  >;
 } {
   const hotels = new Map<string, HotelSummaryRow>([
     [HOTEL_A_ID, { id: HOTEL_A_ID, createdAt: HOTEL_A_CREATED_AT, deletedAt: null }],
@@ -122,6 +137,17 @@ function harness(): {
     [TOUR_4_ID, { id: TOUR_4_ID, status: 'PUBLISHED', deletedAt: null }],
   ]);
 
+  const upsertMock = vi.fn(
+    (): Promise<{ id: string }> =>
+      Promise.resolve({ id: '01990000-0000-7000-8000-000000000401' }),
+  );
+  const deleteManyMock = vi.fn(
+    (): Promise<unknown> => Promise.resolve({ count: 0 }),
+  );
+  const createManyMock = vi.fn(
+    (): Promise<unknown> => Promise.resolve({ count: 0 }),
+  );
+
   const prisma: SelectionPrismaClient = {
     hotel: {
       findFirst: (args: { where: Prisma.HotelWhereInput }): Promise<HotelSummaryRow | null> => {
@@ -163,7 +189,7 @@ function harness(): {
           })),
         });
       },
-      upsert: () => Promise.resolve({ id: '' }),
+      upsert: upsertMock,
     },
 
     tour: {
@@ -191,11 +217,11 @@ function harness(): {
     $transaction: <T>(fn: (tx: SelectionTx) => Promise<T>): Promise<T> => {
       const tx: SelectionTx = {
         selection: {
-          upsert: () => Promise.resolve({ id: '' }),
+          upsert: upsertMock,
         },
         selectionItem: {
-          deleteMany: () => Promise.resolve({ count: 0 }),
-          createMany: () => Promise.resolve({ count: 0 }),
+          deleteMany: deleteManyMock,
+          createMany: createManyMock,
         },
       };
       return fn(tx);
@@ -207,6 +233,9 @@ function harness(): {
     hotels,
     selections,
     tours,
+    upsertMock,
+    deleteManyMock,
+    createManyMock,
   };
 }
 
@@ -296,4 +325,41 @@ describe('SelectionService', () => {
       NotFoundException,
     );
   });
+
+  describe('replace — accès et validation', () => {
+    const sampleUpdate: SelectionUpdate = SelectionUpdateSchema.parse({
+      featuredTourId: TOUR_1_ID,
+      tourIds: [TOUR_1_ID, TOUR_2_ID],
+      attractTourIds: [TOUR_1_ID],
+    });
+
+    it('un gestionnaire de l’hôtel B ne peut pas remplacer la sélection de l’hôtel A → NotFoundException, aucune écriture', async () => {
+      const { service, upsertMock, deleteManyMock, createManyMock } = harness();
+
+      await expect(
+        service.replace(managerHotelB, HOTEL_A_ID, sampleUpdate),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(upsertMock).not.toHaveBeenCalled();
+      expect(deleteManyMock).not.toHaveBeenCalled();
+      expect(createManyMock).not.toHaveBeenCalled();
+    });
+
+    it('ADMIN reçoit 404 pour un hôtel supprimé (deletedAt non nul) ou inconnu', async () => {
+      const { service, upsertMock, deleteManyMock, createManyMock } = harness();
+
+      await expect(
+        service.replace(admin, HOTEL_DELETED_ID, sampleUpdate),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      await expect(
+        service.replace(admin, UNKNOWN_HOTEL_ID, sampleUpdate),
+      ).rejects.toBeInstanceOf(NotFoundException);
+
+      expect(upsertMock).not.toHaveBeenCalled();
+      expect(deleteManyMock).not.toHaveBeenCalled();
+      expect(createManyMock).not.toHaveBeenCalled();
+    });
+  });
 });
+
