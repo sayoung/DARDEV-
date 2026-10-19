@@ -317,7 +317,7 @@ export async function mountVr(
       });
 
       // 6. Entrée en session immersive
-      await session.enter();
+      await session.enter({ optionalFeatures: ['local-floor'] });
     } catch (error) {
       if (currentTeardown !== null) {
         currentTeardown();

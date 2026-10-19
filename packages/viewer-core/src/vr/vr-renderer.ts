@@ -32,6 +32,7 @@ export function createVrRenderer(canvasParent: HTMLElement): VrRendererHandle {
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.xr.enabled = false;
+  renderer.xr.setReferenceSpaceType('local');
 
   const camera = new THREE.PerspectiveCamera(75, ratio, 0.1, 100);
 

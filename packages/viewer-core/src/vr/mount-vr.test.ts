@@ -2,10 +2,30 @@
  * @vitest-environment happy-dom
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TourGraphSchema } from '@xplor/shared';
 import { mountVr } from './mount-vr.js';
 import * as indexExports from '../index.js';
+
+vi.mock('three', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('three')>();
+  class MockWebGLRenderer {
+    domElement = document.createElement('canvas');
+    xr = {
+      enabled: false,
+      setReferenceSpaceType: vi.fn(),
+      setSession: vi.fn().mockResolvedValue(undefined),
+    };
+    setSize = vi.fn();
+    render = vi.fn();
+    dispose = vi.fn();
+    setAnimationLoop = vi.fn();
+  }
+  return {
+    ...actual,
+    WebGLRenderer: MockWebGLRenderer,
+  };
+});
 
 describe('mountVr (M6 F-70, F-71)', () => {
   let container: HTMLDivElement;
@@ -136,5 +156,43 @@ describe('mountVr (M6 F-70, F-71)', () => {
       handle.destroy();
     }).not.toThrow();
     expect(container.children.length).toBe(0);
+  });
+
+  it('lors du clic sur le bouton VR, requestSession reçoit immersive-vr et optionalFeatures local-floor', async () => {
+    const fakeSession = {
+      addEventListener: vi.fn(),
+      end: vi.fn().mockResolvedValue(undefined),
+    };
+    const requestSessionMock = vi.fn().mockResolvedValue(fakeSession);
+
+    const fakeNavigator = {
+      xr: {
+        isSessionSupported: () => Promise.resolve(true),
+        requestSession: requestSessionMock,
+      },
+    };
+
+    const handle = await mountVr(container, {
+      label: 'Entrer en VR',
+      graph: validGraph,
+      getCurrentSceneId: () => 'scene-1',
+      showScene: async () => {},
+      resolveTextureUrl: () => null,
+      navigatorLike: fakeNavigator,
+    });
+
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    if (button !== null) {
+      button.click();
+    }
+
+    await vi.waitFor(() => {
+      expect(requestSessionMock).toHaveBeenCalledWith('immersive-vr', {
+        optionalFeatures: ['local-floor'],
+      });
+    });
+
+    handle.destroy();
   });
 });
