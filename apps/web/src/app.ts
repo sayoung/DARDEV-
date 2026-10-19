@@ -22,13 +22,17 @@ export async function startViewer(
       }
     ) => { goToScene(id: string): Promise<void>; destroy(): void; gyroscopeSupported(): Promise<boolean>; toggleGyroscope(): void };
     navigate: (url: string) => void;
+    mountVr?: (container: HTMLElement, sceneId: string, graph: TourGraph) => Promise<{ destroy(): void }>;
   }
 ): Promise<void> {
   const lang = resolveLang(location.search);
   doc.documentElement.setAttribute('lang', lang);
   doc.documentElement.setAttribute('dir', dir(lang));
 
-  const labels = resources[lang].viewer;
+  const labels = {
+    ...resources[lang].viewer,
+    vr: resources[lang].vr.enter,
+  };
 
   createLangSwitcher(doc, lang, resources.fr.viewer.language, (newLang) => {
     deps.navigate(`?lang=${newLang}`);
@@ -90,6 +94,7 @@ export async function startViewer(
           onHotspotClick: (id) => { controller.onHotspotClick(id).catch(() => {}); },
         });
       },
+      mountVr: deps.mountVr,
     });
 
     await controller.start(token);

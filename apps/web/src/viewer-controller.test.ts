@@ -390,4 +390,100 @@ describe('createViewerController', () => {
     expect(status?.hidden).toBe(false);
     expect(status?.textContent).toBe(labels.notFound);
   });
+
+  it('mountVr appelé une fois par visite', async () => {
+    const { load, mountScene } = setupDeps();
+    const mockVrHandle = { destroy: vi.fn() };
+    const mountVr = vi.fn().mockResolvedValue(mockVrHandle);
+
+    const controller = createViewerController(doc, {
+      load,
+      mountScene,
+      labels,
+      mountVr,
+    });
+
+    await controller.start('token1');
+
+    const controlsContainer = doc.getElementById('controls');
+    expect(controlsContainer).not.toBeNull();
+    expect(mountVr).toHaveBeenCalledTimes(1);
+    expect(mountVr).toHaveBeenCalledWith(controlsContainer, 's1', mockGraph1);
+
+    // Un changement de scène au sein de la même visite n'appelle pas mountVr à nouveau
+    controller.onSceneChange('s2');
+    expect(mountVr).toHaveBeenCalledTimes(1);
+  });
+
+  it('destroy au changement', async () => {
+    const { load, mountScene } = setupDeps();
+    const mockDestroy1 = vi.fn();
+    const mockDestroy2 = vi.fn();
+    const mountVr = vi
+      .fn()
+      .mockResolvedValueOnce({ destroy: mockDestroy1 })
+      .mockResolvedValueOnce({ destroy: mockDestroy2 });
+
+    const controller = createViewerController(doc, {
+      load,
+      mountScene,
+      labels,
+      mountVr,
+    });
+
+    await controller.start('token1');
+    expect(mockDestroy1).not.toHaveBeenCalled();
+
+    // Changement de visite via TOUR_LINK
+    controller.onSceneChange('s2');
+    const clickPromise = controller.onHotspotClick('hs1');
+    await new Promise((r) => setTimeout(r, 0));
+
+    const confirmBtn = doc.querySelector('.confirm-dialog-btn-confirm');
+    expect(confirmBtn).not.toBeNull();
+    if (confirmBtn instanceof HTMLButtonElement) {
+      confirmBtn.click();
+    }
+    await clickPromise;
+
+    // L'ancienne instance VR de la visite 1 doit être détruite
+    expect(mockDestroy1).toHaveBeenCalledOnce();
+    // La nouvelle visite monte son handle VR
+    expect(mountVr).toHaveBeenCalledTimes(2);
+
+    // Destruction du contrôleur -> destruction de l'instance courante
+    controller.destroy();
+    expect(mockDestroy2).toHaveBeenCalledOnce();
+  });
+
+  it('erreur absorbée', async () => {
+    const { load, mountScene } = setupDeps();
+    const mountVr = vi.fn().mockRejectedValue(new Error('WebXR initialization failed'));
+
+    const controller = createViewerController(doc, {
+      load,
+      mountScene,
+      labels,
+      mountVr,
+    });
+
+    await expect(controller.start('token1')).resolves.toBeUndefined();
+
+    const status = doc.getElementById('status');
+    expect(status?.hidden).toBe(true);
+    expect(status?.textContent).toBe('');
+  });
+
+  it('absent → aucun appel', async () => {
+    const { load, mountScene } = setupDeps();
+    const controller = createViewerController(doc, {
+      load,
+      mountScene,
+      labels,
+    });
+
+    await expect(controller.start('token1')).resolves.toBeUndefined();
+    const status = doc.getElementById('status');
+    expect(status?.hidden).toBe(true);
+  });
 });
