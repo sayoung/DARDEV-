@@ -1021,3 +1021,9 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** imposer les contrôleurs physiques 6DOF (exclut l'usage mains libres des casques autonomes) ; intégrer des fenêtres HTML/CSS 3D complexes dans WebXR ; bouton de sortie flottant ancré à la caméra (risque de gêne visuelle et de cinétose).
 - **À valider :** oui (fluidité 72 fps, confort visuel et navigation à valider sur casque réel Quest 3 / Pico 4 par le porteur)
 
+## D-130 — Table Event partitionnée (M7)
+
+- **Date :** 19/10/2026
+- **Décision :** partitionnement déclaratif PostgreSQL PARTITION BY RANGE sur `receivedAt` (horodatage serveur, fiable) par mois ; clé primaire (id, receivedAt) ; pas de clés étrangères ; pas d'IP ; rétention 13 mois par suppression de partition.
+- **Alternatives :** partition sur `occurredAt` écartée (horodatage client non fiable).
+- **À valider :** non
