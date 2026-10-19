@@ -43,7 +43,7 @@ export function createControls(
   const backBtn = createButton(labels.back, '↩', () => { handlers.onBack(); });
   const prevBtn = createButton(labels.previous, '❮', () => { handlers.onPrevious(); });
   const nextBtn = createButton(labels.next, '❯', () => { handlers.onNext(); });
-  const infoBtn = createButton(labels.practicalInfo, 'ℹ', () => { handlers.onPracticalInfo(); });
+  const infoBtn = createButton(labels.practicalInfo, 'ℹ︎', () => { handlers.onPracticalInfo(); });
   const fsBtn = createButton(labels.fullscreen, '⛶', () => { handlers.onFullscreen(); });
 
   let gyroBtn: HTMLButtonElement | null = null;
