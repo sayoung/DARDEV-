@@ -16,13 +16,14 @@ interface Props {
   initialData?: HotspotResponse | null;
   defaultPosition?: { yaw: number; pitch: number };
   currentTourScenes: SceneResponse[];
+  currentSceneId?: string;
   onSubmit: (data: HotspotCreate) => Promise<void>;
   onDelete?: () => Promise<void>;
   onCancel?: () => void;
   isSubmitting: boolean;
 }
 
-export function HotspotForm({ initialData, defaultPosition, currentTourScenes, onSubmit, onDelete, onCancel, isSubmitting }: Props) {
+export function HotspotForm({ initialData, defaultPosition, currentTourScenes, currentSceneId, onSubmit, onDelete, onCancel, isSubmitting }: Props) {
   const { t } = useTranslation();
 
   const [type, setType] = useState<HotspotType>(initialData?.type ?? HotspotType.SCENE_LINK);
@@ -143,7 +144,7 @@ export function HotspotForm({ initialData, defaultPosition, currentTourScenes, o
               required
             >
               <option value="">{t('common.select')}</option>
-              {currentTourScenes.map((s) => (
+              {currentTourScenes.filter((s) => s.id !== currentSceneId).map((s) => (
                 <option key={s.id} value={s.id}>{s.title.fr || s.id}</option>
               ))}
             </Select>

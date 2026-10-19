@@ -161,6 +161,7 @@ export function HotspotDetailPage() {
       <HotspotForm
         initialData={hotspot}
         currentTourScenes={currentTourScenes}
+        currentSceneId={hotspot?.sceneId || sceneId || undefined}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
       />

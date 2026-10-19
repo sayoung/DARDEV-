@@ -157,4 +157,72 @@ describe('HotspotForm', () => {
 
     expect(onCancel).toHaveBeenCalledOnce();
   });
+
+  it('avec currentTourScenes = [A, B] et currentSceneId = A, le select ne propose pas A mais propose B ; sans currentSceneId, les deux sont proposées', () => {
+    const sceneA: SceneResponse = {
+      id: 'scene-a-id',
+      tourId: '018f3a2b-0001-7000-8000-000000000002',
+      title: { fr: 'Scène A' },
+      panoramaAssetId: '018f3a2b-0001-7000-8000-000000000003',
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      weight: 0,
+      hotspotCount: 0,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+    const sceneB: SceneResponse = {
+      id: 'scene-b-id',
+      tourId: '018f3a2b-0001-7000-8000-000000000002',
+      title: { fr: 'Scène B' },
+      panoramaAssetId: '018f3a2b-0001-7000-8000-000000000004',
+      initialYaw: 0,
+      initialPitch: 0,
+      initialZoom: 50,
+      weight: 1,
+      hotspotCount: 0,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    const { unmount } = render(
+      <HotspotForm
+        currentTourScenes={[sceneA, sceneB]}
+        currentSceneId={sceneA.id}
+        onSubmit={vi.fn()}
+        isSubmitting={false}
+      />
+    );
+
+    const selectWithFilter = document.getElementById('targetSceneId');
+    expect(selectWithFilter).toBeInstanceOf(HTMLSelectElement);
+    if (selectWithFilter instanceof HTMLSelectElement) {
+      const options = Array.from(selectWithFilter.options).map((opt) => opt.text);
+      expect(options).not.toContain('Scène A');
+      expect(options).toContain('Scène B');
+    }
+    expect(screen.queryByRole('option', { name: 'Scène A' })).toBeNull();
+    expect(screen.getByRole('option', { name: 'Scène B' })).toBeDefined();
+
+    unmount();
+
+    render(
+      <HotspotForm
+        currentTourScenes={[sceneA, sceneB]}
+        onSubmit={vi.fn()}
+        isSubmitting={false}
+      />
+    );
+
+    const selectWithoutFilter = document.getElementById('targetSceneId');
+    expect(selectWithoutFilter).toBeInstanceOf(HTMLSelectElement);
+    if (selectWithoutFilter instanceof HTMLSelectElement) {
+      const options = Array.from(selectWithoutFilter.options).map((opt) => opt.text);
+      expect(options).toContain('Scène A');
+      expect(options).toContain('Scène B');
+    }
+    expect(screen.getByRole('option', { name: 'Scène A' })).toBeDefined();
+    expect(screen.getByRole('option', { name: 'Scène B' })).toBeDefined();
+  });
 });

@@ -409,6 +409,7 @@ function SceneEditorTab({
               key={`${String(draftPosition.yaw)}-${String(draftPosition.pitch)}`}
               defaultPosition={draftPosition}
               currentTourScenes={currentTourScenes}
+              currentSceneId={scene.id}
               onSubmit={handleCreateHotspot}
               isSubmitting={isSubmitting}
               onCancel={() => { setDraftPosition(null); }}
