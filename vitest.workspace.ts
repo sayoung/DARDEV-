@@ -7,7 +7,7 @@ const workspace: TestProjectConfiguration[] = [
   {
     test: {
       name: '@xplor/shared',
-      root: './packages/shared',
+      root: resolve(__dirname, './packages/shared'),
       environment: 'node',
       include: ['src/**/*.test.ts'],
       exclude: [...exclude],
@@ -16,7 +16,7 @@ const workspace: TestProjectConfiguration[] = [
   {
     test: {
       name: '@xplor/i18n',
-      root: './packages/i18n',
+      root: resolve(__dirname, './packages/i18n'),
       environment: 'node',
       include: ['src/**/*.test.ts'],
       exclude: [...exclude],
@@ -25,7 +25,7 @@ const workspace: TestProjectConfiguration[] = [
   {
     test: {
       name: '@xplor/viewer-core',
-      root: './packages/viewer-core',
+      root: resolve(__dirname, './packages/viewer-core'),
       environment: 'node',
       include: ['src/**/*.test.ts'],
       exclude: [...exclude],
@@ -34,17 +34,17 @@ const workspace: TestProjectConfiguration[] = [
   {
     test: {
       name: '@xplor/api',
-      root: './apps/api',
+      root: resolve(__dirname, './apps/api'),
       environment: 'node',
       include: ['src/**/*.test.ts'],
       exclude: [...exclude, '**/*.int.test.ts'],
     },
   },
-  './apps/admin/vitest.config.ts',
+  resolve(__dirname, './apps/admin/vitest.config.ts'),
   {
     test: {
       name: '@xplor/web',
-      root: './apps/web',
+      root: resolve(__dirname, './apps/web'),
       environment: 'happy-dom',
       include: ['src/**/*.test.ts'],
       exclude: [...exclude],
@@ -53,7 +53,7 @@ const workspace: TestProjectConfiguration[] = [
   {
     test: {
       name: '@xplor/kiosk',
-      root: './apps/kiosk',
+      root: resolve(__dirname, './apps/kiosk'),
       environment: 'happy-dom',
       include: ['src/**/*.test.ts'],
       exclude: [...exclude],
@@ -62,7 +62,7 @@ const workspace: TestProjectConfiguration[] = [
   {
     test: {
       name: '@xplor/worker',
-      root: './apps/worker',
+      root: resolve(__dirname, './apps/worker'),
       environment: 'node',
       include: ['src/**/*.test.ts'],
       exclude: [...exclude],
@@ -71,7 +71,7 @@ const workspace: TestProjectConfiguration[] = [
   {
     test: {
       name: 'scripts',
-      root: './scripts',
+      root: resolve(__dirname, './scripts'),
       environment: 'node',
       include: ['**/*.spec.ts'],
       alias: {

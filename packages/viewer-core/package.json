@@ -12,7 +12,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --project @xplor/viewer-core",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@photo-sphere-viewer/core": "5.15.1",
