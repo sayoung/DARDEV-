@@ -202,17 +202,7 @@ export async function mountVr(
         vrScene.setMarkers(withExitTarget(toVrTargets(currentScene)));
       }
 
-      // 4. Chargement de la texture via THREE.TextureLoader (colorSpace SRGB)
-      if (currentScene !== undefined) {
-        try {
-          const initialTexture = await loadTextureForScene(currentScene.id);
-          vrScene.setTexture(initialTexture);
-        } catch {
-          // Erreur de chargement initial absorbée sans crash
-        }
-      }
-
-      // 5. Composants purs : sélecteur par regard, fondu confort, interactions
+      // 4. Composants purs : sélecteur par regard, fondu confort, interactions
       const gaze = createGazeSelector();
       const fade = createVrFade();
 
@@ -316,8 +306,21 @@ export async function mountVr(
         },
       });
 
-      // 6. Entrée en session immersive
-      await session.enter({ optionalFeatures: ['local-floor'] });
+      // 5. Entrée en session immersive synchrone dans le geste du clic avant tout await
+      const entered = session.enter({ optionalFeatures: ['local-floor'] });
+      entered.catch(() => {});
+
+      // 6. Ensuite seulement : chargement de la texture (fond noir pendant le chargement)
+      if (currentScene !== undefined) {
+        try {
+          const initialTexture = await loadTextureForScene(currentScene.id);
+          vrScene.setTexture(initialTexture);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      await entered;
     } catch (error) {
       if (currentTeardown !== null) {
         currentTeardown();

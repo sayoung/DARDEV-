@@ -2,10 +2,15 @@
  * @vitest-environment happy-dom
  */
 
+import * as THREE from 'three';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TourGraphSchema } from '@xplor/shared';
 import { mountVr } from './mount-vr.js';
 import * as indexExports from '../index.js';
+
+const { mockLoadAsync } = vi.hoisted(() => ({
+  mockLoadAsync: vi.fn<(url: string) => Promise<import('three').Texture>>(),
+}));
 
 vi.mock('three', async (importOriginal) => {
   const actual = await importOriginal<typeof import('three')>();
@@ -21,9 +26,15 @@ vi.mock('three', async (importOriginal) => {
     dispose = vi.fn();
     setAnimationLoop = vi.fn();
   }
+  class MockTextureLoader {
+    loadAsync = (url: string): Promise<import('three').Texture> => {
+      return mockLoadAsync(url);
+    };
+  }
   return {
     ...actual,
     WebGLRenderer: MockWebGLRenderer,
+    TextureLoader: MockTextureLoader,
   };
 });
 
@@ -71,6 +82,10 @@ describe('mountVr (M6 F-70, F-71)', () => {
     container = document.createElement('div');
     document.body.innerHTML = '';
     document.body.appendChild(container);
+    mockLoadAsync.mockReset();
+    mockLoadAsync.mockImplementation(() =>
+      Promise.resolve(new THREE.Texture()),
+    );
   });
 
   it('exporte mountVr depuis index.ts', () => {
@@ -193,6 +208,117 @@ describe('mountVr (M6 F-70, F-71)', () => {
       });
     });
 
+    handle.destroy();
+  });
+
+  it('requestSession est appele avant la resolution d un loadAsync de texture mocke en promesse differee', async () => {
+    let resolveTexturePromise: (value: THREE.Texture) => void = () => {};
+    let textureResolved = false;
+    let requestSessionCalledBeforeTextureResolved = false;
+
+    const deferredTexturePromise = new Promise<THREE.Texture>((resolve) => {
+      resolveTexturePromise = (texture: THREE.Texture) => {
+        textureResolved = true;
+        resolve(texture);
+      };
+    });
+
+    mockLoadAsync.mockReturnValue(deferredTexturePromise);
+
+    const fakeSession = {
+      addEventListener: vi.fn(),
+      end: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const requestSessionMock = vi.fn().mockImplementation(() => {
+      if (!textureResolved) {
+        requestSessionCalledBeforeTextureResolved = true;
+      }
+      return Promise.resolve(fakeSession);
+    });
+
+    const fakeNavigator = {
+      xr: {
+        isSessionSupported: () => Promise.resolve(true),
+        requestSession: requestSessionMock,
+      },
+    };
+
+    const handle = await mountVr(container, {
+      label: 'Entrer en VR',
+      graph: validGraph,
+      getCurrentSceneId: () => 'scene-1',
+      showScene: async () => {},
+      resolveTextureUrl: () => 'http://example.com/web1.jpg',
+      navigatorLike: fakeNavigator,
+    });
+
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    if (button !== null) {
+      button.click();
+    }
+
+    // Dans le geste du clic synchrone, requestSession est déclenché avant la résolution de la texture
+    expect(requestSessionMock).toHaveBeenCalledTimes(1);
+    expect(requestSessionCalledBeforeTextureResolved).toBe(true);
+    expect(textureResolved).toBe(false);
+
+    // Résolution de la promesse différée de texture
+    resolveTexturePromise(new THREE.Texture());
+
+    await vi.waitFor(() => {
+      expect(textureResolved).toBe(true);
+    });
+
+    handle.destroy();
+  });
+
+  it('un echec de chargement de texture apres entree n appelle pas session.end et ne rejette pas', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    mockLoadAsync.mockRejectedValue(new Error('Texture load failure'));
+
+    const fakeSession = {
+      addEventListener: vi.fn(),
+      end: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const requestSessionMock = vi.fn().mockResolvedValue(fakeSession);
+
+    const fakeNavigator = {
+      xr: {
+        isSessionSupported: () => Promise.resolve(true),
+        requestSession: requestSessionMock,
+      },
+    };
+
+    const handle = await mountVr(container, {
+      label: 'Entrer en VR',
+      graph: validGraph,
+      getCurrentSceneId: () => 'scene-1',
+      showScene: async () => {},
+      resolveTextureUrl: () => 'http://example.com/web1.jpg',
+      navigatorLike: fakeNavigator,
+    });
+
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    if (button !== null) {
+      button.click();
+    }
+
+    await vi.waitFor(() => {
+      expect(requestSessionMock).toHaveBeenCalledTimes(1);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+
+    // La session reste ouverte : session.end n'a pas été appelé
+    expect(fakeSession.end).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
     handle.destroy();
   });
 });
