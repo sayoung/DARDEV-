@@ -395,7 +395,7 @@ describe('SceneDetailPage', () => {
     expect(await screen.findByText("Le panorama n'est pas prêt.")).toBeDefined();
   });
 
-  it('displays hint initially and shows form with yaw/pitch on click', async () => {
+  it('displays hint initially and shows form on click without yaw/pitch fields', async () => {
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({
       route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
@@ -432,10 +432,12 @@ describe('SceneDetailPage', () => {
 
     expect(await screen.findByText('Nouveau hotspot')).toBeDefined();
     
-    const yawInput = container.querySelector('#yaw') as HTMLInputElement;
-    const pitchInput = container.querySelector('#pitch') as HTMLInputElement;
-    expect(yawInput.value).toBe('0.5');
-    expect(pitchInput.value).toBe('0.1');
+    expect(screen.queryByLabelText(/yaw/i)).toBeNull();
+    expect(screen.queryByLabelText(/pitch/i)).toBeNull();
+    expect(screen.queryByLabelText(/arrivalYaw/i)).toBeNull();
+    expect(container.querySelector('#yaw')).toBeNull();
+    expect(container.querySelector('#pitch')).toBeNull();
+    expect(container.querySelector('#arrivalYaw')).toBeNull();
   });
 
   it('submits hotspot form and refreshes list', async () => {

@@ -26,10 +26,10 @@ export function HotspotForm({ initialData, defaultPosition, currentTourScenes, o
   const { t } = useTranslation();
 
   const [type, setType] = useState<HotspotType>(initialData?.type ?? HotspotType.SCENE_LINK);
-  const [yaw, setYaw] = useState<number>(initialData?.yaw ?? defaultPosition?.yaw ?? 0);
-  const [pitch, setPitch] = useState<number>(initialData?.pitch ?? defaultPosition?.pitch ?? 0);
+  const [yaw] = useState<number>(initialData?.yaw ?? defaultPosition?.yaw ?? 0);
+  const [pitch] = useState<number>(initialData?.pitch ?? defaultPosition?.pitch ?? 0);
   const [label, setLabel] = useState<LocalizedText>(initialData?.label ?? { fr: '' });
-  const [arrivalYaw, setArrivalYaw] = useState<number | ''>(initialData?.arrivalYaw ?? '');
+  const [arrivalYaw] = useState<number | ''>(initialData?.arrivalYaw ?? '');
   const [icon, setIcon] = useState<HotspotIcon>(initialData?.icon ?? HotspotIcon.ARROW);
 
   // SCENE_LINK
@@ -131,21 +131,6 @@ export function HotspotForm({ initialData, defaultPosition, currentTourScenes, o
         onChange={setLabel}
         required
       />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="yaw">{t('catalog.hotspots.fields.yaw')}</Label>
-          <Input id="yaw" type="number" step="0.01" value={yaw} onChange={e => { setYaw(Number(e.target.value)); }} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="pitch">{t('catalog.hotspots.fields.pitch')}</Label>
-          <Input id="pitch" type="number" step="0.01" value={pitch} onChange={e => { setPitch(Number(e.target.value)); }} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="arrivalYaw">{t('catalog.hotspots.fields.arrivalYaw')} ({t('common.optional')})</Label>
-          <Input id="arrivalYaw" type="number" step="0.01" value={arrivalYaw} onChange={e => { setArrivalYaw(e.target.value === '' ? '' : Number(e.target.value)); }} />
-        </div>
-      </div>
 
       <div className="border-t pt-4 mt-4">
         {type === HotspotType.SCENE_LINK && (
