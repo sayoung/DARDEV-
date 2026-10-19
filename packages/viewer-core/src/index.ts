@@ -25,3 +25,4 @@ export * from './vr/vr-interaction.js';
 export * from './vr/vr-targets.js';
 export * from './vr/vr-player.js';
 export * from './vr/vr-renderer.js';
+export * from './vr/mount-vr.js';
