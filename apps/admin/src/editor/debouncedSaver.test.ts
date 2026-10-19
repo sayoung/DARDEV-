@@ -93,4 +93,93 @@ describe('debouncedSaver', () => {
     expect(saveMock).toHaveBeenCalledWith('key1', 'value1');
     expect(statusMock).toHaveBeenLastCalledWith('error');
   });
+
+  it('échec puis retry réussi → valeur sauvée, statut saved', async () => {
+    let shouldFail = true;
+    const saveMock = vi.fn().mockImplementation(() => {
+      if (shouldFail) {
+        return Promise.reject(new Error('Erreur réseau'));
+      }
+      return Promise.resolve();
+    });
+    const statusMock = vi.fn();
+
+    const saver = createDebouncedSaver(saveMock, statusMock, 1000);
+
+    saver.schedule('key1', 'value1');
+    await vi.runAllTimersAsync();
+
+    expect(saveMock).toHaveBeenCalledWith('key1', 'value1');
+    expect(statusMock).toHaveBeenLastCalledWith('error');
+
+    shouldFail = false;
+    await saver.retry();
+
+    expect(saveMock).toHaveBeenCalledTimes(2);
+    expect(saveMock).toHaveBeenLastCalledWith('key1', 'value1');
+    expect(statusMock).toHaveBeenLastCalledWith('saved');
+  });
+
+  it('lot de 2 entrées, l\'une réussit, l\'autre échoue → seule l\'échouée reste en attente', async () => {
+    const saveMock = vi.fn().mockImplementation((key: string) => {
+      if (key === 'key2') {
+        return Promise.reject(new Error('Erreur key2'));
+      }
+      return Promise.resolve();
+    });
+    const statusMock = vi.fn();
+
+    const saver = createDebouncedSaver(saveMock, statusMock, 1000);
+
+    saver.schedule('key1', 'value1');
+    saver.schedule('key2', 'value2');
+
+    await vi.runAllTimersAsync();
+
+    expect(saveMock).toHaveBeenCalledWith('key1', 'value1');
+    expect(saveMock).toHaveBeenCalledWith('key2', 'value2');
+    expect(statusMock).toHaveBeenLastCalledWith('error');
+
+    expect(saver.getPendingKeys()).toEqual(['key2']);
+
+    saveMock.mockClear();
+    saveMock.mockResolvedValue(undefined);
+
+    await saver.retry();
+
+    expect(saveMock).toHaveBeenCalledTimes(1);
+    expect(saveMock).toHaveBeenCalledWith('key2', 'value2');
+    expect(saver.getPendingKeys()).toEqual([]);
+    expect(statusMock).toHaveBeenLastCalledWith('saved');
+  });
+
+  it('nouvelle valeur programmée pendant l\'échec → c\'est la plus récente qui est envoyée', async () => {
+    let rejectFirstSave: (reason: Error) => void = () => {};
+    const saveMock = vi.fn().mockImplementation((key: string, value: string) => {
+      if (key === 'key1' && value === 'value1') {
+        return new Promise<void>((_resolve, reject) => {
+          rejectFirstSave = reject;
+        });
+      }
+      return Promise.resolve();
+    });
+    const statusMock = vi.fn();
+
+    const saver = createDebouncedSaver(saveMock, statusMock, 1000);
+
+    saver.schedule('key1', 'value1');
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(saveMock).toHaveBeenCalledWith('key1', 'value1');
+
+    saver.schedule('key1', 'value2');
+
+    rejectFirstSave(new Error('Première sauvegarde échouée'));
+    await vi.runAllTimersAsync();
+
+    await saver.flush();
+
+    expect(saveMock).toHaveBeenLastCalledWith('key1', 'value2');
+    expect(statusMock).toHaveBeenLastCalledWith('saved');
+  });
 });

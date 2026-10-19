@@ -12,6 +12,7 @@
     "deleteConfirm": "Are you sure?",
     "save": "Save",
     "delete": "Delete",
+    "retry": "Retry",
     "error": {
       "generic": "An error occurred."
     },
@@ -203,8 +204,15 @@
     },
     "hotspots": {
       "editor": {
-        "relocate": "Déplacer ici",
-        "relocateHint": "Cliquez sur la photo ou appuyez sur Échap pour annuler."
+        "status": {
+          "pending": "Pending changes…",
+          "saving": "Saving…",
+          "saved": "Saved",
+          "error": "Failed to save"
+        },
+        "retry": "Retry",
+        "relocate": "Move here",
+        "relocateHint": "Click on the photo or press Esc to cancel."
       }
     }
   },
