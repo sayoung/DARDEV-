@@ -1009,3 +1009,15 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | --- | --- | --- |
 | three | WebXR (immersive-vr) | MIT |
 | @types/three | Déclarations TypeScript pour le mode strict | MIT |
+
+## D-129 — Hypothèses et interactions du mode VR (M6 F-70 à F-73)
+
+- **Date :** 19/10/2026
+- **Décision :** Pour le mode VR WebXR autonome (Meta Quest 3 / Pico 4, M6 F-70 à F-73), les hypothèses et choix d'interaction suivants sont arrêtés :
+  1. **Navigation et sélection :** navigation par regard fixe 2 s (dwell time de 2000 ms via `createGazeSelector`) pour une utilisation mains libres sans manette, complétée par la sélection immédiate par manette via `selectNow` (laser/gâchette) réutilisant le même cycle de transition par fondu.
+  2. **Panneau d'information 3D :** panneau textuel uniquement (`createInfoPanel`, texte converti depuis le HTML sans balises riches ni médias, enveloppement 40 caractères par ligne, max 8 lignes sur Canvas 2D projeté sur un Mesh 3D à 2.5 m) comme accepté par le cahier des charges pour la phase 1.
+  3. **Bouton de sortie VR :** bouton de sortie permanent matérialisé par une cible de regard fixe sous l'horizon (`yaw: 0, pitch: -1.0` rad vers le nadir, `withExitTarget`), accessible à tout moment en baissant les yeux sans interférer avec les hotspots situés sur l'horizon, en complément du bouton natif système du casque.
+  4. **Multilingue :** les libellés VR (`vr.enter`) sont disponibles dans `packages/i18n`, avec les traductions arabe et anglaise en repli automatique sur le français conformément à l'exception D-03 / D-82, sans blocage sur la vérification visuelle RTL avant le jalon M8.
+- **Alternatives :** imposer les contrôleurs physiques 6DOF (exclut l'usage mains libres des casques autonomes) ; intégrer des fenêtres HTML/CSS 3D complexes dans WebXR ; bouton de sortie flottant ancré à la caméra (risque de gêne visuelle et de cinétose).
+- **À valider :** oui (fluidité 72 fps, confort visuel et navigation à valider sur casque réel Quest 3 / Pico 4 par le porteur)
+
