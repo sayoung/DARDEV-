@@ -11,6 +11,7 @@ import { HotspotsController } from './catalog/hotspots.controller.js';
 import { ScenesController } from './catalog/scenes.controller.js';
 import { ToursController } from './catalog/tours.controller.js';
 import { loadEnv } from './config/env.js';
+import { EventsPartitionService } from './events/events-partition.service.js';
 import { HealthController } from './health/health.controller.js';
 import { HotelsController } from './hotels/hotels.controller.js';
 import { UsersController } from './users/users.controller.js';
@@ -46,6 +47,7 @@ describe('AppModule', () => {
     expect(moduleRef.get(ScenesController)).toBeInstanceOf(ScenesController);
     expect(moduleRef.get(HotspotsController)).toBeInstanceOf(HotspotsController);
     expect(moduleRef.get(HealthController)).toBeInstanceOf(HealthController);
+    expect(moduleRef.get(EventsPartitionService)).toBeInstanceOf(EventsPartitionService);
     await moduleRef.close();
   });
 });
