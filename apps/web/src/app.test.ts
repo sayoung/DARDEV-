@@ -182,4 +182,26 @@ describe('startViewer', () => {
     expect(status?.textContent).toBe(resources.fr.viewer.notFound);
     expect(mockMount).not.toHaveBeenCalled();
   });
+
+  it('transmet mountVr et le libellé i18n au contrôleur', async () => {
+    mockLoad.mockResolvedValue(mockGraph);
+    const mockMountVr = vi.fn().mockResolvedValue({ destroy: vi.fn() });
+
+    await startViewer(
+      doc,
+      { pathname: '/v/validToken', search: '' },
+      {
+        load: mockLoad,
+        loadPreview: mockLoadPreview,
+        mount: mockMount,
+        navigate: mockNavigate,
+        mountVr: mockMountVr,
+      }
+    );
+
+    const controls = doc.getElementById('controls');
+    expect(controls).not.toBeNull();
+    expect(mockMountVr).toHaveBeenCalledTimes(1);
+    expect(mockMountVr).toHaveBeenCalledWith(controls, 'scene-1', mockGraph);
+  });
 });

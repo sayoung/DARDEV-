@@ -374,6 +374,9 @@
       "confirmReenroll": "Are you sure you want to re-enroll this kiosk? All local data will be reset.",
       "close": "Close"
     }
+  },
+  "vr": {
+    "enter": "Enter VR"
   }
 }
 

@@ -30,6 +30,7 @@ export interface ViewerLabels {
   pause: string;
   gyroscope?: string;
   openMap?: string;
+  vr?: string;
 }
 
 export interface ViewerDeps {
@@ -42,6 +43,7 @@ export interface ViewerDeps {
   onSceneChange?: (sceneId: string) => void;
   openUrl?: (url: string) => void;
   audioFactory?: (url: string) => HTMLAudioElement;
+  mountVr?: (container: HTMLElement, sceneId: string, graph: TourGraph) => Promise<{ destroy(): void }>;
 }
 
 export function createViewerController(doc: Document, deps: ViewerDeps) {
@@ -53,6 +55,43 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
 
   let prevScene: TourGraphScene | null = null;
   let player: ReturnType<typeof createSceneAudioPlayer> | null = null;
+  let currentVr: { destroy(): void } | null = null;
+  let isDestroyed = false;
+  let vrSessionId = 0;
+
+  const destroyCurrentVr = () => {
+    if (currentVr) {
+      try {
+        currentVr.destroy();
+      } catch {
+        // F-73 : aucune erreur visible
+      }
+      currentVr = null;
+    }
+  };
+
+  const attachVr = async (graph: TourGraph, sceneId: string) => {
+    destroyCurrentVr();
+    if (!deps.mountVr) return;
+    const controlsEl = doc.getElementById('controls');
+    if (!controlsEl) return;
+
+    const sessionId = ++vrSessionId;
+    try {
+      const vr = await deps.mountVr(controlsEl, sceneId, graph);
+      if (isDestroyed || sessionId !== vrSessionId) {
+        try {
+          vr.destroy();
+        } catch {
+          // F-73 : aucune erreur visible
+        }
+      } else {
+        currentVr = vr;
+      }
+    } catch {
+      // F-73 : aucune erreur visible
+    }
+  };
 
   const applyAudio = (isNewTour: boolean, sceneId: string) => {
     const state = navigator.current();
@@ -185,6 +224,7 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
           });
           applyAudio(true, state.sceneId);
           updateControls();
+          await attachVr(state.graph, state.sceneId);
         }
       }
       hideStatus();
@@ -254,6 +294,7 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
           });
           applyAudio(true, state.sceneId);
           updateControls();
+          await attachVr(state.graph, state.sceneId);
         }
         hideStatus();
       } catch (err) {
@@ -290,6 +331,7 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
               });
               applyAudio(true, newState.sceneId);
               updateControls();
+              await attachVr(newState.graph, newState.sceneId);
             }
             hideStatus();
           } catch (err) {
@@ -327,6 +369,9 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
     },
 
     destroy() {
+      isDestroyed = true;
+      vrSessionId++;
+      destroyCurrentVr();
       if (currentMount) currentMount.destroy();
       controls.destroy();
       if (player) player.destroy();
