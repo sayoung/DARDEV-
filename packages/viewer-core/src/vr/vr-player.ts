@@ -1,7 +1,9 @@
+import type * as THREE from 'three';
 import type { VrSessionHandle } from './vr-session.js';
 import type { VrSceneHandle } from './vr-scene.js';
 import type { VrInteraction, VrInteractionFrameResult } from './vr-interaction.js';
 import { VR_EXIT_TARGET_ID } from './vr-targets.js';
+import { htmlToPlainText, wrapLines } from './vr-info-panel.js';
 
 /**
  * Dépendances injectées pour le contrôleur de visite VR (M6 F-71).
@@ -48,9 +50,36 @@ export function createVrPlayer(deps: VrPlayerDeps): VrPlayer {
   }
 
   function handleNavigate(hotspotId: string): void {
+    deps.panel.hide();
+
     if (hotspotId === VR_EXIT_TARGET_ID) {
       void deps.session.exit();
       return;
+    }
+
+    const data = deps.getSceneData(hotspotId);
+    if (data === null) {
+      return;
+    }
+
+    if (data.kind === 'tour-link' && data.targetSceneId !== undefined) {
+      const targetSceneId = data.targetSceneId;
+      const navPromise = (async () => {
+        try {
+          const texture = await deps.loadTexture(targetSceneId);
+          deps.scene.setTexture(texture as THREE.Texture | null);
+          await deps.showScene(targetSceneId);
+        } catch {
+          // Erreur de chargement absorbée : pas de setTexture ni de crash
+        }
+      })();
+      void navPromise.catch(() => {});
+      return;
+    }
+
+    if (data.kind === 'info') {
+      const lines = wrapLines(htmlToPlainText(data.text ?? ''), 40, 8);
+      deps.panel.show(lines, data.rtl);
     }
   }
 
