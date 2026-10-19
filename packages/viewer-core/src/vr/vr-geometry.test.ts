@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   sphericalToVector,
+  vectorToSpherical,
   angularDistance,
   pickHotspot,
   type SphericalPosition,
@@ -8,6 +9,7 @@ import {
 } from './vr-geometry.js';
 import {
   sphericalToVector as sphericalToVectorFromIndex,
+  vectorToSpherical as vectorToSphericalFromIndex,
   angularDistance as angularDistanceFromIndex,
   pickHotspot as pickHotspotFromIndex,
 } from '../index.js';
@@ -15,6 +17,7 @@ import {
 describe('vr-geometry (M6 F-71)', () => {
   it('est exporté depuis index.ts', () => {
     expect(sphericalToVectorFromIndex).toBe(sphericalToVector);
+    expect(vectorToSphericalFromIndex).toBe(vectorToSpherical);
     expect(angularDistanceFromIndex).toBe(angularDistance);
     expect(pickHotspotFromIndex).toBe(pickHotspot);
   });
@@ -127,6 +130,112 @@ describe('vr-geometry (M6 F-71)', () => {
         expect(vPosPi.x).toBeCloseTo(vNegPi.x);
         expect(vPosPi.y).toBeCloseTo(vNegPi.y);
         expect(vPosPi.z).toBeCloseTo(vNegPi.z);
+      });
+    });
+  });
+
+  describe('vectorToSpherical', () => {
+    describe('axes principaux (repère Three.js : Y haut, -Z devant pour yaw=0)', () => {
+      it('oriente vers yaw=0 et pitch=0 pour un vecteur le long de -Z (devant)', () => {
+        const spherical = vectorToSpherical({ x: 0, y: 0, z: -1 });
+        expect(spherical.yaw).toBeCloseTo(0);
+        expect(spherical.pitch).toBeCloseTo(0);
+      });
+
+      it('oriente vers yaw=π/2 et pitch=0 pour un vecteur le long de +X (droite)', () => {
+        const spherical = vectorToSpherical({ x: 1, y: 0, z: 0 });
+        expect(spherical.yaw).toBeCloseTo(Math.PI / 2);
+        expect(spherical.pitch).toBeCloseTo(0);
+      });
+
+      it('oriente vers yaw=-π/2 et pitch=0 pour un vecteur le long de -X (gauche)', () => {
+        const spherical = vectorToSpherical({ x: -1, y: 0, z: 0 });
+        expect(spherical.yaw).toBeCloseTo(-Math.PI / 2);
+        expect(spherical.pitch).toBeCloseTo(0);
+      });
+
+      it('oriente vers yaw=π et pitch=0 pour un vecteur le long de +Z (derrière)', () => {
+        const spherical = vectorToSpherical({ x: 0, y: 0, z: 1 });
+        expect(spherical.yaw).toBeCloseTo(Math.PI);
+        expect(spherical.pitch).toBeCloseTo(0);
+      });
+
+      it('oriente vers yaw=0 et pitch=π/2 pour un vecteur le long de +Y (zénith / haut)', () => {
+        const spherical = vectorToSpherical({ x: 0, y: 1, z: 0 });
+        expect(spherical.yaw).toBeCloseTo(0);
+        expect(spherical.pitch).toBeCloseTo(Math.PI / 2);
+      });
+
+      it('oriente vers yaw=0 et pitch=-π/2 pour un vecteur le long de -Y (nadir / bas)', () => {
+        const spherical = vectorToSpherical({ x: 0, y: -1, z: 0 });
+        expect(spherical.yaw).toBeCloseTo(0);
+        expect(spherical.pitch).toBeCloseTo(-Math.PI / 2);
+      });
+    });
+
+    describe('aller-retour sphericalToVector → vectorToSpherical', () => {
+      const testCases = [
+        { name: 'horizon devant (0, 0)', yaw: 0, pitch: 0 },
+        { name: 'droite (π/2, 0)', yaw: Math.PI / 2, pitch: 0 },
+        { name: 'gauche (-π/2, 0)', yaw: -Math.PI / 2, pitch: 0 },
+        { name: 'derrière positif (π, 0)', yaw: Math.PI, pitch: 0 },
+        { name: 'derrière négatif (-π, 0)', yaw: -Math.PI, pitch: 0 },
+        { name: 'zénith (0, π/2)', yaw: 0, pitch: Math.PI / 2 },
+        { name: 'nadir (0, -π/2)', yaw: 0, pitch: -Math.PI / 2 },
+        { name: 'cadran nord-est haut (π/4, π/4)', yaw: Math.PI / 4, pitch: Math.PI / 4 },
+        { name: 'cadran sud-ouest bas (-3π/4, -π/6)', yaw: (-3 * Math.PI) / 4, pitch: -Math.PI / 6 },
+        { name: 'angle quelconque positif (1.23, 0.45)', yaw: 1.23, pitch: 0.45 },
+        { name: 'angle quelconque négatif (-2.15, -0.62)', yaw: -2.15, pitch: -0.62 },
+        { name: 'haut droite (π/2, π/3)', yaw: Math.PI / 2, pitch: Math.PI / 3 },
+        { name: 'bas gauche (-π/2, -π/3)', yaw: -Math.PI / 2, pitch: -Math.PI / 3 },
+      ];
+
+      for (const tc of testCases) {
+        it(`restitue fidèlement les coordonnées pour ${tc.name}`, () => {
+          const v = sphericalToVector(tc.yaw, tc.pitch);
+          const roundtrip = vectorToSpherical(v);
+          expect(roundtrip.yaw).toBeCloseTo(tc.yaw);
+          expect(roundtrip.pitch).toBeCloseTo(tc.pitch);
+        });
+      }
+    });
+
+    describe('vecteur non normalisé', () => {
+      it('calcule les angles corrects pour des vecteurs d axes de normes arbitraires', () => {
+        expect(vectorToSpherical({ x: 0, y: 0, z: -10 })).toEqual({ yaw: 0, pitch: 0 });
+        expect(vectorToSpherical({ x: 5, y: 0, z: 0 }).yaw).toBeCloseTo(Math.PI / 2);
+        expect(vectorToSpherical({ x: 5, y: 0, z: 0 }).pitch).toBeCloseTo(0);
+        expect(vectorToSpherical({ x: -12, y: 0, z: 0 }).yaw).toBeCloseTo(-Math.PI / 2);
+        expect(vectorToSpherical({ x: -12, y: 0, z: 0 }).pitch).toBeCloseTo(0);
+        expect(vectorToSpherical({ x: 0, y: 50, z: 0 })).toEqual({ yaw: 0, pitch: Math.PI / 2 });
+        expect(vectorToSpherical({ x: 0, y: -0.25, z: 0 })).toEqual({ yaw: 0, pitch: -Math.PI / 2 });
+      });
+
+      it('préserve les angles pour un vecteur arbitraire avec un rayon grand ou petit', () => {
+        const yaw = 0.85;
+        const pitch = -0.32;
+
+        const vLarge = sphericalToVector(yaw, pitch, 100);
+        const resLarge = vectorToSpherical(vLarge);
+        expect(resLarge.yaw).toBeCloseTo(yaw);
+        expect(resLarge.pitch).toBeCloseTo(pitch);
+
+        const vSmall = sphericalToVector(yaw, pitch, 0.001);
+        const resSmall = vectorToSpherical(vSmall);
+        expect(resSmall.yaw).toBeCloseTo(yaw);
+        expect(resSmall.pitch).toBeCloseTo(pitch);
+      });
+    });
+
+    describe('vecteur nul', () => {
+      it('renvoie { yaw: 0, pitch: 0 } pour { x: 0, y: 0, z: 0 }', () => {
+        const result = vectorToSpherical({ x: 0, y: 0, z: 0 });
+        expect(result).toEqual({ yaw: 0, pitch: 0 });
+      });
+
+      it('renvoie { yaw: 0, pitch: 0 } même avec des zéros négatifs', () => {
+        const result = vectorToSpherical({ x: -0, y: 0, z: -0 });
+        expect(result).toEqual({ yaw: 0, pitch: 0 });
       });
     });
   });

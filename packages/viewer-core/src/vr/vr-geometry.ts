@@ -65,6 +65,39 @@ export function sphericalToVector(
 }
 
 /**
+ * Convertit un vecteur cartésien {x, y, z} en coordonnées sphériques {yaw, pitch} dans le repère Three.js.
+ *
+ * Inverse exacte de `sphericalToVector` :
+ * - Même repère et mêmes conventions :
+ *   - `yaw` (radians) : angle horizontal autour de l'axe vertical Y,
+ *     -Z devant pour yaw = 0,
+ *     +X à droite pour yaw = +π/2,
+ *     -X à gauche pour yaw = -π/2,
+ *     +Z derrière pour yaw = ±π.
+ *   - `pitch` (radians) : angle d'élévation au-dessus du plan horizontal XZ,
+ *     compris dans [-π/2, +π/2] (+Y vers le haut / zénith, -Y vers le bas / nadir).
+ * - Le vecteur `v` n'a pas besoin d'être normalisé.
+ * - En cas de vecteur nul ({x: 0, y: 0, z: 0}), renvoie { yaw: 0, pitch: 0 }.
+ *
+ * @param v Vecteur cartésien { x, y, z }.
+ * @returns Coordonnées sphériques { yaw, pitch } en radians.
+ */
+export function vectorToSpherical(v: Vector3D): SphericalPosition {
+  if (v.x === 0 && v.y === 0 && v.z === 0) {
+    return { yaw: 0, pitch: 0 };
+  }
+
+  const xz = Math.hypot(v.x, v.z);
+  const rawYaw = xz === 0 ? 0 : Math.atan2(v.x, -v.z);
+  const rawPitch = Math.atan2(v.y, xz);
+
+  return {
+    yaw: rawYaw === 0 ? 0 : rawYaw,
+    pitch: rawPitch === 0 ? 0 : rawPitch,
+  };
+}
+
+/**
  * Calcule l'angle (distance angulaire) en radians entre deux directions sphériques.
  *
  * Utilise la géométrie vectorielle 3D (produit scalaire et norme du produit vectoriel
