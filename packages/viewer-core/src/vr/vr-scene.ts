@@ -19,6 +19,7 @@ export interface VrSceneHandle {
   setTexture(tex: THREE.Texture | null): void;
   setMarkers(markers: readonly VrMarkerTarget[]): void;
   getMarkerTargets(): VrMarkerTarget[];
+  setYaw(yaw: number): void;
   dispose(): void;
 }
 
@@ -112,12 +113,17 @@ export function createVrScene(): VrSceneHandle {
     }));
   }
 
+  function setYaw(yaw: number): void {
+    scene.rotation.y = yaw;
+  }
+
   function dispose(): void {
     if (isDisposed) {
       return;
     }
     isDisposed = true;
 
+    scene.rotation.y = 0;
     clearCurrentMarkers();
     scene.remove(sphere);
     sphereGeometry.dispose();
@@ -135,6 +141,7 @@ export function createVrScene(): VrSceneHandle {
     setTexture,
     setMarkers,
     getMarkerTargets,
+    setYaw,
     dispose,
   };
 }

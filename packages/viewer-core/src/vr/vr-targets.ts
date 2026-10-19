@@ -1,5 +1,9 @@
-import type { TourGraphScene } from '@xplor/shared';
-import { toMarkers } from '../scene-markers.js';
+import {
+  HotspotType,
+  type TourGraph,
+  type TourGraphScene,
+} from '@xplor/shared';
+import { resolveTourLink } from '../tour-link.js';
 import type { HotspotTarget } from './vr-geometry.js';
 
 /**
@@ -22,24 +26,53 @@ export const VR_EXIT_TARGET: HotspotTarget = {
 /**
  * Extrait les cibles de hotspots interactives pour le mode VR depuis une scène (M6 F-71).
  *
- * Réutilise `toMarkers` pour extraire les marqueurs de la scène, puis filtre
- * pour ne retenir que les hotspots de type 'tour-link' et 'info'
- * (les types 'media' et 'url' sont exclus en mode VR).
+ * Parcourt directement `scene.hotspots` :
+ * - SCENE_LINK : conservé si targetSceneId est présent dans les scènes du graphe.
+ * - INFO : conservé.
+ * - TOUR_LINK : conservé seulement si resolveTourLink(graph, hotspot.id) renvoie un lien avec shareToken non vide.
+ * - Les types MEDIA et URL sont exclus en mode VR.
  *
  * @param scene Scène issue du graphe de visite (TourGraphScene).
+ * @param graph Graphe complet de la visite (TourGraph).
  * @returns Liste des cibles { id, yaw, pitch } éligibles pour l'interaction VR.
  */
-export function toVrTargets(scene: TourGraphScene): HotspotTarget[] {
-  const markers = toMarkers(scene);
+export function toVrTargets(
+  scene: TourGraphScene,
+  graph: TourGraph,
+): HotspotTarget[] {
   const targets: HotspotTarget[] = [];
 
-  for (const marker of markers) {
-    if (marker.kind === 'tour-link' || marker.kind === 'info') {
+  for (const hotspot of scene.hotspots) {
+    if (hotspot.type === HotspotType.SCENE_LINK) {
+      if (
+        typeof hotspot.targetSceneId === 'string' &&
+        graph.scenes.some((s) => s.id === hotspot.targetSceneId)
+      ) {
+        targets.push({
+          id: hotspot.id,
+          yaw: hotspot.yaw,
+          pitch: hotspot.pitch,
+        });
+      }
+    } else if (hotspot.type === HotspotType.INFO) {
       targets.push({
-        id: marker.id,
-        yaw: marker.position.yaw,
-        pitch: marker.position.pitch,
+        id: hotspot.id,
+        yaw: hotspot.yaw,
+        pitch: hotspot.pitch,
       });
+    } else if (hotspot.type === HotspotType.TOUR_LINK) {
+      const resolved = resolveTourLink(graph, hotspot.id);
+      if (
+        resolved !== null &&
+        typeof resolved.shareToken === 'string' &&
+        resolved.shareToken.length > 0
+      ) {
+        targets.push({
+          id: hotspot.id,
+          yaw: hotspot.yaw,
+          pitch: hotspot.pitch,
+        });
+      }
     }
   }
 

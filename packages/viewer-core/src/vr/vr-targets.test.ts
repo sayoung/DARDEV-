@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   HotspotIcon,
   HotspotType,
+  TourGraph,
+  TourGraphSchema,
   TourGraphScene,
   TourGraphSceneSchema,
 } from '@xplor/shared';
@@ -13,9 +15,9 @@ import {
 } from './vr-targets.js';
 import type { HotspotTarget } from './vr-geometry.js';
 
-function createTestScene(hotspots: unknown[]): TourGraphScene {
+function createTestScene(hotspots: unknown[], id = 'test-scene-vr-1'): TourGraphScene {
   return TourGraphSceneSchema.parse({
-    id: 'test-scene-vr-1',
+    id,
     title: 'Scène VR de test',
     caption: null,
     panorama: {
@@ -40,8 +42,161 @@ function createTestScene(hotspots: unknown[]): TourGraphScene {
   });
 }
 
+function createTestGraph(
+  scenes: TourGraphScene[],
+  linkedTours: Array<{
+    id: string;
+    title: string;
+    shareToken: string | null;
+    coverUrl?: string;
+    availableOffline?: boolean;
+  }> = [],
+): TourGraph {
+  return TourGraphSchema.parse({
+    id: '01990000-0000-7000-8000-000000000001',
+    contentVersion: 1,
+    lang: 'fr',
+    title: 'Visite test VR',
+    summary: 'Résumé',
+    city: 'Rabat',
+    categories: ['Monument'],
+    coverUrl: 'http://example.com/cover.jpg',
+    practicalInfo: null,
+    location: null,
+    startSceneId: scenes[0]?.id ?? 'test-scene-vr-1',
+    linkedTours: linkedTours.map((lt) => ({
+      id: lt.id,
+      title: lt.title,
+      shareToken: lt.shareToken,
+      coverUrl: lt.coverUrl ?? 'http://example.com/cover.jpg',
+      availableOffline: lt.availableOffline ?? true,
+    })),
+    scenes,
+  });
+}
+
 describe('toVrTargets', () => {
-  it('filtre par type : conserve uniquement tour-link et info, exclut media, url et scene-link', () => {
+  it('(a) une scène avec SCENE_LINK produit une cible VR', () => {
+    const scene1 = createTestScene([
+      {
+        type: HotspotType.SCENE_LINK,
+        id: 'hs-scene-link',
+        yaw: 0.5,
+        pitch: -0.2,
+        label: 'Vers la pièce suivante',
+        icon: HotspotIcon.ARROW,
+        targetSceneId: 'scene-2',
+      },
+    ]);
+    const scene2 = createTestScene([], 'scene-2');
+    const graph = createTestGraph([scene1, scene2]);
+
+    const targets = toVrTargets(scene1, graph);
+
+    expect(targets).toEqual([
+      {
+        id: 'hs-scene-link',
+        yaw: 0.5,
+        pitch: -0.2,
+      },
+    ]);
+  });
+
+  it('(c) SCENE_LINK vers une scène absente du graphe → pas de cible', () => {
+    const scene1 = createTestScene([
+      {
+        type: HotspotType.SCENE_LINK,
+        id: 'hs-scene-link-orphan',
+        yaw: 0.1,
+        pitch: 0.2,
+        label: 'Vers scène inexistante',
+        icon: HotspotIcon.ARROW,
+        targetSceneId: 'scene-absente',
+      },
+    ]);
+    const graph = createTestGraph([scene1]);
+
+    const targets = toVrTargets(scene1, graph);
+
+    expect(targets).toEqual([]);
+  });
+
+  it('(e) TOUR_LINK sans shareToken → pas de cible VR', () => {
+    const scene = createTestScene([
+      {
+        type: HotspotType.TOUR_LINK,
+        id: 'hs-tour-link-no-token',
+        yaw: 0.3,
+        pitch: -0.1,
+        label: 'Vers tour non partagé',
+        icon: HotspotIcon.PORTAL,
+        targetTourId: 'tour-unshared',
+      },
+    ]);
+    const graph = createTestGraph([scene], [
+      {
+        id: 'tour-unshared',
+        title: 'Tour non partagé',
+        shareToken: null,
+      },
+    ]);
+
+    const targets = toVrTargets(scene, graph);
+
+    expect(targets).toEqual([]);
+  });
+
+  it('TOUR_LINK non présent dans linkedTours → pas de cible VR', () => {
+    const scene = createTestScene([
+      {
+        type: HotspotType.TOUR_LINK,
+        id: 'hs-tour-link-missing',
+        yaw: 0.3,
+        pitch: -0.1,
+        label: 'Vers tour inconnu',
+        icon: HotspotIcon.PORTAL,
+        targetTourId: 'tour-inconnu',
+      },
+    ]);
+    const graph = createTestGraph([scene], []);
+
+    const targets = toVrTargets(scene, graph);
+
+    expect(targets).toEqual([]);
+  });
+
+  it('TOUR_LINK avec shareToken résolu produit une cible VR', () => {
+    const scene = createTestScene([
+      {
+        type: HotspotType.TOUR_LINK,
+        id: 'hs-tour-link-valid',
+        yaw: 0.75,
+        pitch: -0.25,
+        label: 'Vers le jardin',
+        icon: HotspotIcon.PORTAL,
+        targetTourId: 'tour-jardin',
+      },
+    ]);
+    const graph = createTestGraph([scene], [
+      {
+        id: 'tour-jardin',
+        title: 'Visite du jardin',
+        shareToken: 'token-jardin-456',
+      },
+    ]);
+
+    const targets = toVrTargets(scene, graph);
+
+    expect(targets).toEqual([
+      {
+        id: 'hs-tour-link-valid',
+        yaw: 0.75,
+        pitch: -0.25,
+      },
+    ]);
+  });
+
+  it('filtre par type : conserve SCENE_LINK (présent), TOUR_LINK (résolu) et INFO, exclut MEDIA et URL', () => {
     const scene = createTestScene([
       {
         type: HotspotType.SCENE_LINK,
@@ -91,11 +246,25 @@ describe('toVrTargets', () => {
       },
     ]);
 
-    const targets = toVrTargets(scene);
+    const scene2 = createTestScene([], 'scene-2');
+    const graph = createTestGraph([scene, scene2], [
+      {
+        id: 'tour-jardin',
+        title: 'Visite du jardin',
+        shareToken: 'token-jardin',
+      },
+    ]);
 
-    expect(targets).toHaveLength(2);
+    const targets = toVrTargets(scene, graph);
+
+    expect(targets).toHaveLength(3);
 
     expect(targets).toEqual([
+      {
+        id: 'hs-scene-link',
+        yaw: 0.1,
+        pitch: 0.1,
+      },
       {
         id: 'hs-tour-link',
         yaw: 0.75,
@@ -109,7 +278,6 @@ describe('toVrTargets', () => {
     ]);
 
     const ids = targets.map((t) => t.id);
-    expect(ids).not.toContain('hs-scene-link');
     expect(ids).not.toContain('hs-media');
     expect(ids).not.toContain('hs-url');
   });
@@ -117,13 +285,13 @@ describe('toVrTargets', () => {
   it('conservation des angles : préserve fidèlement yaw et pitch des hotspots retenus', () => {
     const scene = createTestScene([
       {
-        type: HotspotType.TOUR_LINK,
+        type: HotspotType.SCENE_LINK,
         id: 'hs-angles-1',
         yaw: 3.14159,
         pitch: -0.8765,
         label: 'Destination',
-        icon: HotspotIcon.PORTAL,
-        targetTourId: 'tour-dest',
+        icon: HotspotIcon.ARROW,
+        targetSceneId: 'scene-2',
       },
       {
         type: HotspotType.INFO,
@@ -136,8 +304,10 @@ describe('toVrTargets', () => {
         images: [],
       },
     ]);
+    const scene2 = createTestScene([], 'scene-2');
+    const graph = createTestGraph([scene, scene2]);
 
-    const targets = toVrTargets(scene);
+    const targets = toVrTargets(scene, graph);
 
     expect(targets).toHaveLength(2);
     expect(targets[0]?.id).toBe('hs-angles-1');
@@ -151,21 +321,13 @@ describe('toVrTargets', () => {
 
   it('retourne un tableau vide quand la scène ne contient aucun hotspot', () => {
     const scene = createTestScene([]);
-    const targets = toVrTargets(scene);
+    const graph = createTestGraph([scene]);
+    const targets = toVrTargets(scene, graph);
     expect(targets).toEqual([]);
   });
 
   it('retourne un tableau vide quand la scène ne contient que des types non éligibles VR', () => {
     const scene = createTestScene([
-      {
-        type: HotspotType.SCENE_LINK,
-        id: 'hs-1',
-        yaw: 0,
-        pitch: 0,
-        label: 'Scène suivante',
-        icon: HotspotIcon.ARROW,
-        targetSceneId: 'scene-2',
-      },
       {
         type: HotspotType.MEDIA,
         id: 'hs-2',
@@ -185,8 +347,9 @@ describe('toVrTargets', () => {
         url: 'https://example.com',
       },
     ]);
+    const graph = createTestGraph([scene]);
 
-    const targets = toVrTargets(scene);
+    const targets = toVrTargets(scene, graph);
     expect(targets).toEqual([]);
   });
 });

@@ -4,7 +4,13 @@ import '@photo-sphere-viewer/virtual-tour-plugin/index.css';
 import '@photo-sphere-viewer/gallery-plugin/index.css';
 
 import { resources } from '@xplor/i18n';
-import { fetchTourGraph, fetchPreviewGraph, mountViewer, mountVr } from '@xplor/viewer-core';
+import {
+  fetchTourGraph,
+  fetchPreviewGraph,
+  mountViewer,
+  mountVr,
+  resolveTourLink,
+} from '@xplor/viewer-core';
 import { startViewer } from './app.js';
 
 void startViewer(document, window.location, {
@@ -28,6 +34,22 @@ void startViewer(document, window.location, {
           return null;
         }
         return scene.panorama.web || scene.panorama.preview || null;
+      },
+      openTourLink: (hotspotId: string) => {
+        const link = resolveTourLink(graph, hotspotId);
+        if (link === null) {
+          return;
+        }
+        const params = new URLSearchParams();
+        params.set('lang', graph.lang);
+        if (link.sceneId !== null && link.sceneId.length > 0) {
+          params.set('scene', link.sceneId);
+        }
+        if (typeof link.arrivalYaw === 'number') {
+          params.set('yaw', String(link.arrivalYaw));
+        }
+        const query = params.toString();
+        window.location.href = query.length > 0 ? `/v/${link.shareToken}?${query}` : `/v/${link.shareToken}`;
       },
     });
   },

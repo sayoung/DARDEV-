@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createVrPlayer,
   type VrPlayerDeps,
+  type VrPlayerSceneData,
 } from './vr-player.js';
 import { createVrPlayer as createVrPlayerFromIndex } from '../index.js';
 import { VR_EXIT_TARGET_ID } from './vr-targets.js';
@@ -13,13 +14,10 @@ function createFakeDeps(overrides?: {
   onExit?: () => Promise<void>;
   onLoadTexture?: (sceneId: string) => Promise<unknown>;
   onShowScene?: (sceneId: string) => Promise<void>;
-  getSceneData?: (hotspotId: string) => {
-    kind: 'tour-link' | 'info';
-    targetSceneId?: string;
-    text?: string;
-    rtl?: boolean;
-  } | null;
+  getSceneData?: (hotspotId: string) => VrPlayerSceneData | null;
   onSetTexture?: (tex: unknown) => void;
+  onSetYaw?: (yaw: number) => void;
+  onOpenTourLink?: (hotspotId: string) => void | Promise<void>;
   onPanelShow?: (lines: string[], rtl?: boolean) => void;
   onPanelHide?: () => void;
 }): {
@@ -28,8 +26,10 @@ function createFakeDeps(overrides?: {
   frameSpy: ReturnType<typeof vi.fn<(gazeDir: { yaw: number; pitch: number } | null, nowMs: number) => VrInteractionFrameResult>>;
   loadTextureSpy: ReturnType<typeof vi.fn<(sceneId: string) => Promise<unknown>>>;
   showSceneSpy: ReturnType<typeof vi.fn<(sceneId: string) => Promise<void>>>;
-  getSceneDataSpy: ReturnType<typeof vi.fn<(hotspotId: string) => { kind: 'tour-link' | 'info'; targetSceneId?: string; text?: string; rtl?: boolean } | null>>;
+  getSceneDataSpy: ReturnType<typeof vi.fn<(hotspotId: string) => VrPlayerSceneData | null>>;
   setTextureSpy: ReturnType<typeof vi.fn<(tex: unknown) => void>>;
+  setYawSpy: ReturnType<typeof vi.fn<(yaw: number) => void>>;
+  openTourLinkSpy: ReturnType<typeof vi.fn<(hotspotId: string) => void | Promise<void>>>;
   panelShowSpy: ReturnType<typeof vi.fn<(lines: string[], rtl?: boolean) => void>>;
   panelHideSpy: ReturnType<typeof vi.fn<() => void>>;
 } {
@@ -64,6 +64,12 @@ function createFakeDeps(overrides?: {
   const setTextureSpy = vi.fn(
     overrides?.onSetTexture ?? (() => {})
   );
+  const setYawSpy = vi.fn(
+    overrides?.onSetYaw ?? (() => {})
+  );
+  const openTourLinkSpy = vi.fn(
+    overrides?.onOpenTourLink ?? (() => Promise.resolve())
+  );
   const panelShowSpy = vi.fn(
     overrides?.onPanelShow ?? (() => {})
   );
@@ -80,6 +86,7 @@ function createFakeDeps(overrides?: {
     scene: {
       setMarkers: () => {},
       setTexture: setTextureSpy,
+      setYaw: setYawSpy,
       getMarkerTargets: () => [],
     },
     interaction: {
@@ -95,6 +102,7 @@ function createFakeDeps(overrides?: {
     loadTexture: loadTextureSpy,
     getSceneData: getSceneDataSpy,
     showScene: showSceneSpy,
+    openTourLink: openTourLinkSpy,
   };
 
   return {
@@ -105,6 +113,8 @@ function createFakeDeps(overrides?: {
     showSceneSpy,
     getSceneDataSpy,
     setTextureSpy,
+    setYawSpy,
+    openTourLinkSpy,
     panelShowSpy,
     panelHideSpy,
   };
@@ -225,25 +235,42 @@ describe('vr-player (M6 F-71)', () => {
       expect(exitSpy).toHaveBeenCalledTimes(2);
     });
 
-    it('navigation tour-link (ordre loadTexture → setTexture → showScene)', async () => {
+    it('(b) sélection d un SCENE_LINK → loadTexture et showScene appelés avec la cible, orientation d arrivée appliquée, session toujours active', async () => {
       const callOrder: string[] = [];
       const fakeTexture = { isTexture: true };
 
-      const { deps, loadTextureSpy, setTextureSpy, showSceneSpy, panelHideSpy } = createFakeDeps({
+      const {
+        deps,
+        loadTextureSpy,
+        setTextureSpy,
+        showSceneSpy,
+        setYawSpy,
+        exitSpy,
+        panelHideSpy,
+      } = createFakeDeps({
         getSceneData: (id) =>
           id === 'spot-cour'
-            ? { kind: 'tour-link', targetSceneId: 'scene-jardin' }
+            ? {
+                kind: 'scene-link',
+                targetSceneId: 'scene-jardin',
+                arrivalYaw: 1.57,
+              }
             : null,
         onLoadTexture: (sceneId) => {
           callOrder.push(`loadTexture:${sceneId}`);
           return Promise.resolve(fakeTexture);
         },
         onSetTexture: (tex) => {
-          callOrder.push(`setTexture:${tex === fakeTexture ? 'match' : 'mismatch'}`);
+          callOrder.push(
+            `setTexture:${tex === fakeTexture ? 'match' : 'mismatch'}`,
+          );
         },
         onShowScene: (sceneId) => {
           callOrder.push(`showScene:${sceneId}`);
           return Promise.resolve();
+        },
+        onSetYaw: (yaw) => {
+          callOrder.push(`setYaw:${String(yaw)}`);
         },
       });
 
@@ -260,11 +287,59 @@ describe('vr-player (M6 F-71)', () => {
       expect(setTextureSpy).toHaveBeenCalledTimes(1);
       expect(setTextureSpy).toHaveBeenCalledWith(fakeTexture);
       expect(showSceneSpy).toHaveBeenCalledTimes(1);
+      expect(setYawSpy).toHaveBeenCalledWith(1.57);
+      expect(exitSpy).not.toHaveBeenCalled();
       expect(callOrder).toEqual([
         'loadTexture:scene-jardin',
         'setTexture:match',
         'showScene:scene-jardin',
+        'setYaw:1.57',
       ]);
+    });
+
+    it('(d) TOUR_LINK résolu → session.exit puis openTourLink(hotspotId), aucun showScene local', async () => {
+      const callOrder: string[] = [];
+
+      const {
+        deps,
+        exitSpy,
+        openTourLinkSpy,
+        showSceneSpy,
+        loadTextureSpy,
+        setTextureSpy,
+        panelHideSpy,
+      } = createFakeDeps({
+        getSceneData: (id) =>
+          id === 'spot-tour-jardin'
+            ? { kind: 'tour-link', hotspotId: 'spot-tour-jardin' }
+            : null,
+        onExit: () => {
+          callOrder.push('session.exit');
+          return Promise.resolve();
+        },
+        onOpenTourLink: (id) => {
+          callOrder.push(`openTourLink:${id}`);
+          return Promise.resolve();
+        },
+      });
+
+      const player = createVrPlayer(deps);
+      player.handleNavigate('spot-tour-jardin');
+
+      await vi.waitFor(() => {
+        expect(openTourLinkSpy).toHaveBeenCalledWith('spot-tour-jardin');
+      });
+
+      expect(panelHideSpy).toHaveBeenCalledTimes(1);
+      expect(exitSpy).toHaveBeenCalledTimes(1);
+      expect(openTourLinkSpy).toHaveBeenCalledTimes(1);
+      expect(callOrder).toEqual([
+        'session.exit',
+        'openTourLink:spot-tour-jardin',
+      ]);
+      expect(showSceneSpy).not.toHaveBeenCalled();
+      expect(loadTextureSpy).not.toHaveBeenCalled();
+      expect(setTextureSpy).not.toHaveBeenCalled();
     });
 
     it('info (lignes enveloppées, rtl transmis)', () => {
@@ -355,7 +430,7 @@ describe('vr-player (M6 F-71)', () => {
       const { deps, loadTextureSpy, setTextureSpy, showSceneSpy, panelHideSpy } = createFakeDeps({
         getSceneData: (id) =>
           id === 'spot-fail'
-            ? { kind: 'tour-link', targetSceneId: 'scene-invalide' }
+            ? { kind: 'scene-link', targetSceneId: 'scene-invalide' }
             : null,
         onLoadTexture: () => Promise.reject(new Error('Texture 404 introuvable')),
       });
@@ -431,18 +506,20 @@ describe('vr-player (M6 F-71)', () => {
       expect(exitSpy).not.toHaveBeenCalled();
     });
 
-    it('tour-link sans targetSceneId est ignoré', () => {
-      const { deps, panelHideSpy, loadTextureSpy, showSceneSpy, setTextureSpy } = createFakeDeps({
-        getSceneData: () => ({ kind: 'tour-link', targetSceneId: undefined }),
+    it('scene-link sans arrivalYaw ne fait pas appel à setYaw', async () => {
+      const { deps, loadTextureSpy, showSceneSpy, setYawSpy } = createFakeDeps({
+        getSceneData: () => ({ kind: 'scene-link', targetSceneId: 'scene-2' }),
       });
 
       const player = createVrPlayer(deps);
-      player.handleNavigate('spot-sans-cible');
+      player.handleNavigate('spot-sans-yaw');
 
-      expect(panelHideSpy).toHaveBeenCalledTimes(1);
-      expect(loadTextureSpy).not.toHaveBeenCalled();
-      expect(setTextureSpy).not.toHaveBeenCalled();
-      expect(showSceneSpy).not.toHaveBeenCalled();
+      await vi.waitFor(() => {
+        expect(showSceneSpy).toHaveBeenCalledWith('scene-2');
+      });
+
+      expect(loadTextureSpy).toHaveBeenCalledWith('scene-2');
+      expect(setYawSpy).not.toHaveBeenCalled();
     });
   });
 });

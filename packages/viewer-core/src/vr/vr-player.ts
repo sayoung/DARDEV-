@@ -6,11 +6,32 @@ import { VR_EXIT_TARGET_ID } from './vr-targets.js';
 import { htmlToPlainText, wrapLines } from './vr-info-panel.js';
 
 /**
+ * Données résolues d'un hotspot pour le lecteur VR (M6 F-71).
+ */
+export type VrPlayerSceneData =
+  | {
+      kind: 'scene-link';
+      targetSceneId: string;
+      arrivalYaw?: number;
+    }
+  | {
+      kind: 'tour-link';
+      hotspotId: string;
+    }
+  | {
+      kind: 'info';
+      text?: string;
+      rtl?: boolean;
+    };
+
+/**
  * Dépendances injectées pour le contrôleur de visite VR (M6 F-71).
  */
 export interface VrPlayerDeps {
   session: Pick<VrSessionHandle, 'enter' | 'exit' | 'isActive'>;
-  scene: Pick<VrSceneHandle, 'setMarkers' | 'setTexture' | 'getMarkerTargets'>;
+  scene: Pick<VrSceneHandle, 'setMarkers' | 'setTexture' | 'getMarkerTargets'> & {
+    setYaw?: (yaw: number) => void;
+  };
   interaction: VrInteraction;
   panel: {
     show(lines: string[], rtl?: boolean): void;
@@ -18,13 +39,9 @@ export interface VrPlayerDeps {
   };
   getGazeDir: () => { yaw: number; pitch: number } | null;
   loadTexture: (sceneId: string) => Promise<unknown>;
-  getSceneData: (hotspotId: string) => {
-    kind: 'tour-link' | 'info';
-    targetSceneId?: string;
-    text?: string;
-    rtl?: boolean;
-  } | null;
+  getSceneData: (hotspotId: string) => VrPlayerSceneData | null;
   showScene: (sceneId: string) => Promise<void>;
+  openTourLink?: (hotspotId: string) => void | Promise<void>;
 }
 
 /**
@@ -33,6 +50,17 @@ export interface VrPlayerDeps {
 export interface VrPlayer {
   frame(nowMs: number): VrInteractionFrameResult;
   handleNavigate(hotspotId: string): void;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isTexture(value: unknown): value is THREE.Texture {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return value.isTexture === true;
 }
 
 /**
@@ -62,13 +90,19 @@ export function createVrPlayer(deps: VrPlayerDeps): VrPlayer {
       return;
     }
 
-    if (data.kind === 'tour-link' && data.targetSceneId !== undefined) {
+    if (data.kind === 'scene-link') {
       const targetSceneId = data.targetSceneId;
+      const arrivalYaw = data.arrivalYaw;
       const navPromise = (async () => {
         try {
           const texture = await deps.loadTexture(targetSceneId);
-          deps.scene.setTexture(texture as THREE.Texture | null);
+          if (isTexture(texture) || texture === null) {
+            deps.scene.setTexture(texture);
+          }
           await deps.showScene(targetSceneId);
+          if (typeof arrivalYaw === 'number') {
+            deps.scene.setYaw?.(arrivalYaw);
+          }
         } catch {
           // Erreur de chargement absorbée : pas de setTexture ni de crash
         }
@@ -77,10 +111,23 @@ export function createVrPlayer(deps: VrPlayerDeps): VrPlayer {
       return;
     }
 
-    if (data.kind === 'info') {
-      const lines = wrapLines(htmlToPlainText(data.text ?? ''), 40, 8);
-      deps.panel.show(lines, data.rtl);
+    if (data.kind === 'tour-link') {
+      const exitPromise = (async () => {
+        try {
+          await deps.session.exit();
+          if (deps.openTourLink !== undefined) {
+            await deps.openTourLink(data.hotspotId);
+          }
+        } catch {
+          // Erreur absorbée
+        }
+      })();
+      void exitPromise.catch(() => {});
+      return;
     }
+
+    const lines = wrapLines(htmlToPlainText(data.text ?? ''), 40, 8);
+    deps.panel.show(lines, data.rtl);
   }
 
   return {
