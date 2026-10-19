@@ -334,7 +334,7 @@ Clé de stockage : `panoramas/{assetId}/{contentHash}/…` — le hash dans le c
 **F-21 — Placement.** Clic sur le panorama → création d'un hotspot aux coordonnées yaw/pitch cliquées ; panneau latéral pour choisir le type, la cible (liste des scènes de la visite / recherche de visites), le libellé dans chaque langue, l'icône.
 *CA :* un hotspot créé est visible immédiatement, persistant après rechargement, et ses coordonnées stockées correspondent au point cliqué (écart < 0,01 rad).
 
-**F-22 — Édition directe.** Glisser-déposer d'un hotspot pour le déplacer ; suppression ; annuler/rétablir (Ctrl+Z / Ctrl+Y) sur la session d'édition ; sauvegarde automatique (debounce 1 s) avec indicateur « Enregistré ».
+**F-22 — Édition directe.** Glisser-déposer d'un hotspot pour le déplacer ; suppression avec confirmation (non annulable) ; annuler/rétablir (Ctrl+Z / Ctrl+Y) des déplacements de hotspots sur la session d'édition ; sauvegarde automatique (debounce 1 s) avec indicateur « Enregistré » et bouton « Réessayer » en cas d'échec.
 
 **F-23 — Vue initiale et orientation d'arrivée.** Bouton « Définir la vue actuelle comme vue initiale » ; pour un hotspot `SCENE_LINK`, bouton « Définir l'orientation d'arrivée » qui ouvre la scène cible pour choisir la direction.
 
