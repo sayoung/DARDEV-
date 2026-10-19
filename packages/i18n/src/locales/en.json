@@ -384,7 +384,8 @@
     }
   },
   "vr": {
-    "enter": "Enter VR"
+    "enter": "Enter VR",
+    "startFailed": "VR could not start"
   }
 }
 

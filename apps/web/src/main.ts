@@ -15,6 +15,7 @@ void startViewer(document, window.location, {
     let currentSceneId = sceneId;
     return mountVr(container, {
       label: resources[graph.lang].vr.enter,
+      startFailedLabel: resources[graph.lang].vr.startFailed,
       graph,
       getCurrentSceneId: () => currentSceneId,
       showScene: (targetSceneId: string) => {

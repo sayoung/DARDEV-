@@ -137,6 +137,7 @@ describe('clés i18n', () => {
 
   it('définit les clés vr en français', () => {
     expect(resources.fr.vr.enter).toBe('Vivre en VR');
+    expect(resources.fr.vr.startFailed).toBe("La VR n'a pas pu démarrer");
   });
 });
 

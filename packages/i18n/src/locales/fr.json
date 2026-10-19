@@ -627,7 +627,8 @@
     }
   },
   "vr": {
-    "enter": "Vivre en VR"
+    "enter": "Vivre en VR",
+    "startFailed": "La VR n'a pas pu démarrer"
   }
 }
 

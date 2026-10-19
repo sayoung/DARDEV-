@@ -27,6 +27,7 @@ import { toVrTargets, withExitTarget } from './vr-targets.js';
  */
 export interface MountVrOptions {
   label: string;
+  startFailedLabel?: string;
   graph: TourGraph;
   getCurrentSceneId: () => string;
   showScene: (id: string) => Promise<void>;
@@ -163,6 +164,51 @@ export async function mountVr(
   let currentTeardown: (() => void) | null = null;
   let isStarting = false;
   let isDestroyed = false;
+  let alertElement: HTMLDivElement | null = null;
+  let alertTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const removeAlert = (): void => {
+    if (alertTimeoutId !== null) {
+      clearTimeout(alertTimeoutId);
+      alertTimeoutId = null;
+    }
+    if (alertElement !== null) {
+      if (alertElement.parentNode !== null) {
+        alertElement.parentNode.removeChild(alertElement);
+      }
+      alertElement = null;
+    }
+  };
+
+  const showAlert = (message: string): void => {
+    removeAlert();
+    if (isDestroyed) {
+      return;
+    }
+    const doc = container.ownerDocument;
+    const alertDiv = doc.createElement('div');
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.textContent = message;
+    alertDiv.style.position = 'absolute';
+    alertDiv.style.insetBlockStart = '1rem';
+    alertDiv.style.insetInlineStart = '50%';
+    alertDiv.style.transform = 'translateX(-50%)';
+    alertDiv.style.paddingBlock = '0.5rem';
+    alertDiv.style.paddingInline = '1rem';
+    alertDiv.style.borderRadius = '0.5rem';
+    alertDiv.style.backgroundColor = '#ba1a1a';
+    alertDiv.style.color = '#ffffff';
+    alertDiv.style.fontSize = '0.875rem';
+    alertDiv.style.zIndex = '1000';
+    alertDiv.style.pointerEvents = 'none';
+
+    container.appendChild(alertDiv);
+    alertElement = alertDiv;
+
+    alertTimeoutId = setTimeout(() => {
+      removeAlert();
+    }, 4000);
+  };
 
   const loadTextureForScene = async (
     sceneId: string,
@@ -191,6 +237,22 @@ export async function mountVr(
       const vrScene = createVrScene();
       const infoPanel = createInfoPanel();
       vrScene.scene.add(infoPanel.mesh);
+
+      let isDisposed = false;
+      const teardown = (): void => {
+        if (isDisposed) {
+          return;
+        }
+        isDisposed = true;
+        infoPanel.dispose();
+        vrScene.dispose();
+        rendererHandle.dispose();
+        if (currentTeardown === teardown) {
+          currentTeardown = null;
+        }
+        currentSession = null;
+      };
+      currentTeardown = teardown;
 
       // 3. Détection de la scène courante et configuration des marqueurs avec cible de sortie VR
       const currentSceneId = opts.getCurrentSceneId();
@@ -221,27 +283,9 @@ export async function mountVr(
 
       const xrSystem = getXrSystem(opts.navigatorLike);
       if (xrSystem === null) {
-        infoPanel.dispose();
-        vrScene.dispose();
-        rendererHandle.dispose();
+        teardown();
         return;
       }
-
-      let isDisposed = false;
-      const teardown = (): void => {
-        if (isDisposed) {
-          return;
-        }
-        isDisposed = true;
-        infoPanel.dispose();
-        vrScene.dispose();
-        rendererHandle.dispose();
-        if (currentTeardown === teardown) {
-          currentTeardown = null;
-        }
-        currentSession = null;
-      };
-      currentTeardown = teardown;
 
       // Boucle onFrame → player.frame(now) puis renderer.render. Aucune rotation automatique.
       const vrRendererAdapter: VrRendererLike = {
@@ -336,7 +380,14 @@ export async function mountVr(
     label: opts.label,
     supported: () => isVrSupported(opts.navigatorLike),
     onClick: () => {
-      void handleClick();
+      handleClick().catch((error: unknown) => {
+        if (currentTeardown !== null) {
+          currentTeardown();
+          currentTeardown = null;
+        }
+        console.error(error);
+        showAlert(opts.startFailedLabel ?? "La VR n'a pas pu démarrer");
+      });
     },
   });
 
@@ -346,6 +397,7 @@ export async function mountVr(
         return;
       }
       isDestroyed = true;
+      removeAlert();
       buttonHandle.destroy();
       if (currentSession !== null && currentSession.isActive()) {
         void currentSession.exit();
