@@ -49,7 +49,13 @@ function getHotspotUpdate(h: HotspotResponse, yaw: number, pitch: number): Hotsp
   }
 }
 
-function SceneEditorTab({ scene }: { scene: SceneResponse }) {
+function SceneEditorTab({
+  scene,
+  onSceneUpdate,
+}: {
+  scene: SceneResponse;
+  onSceneUpdate: (updated: SceneResponse) => void;
+}) {
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -253,7 +259,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
     setActionSuccess(null);
     try {
       const view = handleRef.current.getView();
-      await updateScene(scene.id, {
+      const updated = await updateScene(scene.id, {
         title: scene.title,
         panoramaAssetId: scene.panoramaAssetId,
         weight: scene.weight,
@@ -264,6 +270,7 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
         initialPitch: view.pitch,
         initialZoom: view.zoom,
       });
+      onSceneUpdate(updated);
       setActionSuccess('catalog.hotspots.editor.initialViewSaved');
     } catch {
       setActionError('common.error.generic');
@@ -757,7 +764,7 @@ export function SceneDetailPage() {
             <TabsContent value="editor">
               <Card>
                 <CardContent className="pt-6">
-                  {scene && <SceneEditorTab scene={scene} />}
+                  {scene && <SceneEditorTab scene={scene} onSceneUpdate={setScene} />}
                 </CardContent>
               </Card>
             </TabsContent>

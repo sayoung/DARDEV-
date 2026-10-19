@@ -122,6 +122,50 @@ describe('SceneEditor360', () => {
     expect(mountSceneEditor).not.toHaveBeenCalled();
   });
 
+  it('change initialView puis change le panorama : le nouveau montage reçoit la nouvelle vue', () => {
+    const destroyMock = vi.fn();
+    vi.mocked(mountSceneEditor).mockReturnValue({
+      destroy: destroyMock,
+      setMarkers: vi.fn(),
+      setSelectedMarker: vi.fn(),
+      getView: vi.fn(),
+    });
+
+    const initialView1 = { yaw: 0, pitch: 0, zoom: 50 };
+    const { rerender } = render(<SceneEditor360 {...defaultProps} initialView={initialView1} />);
+
+    expect(mountSceneEditor).toHaveBeenCalledTimes(1);
+    expect(mountSceneEditor).toHaveBeenNthCalledWith(
+      1,
+      expect.any(HTMLElement),
+      expect.objectContaining({
+        initialView: initialView1,
+      })
+    );
+
+    // Changer initialView sans changer de panorama : ne doit ni remonter ni bouger la caméra
+    const initialView2 = { yaw: 1.25, pitch: -0.35, zoom: 65 };
+    rerender(<SceneEditor360 {...defaultProps} initialView={initialView2} />);
+
+    expect(mountSceneEditor).toHaveBeenCalledTimes(1);
+    expect(destroyMock).not.toHaveBeenCalled();
+
+    // Changer le panorama : le nouveau montage reçoit la nouvelle vue
+    const newPanorama = { width: 8192, cols: 16, rows: 8, baseUrl: 'new', tileUrl: () => 'new' };
+    rerender(<SceneEditor360 {...defaultProps} initialView={initialView2} panorama={newPanorama} />);
+
+    expect(destroyMock).toHaveBeenCalledTimes(1);
+    expect(mountSceneEditor).toHaveBeenCalledTimes(2);
+    expect(mountSceneEditor).toHaveBeenNthCalledWith(
+      2,
+      expect.any(HTMLElement),
+      expect.objectContaining({
+        panorama: newPanorama,
+        initialView: initialView2,
+      })
+    );
+  });
+
   it('relaie les callbacks onPanoramaClick, onMarkerSelect et onMarkerMove, y compris après rerender', () => {
     vi.mocked(mountSceneEditor).mockReturnValue({
       destroy: vi.fn(),

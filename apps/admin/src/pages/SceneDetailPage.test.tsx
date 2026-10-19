@@ -1006,6 +1006,97 @@ describe('SceneDetailPage', () => {
     });
 
     expect(await screen.findByText('Vue initiale enregistrée')).toBeDefined();
+
+    // Vérifie que l'état local de la page est mis à jour avec la valeur renvoyée :
+    // 1) SceneEditor360 reçoit la nouvelle vue initiale via les props
+    await waitFor(() => {
+      expect(vi.mocked(SceneEditor360).mock.lastCall?.[0]?.initialView).toEqual({
+        yaw: 0.5,
+        pitch: -0.2,
+        zoom: 40,
+      });
+    });
+
+    // 2) L'onglet Informations reflète les nouvelles coordonnées dans le formulaire
+    const infoTab = await screen.findByRole('tab', { name: 'Informations' });
+    fireEvent.mouseDown(infoTab);
+    fireEvent.click(infoTab);
+
+    const yawInput = await screen.findByLabelText('Lacet initial');
+    if (yawInput instanceof HTMLInputElement) {
+      expect(yawInput.value).toBe('0.5');
+    } else {
+      expect.fail('yawInput is not an HTMLInputElement');
+    }
+
+    const pitchInput = screen.getByLabelText('Tangage initial');
+    if (pitchInput instanceof HTMLInputElement) {
+      expect(pitchInput.value).toBe('-0.2');
+    } else {
+      expect.fail('pitchInput is not an HTMLInputElement');
+    }
+
+    const zoomInput = screen.getByLabelText('Zoom initial');
+    if (zoomInput instanceof HTMLInputElement) {
+      expect(zoomInput.value).toBe('40');
+    } else {
+      expect.fail('zoomInput is not an HTMLInputElement');
+    }
+  });
+
+  it('affiche une erreur quand la sauvegarde de la vue initiale échoue et ne modifie pas l\'état de la scène', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1', tourId: 't-1', title: { fr: 'Titre' }, panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 0, hotspotCount: 0,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    vi.mocked(listScenes).mockResolvedValue([]);
+    const mockAsset: AssetResponse = {
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
+      thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
+      createdAt: new Date().toISOString(),
+    };
+    vi.mocked(getAsset).mockResolvedValue(mockAsset);
+    vi.mocked(listHotspots).mockResolvedValue([]);
+    vi.mocked(updateScene).mockRejectedValue(new Error('Network failure'));
+
+    render(<SceneDetailPage />);
+
+    const editorTab = await screen.findByText('Éditeur 360');
+    fireEvent.mouseDown(editorTab);
+    fireEvent.click(editorTab);
+
+    const btn = await screen.findByRole('button', { name: 'Définir la vue actuelle comme vue initiale' });
+    fireEvent.click(btn);
+
+    await waitFor(() => {
+      expect(updateScene).toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText('Une erreur est survenue.')).toBeDefined();
+
+    // SceneEditor360 conserve l'ancienne vue initiale
+    expect(vi.mocked(SceneEditor360).mock.lastCall?.[0]?.initialView).toEqual({
+      yaw: 0,
+      pitch: 0,
+      zoom: 50,
+    });
+
+    // Le bouton n'est plus désactivé
+    if (btn instanceof HTMLButtonElement) {
+      expect(btn.disabled).toBe(false);
+    } else {
+      expect.fail('btn is not an HTMLButtonElement');
+    }
   });
 
   it('shows and handles arrival orientation button for SCENE_LINK hotspots', async () => {
