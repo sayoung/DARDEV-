@@ -506,7 +506,7 @@ describe('vr-player (M6 F-71)', () => {
       expect(exitSpy).not.toHaveBeenCalled();
     });
 
-    it('scene-link sans arrivalYaw ne fait pas appel à setYaw', async () => {
+    it('scene-link sans arrivalYaw réinitialise l orientation avec setYaw(0)', async () => {
       const { deps, loadTextureSpy, showSceneSpy, setYawSpy } = createFakeDeps({
         getSceneData: () => ({ kind: 'scene-link', targetSceneId: 'scene-2' }),
       });
@@ -519,7 +519,46 @@ describe('vr-player (M6 F-71)', () => {
       });
 
       expect(loadTextureSpy).toHaveBeenCalledWith('scene-2');
-      expect(setYawSpy).not.toHaveBeenCalled();
+      expect(setYawSpy).toHaveBeenCalledTimes(1);
+      expect(setYawSpy).toHaveBeenCalledWith(0);
+    });
+
+    it('réinitialise l orientation à 0 après une scène ayant un arrivalYaw non nul', async () => {
+      const { deps, showSceneSpy, setYawSpy } = createFakeDeps({
+        getSceneData: (id) => {
+          if (id === 'spot-1') {
+            return {
+              kind: 'scene-link',
+              targetSceneId: 'scene-orientee',
+              arrivalYaw: 1.57,
+            };
+          }
+          if (id === 'spot-2') {
+            return {
+              kind: 'scene-link',
+              targetSceneId: 'scene-normale',
+            };
+          }
+          return null;
+        },
+      });
+
+      const player = createVrPlayer(deps);
+
+      // Première transition avec arrivalYaw
+      player.handleNavigate('spot-1');
+      await vi.waitFor(() => {
+        expect(showSceneSpy).toHaveBeenCalledWith('scene-orientee');
+      });
+      expect(setYawSpy).toHaveBeenLastCalledWith(1.57);
+
+      // Seconde transition sans arrivalYaw : doit remettre à 0
+      player.handleNavigate('spot-2');
+      await vi.waitFor(() => {
+        expect(showSceneSpy).toHaveBeenCalledWith('scene-normale');
+      });
+      expect(setYawSpy).toHaveBeenLastCalledWith(0);
+      expect(setYawSpy).toHaveBeenCalledTimes(2);
     });
   });
 });

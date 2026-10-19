@@ -100,9 +100,7 @@ export function createVrPlayer(deps: VrPlayerDeps): VrPlayer {
             deps.scene.setTexture(texture);
           }
           await deps.showScene(targetSceneId);
-          if (typeof arrivalYaw === 'number') {
-            deps.scene.setYaw?.(arrivalYaw);
-          }
+          deps.scene.setYaw?.(typeof arrivalYaw === 'number' ? arrivalYaw : 0);
         } catch {
           // Erreur de chargement absorbée : pas de setTexture ni de crash
         }

@@ -50,6 +50,7 @@ export function createVrScene(): VrSceneHandle {
 
   let currentMarkerMeshes: THREE.Mesh[] = [];
   let currentTargets: VrMarkerTarget[] = [];
+  let currentYaw = 0;
   let isDisposed = false;
 
   function clearCurrentMarkers(): void {
@@ -106,14 +107,26 @@ export function createVrScene(): VrSceneHandle {
   }
 
   function getMarkerTargets(): VrMarkerTarget[] {
-    return currentTargets.map((target) => ({
-      id: target.id,
-      yaw: target.yaw,
-      pitch: target.pitch,
-    }));
+    return currentTargets.map((target) => {
+      if (currentYaw === 0) {
+        return {
+          id: target.id,
+          yaw: target.yaw,
+          pitch: target.pitch,
+        };
+      }
+      const diff = target.yaw - currentYaw;
+      const normalizedYaw = Math.atan2(Math.sin(diff), Math.cos(diff));
+      return {
+        id: target.id,
+        yaw: normalizedYaw,
+        pitch: target.pitch,
+      };
+    });
   }
 
   function setYaw(yaw: number): void {
+    currentYaw = yaw;
     scene.rotation.y = yaw;
   }
 
@@ -123,6 +136,7 @@ export function createVrScene(): VrSceneHandle {
     }
     isDisposed = true;
 
+    currentYaw = 0;
     scene.rotation.y = 0;
     clearCurrentMarkers();
     scene.remove(sphere);
