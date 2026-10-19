@@ -321,4 +321,117 @@ describe('mountVr (M6 F-70, F-71)', () => {
     consoleErrorSpy.mockRestore();
     handle.destroy();
   });
+
+  it('un requestSession qui rejette affiche le message d erreur, ne produit aucun unhandledRejection et demonte le renderer', async () => {
+    const unhandledRejections: unknown[] = [];
+    const handleUnhandledRejection = (reason: unknown): void => {
+      unhandledRejections.push(reason);
+    };
+    process.on('unhandledRejection', handleUnhandledRejection);
+
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    const requestSessionMock = vi
+      .fn()
+      .mockRejectedValue(new Error('WebXR requestSession denied'));
+
+    const fakeNavigator = {
+      xr: {
+        isSessionSupported: () => Promise.resolve(true),
+        requestSession: requestSessionMock,
+      },
+    };
+
+    const handle = await mountVr(container, {
+      label: 'Entrer en VR',
+      startFailedLabel: "La VR n'a pas pu démarrer",
+      graph: validGraph,
+      getCurrentSceneId: () => 'scene-1',
+      showScene: async () => {},
+      resolveTextureUrl: () => 'http://example.com/web1.jpg',
+      navigatorLike: fakeNavigator,
+    });
+
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    if (button !== null) {
+      button.click();
+    }
+
+    await vi.waitFor(() => {
+      const alert = container.querySelector('[role="alert"]');
+      expect(alert).not.toBeNull();
+      expect(alert?.textContent).toBe("La VR n'a pas pu démarrer");
+      expect(alert?.getAttribute('role')).toBe('alert');
+    });
+
+    // Aucun unhandledRejection
+    expect(unhandledRejections).toHaveLength(0);
+
+    // Le renderer Three.js est démonté (aucun canvas dans le conteneur)
+    expect(container.querySelector('canvas')).toBeNull();
+
+    // console.error a bien capturé l'erreur
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    // destroy() retire le message d'alerte et nettoie le conteneur
+    handle.destroy();
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+
+    consoleErrorSpy.mockRestore();
+    process.off('unhandledRejection', handleUnhandledRejection);
+  });
+
+  it('le message d erreur role="alert" disparait automatiquement apres ~4s', async () => {
+    vi.useFakeTimers();
+    try {
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      const requestSessionMock = vi
+        .fn()
+        .mockRejectedValue(new Error('WebXR requestSession failed'));
+
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: requestSessionMock,
+        },
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        startFailedLabel: "La VR n'a pas pu démarrer",
+        graph: validGraph,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.advanceTimersByTimeAsync(0);
+
+      const alert = container.querySelector('[role="alert"]');
+      expect(alert).not.toBeNull();
+      expect(alert?.textContent).toBe("La VR n'a pas pu démarrer");
+
+      // Après 4 secondes (~4s), l'élément est automatiquement retiré
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(container.querySelector('[role="alert"]')).toBeNull();
+
+      consoleErrorSpy.mockRestore();
+      handle.destroy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
