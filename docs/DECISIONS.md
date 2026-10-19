@@ -916,11 +916,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** opérations différentielles (POST/DELETE individuels) ; rafraîchissement immédiat de toutes les sessions actives en cache/Redis.
 - **À valider :** oui
 
-## D-117 — Remplacement de la sélection d'un hôtel (M5 F-51)
+## D-117 — Validation des visites de sélection (M5 F-51)
 
 - **Date :** 17/10/2026
-- **Décision :** la sélection d'un hôtel est remplacée en bloc par PUT, chaque écriture incrémente version ; seules des visites PUBLISHED sont acceptées ; les gestionnaires de l'hôtel et ADMIN peuvent écrire ; EDITOR hors périmètre → 404.
-- **Alternatives :** opérations différentielles ; accepter des visites non publiées ; réserver l'écriture à ADMIN.
+- **Décision :** featuredTourId, tourIds et attractTourIds sont dédoublonnés puis doivent tous être des visites PUBLISHED non supprimées, sinon erreur SELECTION_TOUR_INVALID, et un hôtel inaccessible répond 404 (pas 403). La sélection d'un hôtel est remplacée en bloc par PUT, chaque écriture incrémente version ; les gestionnaires de l'hôtel et ADMIN peuvent écrire ; EDITOR hors périmètre → 404.
+- **Alternatives :** opérations différentielles ; accepter des visites non publiées ; réserver l'écriture à ADMIN ; renvoyer 403 au lieu de 404 pour un hôtel inaccessible.
 - **À valider :** oui
 
 ## D-118 — Réordonnancement de la sélection (M5 F-51)
