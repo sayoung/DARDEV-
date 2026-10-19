@@ -316,4 +316,70 @@ describe('vr-scene (M6 F-70)', () => {
       }).not.toThrow();
     });
   });
+
+  describe('setYaw et alignement des cibles (6)', () => {
+    it('applique scene.rotation.y = yaw et compense le yaw dans getMarkerTargets sans désaligner les cibles', () => {
+      const handle = createVrScene();
+      const markers: readonly VrMarkerTarget[] = [
+        { id: 'target-arret', yaw: 1.0, pitch: 0.2 },
+        { id: 'target-cote', yaw: -0.5, pitch: -0.1 },
+      ];
+      handle.setMarkers(markers);
+
+      handle.setYaw(1.0);
+      expect(handle.scene.rotation.y).toBe(1.0);
+
+      const targets = handle.getMarkerTargets();
+      expect(targets).toHaveLength(2);
+
+      const firstTarget = targets.at(0);
+      const secondTarget = targets.at(1);
+      expect(firstTarget).toBeDefined();
+      expect(secondTarget).toBeDefined();
+
+      if (firstTarget !== undefined && secondTarget !== undefined) {
+        expect(firstTarget.id).toBe('target-arret');
+        // 1.0 - 1.0 = 0
+        expect(firstTarget.yaw).toBeCloseTo(0, 5);
+        expect(firstTarget.pitch).toBeCloseTo(0.2, 5);
+
+        expect(secondTarget.id).toBe('target-cote');
+        // -0.5 - 1.0 = -1.5
+        expect(secondTarget.yaw).toBeCloseTo(-1.5, 5);
+        expect(secondTarget.pitch).toBeCloseTo(-0.1, 5);
+      }
+    });
+
+    it('réinitialise l orientation et les cibles avec setYaw(0)', () => {
+      const handle = createVrScene();
+      const markers: readonly VrMarkerTarget[] = [
+        { id: 'target-alignee', yaw: 0.75, pitch: 0 },
+      ];
+      handle.setMarkers(markers);
+
+      // Tourne à 0.75
+      handle.setYaw(0.75);
+      const rotatedTargets = handle.getMarkerTargets();
+      const firstRotated = rotatedTargets.at(0);
+      expect(firstRotated?.yaw).toBeCloseTo(0, 5);
+
+      // Remise à 0
+      handle.setYaw(0);
+      expect(handle.scene.rotation.y).toBe(0);
+
+      const resetTargets = handle.getMarkerTargets();
+      const firstReset = resetTargets.at(0);
+      expect(firstReset?.yaw).toBeCloseTo(0.75, 5);
+    });
+
+    it('dispose remet scene.rotation.y à 0', () => {
+      const handle = createVrScene();
+      handle.setYaw(1.23);
+      expect(handle.scene.rotation.y).toBe(1.23);
+
+      handle.dispose();
+      expect(handle.scene.rotation.y).toBe(0);
+    });
+  });
 });
+

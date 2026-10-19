@@ -19,7 +19,7 @@ import {
   type XrSessionLike,
   type XrSystemLike,
 } from './vr-session.js';
-import { createVrPlayer, type VrPlayer } from './vr-player.js';
+import { createVrPlayer, type VrPlayer, type VrPlayerSceneData } from './vr-player.js';
 import { toVrTargets, withExitTarget } from './vr-targets.js';
 
 /**
@@ -33,6 +33,7 @@ export interface MountVrOptions {
   showScene: (id: string) => Promise<void>;
   resolveTextureUrl: (sceneId: string) => string | null;
   navigatorLike?: Parameters<typeof isVrSupported>[0];
+  openTourLink?: (hotspotId: string) => void | Promise<void>;
 }
 
 /**
@@ -41,13 +42,6 @@ export interface MountVrOptions {
 export interface MountVrHandle {
   destroy(): void;
 }
-
-type SceneDataResult = {
-  kind: 'tour-link' | 'info';
-  targetSceneId?: string;
-  text?: string;
-  rtl?: boolean;
-} | null;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -114,18 +108,25 @@ function getSceneData(
   graph: TourGraph,
   getCurrentSceneId: () => string,
   hotspotId: string,
-): SceneDataResult {
+): VrPlayerSceneData | null {
   const hotspot = findHotspot(graph, getCurrentSceneId(), hotspotId);
   if (hotspot === undefined) {
     return null;
   }
+  if (hotspot.type === HotspotType.SCENE_LINK) {
+    return {
+      kind: 'scene-link',
+      targetSceneId: hotspot.targetSceneId,
+      arrivalYaw:
+        typeof hotspot.arrivalYaw === 'number'
+          ? hotspot.arrivalYaw
+          : undefined,
+    };
+  }
   if (hotspot.type === HotspotType.TOUR_LINK) {
     return {
       kind: 'tour-link',
-      targetSceneId:
-        typeof hotspot.targetSceneId === 'string'
-          ? hotspot.targetSceneId
-          : undefined,
+      hotspotId: hotspot.id,
     };
   }
   if (hotspot.type === HotspotType.INFO) {
@@ -261,7 +262,7 @@ export async function mountVr(
         opts.graph.scenes[0];
 
       if (currentScene !== undefined) {
-        vrScene.setMarkers(withExitTarget(toVrTargets(currentScene)));
+        vrScene.setMarkers(withExitTarget(toVrTargets(currentScene, opts.graph)));
       }
 
       // 4. Composants purs : sélecteur par regard, fondu confort, interactions
@@ -345,9 +346,10 @@ export async function mountVr(
           await opts.showScene(targetSceneId);
           const nextScene = opts.graph.scenes.find((s) => s.id === targetSceneId);
           if (nextScene !== undefined) {
-            vrScene.setMarkers(withExitTarget(toVrTargets(nextScene)));
+            vrScene.setMarkers(withExitTarget(toVrTargets(nextScene, opts.graph)));
           }
         },
+        openTourLink: opts.openTourLink,
       });
 
       // 5. Entrée en session immersive synchrone dans le geste du clic avant tout await

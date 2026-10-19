@@ -4,12 +4,13 @@
 
 import * as THREE from 'three';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TourGraphSchema } from '@xplor/shared';
+import { HotspotIcon, HotspotType, TourGraphSchema } from '@xplor/shared';
 import { mountVr } from './mount-vr.js';
 import * as indexExports from '../index.js';
 
-const { mockLoadAsync } = vi.hoisted(() => ({
+const { mockLoadAsync, mockSetAnimationLoop } = vi.hoisted(() => ({
   mockLoadAsync: vi.fn<(url: string) => Promise<import('three').Texture>>(),
+  mockSetAnimationLoop: vi.fn<(cb: ((time: number) => void) | null) => void>(),
 }));
 
 vi.mock('three', async (importOriginal) => {
@@ -24,7 +25,9 @@ vi.mock('three', async (importOriginal) => {
     setSize = vi.fn();
     render = vi.fn();
     dispose = vi.fn();
-    setAnimationLoop = vi.fn();
+    setAnimationLoop = (cb: ((time: number) => void) | null) => {
+      mockSetAnimationLoop(cb);
+    };
   }
   class MockTextureLoader {
     loadAsync = (url: string): Promise<import('three').Texture> => {
@@ -86,6 +89,7 @@ describe('mountVr (M6 F-70, F-71)', () => {
     mockLoadAsync.mockImplementation(() =>
       Promise.resolve(new THREE.Texture()),
     );
+    mockSetAnimationLoop.mockReset();
   });
 
   it('exporte mountVr depuis index.ts', () => {
@@ -433,5 +437,260 @@ describe('mountVr (M6 F-70, F-71)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('(b) sélection d un SCENE_LINK → loadTexture et showScene appelés avec la cible, cibles mises à jour avec celles de la nouvelle scène, session toujours active', async () => {
+    const graphWithSceneLink = TourGraphSchema.parse({
+      id: '01990000-0000-7000-8000-00000000000b',
+      contentVersion: 1,
+      lang: 'fr',
+      title: 'Visite multi-scène VR',
+      summary: 'Résumé',
+      city: 'Rabat',
+      categories: ['Monument'],
+      coverUrl: 'http://example.com/cover.jpg',
+      practicalInfo: null,
+      location: null,
+      startSceneId: 'scene-1',
+      linkedTours: [],
+      scenes: [
+        {
+          id: 'scene-1',
+          title: 'Scène 1',
+          caption: null,
+          panorama: {
+            preview: 'http://example.com/preview1.jpg',
+            web: 'http://example.com/web1.jpg',
+            tiles: {
+              width: 4096,
+              cols: 8,
+              rows: 4,
+              baseUrl: 'http://example.com/tiles1/{col}_{row}.jpg',
+            },
+          },
+          initialView: { yaw: 0, pitch: 0, zoom: 50 },
+          narrationUrl: null,
+          ambientUrl: null,
+          thumb: 'http://example.com/thumb1.jpg',
+          hotspots: [
+            {
+              type: HotspotType.SCENE_LINK,
+              id: 'hs-link-scene-2',
+              yaw: 0,
+              pitch: 0,
+              label: 'Vers scène 2',
+              icon: HotspotIcon.ARROW,
+              targetSceneId: 'scene-2',
+              arrivalYaw: 1.57,
+            },
+          ],
+        },
+        {
+          id: 'scene-2',
+          title: 'Scène 2',
+          caption: null,
+          panorama: {
+            preview: 'http://example.com/preview2.jpg',
+            web: 'http://example.com/web2.jpg',
+            tiles: {
+              width: 4096,
+              cols: 8,
+              rows: 4,
+              baseUrl: 'http://example.com/tiles2/{col}_{row}.jpg',
+            },
+          },
+          initialView: { yaw: 0, pitch: 0, zoom: 50 },
+          narrationUrl: null,
+          ambientUrl: null,
+          thumb: 'http://example.com/thumb2.jpg',
+          hotspots: [
+            {
+              type: HotspotType.SCENE_LINK,
+              id: 'hs-link-scene-1',
+              yaw: 1.0,
+              pitch: 0,
+              label: 'Vers scène 1',
+              icon: HotspotIcon.ARROW,
+              targetSceneId: 'scene-1',
+            },
+          ],
+        },
+      ],
+    });
+
+    const fakeSession = {
+      addEventListener: vi.fn(),
+      end: vi.fn().mockResolvedValue(undefined),
+    };
+    const requestSessionMock = vi.fn().mockResolvedValue(fakeSession);
+    const fakeNavigator = {
+      xr: {
+        isSessionSupported: () => Promise.resolve(true),
+        requestSession: requestSessionMock,
+      },
+    };
+
+    let currentSceneId = 'scene-1';
+    const showSceneSpy = vi.fn((targetId: string) => {
+      currentSceneId = targetId;
+      return Promise.resolve();
+    });
+
+    const handle = await mountVr(container, {
+      label: 'Entrer en VR',
+      graph: graphWithSceneLink,
+      getCurrentSceneId: () => currentSceneId,
+      showScene: showSceneSpy,
+      resolveTextureUrl: (id: string) => `http://example.com/${id}.jpg`,
+      navigatorLike: fakeNavigator,
+    });
+
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    if (button !== null) {
+      button.click();
+    }
+
+    await vi.waitFor(() => {
+      expect(mockSetAnimationLoop).toHaveBeenCalled();
+    });
+
+    const animationCallback = mockSetAnimationLoop.mock.calls[0]?.[0];
+    expect(animationCallback).toBeDefined();
+
+    if (animationCallback !== undefined && animationCallback !== null) {
+      animationCallback(0);
+      animationCallback(2100);
+      animationCallback(2300);
+    }
+
+    await vi.waitFor(() => {
+      expect(showSceneSpy).toHaveBeenCalledWith('scene-2');
+    });
+
+    expect(mockLoadAsync).toHaveBeenCalledWith('http://example.com/scene-2.jpg');
+    expect(fakeSession.end).not.toHaveBeenCalled();
+
+    handle.destroy();
+  });
+
+  it('(d) TOUR_LINK résolu → session.exit puis openTourLink(hotspotId), aucun showScene local', async () => {
+    const graphWithTourLink = TourGraphSchema.parse({
+      id: '01990000-0000-7000-8000-00000000000c',
+      contentVersion: 1,
+      lang: 'fr',
+      title: 'Visite lien tour VR',
+      summary: 'Résumé',
+      city: 'Rabat',
+      categories: ['Monument'],
+      coverUrl: 'http://example.com/cover.jpg',
+      practicalInfo: null,
+      location: null,
+      startSceneId: 'scene-1',
+      linkedTours: [
+        {
+          id: 'tour-ext-1',
+          title: 'Visite externe',
+          shareToken: 'token-ext-abc',
+          coverUrl: 'http://example.com/cover-ext.jpg',
+          availableOffline: true,
+        },
+      ],
+      scenes: [
+        {
+          id: 'scene-1',
+          title: 'Scène 1',
+          caption: null,
+          panorama: {
+            preview: 'http://example.com/preview1.jpg',
+            web: 'http://example.com/web1.jpg',
+            tiles: {
+              width: 4096,
+              cols: 8,
+              rows: 4,
+              baseUrl: 'http://example.com/tiles1/{col}_{row}.jpg',
+            },
+          },
+          initialView: { yaw: 0, pitch: 0, zoom: 50 },
+          narrationUrl: null,
+          ambientUrl: null,
+          thumb: 'http://example.com/thumb1.jpg',
+          hotspots: [
+            {
+              type: HotspotType.TOUR_LINK,
+              id: 'hs-link-tour-ext',
+              yaw: 0,
+              pitch: 0,
+              label: 'Vers visite externe',
+              icon: HotspotIcon.PORTAL,
+              targetTourId: 'tour-ext-1',
+            },
+          ],
+        },
+      ],
+    });
+
+    const callOrder: string[] = [];
+    const fakeSession = {
+      addEventListener: vi.fn(),
+      end: vi.fn().mockImplementation(() => {
+        callOrder.push('session.end');
+        return Promise.resolve();
+      }),
+    };
+    const requestSessionMock = vi.fn().mockResolvedValue(fakeSession);
+    const fakeNavigator = {
+      xr: {
+        isSessionSupported: () => Promise.resolve(true),
+        requestSession: requestSessionMock,
+      },
+    };
+
+    const showSceneSpy = vi.fn(() => Promise.resolve());
+    const openTourLinkSpy = vi.fn((id: string) => {
+      callOrder.push(`openTourLink:${id}`);
+      return Promise.resolve();
+    });
+
+    const handle = await mountVr(container, {
+      label: 'Entrer en VR',
+      graph: graphWithTourLink,
+      getCurrentSceneId: () => 'scene-1',
+      showScene: showSceneSpy,
+      openTourLink: openTourLinkSpy,
+      resolveTextureUrl: () => null,
+      navigatorLike: fakeNavigator,
+    });
+
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    if (button !== null) {
+      button.click();
+    }
+
+    await vi.waitFor(() => {
+      expect(mockSetAnimationLoop).toHaveBeenCalled();
+    });
+
+    const animationCallback = mockSetAnimationLoop.mock.calls[0]?.[0];
+    expect(animationCallback).toBeDefined();
+
+    if (animationCallback !== undefined && animationCallback !== null) {
+      animationCallback(0);
+      animationCallback(2100);
+      animationCallback(2300);
+    }
+
+    await vi.waitFor(() => {
+      expect(openTourLinkSpy).toHaveBeenCalledWith('hs-link-tour-ext');
+    });
+
+    expect(callOrder).toEqual([
+      'session.end',
+      'openTourLink:hs-link-tour-ext',
+    ]);
+    expect(showSceneSpy).not.toHaveBeenCalled();
+
+    handle.destroy();
   });
 });
