@@ -13,6 +13,64 @@ body {
   margin-inline: 0;
 }
 
+/* Icônes des hotspots non natifs au lecteur (INFO, média, portail, URL). */
+.xplor-marker {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  color: #ffffff;
+  background: #155e63;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 55%);
+  cursor: pointer;
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+.xplor-marker:hover {
+  transform: scale(1.12);
+}
+
+.xplor-marker .marker-icon,
+.xplor-marker .marker-icon span {
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.xplor-marker .marker-icon span {
+  font-family: Arial, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.xplor-marker .icon-INFO::before {
+  content: "i";
+}
+
+.xplor-marker .icon-PHOTO::before {
+  content: "▣";
+}
+
+.xplor-marker .icon-PORTAL::before {
+  content: "↗";
+}
+
+.xplor-marker .icon-PLAY::before {
+  content: "▶";
+}
+
+.xplor-marker-tour-link {
+  background: #6958a5;
+}
+
+.xplor-marker-media {
+  background: #b45309;
+}
+
 #status {
   grid-area: 1 / 1;
   place-self: center;

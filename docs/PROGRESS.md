@@ -23,6 +23,8 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ## Session en cours
 
+- Correctif lecteur public : styles ajoutés pour afficher les icônes des hotspots INFO/MÉDIA/portail/lecture (HTML déjà présent, style manquant) ; aucune dépendance ajoutée. Tests non exécutés (non demandés).
+
 ## État des tâches
 
 ### En cours
