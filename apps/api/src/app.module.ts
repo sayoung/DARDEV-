@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { ConfigModule } from './config/config.module.js';
 import { type Env } from './config/env.js';
+import { EventsModule } from './events/events.module.js';
 import { HealthModule } from './health/health.module.js';
 import { HotelsModule } from './hotels/hotels.module.js';
 import { KiosksModule } from './kiosks/kiosks.module.js';
@@ -33,6 +34,7 @@ export class AppModule {
         HotelsModule,
         KiosksModule,
         CatalogModule,
+        EventsModule,
         StorageModule,
         ViewerModule,
         HealthModule,
