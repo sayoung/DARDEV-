@@ -395,3 +395,44 @@ model UserHotel {
   @@id([userId, hotelId])
   @@index([hotelId])
 }
+
+enum EventChannel {
+  KIOSK
+  VR
+  WEB
+}
+
+enum EventType {
+  SESSION_START
+  SESSION_END
+  TOUR_OPEN
+  SCENE_VIEW
+  HOTSPOT_CLICK
+  AUDIO_PLAY
+  VR_ENTER
+  VR_EXIT
+  QR_SHOWN
+  LANG_CHANGE
+}
+
+/// Événements statistiques (cahier, §5.9, F-80). Table partitionnée par mois.
+model Event {
+  id         BigInt       @default(autoincrement())
+  kioskId    String?      @db.Uuid
+  hotelId    String?      @db.Uuid
+  channel    EventChannel
+  sessionId  String       @db.Uuid
+  type       EventType
+  tourId     String?      @db.Uuid
+  sceneId    String?      @db.Uuid
+  hotspotId  String?      @db.Uuid
+  lang       String       @db.VarChar(8)
+  durationMs Int?
+  occurredAt DateTime     @db.Timestamptz(6)
+  receivedAt DateTime     @default(now()) @db.Timestamptz(6)
+
+  @@id([id, receivedAt])
+  @@index([hotelId, receivedAt])
+  @@index([kioskId, receivedAt])
+  @@index([tourId, receivedAt])
+}
