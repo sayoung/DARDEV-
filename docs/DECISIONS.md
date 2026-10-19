@@ -998,8 +998,14 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** hash Argon2id dans le manifeste (écartée : l'API Web Crypto du navigateur ne supporte pas Argon2id nativement et exigerait une dépendance WebAssembly lourde ou exposerait inutilement un condensat sensible dans le manifeste public du kiosque).
 - **À valider :** oui
 
+## D-128 — Mode VR via three.js dédié (M6 F-70)
 
+- **Date :** 18/10/2026
+- **Décision :** Photo Sphere Viewer ne gère pas WebXR, donc le mode VR est un rendu three.js dédié dans packages/viewer-core/src/vr/ (sphère équirectangulaire texturée, marqueurs, panneau d'info, fondu). Dépendance directe `three` en version exacte 0.185.1 (déjà présente dans pnpm-lock via PSV) ajoutée à `@xplor/viewer-core`, licence MIT, raison : WebXR (immersive-vr), plus `@types/three` en devDependency (version 0.185.0, licence MIT) pour le mode strict.
+- **Alternatives :** plugins tiers Photo Sphere Viewer non officiels ; déporter le mode VR dans une application externe.
+- **À valider :** oui
 
-
-
-
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| three | WebXR (immersive-vr) | MIT |
+| @types/three | Déclarations TypeScript pour le mode strict | MIT |
