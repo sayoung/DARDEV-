@@ -134,6 +134,10 @@ describe('clés i18n', () => {
     );
     expect(resources.fr.kiosk.maintenance.close).toBe('Fermer');
   });
+
+  it('définit les clés vr en français', () => {
+    expect(resources.fr.vr.enter).toBe('Vivre en VR');
+  });
 });
 
 describe('isRtl / dir', () => {

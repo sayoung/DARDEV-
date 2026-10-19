@@ -16,3 +16,4 @@ export * from './vr/gaze-selector.js';
 export * from './vr/vr-fade.js';
 export * from './vr/vr-geometry.js';
 export * from './vr/vr-info-panel.js';
+export * from './vr/vr-button.js';

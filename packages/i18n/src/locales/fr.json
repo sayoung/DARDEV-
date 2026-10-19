@@ -626,6 +626,9 @@
       "confirmReenroll": "Voulez-vous vraiment réenrôler ce kiosque ? Toutes les données locales seront réinitialisées.",
       "close": "Fermer"
     }
+  },
+  "vr": {
+    "enter": "Vivre en VR"
   }
 }
 
