@@ -32,6 +32,7 @@ export function TourDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [successKey, setSuccessKey] = useState<string | null>(null);
+  const [fallbackPreviewUrl, setFallbackPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -130,14 +131,24 @@ export function TourDetailPage() {
     setIsSubmitting(true);
     setActionError(null);
     setSuccessKey(null);
+    setFallbackPreviewUrl(null);
+    const w = window.open('', '_blank');
     try {
       const res = await createPreviewToken(id);
       const webBase = typeof import.meta.env.VITE_PUBLIC_WEB_URL === 'string'
         ? import.meta.env.VITE_PUBLIC_WEB_URL
         : window.location.origin;
       const url = previewUrl(webBase, res.token, i18n.language);
-      window.open(url, '_blank', 'noopener');
+      if (w !== null) {
+        w.opener = null;
+        w.location.href = url;
+      } else {
+        setFallbackPreviewUrl(url);
+      }
     } catch {
+      if (w !== null) {
+        w.close();
+      }
       setActionError('common.error.generic');
     } finally {
       setIsSubmitting(false);
@@ -151,9 +162,21 @@ export function TourDetailPage() {
       <PageHeader 
         title={t('page.tourDetail.title')} 
         actions={
-          <Button onClick={() => { void handlePreview(); }} disabled={isSubmitting}>
-            {t('catalog.tours.preview.open')}
-          </Button>
+          <div className="flex items-center gap-3">
+            {fallbackPreviewUrl !== null && (
+              <a
+                href={fallbackPreviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline text-sm font-medium"
+              >
+                {t('catalog.tours.preview.openLink')}
+              </a>
+            )}
+            <Button onClick={() => { void handlePreview(); }} disabled={isSubmitting}>
+              {t('catalog.tours.preview.open')}
+            </Button>
+          </div>
         }
       />
       <TourPublicationPanel tour={tour} onTourUpdated={setTour} />

@@ -91,7 +91,8 @@
   "catalog": {
     "tours": {
       "preview": {
-        "open": "Tester la visite"
+        "open": "Tester la visite",
+        "openLink": "Ouvrir l'aperçu"
       },
       "linkMap": {
         "title": "Carte des liens",

@@ -175,8 +175,33 @@ export function mountSceneEditor(
   markersPlugin.addEventListener('select-marker', ({ marker }) => {
     options.onMarkerSelect(marker.id);
   });
-
   const handleKeyDown = (e: KeyboardEvent) => {
+    const activeEl = typeof document !== 'undefined' ? document.activeElement : null;
+    const isBody = activeEl !== null && (activeEl === document.body || activeEl.tagName.toLowerCase() === 'body');
+    const inContainer = typeof container.contains === 'function' && activeEl !== null && container.contains(activeEl);
+
+    if (activeEl === null || (!isBody && !inContainer)) {
+      return;
+    }
+
+    if (typeof activeEl.closest === 'function') {
+      if (activeEl.closest('input, textarea, select, button, a, [contenteditable], [role="textbox"]') !== null) {
+        return;
+      }
+    } else {
+      if (typeof activeEl.tagName === 'string') {
+        const tag = activeEl.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a') {
+          return;
+        }
+      }
+      if (typeof activeEl.getAttribute === 'function') {
+        if (activeEl.getAttribute('contenteditable') !== null || activeEl.getAttribute('role') === 'textbox') {
+          return;
+        }
+      }
+    }
+
     if (e.key === 'Escape' && isMoveModeActive) {
       isMoveModeActive = false;
       const btn = viewer.navbar.getButton('move-mode');
@@ -185,11 +210,6 @@ export function mountSceneEditor(
     }
 
     if (!currentSelectedMarkerId) return;
-    const activeEl = document.activeElement;
-    if (activeEl) {
-      const tag = activeEl.tagName.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-    }
 
     let yawOffset = 0;
     let pitchOffset = 0;

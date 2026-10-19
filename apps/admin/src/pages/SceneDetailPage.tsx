@@ -78,6 +78,7 @@ function SceneEditorTab({
   }, [selectedHotspotId]);
 
   const handleRef = useRef<SceneEditor360Handle>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const [rawHotspots, setRawHotspots] = useState<HotspotResponse[]>([]);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -148,12 +149,30 @@ function SceneEditorTab({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
-      if (activeEl) {
-        const tag = activeEl.tagName.toLowerCase();
-        if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+      const container = editorContainerRef.current;
+      const isBody = activeEl !== null && (activeEl === document.body || activeEl.tagName.toLowerCase() === 'body');
+      const inContainer = container !== null && typeof container.contains === 'function' && activeEl !== null && container.contains(activeEl);
+
+      if (activeEl === null || (!isBody && !inContainer)) {
+        return;
+      }
+
+      if (typeof activeEl.closest === 'function') {
+        if (activeEl.closest('input, textarea, select, button, a, [contenteditable], [role="textbox"]') !== null) {
           return;
         }
+      } else {
+        const tag = activeEl.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a') {
+          return;
+        }
+        if (typeof activeEl.getAttribute === 'function') {
+          if (activeEl.getAttribute('contenteditable') !== null || activeEl.getAttribute('role') === 'textbox') {
+            return;
+          }
+        }
       }
+
       if (e.key === 'Escape') {
         setIsRelocating(false);
       }
@@ -355,15 +374,44 @@ function SceneEditorTab({
         </div>
         {actionSuccess && <Alert variant="default" className="mb-4">{t(actionSuccess)}</Alert>}
         {actionError && !draftPosition && !selectedHotspotId && <Alert variant="destructive" className="mb-4">{t(actionError)}</Alert>}
-        <SceneEditor360
-          handleRef={handleRef}
-          panorama={panorama}
-          hotspots={hotspots}
-          selectedHotspotId={selectedHotspotId}
-          initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}
-          onPanoramaClick={(yaw, pitch) => {
-            if (isRelocating && selectedHotspotId) {
-              const id = selectedHotspotId;
+        <div ref={editorContainerRef} data-testid="scene-editor-container">
+          <SceneEditor360
+            handleRef={handleRef}
+            panorama={panorama}
+            hotspots={hotspots}
+            selectedHotspotId={selectedHotspotId}
+            initialView={{ yaw: scene.initialYaw, pitch: scene.initialPitch, zoom: scene.initialZoom }}
+            onPanoramaClick={(yaw, pitch) => {
+              if (isRelocating && selectedHotspotId) {
+                const id = selectedHotspotId;
+                const old = hotspots.find(h => h.id === id);
+                if (old && historyRef.current) {
+                  historyRef.current.push({ kind: 'move', hotspotId: id, from: old.position, to: { yaw, pitch } });
+                  updateHistoryState();
+                }
+                setHotspots((prev) => prev.map((h) => (h.id === id ? { ...h, position: { yaw, pitch } } : h)));
+                if (saverRef.current) {
+                  const raw = rawHotspots.find((r) => r.id === id);
+                  if (raw) {
+                    saverRef.current.schedule(id, getHotspotUpdate(raw, yaw, pitch));
+                  }
+                }
+                setIsRelocating(false);
+                return;
+              }
+              setDraftPosition({ yaw, pitch });
+              setSelectedHotspotId(null);
+              setIsEditingHotspot(false);
+              setActionError(null);
+            }}
+            onMarkerSelect={(id) => {
+              setSelectedHotspotId(id);
+              setDraftPosition(null);
+              setIsRelocating(false);
+              setIsEditingHotspot(false);
+              setActionError(null);
+            }}
+            onMarkerMove={(id, yaw, pitch) => {
               const old = hotspots.find(h => h.id === id);
               if (old && historyRef.current) {
                 historyRef.current.push({ kind: 'move', hotspotId: id, from: old.position, to: { yaw, pitch } });
@@ -376,36 +424,9 @@ function SceneEditorTab({
                   saverRef.current.schedule(id, getHotspotUpdate(raw, yaw, pitch));
                 }
               }
-              setIsRelocating(false);
-              return;
-            }
-            setDraftPosition({ yaw, pitch });
-            setSelectedHotspotId(null);
-            setIsEditingHotspot(false);
-            setActionError(null);
-          }}
-          onMarkerSelect={(id) => {
-            setSelectedHotspotId(id);
-            setDraftPosition(null);
-            setIsRelocating(false);
-            setIsEditingHotspot(false);
-            setActionError(null);
-          }}
-          onMarkerMove={(id, yaw, pitch) => {
-            const old = hotspots.find(h => h.id === id);
-            if (old && historyRef.current) {
-              historyRef.current.push({ kind: 'move', hotspotId: id, from: old.position, to: { yaw, pitch } });
-              updateHistoryState();
-            }
-            setHotspots((prev) => prev.map((h) => (h.id === id ? { ...h, position: { yaw, pitch } } : h)));
-            if (saverRef.current) {
-              const raw = rawHotspots.find((r) => r.id === id);
-              if (raw) {
-                saverRef.current.schedule(id, getHotspotUpdate(raw, yaw, pitch));
-              }
-            }
-          }}
-        />
+            }}
+          />
+        </div>
       </div>
       <div>
         {draftPosition ? (
