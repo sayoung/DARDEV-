@@ -15,6 +15,7 @@
     "cancel": "Annuler",
     "close": "Fermer",
     "delete": "Supprimer",
+    "retry": "Réessayer",
     "actions": {
       "cancel": "Annuler"
     },
@@ -257,6 +258,7 @@
           "saved": "Enregistré",
           "error": "Échec de l'enregistrement"
         },
+        "retry": "Réessayer",
         "useThisDirection": "Utiliser cette direction"
       },
       "columns": {

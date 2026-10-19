@@ -776,6 +776,73 @@ describe('SceneDetailPage', () => {
     expect(screen.getByText('Enregistré')).toBeDefined();
   });
 
+  it('displays error message and retry button when autosave fails, and retries on click', async () => {
+    mockAuth();
+    vi.mocked(useAppLocation).mockReturnValue({
+      route: { name: 'scene-detail', tourId: 't-1', sceneId: 's-1' },
+      notice: null,
+      search: '',
+    });
+
+    const mockSceneResponse: SceneResponse = {
+      id: 's-1', tourId: 't-1', title: { fr: 'Titre' }, panoramaAssetId: '018b1d62-a5e3-7a91-9e23-2834b6b63300',
+      initialYaw: 0, initialPitch: 0, initialZoom: 50, weight: 0, hotspotCount: 0,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(getScene).mockResolvedValue(mockSceneResponse);
+    vi.mocked(listScenes).mockResolvedValue([]);
+    const mockAsset: AssetResponse = {
+      id: '018b1d62-a5e3-7a91-9e23-2834b6b63300', filename: 'mock.jpg', kind: AssetKind.PANORAMA, mimeType: 'image/jpeg', sizeBytes: 1000,
+      width: 4000, height: 2000, processingStatus: ProcessingStatus.READY, processingLog: null, copyright: null,
+      thumbnailUrl: null, derivatives: {}, panorama: { preview: 'mock', web: 'mock', tiles: { width: 2, cols: 2, rows: 2, baseUrl: '' } },
+      createdAt: new Date().toISOString(),
+    };
+    vi.mocked(getAsset).mockResolvedValue(mockAsset);
+
+    const mockHotspotResponse: HotspotResponse = {
+      id: 'h-1', sceneId: 's-1', type: HotspotType.INFO, yaw: 0, pitch: 0, label: { fr: 'Mon hotspot' },
+      targetSceneId: null, targetTourId: null, targetTourSceneId: null, body: { fr: 'Body' }, url: null,
+      arrivalYaw: null, mediaAssetIds: [], icon: HotspotIcon.INFO,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+    vi.mocked(listHotspots).mockResolvedValue([mockHotspotResponse]);
+    vi.mocked(updateHotspot).mockRejectedValueOnce(new Error('Network failure'));
+
+    render(<SceneDetailPage />);
+
+    const editorTab = await screen.findByText('Éditeur 360');
+    fireEvent.mouseDown(editorTab);
+    fireEvent.click(editorTab);
+
+    await screen.findByText('Cliquez sur le panorama pour placer un hotspot.');
+
+    vi.useFakeTimers();
+    const moveBtn = screen.getByTestId('mock-marker-move');
+    fireEvent.click(moveBtn);
+
+    expect(screen.getByText(/Modifications en attente/)).toBeDefined();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(updateHotspot).toHaveBeenCalledWith('h-1', expect.objectContaining({ yaw: 1.2, pitch: 0.3 }));
+    expect(screen.getByText("Échec de l'enregistrement")).toBeDefined();
+
+    const retryBtn = screen.getByRole('button', { name: 'Réessayer' });
+    expect(retryBtn).toBeDefined();
+
+    vi.mocked(updateHotspot).mockResolvedValueOnce({ ...mockHotspotResponse, yaw: 1.2, pitch: 0.3 });
+
+    await act(async () => {
+      fireEvent.click(retryBtn);
+      await vi.runAllTimersAsync();
+    });
+
+    expect(updateHotspot).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('Enregistré')).toBeDefined();
+  });
+
   it('handles undo after marker move', async () => {
     mockAuth();
     vi.mocked(useAppLocation).mockReturnValue({

@@ -12,6 +12,7 @@
     "deleteConfirm": "هل أنت متأكد؟",
     "save": "حفظ",
     "delete": "حذف",
+    "retry": "إعادة المحاولة",
     "error": {
       "generic": "حدث خطأ."
     },
@@ -203,6 +204,13 @@
     },
     "hotspots": {
       "editor": {
+        "status": {
+          "pending": "تغييرات معلقة…",
+          "saving": "جاري الحفظ…",
+          "saved": "تم الحفظ",
+          "error": "فشل الحفظ"
+        },
+        "retry": "إعادة المحاولة",
         "relocate": "Déplacer ici",
         "relocateHint": "Cliquez sur la photo ou appuyez sur Échap pour annuler."
       }

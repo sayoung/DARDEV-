@@ -12,17 +12,32 @@ export function createDebouncedSaver<V>(
   const executeSaves = async (mapToSave: Map<string, V>) => {
     onStatus('saving');
     
-    try {
-      const promises = Array.from(mapToSave.entries()).map(([k, v]) => save(k, v));
-      await Promise.all(promises);
-      
-      if (pendingMap.size === 0) {
-        onStatus('saved');
-      } else {
-        onStatus('pending');
+    const entries = Array.from(mapToSave.entries());
+    const results = await Promise.allSettled(
+      entries.map(async ([k, v]) => {
+        await save(k, v);
+      })
+    );
+
+    let hasError = false;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const result = results[i];
+      if (entry && result && result.status === 'rejected') {
+        hasError = true;
+        const [k, v] = entry;
+        if (!pendingMap.has(k)) {
+          pendingMap.set(k, v);
+        }
       }
-    } catch {
+    }
+
+    if (hasError) {
       onStatus('error');
+    } else if (pendingMap.size === 0) {
+      onStatus('saved');
+    } else {
+      onStatus('pending');
     }
   };
 
@@ -39,7 +54,9 @@ export function createDebouncedSaver<V>(
       if (pendingMap.size > 0) {
         const mapToSave = pendingMap;
         pendingMap = new Map();
-        savePromise = (savePromise || Promise.resolve()).then(() => executeSaves(mapToSave));
+        savePromise = (savePromise || Promise.resolve())
+          .then(() => executeSaves(mapToSave))
+          .catch(() => {});
       }
     }, delayMs);
   };
@@ -53,12 +70,21 @@ export function createDebouncedSaver<V>(
     if (pendingMap.size > 0) {
       const mapToSave = pendingMap;
       pendingMap = new Map();
-      savePromise = (savePromise || Promise.resolve()).then(() => executeSaves(mapToSave));
+      savePromise = (savePromise || Promise.resolve())
+        .then(() => executeSaves(mapToSave))
+        .catch(() => {});
     }
 
     if (savePromise) {
       await savePromise;
     }
+  };
+
+  const retry = async () => {
+    if (savePromise) {
+      await savePromise;
+    }
+    return flush();
   };
 
   const cancel = () => {
@@ -70,5 +96,7 @@ export function createDebouncedSaver<V>(
     onStatus('idle');
   };
 
-  return { schedule, flush, cancel };
+  const getPendingKeys = () => Array.from(pendingMap.keys());
+
+  return { schedule, flush, cancel, retry, getPendingKeys };
 }

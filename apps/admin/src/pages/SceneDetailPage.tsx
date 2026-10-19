@@ -70,7 +70,19 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
 
   const [rawHotspots, setRawHotspots] = useState<HotspotResponse[]>([]);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [isRetrying, setIsRetrying] = useState(false);
   const saverRef = useRef<ReturnType<typeof createDebouncedSaver<HotspotUpdate>> | null>(null);
+
+  const handleRetry = async () => {
+    const saver = saverRef.current;
+    if (isRetrying || !saver) return;
+    setIsRetrying(true);
+    try {
+      await saver.retry();
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   const historyRef = useRef<ReturnType<typeof createEditHistory> | null>(null);
   const rawHotspotsRef = useRef(rawHotspots);
@@ -305,8 +317,27 @@ function SceneEditorTab({ scene }: { scene: SceneResponse }) {
             </Button>
           </div>
           {saveStatus !== 'idle' && (
-            <div aria-live="polite" className="text-sm font-medium text-muted-foreground">
-              {t(`catalog.hotspots.editor.status.${saveStatus}`)}
+            <div className="flex items-center gap-2">
+              <span
+                aria-live="polite"
+                className={`text-sm font-medium ${
+                  saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'
+                }`}
+              >
+                {t(`catalog.hotspots.editor.status.${saveStatus}`)}
+              </span>
+              {saveStatus === 'error' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void handleRetry();
+                  }}
+                  disabled={isRetrying || isSubmitting}
+                >
+                  {t('catalog.hotspots.editor.retry')}
+                </Button>
+              )}
             </div>
           )}
         </div>
