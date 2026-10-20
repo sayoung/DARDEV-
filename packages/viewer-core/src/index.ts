@@ -29,3 +29,4 @@ export * from './vr/mount-vr.js';
 export * from './event-batcher.js';
 export * from './event-store-idb.js';
 export * from './event-sender.js';
+export * from './stats-tracker.js';
