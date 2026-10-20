@@ -5,11 +5,12 @@ import { KioskDeviceController } from './kiosk-device.controller.js';
 import { KioskTokenGuard } from './kiosk-token.guard.js';
 import { KiosksController } from './kiosks.controller.js';
 import { KioskService } from './kiosks.service.js';
+import { OptionalKioskTokenGuard } from './optional-kiosk-token.guard.js';
 
 @Module({
   imports: [AuthModule],
   controllers: [KiosksController, KioskDeviceController],
-  providers: [KioskService, KioskTokenGuard],
-  exports: [KioskService],
+  providers: [KioskService, KioskTokenGuard, OptionalKioskTokenGuard],
+  exports: [KioskService, KioskTokenGuard, OptionalKioskTokenGuard],
 })
 export class KiosksModule {}
