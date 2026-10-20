@@ -30,7 +30,7 @@ export function getLinkTooltip(content: string, link: VirtualTourLink): string {
   return content;
 }
 
-export function createArrowElement(link: VirtualTourLink): HTMLElement {
+export function createArrowElement(link?: VirtualTourLink | null): HTMLElement {
   if (typeof document === 'undefined') {
     throw new Error('document is not defined');
   }

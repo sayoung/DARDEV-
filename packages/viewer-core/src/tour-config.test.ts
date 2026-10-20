@@ -13,6 +13,7 @@ import {
   getLinkTooltip,
   extractHotspotLabel,
 } from './tour-config.js';
+import { computeSceneOrientation } from './orientation.js';
 import { TourGraphSchema } from '@xplor/shared';
 import type { VirtualTourLink } from '@photo-sphere-viewer/virtual-tour-plugin';
 
@@ -163,6 +164,14 @@ describe('tourPluginOptions (2D navigation arrows)', () => {
     expect(element.title).toBe('');
     expect(element.getAttribute('aria-label')).toBeNull();
     expect(element.querySelector('svg')).not.toBeNull();
+
+    const elementFromNull = createArrowElement(null);
+    expect(elementFromNull.tagName).toBe('BUTTON');
+    expect(elementFromNull.title).toBe('');
+
+    const elementFromUndefined = createArrowElement(undefined);
+    expect(elementFromUndefined.tagName).toBe('BUTTON');
+    expect(elementFromUndefined.title).toBe('');
   });
 
   it('extractHotspotLabel extracts string label safely without type coercion', () => {
@@ -216,5 +225,28 @@ describe('tourPluginOptions (2D navigation arrows)', () => {
         },
       },
     ]);
+  });
+
+  it('verifies arrival orientation works in 2D and link click changes scene with fade', () => {
+    const options = tourPluginOptions(validGraph);
+    expect(options.renderMode).toBe('2d');
+    expect(options.transitionOptions).toEqual({
+      effect: 'fade',
+      speed: TRANSITION_MS,
+    });
+
+    const link = options.nodes?.[0]?.links?.[0];
+    expect(link).toBeDefined();
+    if (!link) return;
+
+    const targetScene = validGraph.scenes[1];
+    expect(targetScene).toBeDefined();
+    if (!targetScene) return;
+
+    const orientation = computeSceneOrientation(targetScene, link);
+    expect(orientation).toEqual({
+      yaw: 0.8,
+      pitch: 0,
+    });
   });
 });
