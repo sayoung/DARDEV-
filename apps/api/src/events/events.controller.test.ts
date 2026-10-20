@@ -8,7 +8,7 @@ import {
   type Event,
   type EventsBatch,
 } from '@xplor/shared';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   KioskDevice,
@@ -336,10 +336,11 @@ describe('EventsController', () => {
     expect(responseB).toEqual({ accepted: 1 });
   });
 
-  it('le mode kiosque (Bearer valide avec kioskDevice présent) n’appelle jamais Redis', async () => {
+  it('le mode kiosque (Bearer valide avec kioskDevice présent) n’appelle jamais le service ni Redis', async () => {
     const kioskId = '01990000-0000-7000-8000-000000000101';
     const hotelId = '01990000-0000-7000-8000-000000000102';
     const kioskRequest = makeRequest({ kioskId, hotelId }, '198.51.100.99');
+    const consumeSpy = vi.spyOn(rateLimiter, 'consume');
     const batch: EventsBatch = {
       events: [createEvent({ channel: EVENT_CHANNELS.KIOSK })],
     };
@@ -350,18 +351,37 @@ describe('EventsController', () => {
       expect(response).toEqual({ accepted: 1 });
     }
 
+    expect(consumeSpy).not.toHaveBeenCalled();
     expect(redis.data.size).toBe(0);
     expect(redis.expireCalls).toHaveLength(0);
   });
 
+  it('en mode anonyme, le service rateLimiter est appelé avec request.ip', async () => {
+    const clientIp = '198.51.100.42';
+    const request = makeRequest(undefined, clientIp);
+    const batch: EventsBatch = {
+      events: [createEvent({ channel: EVENT_CHANNELS.WEB })],
+    };
+    service.result = { accepted: 1 };
+    const consumeSpy = vi.spyOn(rateLimiter, 'consume');
+
+    const response = await controller.ingest(batch, request);
+
+    expect(response).toEqual({ accepted: 1 });
+    expect(consumeSpy).toHaveBeenCalledTimes(1);
+    expect(consumeSpy).toHaveBeenCalledWith(clientIp);
+  });
+
   it('en mode anonyme sans IP renseignée (chaîne vide), la requête passe et Redis n’est pas sollicité', async () => {
     const emptyIpRequest = makeRequest(undefined, '');
+    const consumeSpy = vi.spyOn(rateLimiter, 'consume');
     const batch: EventsBatch = {
       events: [createEvent({ channel: EVENT_CHANNELS.WEB })],
     };
 
     const response = await controller.ingest(batch, emptyIpRequest);
     expect(response).toEqual({ accepted: 1 });
+    expect(consumeSpy).not.toHaveBeenCalled();
     expect(redis.data.size).toBe(0);
     expect(redis.expireCalls).toHaveLength(0);
   });
