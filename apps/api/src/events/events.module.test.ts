@@ -9,6 +9,7 @@ import { REDIS } from '../redis/redis.module.js';
 import { EventsController } from './events.controller.js';
 import { EventsIngestService } from './events-ingest.service.js';
 import { EventsPartitionService } from './events-partition.service.js';
+import { EventsRateLimitService } from './events-rate-limit.js';
 import { EventsModule } from './events.module.js';
 
 @Global()
@@ -18,6 +19,8 @@ import { EventsModule } from './events.module.js';
       provide: REDIS,
       useValue: {
         defineCommand: () => {},
+        incr: () => Promise.resolve(1),
+        expire: () => Promise.resolve(1),
       },
     },
     {
@@ -39,7 +42,7 @@ import { EventsModule } from './events.module.js';
 class MockGlobalModule {}
 
 describe('EventsModule', () => {
-  it('compile le module et résout EventsPartitionService, EventsIngestService et EventsController', async () => {
+  it('compile le module et résout EventsPartitionService, EventsIngestService, EventsRateLimitService et EventsController', async () => {
     const fakePrisma = {
       $executeRaw: () => Promise.resolve(1),
       event: {
@@ -60,6 +63,10 @@ describe('EventsModule', () => {
     const ingestService = moduleRef.get(EventsIngestService);
     expect(ingestService).toBeDefined();
     expect(ingestService).toBeInstanceOf(EventsIngestService);
+
+    const rateLimitService = moduleRef.get(EventsRateLimitService);
+    expect(rateLimitService).toBeDefined();
+    expect(rateLimitService).toBeInstanceOf(EventsRateLimitService);
 
     const controller = moduleRef.get(EventsController);
     expect(controller).toBeDefined();
