@@ -30,3 +30,4 @@ export * from './event-batcher.js';
 export * from './event-store-idb.js';
 export * from './event-sender.js';
 export * from './stats-tracker.js';
+export * from './stats-session.js';
