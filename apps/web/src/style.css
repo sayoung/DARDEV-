@@ -28,31 +28,14 @@ body {
   padding-block: 1rem;
   padding-inline: 1rem;
   overflow-block: auto;
-  background: rgb(22 23 27 / 92%);
-  color: #f4f4f5;
-  border-inline-start: 6px solid rgb(0 0 0 / 72%);
-  box-shadow: 0 0 2rem rgb(0 0 0 / 28%);
+  background-color: #ffffff;
+  color: #333333;
+  border-inline-start: 1px solid #cccccc;
   z-index: 100;
 }
 
 #info-panel h2 {
   margin-block-start: 0;
-  margin-block-end: 1rem;
-  padding-block: 0.55rem;
-  padding-inline: 0.25rem;
-  border-block-end: 1px solid rgb(255 255 255 / 12%);
-  color: #ffffff;
-  font-size: 1.35rem;
-  font-weight: 600;
-}
-
-#info-panel > div {
-  padding: 0.85rem;
-  border-radius: 0.25rem;
-  background: rgb(255 255 255 / 7%);
-  color: #e5e7eb;
-  font-size: 1rem;
-  line-height: 1.65;
 }
 
 #info-panel img {
@@ -66,21 +49,13 @@ body {
   inset-inline-end: 0.5rem;
   min-inline-size: 44px;
   min-block-size: 44px;
-  padding-inline: 0.65rem;
-  border: 1px solid rgb(255 255 255 / 18%);
-  border-radius: 0.25rem;
-  background: rgb(255 255 255 / 9%);
-  color: #ffffff;
-  font: inherit;
+  background: transparent;
+  border: none;
   cursor: pointer;
 }
 
-#info-panel button:hover {
-  background: rgb(255 255 255 / 16%);
-}
-
 #info-panel button:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 

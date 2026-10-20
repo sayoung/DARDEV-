@@ -1,4 +1,3 @@
-import { z } from '@xplor/shared';
 import type { TourGraphScene } from '@xplor/shared';
 import type { VirtualTourLink } from '@photo-sphere-viewer/virtual-tour-plugin';
 
@@ -8,28 +7,22 @@ export type OrientationCommand = {
   zoom?: number;
 };
 
-const LinkArrivalDataSchema = z.looseObject({
-  arrivalYaw: z.number().nullable().optional(),
-});
-
-function extractArrivalYaw(link?: VirtualTourLink | null): number | null {
-  const parsed = LinkArrivalDataSchema.safeParse(link?.data);
-  if (parsed.success && typeof parsed.data.arrivalYaw === 'number') {
-    return parsed.data.arrivalYaw;
-  }
-  return null;
-}
-
 export function computeSceneOrientation(
   scene: TourGraphScene,
   fromLink?: VirtualTourLink | null
 ): OrientationCommand {
-  const arrivalYaw = extractArrivalYaw(fromLink);
+  // Check if we arrived via a link that has an arrivalYaw
+  const arrivalYaw = fromLink?.data && typeof (fromLink.data as Record<string, unknown>).arrivalYaw === 'number' 
+    ? (fromLink.data as Record<string, unknown>).arrivalYaw as number 
+    : null;
 
   if (arrivalYaw !== null) {
     return {
       yaw: arrivalYaw,
       pitch: 0,
+      // No zoom specified for arrival via link (viewer keeps current zoom or resets, 
+      // but according to instruction "sinon utilise initialView de la scène").
+      // So zoom is not set when using arrivalYaw.
     };
   }
 
