@@ -11,7 +11,7 @@
     "prebuild": "pnpm --filter @xplor/shared build && pnpm --filter @xplor/i18n build && prisma generate",
     "postinstall": "prisma generate",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run",
+    "test": "vitest run --project @xplor/api",
     "test:int": "vitest run --config vitest.int.config.ts",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

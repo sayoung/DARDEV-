@@ -312,7 +312,13 @@ export async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<void
   const args = parseArgs(argv.slice(2), env);
   apiUrl = args.apiUrl;
 
-  const dataPath = path.resolve(args.data);
+  let dataPath = path.resolve(args.data);
+  if (!fs.existsSync(dataPath)) {
+    const fallbackPath = path.resolve(__dirname, 'tour-data.json');
+    if (fs.existsSync(fallbackPath)) {
+      dataPath = fallbackPath;
+    }
+  }
   const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
   
   const TourDataSchema = z.object({

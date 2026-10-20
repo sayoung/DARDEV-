@@ -10,6 +10,8 @@ import type { MockedFunction } from 'vitest';
 import { login, uploadFile, main, listTours, resolveReferences, ensureNoDuplicate, createTour, apiUrl } from './import.js';
 import { buildTourPlan } from './plan.js';
 
+const defaultTourDataPath = path.resolve(__dirname, 'tour-data.json');
+
 vi.mock('node:crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:crypto')>();
   return {
@@ -242,7 +244,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
   });
 
   it('main() respecte la limite de 3 envois simultanés', async () => {
-    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const dataPath = defaultTourDataPath;
     const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf-8')) as { scenes: { file: string }[] };
     const files = rawData.scenes.map((s) => s.file);
 
@@ -302,7 +304,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
   });
 
   it('main() rejette avec erreur et n\'appelle pas upload-url si la visite existe déjà sans --replace', async () => {
-    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const dataPath = defaultTourDataPath;
     const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
     const parsedData = z.object({ title: z.string() }).parse(rawData);
     
@@ -362,7 +364,7 @@ describe('Import Oudaïas (partie upload et authentification)', () => {
   });
 
   it('main() rejette si le traitement de l\'image échoue (status ERROR)', async () => {
-    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const dataPath = defaultTourDataPath;
     const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
     const parsedData = z.object({ scenes: z.array(z.object({ file: z.string() })) }).parse(rawData);
 
@@ -439,7 +441,7 @@ panorama: null,
   it('main() rejette avec erreur si le délai d\'attente est dépassé', async () => {
     vi.useFakeTimers();
 
-    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const dataPath = defaultTourDataPath;
     const rawData: unknown = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
     const parsedData = z.object({ scenes: z.array(z.object({ file: z.string() })) }).parse(rawData);
 
@@ -1021,7 +1023,7 @@ describe('main() — scénarios import et dry-run', () => {
   });
 
   const writeSceneFiles = (dir: string, omit?: string) => {
-    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const dataPath = defaultTourDataPath;
     const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf-8')) as { scenes: { file: string }[] };
     for (const scene of rawData.scenes) {
       if (scene.file !== omit) {
@@ -1050,7 +1052,7 @@ describe('main() — scénarios import et dry-run', () => {
   });
 
   it('un fichier omis', async () => {
-    const dataPath = path.resolve('scripts/oudayas/tour-data.json');
+    const dataPath = defaultTourDataPath;
     const rawData = JSON.parse(fs.readFileSync(dataPath, 'utf-8')) as { scenes: { file: string }[] };
     const omitFile = rawData.scenes[0]?.file;
 
