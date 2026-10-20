@@ -4,22 +4,33 @@ import type { TourGraphScene } from '@xplor/shared';
 import type { VirtualTourLink } from '@photo-sphere-viewer/virtual-tour-plugin';
 
 describe('computeSceneOrientation', () => {
-  const mockScene = {
+  const mockScene: TourGraphScene = {
     id: 's1',
+    title: 'Scène 1',
+    caption: null,
+    panorama: {
+      preview: 'p1',
+      web: 'w1',
+      tiles: { width: 1024, cols: 2, rows: 1, baseUrl: 'b1' },
+    },
     initialView: {
       yaw: 1.5,
       pitch: 0.5,
       zoom: 50,
     },
-  } as TourGraphScene;
+    narrationUrl: null,
+    ambientUrl: null,
+    thumb: 't1',
+    hotspots: [],
+  };
 
   it('uses arrivalYaw with pitch 0 if present in fromLink', () => {
-    const link = {
+    const link: VirtualTourLink = {
       nodeId: 's1',
       data: {
         arrivalYaw: 3.14,
       },
-    } as VirtualTourLink;
+    };
 
     const result = computeSceneOrientation(mockScene, link);
 
@@ -29,13 +40,46 @@ describe('computeSceneOrientation', () => {
     });
   });
 
+  it('preserves arrivalYaw: 0 (falsy number) with pitch 0', () => {
+    const link: VirtualTourLink = {
+      nodeId: 's1',
+      data: {
+        arrivalYaw: 0,
+      },
+    };
+
+    const result = computeSceneOrientation(mockScene, link);
+
+    expect(result).toEqual({
+      yaw: 0,
+      pitch: 0,
+    });
+  });
+
+  it('uses arrivalYaw in 2D mode when fromLink contains both arrivalYaw and label', () => {
+    const link: VirtualTourLink = {
+      nodeId: 's1',
+      data: {
+        arrivalYaw: 2.71,
+        label: 'Direction chambre',
+      },
+    };
+
+    const result = computeSceneOrientation(mockScene, link);
+
+    expect(result).toEqual({
+      yaw: 2.71,
+      pitch: 0,
+    });
+  });
+
   it('uses scene initialView if arrivalYaw is null', () => {
-    const link = {
+    const link: VirtualTourLink = {
       nodeId: 's1',
       data: {
         arrivalYaw: null,
       },
-    } as VirtualTourLink;
+    };
 
     const result = computeSceneOrientation(mockScene, link);
 
@@ -47,9 +91,9 @@ describe('computeSceneOrientation', () => {
   });
 
   it('uses scene initialView if fromLink has no data', () => {
-    const link = {
+    const link: VirtualTourLink = {
       nodeId: 's1',
-    } as VirtualTourLink;
+    };
 
     const result = computeSceneOrientation(mockScene, link);
 

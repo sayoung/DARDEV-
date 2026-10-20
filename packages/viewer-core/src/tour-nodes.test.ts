@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TourGraphSchema } from '@xplor/shared';
+import { TourGraphSchema, z } from '@xplor/shared';
 import { toTourNodes } from './tour-nodes.js';
-
 
 const uuidA = '01990000-0000-7000-8000-00000000000a';
 const scene1Id = '01990000-0000-7000-8000-000000000001';
@@ -105,6 +104,14 @@ const validGraph = TourGraphSchema.parse({
   ]
 });
 
+const PanoTilesTestSchema = z.object({
+  width: z.number(),
+  cols: z.number(),
+  rows: z.number(),
+  baseUrl: z.string(),
+  tileUrl: z.custom<(col: number, row: number) => string>((val) => typeof val === 'function'),
+});
+
 describe('toTourNodes', () => {
   it('convertit un graphe en nœuds pour Photo Sphere Viewer en appliquant les règles de filtrage', () => {
     const nodes = toTourNodes(validGraph);
@@ -130,19 +137,19 @@ describe('toTourNodes', () => {
       baseUrl: 'http://example.com/preview1.jpg',
     });
 
-    const panoramaObj = node0.panorama as { width: number; cols: number; rows: number; baseUrl: string; tileUrl: (col: number, row: number) => string };
-    expect(panoramaObj.tileUrl(3, 1)).toBe('http://example.com/tiles1/3_1.jpg');
+    const parsedPanorama = PanoTilesTestSchema.parse(node0.panorama);
+    expect(parsedPanorama.tileUrl(3, 1)).toBe('http://example.com/tiles1/3_1.jpg');
 
     expect(node0.thumbnail).toBe('http://example.com/thumb1.jpg');
 
-    // (2) hotspot SCENE_LINK vers une scène présente (conservé avec sa position)
+    // (2) hotspot SCENE_LINK vers une scène présente (conservé avec sa position et son label)
     // (3) hotspot SCENE_LINK vers une scène absente (ignoré)
     // (4) hotspots INFO, TOUR_LINK, URL (exclus)
     expect(node0.links).toEqual([
       {
         nodeId: scene2Id,
         position: { yaw: 1.5, pitch: -0.5 },
-        data: { arrivalYaw: 0 }
+        data: { arrivalYaw: 0, label: 'Aller à scène 2' }
       }
     ]);
     expect(node1.links).toEqual([]);
