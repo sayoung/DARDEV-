@@ -1036,3 +1036,15 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Gestion des adresses IP absentes ou vides :** si `request.ip` est absente ou vide (ex. configuration proxy atypique, requêtes internes ou tests unitaires), la requête n'est pas bloquée et le limiteur de débit ne sollicite pas Redis. Nous évitons délibérément le repli arbitraire sur `127.0.0.1` qui aurait pour effet de regrouper tous les clients sans IP sous un même compteur partagé et de créer un déni de service artificiel croisé pour des utilisateurs légitimes.
 - **Alternatives :** repli sur `127.0.0.1` (rejeté car DoS partagé) ; rejet systématique par une 400 lorsque l'IP n'est pas résolue (rejeté car pénalisant et inutilement bloquant) ; utilisation d'un module npm tiers (rejeté car la pile Redis standard suffit).
 - **À valider :** oui
+
+
+## D-132 — Dépendance fake-indexeddb pour les tests de EventStore (M7 F-80)
+
+- **Date :** 20/10/2026
+- **Décision :** ajout du paquet `fake-indexeddb` en devDependency de `packages/viewer-core` pour les tests unitaires et d'intégration du magasin persistant IndexedDB `createIdbEventStore` (M7 F-80). Il permet d'émuler l'API IndexedDB du navigateur en mémoire sous Node.js / Vitest sans dépendance matérielle ni navigateur réel.
+- **Alternatives :** mocker manuellement l'intégralité des interfaces IndexedDB (IDBFactory, IDBDatabase, IDBTransaction, IDBObjectStore, IDBRequest) ; exécuter ces tests uniquement sous Playwright.
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| fake-indexeddb | Simulation in-memory de l'API IndexedDB pour les tests de persistance d'événements (M7 F-80) | MIT |
