@@ -27,3 +27,4 @@ export * from './vr/vr-player.js';
 export * from './vr/vr-renderer.js';
 export * from './vr/mount-vr.js';
 export * from './event-batcher.js';
+export * from './event-store-idb.js';
