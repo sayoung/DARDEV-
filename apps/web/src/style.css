@@ -101,31 +101,29 @@ body {
 
 #info-panel {
   position: fixed;
-  inset-block: 1rem;
-  inset-inline-end: 1rem;
-  inline-size: min(27rem, calc(100% - 2rem));
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: min(24rem, 100%);
   max-inline-size: 100%;
-  padding: 1.5rem;
+  padding-block: 1rem;
+  padding-inline: 1rem;
   overflow: auto;
-  border: 1px solid rgb(255 255 255 / 80%);
-  border-radius: 1.25rem;
-  background: linear-gradient(155deg, #f8fbfa 0%, #eef4f2 100%);
-  color: #25383a;
-  box-shadow: 0 1.5rem 4rem rgb(8 25 28 / 32%), 0 0.25rem 1rem rgb(8 25 28 / 12%);
+  border-inline-start: 6px solid rgb(0 0 0 / 72%);
+  background: rgb(22 23 27 / 92%);
+  color: #f4f4f5;
+  box-shadow: 0 0 2rem rgb(0 0 0 / 28%);
   z-index: 100;
-  animation: info-panel-enter 180ms ease-out both;
 }
 
 #info-panel h2 {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0 0 1.25rem;
-  padding-inline-end: 6rem;
-  color: #173f42;
+  margin-block-start: 0;
+  margin-block-end: 1rem;
+  padding-block: 0.55rem;
+  padding-inline: 0.25rem;
+  border-block-end: 1px solid rgb(255 255 255 / 12%);
+  color: #ffffff;
   font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.25;
+  font-weight: 600;
 }
 
 #info-panel h2::before {
@@ -135,8 +133,8 @@ body {
   block-size: 2.5rem;
   place-items: center;
   border-radius: 50%;
-  background: #dceceb;
-  color: #176d70;
+  background: rgb(255 255 255 / 10%);
+  color: #f4f4f5;
   content: "i";
   font-family: Georgia, serif;
   font-size: 1.4rem;
@@ -144,11 +142,10 @@ body {
 }
 
 #info-panel > div {
-  padding: 1.15rem 1.25rem;
-  border: 1px solid #e0e9e7;
-  border-radius: 0.9rem;
-  background: rgb(255 255 255 / 88%);
-  color: #435456;
+  padding: 0.85rem;
+  border-radius: 0.25rem;
+  background: rgb(255 255 255 / 7%);
+  color: #e5e7eb;
   font-size: 1rem;
   line-height: 1.7;
   overflow-wrap: anywhere;
@@ -172,71 +169,40 @@ body {
 
 #info-panel button {
   position: absolute;
-  inset-block-start: 1.25rem;
-  inset-inline-end: 1.25rem;
+  inset-block-start: 0.5rem;
+  inset-inline-end: 0.5rem;
   min-inline-size: 44px;
   min-block-size: 44px;
-  padding-inline: 0.85rem;
-  border: 1px solid #d7e2e0;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #315254;
+  padding-inline: 0.65rem;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 0.25rem;
+  background: rgb(255 255 255 / 9%);
+  color: #ffffff;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgb(8 25 28 / 8%);
+}
+
+#info-panel button:hover {
+  background: rgb(255 255 255 / 16%);
 }
 
 #info-panel button::after {
   margin-inline-start: 0.45rem;
-  color: #176d70;
+  color: #ffffff;
   content: "×";
   font-size: 1.15rem;
   line-height: 0;
 }
 
 #info-panel button:focus-visible {
-  outline: 3px solid #176d70;
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
 
-@keyframes info-panel-enter {
-  from {
-    opacity: 0;
-    transform: translateX(0.75rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@media (max-width: 36rem) {
-  #info-panel {
-    inset-block: 0.65rem;
-    inset-inline-end: 0.65rem;
-    inline-size: calc(100% - 1.3rem);
-    padding: 1.25rem;
-    border-radius: 1rem;
-  }
-
-  #info-panel h2 {
-    margin-block-end: 1rem;
-    font-size: 1.2rem;
-  }
-
-  #info-panel button {
-    inset-block-start: 0.9rem;
-    inset-inline-end: 0.9rem;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  #info-panel,
   .xplor-marker-info .marker-icon {
-    animation: none;
     transition: none;
   }
 }

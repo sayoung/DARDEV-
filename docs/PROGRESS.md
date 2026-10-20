@@ -23,7 +23,7 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ## Session en cours
 
-- Retouche CSS des marqueurs INFO et du panneau public : marqueur avec relief, panneau flottant, meilleure hiérarchie du texte et adaptation mobile. `git diff --check` passe ; build non lancé.
+- 20/10/2026 — Le panneau INFO reprend le style sombre translucide du volet latéral du viewer ; texte et bouton Fermer restent lisibles. Build web via l'image Docker de production.
 
 ## État des tâches
 
