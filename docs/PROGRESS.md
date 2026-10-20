@@ -23,6 +23,8 @@ Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRE
 
 ## Session en cours
 
+- 20/10/2026 — Panneau INFO réaligné sur le style sombre translucide du viewer ; texte, bouton Fermer et séparateur sont lisibles sur fond sombre. `git diff --check` passe ; build non lancé.
+
 ## État des tâches
 
 ### En cours

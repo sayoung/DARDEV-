@@ -4,6 +4,7 @@ export * from './tour-history.js';
 export * from './scene-order.js';
 export * from './tour-client.js';
 export * from './tour-link.js';
+export * from './orientation.js';
 
 export * from './tour-navigator.js';
 export * from './scene-markers.js';
