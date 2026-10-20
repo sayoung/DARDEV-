@@ -1027,3 +1027,12 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** partitionnement déclaratif PostgreSQL PARTITION BY RANGE sur `receivedAt` (horodatage serveur, fiable) par mois ; clé primaire (id, receivedAt) ; pas de clés étrangères ; pas d'IP ; rétention 13 mois par suppression de partition.
 - **Alternatives :** partition sur `occurredAt` écartée (horodatage client non fiable).
 - **À valider :** non
+
+
+## D-131 — Limitation de débit anonyme de POST /events (M7 F-80 / API-04)
+
+- **Date :** 20/10/2026
+- **Décision :** Le point d'entrée anonyme `POST /events` (API-04, canal `WEB`) applique une limitation de débit par adresse IP de 60 requêtes par minute glissante (fenêtre de 60 s). L'implémentation repose sur Redis avec une clé `rl:events:anon:<sha256(ip)>` sans aucun stockage ni journalisation de l'adresse IP en clair, conformément à l'exigence de confidentialité NF-02 (loi 09-08). Le premier incrément (`incr`) positionne l'expiration (`expire`) à 60 s. Tout dépassement au-delà de 60 requêtes lève une exception HTTP 429 `EventsRateLimitExceededException` avec code d'erreur `RATE_LIMIT_EXCEEDED`. Les requêtes authentifiées avec un jeton kiosque (`kioskDevice` présent) ne sont pas soumises à cette limitation de débit.
+- **Gestion des adresses IP absentes ou vides :** si `request.ip` est absente ou vide (ex. configuration proxy atypique, requêtes internes ou tests unitaires), la requête n'est pas bloquée et le limiteur de débit ne sollicite pas Redis. Nous évitons délibérément le repli arbitraire sur `127.0.0.1` qui aurait pour effet de regrouper tous les clients sans IP sous un même compteur partagé et de créer un déni de service artificiel croisé pour des utilisateurs légitimes.
+- **Alternatives :** repli sur `127.0.0.1` (rejeté car DoS partagé) ; rejet systématique par une 400 lorsque l'IP n'est pas résolue (rejeté car pénalisant et inutilement bloquant) ; utilisation d'un module npm tiers (rejeté car la pile Redis standard suffit).
+- **À valider :** oui
