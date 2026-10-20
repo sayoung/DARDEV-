@@ -992,7 +992,7 @@ describe('dossiers médiathèque HTTP', () => {
     expect(editorFolders.statusCode).toBe(200);
   });
 
-  it("test d'accès hôtel A / hôtel B (HOTEL_MANAGER refusé globalement)", async () => {
+  it("un gestionnaire de l'hôtel A ne voit pas l'hôtel B (HOTEL_MANAGER refusé globalement)", async () => {
     const hotelA = await prisma.hotel.create({
       data: {
         name: 'Hotel A',
@@ -1061,6 +1061,10 @@ describe('dossiers médiathèque HTTP', () => {
         const resUnused = await read('/api/v1/admin/assets?unused=true', sess);
         expect(resUnused.statusCode).toBe(403);
         expect(resUnused.body).not.toContain(tourB.id);
+
+        const resDetailB = await read(`/api/v1/admin/assets/${coverAssetB.id}`, sess);
+        expect(resDetailB.statusCode).toBe(403);
+        expect(resDetailB.body).not.toContain(coverAssetB.id);
       }
     } finally {
       await prisma.userHotel.deleteMany({
