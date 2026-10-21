@@ -287,18 +287,14 @@ function createXrInputTracker(
   let sessionInputsListener: ((ev: unknown) => void) | null = null;
 
   function handleSelect(
-    controller: THREE.Object3D | null,
+    controller: THREE.Object3D,
     sourceOrEvent: unknown,
   ): void {
     if (isDisposed) {
       return;
     }
 
-    let dir: SphericalPosition | null = null;
-
-    if (controller !== null) {
-      dir = resolveDirectionFromController(controller);
-    }
+    let dir: SphericalPosition | null = resolveDirectionFromController(controller);
 
     if (dir === null && isRecord(sourceOrEvent)) {
       if ('pose' in sourceOrEvent) {
@@ -395,11 +391,8 @@ function createXrInputTracker(
         matchedController = e.target;
       }
 
-      if (matchedController === null && trackedControllers.length > 0) {
-        const first = trackedControllers[0];
-        if (first !== undefined) {
-          matchedController = first.controller;
-        }
+      if (matchedController === null) {
+        return;
       }
 
       handleSelect(matchedController, e);

@@ -3,7 +3,7 @@
 Ce protocole définit les étapes opérationnelles, les points de contrôle et les symptômes attendus pour valider le mode VR WebXR autonome (`immersive-vr`) et la navigation par rayon manette / main sur **Meta Quest Browser** (Meta Quest 3, Meta Quest Pro ou Meta Quest 2), conformément à l'exigence **F-71** et à la décision **D-129**.
 
 > **Statut de validation matérielle :** **À FAIRE SUR QUEST**
-> *En l'absence de casque physique connecté au poste de développement, l'ensemble des fonctionnalités a été couvert et vérifié par tests automatisés unitaires et d'intégration WebXR Three.js (`packages/viewer-core/src/vr/mount-vr.test.ts`). La validation physique finale sur casque réel reste à exécuter par le porteur selon les étapes ci-dessous.*
+> *En l'absence de casque physique connecté au poste de développement, l'ensemble des fonctionnalités a été couvert et vérifié par tests automatisés unitaires et d'intégration WebXR Three.js (`packages/viewer-core/src/vr/mount-vr.test.ts`). Cependant, les tests automatisés ne valident pas les gestes physiques réels (actionnement de la gâchette sur manette Touch ou pincement index-pouce en suivi des mains). La validation physique finale sur casque réel reste à exécuter par le porteur selon les étapes ci-dessous.*
 
 ---
 
@@ -56,6 +56,9 @@ Ce protocole définit les étapes opérationnelles, les points de contrôle et l
    - L'écran s'éclaircit progressivement (descente 150 ms) sur la nouvelle scène.
    - Aucun mouvement brutal de caméra ou translation artificielle (confort anti-cinétose, F-72).
 
+> [!NOTE]
+> Les tests automatisés simulent la réception des événements d'entrée WebXR (`select`), mais ne valident pas les gestes physiques réels (détection biomécanique de la gâchette ou reconnaissance visuelle du pincement par le casque). Seule la validation matérielle sur Meta Quest permet de confirmer le ressenti et la fiabilité de ces gestes physiques.
+
 ### Étape 4 : Déclenchement unique (Anti-rebond / double envoi)
 1. Viser une flèche de navigation et presser la gâchette de façon répétée et très rapide (mitraillage de 3 ou 4 clics successifs) ou enchaîner plusieurs pincements rapides.
 2. **Symptôme attendu :**
@@ -67,7 +70,7 @@ Ce protocole définit les étapes opérationnelles, les points de contrôle et l
 1. Aligner le rayon vers un marqueur d'information (`INFO`).
 2. Presser la gâchette ou pincer l'index et le pouce.
 3. **Symptômes attendus :**
-   - Un panneau textuel 3D (`createInfoPanel`) apparaît à distance confortable (2,5 m en face de l'utilisateur).
+   - Un panneau textuel 3D (`createInfoPanel`) apparaît à distance confortable (2 m en face de l'utilisateur, conformément à `DEFAULT_INFO_PANEL_DISTANCE_M = 2.0`).
    - Le texte est net, lisible (enveloppement automatique des lignes, rendu Canvas 2D projeté sur un Mesh 3D).
    - En arabe, le texte s'affiche de droite à gauche avec l'alignement approprié (propriétés RTL respectées).
    - Un nouvel appui sur le point d'info referme le panneau.
@@ -117,3 +120,6 @@ Ce protocole définit les étapes opérationnelles, les points de contrôle et l
 | 11 | Sortie VR nadir | Cible nadir `vr-exit` quitte la session proprement | À faire sur Quest |
 | 12 | Sortie VR système | Bouton système quitte et libère toutes les ressources | À faire sur Quest |
 | 13 | Console propre | 0 erreur console non gérée pendant tout le cycle de vie | À faire sur Quest |
+
+> [!IMPORTANT]
+> Les points de contrôle 6 (Gâchette manette) et 7 (Pincement main nue) évaluent la réponse aux actions biomécaniques réelles. Les tests automatisés simulent fidèlement l'émission des événements WebXR `select` au niveau applicatif, mais ne valident pas la détection physique du geste matériel (course de la gâchette Touch ou reconnaissance visuelle du pincement par le casque) ; leur validation physique reste donc impérativement à réaliser sur casque Meta Quest réel.

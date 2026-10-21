@@ -1010,6 +1010,91 @@ describe('mountVr (M6 F-70, F-71)', () => {
       handle.destroy();
     });
 
+    it('ignore les événements select dont la source ne correspond à aucun contrôleur', async () => {
+      const selectListeners: ((event: unknown) => void)[] = [];
+      const opaqueSpace = new OpaqueXRSpace();
+      const knownInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const unknownInputSource = {
+        targetRaySpace: new OpaqueXRSpace(),
+        targetRayMode: 'tracked-pointer',
+        handedness: 'left',
+      };
+      const fakeSession = {
+        inputSources: [knownInputSource],
+        addEventListener: vi.fn((type: string, listener: (ev: unknown) => void) => {
+          if (type === 'select') {
+            selectListeners.push(listener);
+          }
+        }),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const showSceneSpy = vi.fn().mockResolvedValue(undefined);
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: showSceneSpy,
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(selectListeners.length).toBeGreaterThan(0);
+        expect(mockSetAnimationLoop).toHaveBeenCalled();
+      });
+
+      // Le contrôleur 0 pointe par défaut vers le hotspot scene-2 (yaw: 0, pitch: 0)
+      const controller = getLastControllers()[0];
+      expect(controller).toBeDefined();
+      if (controller !== undefined) {
+        controller.rotation.set(0, 0, 0);
+        controller.updateMatrixWorld();
+      }
+
+      // Événement select émis avec une source non reconnue (absente de inputSources et sans correspondance)
+      const selectCallback = selectListeners[0];
+      expect(selectCallback).toBeDefined();
+      if (selectCallback !== undefined) {
+        selectCallback({
+          type: 'select',
+          inputSource: unknownInputSource,
+          timeStamp: 100,
+        });
+      }
+
+      const animationCallback = mockSetAnimationLoop.mock.calls[0]?.[0];
+      expect(animationCallback).toBeDefined();
+      if (animationCallback !== undefined && animationCallback !== null) {
+        animationCallback(0);
+        animationCallback(150);
+        animationCallback(300);
+      }
+
+      // La transition ne doit jamais être déclenchée car la source ne correspond à aucun contrôleur
+      expect(showSceneSpy).not.toHaveBeenCalled();
+
+      handle.destroy();
+    });
+
     it('maintient le regard avec dwell de 2 s comme secours lorsque la manette n est pas utilisée', async () => {
       const opaqueSpace = new OpaqueXRSpace();
       const fakeInputSource = {
