@@ -1,4 +1,4 @@
-import { LANGS, type Lang, type Role } from '@xplor/shared';
+import { LANGS, Role, type Lang } from '@xplor/shared';
 import { type MouseEvent, type ReactNode, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -61,6 +61,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isCitiesActive = route.name === 'cities';
   const isHotelsActive = route.name === 'hotels' || route.name === 'hotel-selection';
 const isKiosksActive = route.name === 'kiosks';
+  const isStatsActive = route.name === 'stats';
   const isCategoriesActive = route.name === 'categories';
   const isMediaActive = route.name === 'media';
 
@@ -170,6 +171,16 @@ const isKiosksActive = route.name === 'kiosks';
                 {t('nav.kiosks')}
               </a>
             </li>
+            {auth.state.profile.role !== Role.EDITOR ? <li>
+              <a
+                href={hrefFor('/stats')}
+                aria-current={isStatsActive ? 'page' : undefined}
+                onClick={(e) => { handleNavClick(e, '/stats'); }}
+                className={`block px-4 py-2 rounded-md transition-colors ${isStatsActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+              >
+                {t('nav.stats')}
+              </a>
+            </li> : null}
           </ul>
         </nav>
       </aside>

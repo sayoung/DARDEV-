@@ -342,7 +342,8 @@
     "categories": "Catégories",
     "media": "Médias",
     "hotels": "Hôtels",
-    "kiosks": "Kiosques"
+    "kiosks": "Kiosques",
+    "stats": "Statistiques"
   },
   "media": {
     "title": "Médiathèque",
@@ -399,6 +400,16 @@
     }
   },
   "page": {
+    "stats": {
+      "title": "Statistiques", "subtitle": "Activité des visites sur la période sélectionnée.",
+      "from": "Du", "to": "Au", "hotel": "Hôtel", "allHotels": "Tous les hôtels accessibles",
+      "tour": "Visite", "allTours": "Toutes les visites", "channel": "Canal", "allChannels": "Tous les canaux",
+      "language": "Langue", "allLanguages": "Toutes les langues", "apply": "Appliquer les filtres",
+      "export": "Exporter en CSV", "exporting": "Préparation du CSV…", "error": "Impossible de charger ou exporter les statistiques.",
+      "minutes": "min", "daily": "Sessions par jour", "hourly": "Sessions par heure (UTC)",
+      "topTours": "Visites les plus ouvertes", "topScenes": "Scènes les plus vues", "languages": "Répartition par langue", "channels": "Répartition par canal",
+      "metrics": { "sessions": "Sessions", "averageDuration": "Durée moyenne", "toursOpened": "Visites ouvertes", "scenesViewed": "Scènes vues", "hotspotClicks": "Clics sur les points", "vrEntries": "Entrées VR", "qrScans": "Scans QR" }
+    },
     "home": {
       "title": "Accueil",
       "loading": "Chargement du tableau de bord…",

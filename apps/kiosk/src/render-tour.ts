@@ -8,6 +8,10 @@ export interface ViewerInstance {
 export type MountViewerFn = (
   container: HTMLElement,
   graph: TourGraph,
+  options?: {
+    onSceneChange?: (sceneId: string) => void;
+    onHotspotClick?: (hotspotId: string) => void;
+  },
 ) => ViewerInstance;
 
 export type LoadTourFn = (tourId: string) => Promise<TourGraph> | TourGraph;
@@ -18,6 +22,11 @@ export interface RenderTourOptions {
   onClose: () => void;
   loadTour: LoadTourFn;
   mountViewer: MountViewerFn;
+  onTourOpen?: (tourId: string) => void;
+  onSceneChange?: (tourId: string, sceneId: string) => void;
+  onHotspotClick?: (tourId: string, sceneId: string, hotspotId: string) => void;
+  onAudioPlay?: (tourId: string, sceneId: string) => void;
+  audioFactory?: (url: string) => HTMLAudioElement;
 }
 
 export interface RenderTourHandle {
@@ -73,12 +82,76 @@ export function renderTour(
   backButton.setAttribute('aria-label', resources[lang].viewer.back);
   backButton.textContent = resources[lang].viewer.back;
 
+  const audioButton = doc.createElement('button');
+  audioButton.type = 'button';
+  audioButton.className = 'kiosk-tour-audio-btn';
+  audioButton.setAttribute('data-testid', 'kiosk-tour-audio-btn');
+  audioButton.setAttribute('aria-label', resources[lang].viewer.play);
+  audioButton.textContent = '▶';
+  audioButton.hidden = true;
+
+  let narrationAudio: HTMLAudioElement | null = null;
+  let currentSceneId: string | null = null;
+  const setAudioScene = (graph: TourGraph, sceneId: string): void => {
+    if (narrationAudio !== null) {
+      narrationAudio.removeEventListener('ended', handleAudioEnded);
+      narrationAudio.pause();
+      narrationAudio.src = '';
+      narrationAudio = null;
+    }
+    currentSceneId = sceneId;
+    const scene = graph.scenes.find((candidate) => candidate.id === sceneId);
+    if (scene?.narrationUrl) {
+      narrationAudio = options.audioFactory?.(scene.narrationUrl) ?? doc.createElement('audio');
+      narrationAudio.src = scene.narrationUrl;
+      narrationAudio.addEventListener('ended', handleAudioEnded);
+      audioButton.hidden = false;
+      audioButton.setAttribute('aria-label', resources[lang].viewer.play);
+      audioButton.textContent = '▶';
+    } else {
+      audioButton.hidden = true;
+    }
+  };
+
+  const handleAudioClick = (): void => {
+    if (narrationAudio === null || currentSceneId === null) return;
+    if (!narrationAudio.paused) {
+      narrationAudio.pause();
+      audioButton.setAttribute('aria-label', resources[lang].viewer.play);
+      audioButton.textContent = '▶';
+      return;
+    }
+    narrationAudio.play().then(() => {
+      if (isDestroyed) return;
+      audioButton.setAttribute('aria-label', resources[lang].viewer.pause);
+      audioButton.textContent = '⏸';
+      options.onAudioPlay?.(tourId, currentSceneId ?? '');
+    }).catch(() => {
+      audioButton.setAttribute('aria-label', resources[lang].viewer.play);
+      audioButton.textContent = '▶';
+    });
+  };
+
+  const handleAudioEnded = (): void => {
+    audioButton.setAttribute('aria-label', resources[lang].viewer.play);
+    audioButton.textContent = '▶';
+  };
+  audioButton.addEventListener('click', handleAudioClick);
+
   root.appendChild(viewerContainer);
   root.appendChild(statusEl);
+  root.appendChild(audioButton);
   root.appendChild(backButton);
 
   function cleanup(): void {
     doc.removeEventListener('keydown', handleKeyDown);
+    audioButton.removeEventListener('click', handleAudioClick);
+    if (narrationAudio !== null) {
+      narrationAudio.removeEventListener('ended', handleAudioEnded);
+      narrationAudio.pause();
+      narrationAudio.src = '';
+      narrationAudio = null;
+    }
     if (viewerInstance !== null) {
       viewerInstance.destroy();
       viewerInstance = null;
@@ -121,7 +194,23 @@ export function renderTour(
       }
       statusEl.hidden = true;
       viewerContainer.setAttribute('aria-label', graph.title);
-      viewerInstance = mountViewer(viewerContainer, graph);
+      currentSceneId = graph.startSceneId;
+      setAudioScene(graph, currentSceneId);
+      options.onTourOpen?.(graph.id);
+      const viewerCallbacks = {
+        onSceneChange: (sceneId: string) => {
+          currentSceneId = sceneId;
+          setAudioScene(graph, sceneId);
+          options.onSceneChange?.(graph.id, sceneId);
+        },
+        onHotspotClick: (hotspotId: string) => {
+          if (currentSceneId === null) return;
+          options.onHotspotClick?.(graph.id, currentSceneId, hotspotId);
+        },
+      };
+      viewerInstance = options.onSceneChange !== undefined || options.onHotspotClick !== undefined
+        ? mountViewer(viewerContainer, graph, viewerCallbacks)
+        : mountViewer(viewerContainer, graph);
     })
     .catch((error: unknown) => {
       if (isDestroyed) {

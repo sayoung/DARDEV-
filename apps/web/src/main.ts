@@ -12,10 +12,19 @@ import {
   resolveTourLink,
 } from '@xplor/viewer-core';
 import { startViewer } from './app.js';
+import { startWebStats } from './stats.js';
+
+let stats: ReturnType<typeof startWebStats> | undefined;
+try {
+  stats = startWebStats({ getLang: () => document.documentElement.lang });
+} catch {
+  // Les statistiques sont facultatives ; la visionneuse reste utilisable.
+}
 
 void startViewer(document, window.location, {
   load: (token, lang) => fetchTourGraph('/api/v1', token, lang),
   loadPreview: (t, lang) => fetchPreviewGraph('/api/v1', t, lang),
+  stats,
   mount: (el, graph, opts) => mountViewer(el, graph, opts),
   mountVr: (container, sceneId, graph) => {
     let currentSceneId = sceneId;

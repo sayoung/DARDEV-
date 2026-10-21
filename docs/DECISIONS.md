@@ -1048,3 +1048,17 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | Paquet | Raison | Licence |
 | --- | --- | --- |
 | fake-indexeddb | Simulation in-memory de l'API IndexedDB pour les tests de persistance d'événements (M7 F-80) | MIT |
+
+## D-133 — Visualisations statistiques sans dépendance supplémentaire (M7 F-81)
+
+- **Date :** 21/10/2026
+- **Décision :** le tableau de bord utilise un SVG natif pour la courbe journalière et des éléments HTML/CSS pour l’histogramme horaire. Le périmètre actuel n’ajoute pas Recharts ni Chart.js ; les données et libellés restent accessibles au clavier et aux lecteurs d’écran.
+- **Alternatives :** Recharts ou Chart.js, qui ajouteraient une dépendance et du poids pour deux graphiques simples.
+- **À valider :** oui
+
+## D-134 — Narration audio contrôlable dans le kiosque (M7 F-80)
+
+- **Date :** 21/10/2026
+- **Décision :** le kiosque expose un contrôle de lecture de la narration de scène afin que l’événement `AUDIO_PLAY` corresponde à une action réelle. Le contrôle réutilise les libellés i18n existants et ne demande aucun nouveau paquet.
+- **Alternatives :** omettre `AUDIO_PLAY` côté kiosque jusqu’à l’existence d’un contrôle accessible ; détecter l’audio lancé automatiquement, ce qui ne correspond pas au geste utilisateur.
+- **À valider :** oui

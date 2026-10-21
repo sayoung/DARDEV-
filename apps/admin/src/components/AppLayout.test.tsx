@@ -90,7 +90,7 @@ describe('AppLayout', () => {
 
     const nav = screen.getByRole('navigation', { name: resources.fr.nav.label });
     const links = nav.querySelectorAll('a');
-    expect(links).toHaveLength(7);
+    expect(links).toHaveLength(8);
     expect(links[0]?.textContent).toBe(resources.fr.nav.home);
     expect(links[1]?.textContent).toBe(resources.fr.nav.tours);
     expect(links[2]?.textContent).toBe(resources.fr.nav.cities);
@@ -100,6 +100,7 @@ describe('AppLayout', () => {
     const kiosksLink = screen.getByRole('link', { name: resources.fr.nav.kiosks });
     expect(kiosksLink.getAttribute('href')).toBe('/kiosks');
     expect(kiosksLink.getAttribute('aria-current')).toBeNull();
+    expect(screen.getByRole('link', { name: resources.fr.nav.stats }).getAttribute('href')).toBe('/stats');
 
     fireEvent.click(kiosksLink);
     expect((await screen.findByRole('link', { name: resources.fr.nav.kiosks })).getAttribute('aria-current')).toBe('page');

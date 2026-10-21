@@ -254,7 +254,7 @@ describe('startWebStats (M7 F-80)', () => {
     expect(calls.langChange).toEqual(['ar', 'en']);
   });
 
-  it('qrShown n’est pas utilisé sur la visionneuse web', () => {
+  it('qrShown enregistre les visites web provenant du QR kiosk', () => {
     const { tracker, calls } = createStubTracker();
     const stubSession = createStubSession(tracker);
     const stats = startWebStats({
@@ -266,9 +266,10 @@ describe('startWebStats (M7 F-80)', () => {
     stats.sceneView('01990000-0000-7000-8000-000000000001', '01990000-0000-7000-8000-000000000002');
     stats.hotspotClick('01990000-0000-7000-8000-000000000001', '01990000-0000-7000-8000-000000000002', '01990000-0000-7000-8000-000000000003');
     stats.audioPlay('01990000-0000-7000-8000-000000000001', '01990000-0000-7000-8000-000000000002');
+    stats.qrShown?.('01990000-0000-7000-8000-000000000001');
     stats.langChange('en');
 
-    expect(calls.qrShown).toEqual([]);
+    expect(calls.qrShown).toEqual(['01990000-0000-7000-8000-000000000001']);
   });
 
   it('les alias onTourOpen, onSceneChange, onHotspotClick, onAudioPlay, onLangChange fonctionnent identiquement', () => {

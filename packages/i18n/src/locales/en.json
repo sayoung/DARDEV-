@@ -225,7 +225,8 @@
     "tours": "Tours",
     "cities": "Cities",
     "categories": "Categories",
-    "media": "Media"
+    "media": "Media",
+    "stats": "Statistics"
   },
   "media": {
     "title": "Media Library",
@@ -266,6 +267,16 @@
     }
   },
   "page": {
+    "stats": {
+      "title": "Statistics", "subtitle": "Tour activity for the selected period.",
+      "from": "From", "to": "To", "hotel": "Hotel", "allHotels": "All accessible hotels",
+      "tour": "Tour", "allTours": "All tours", "channel": "Channel", "allChannels": "All channels",
+      "language": "Language", "allLanguages": "All languages", "apply": "Apply filters",
+      "export": "Export CSV", "exporting": "Preparing CSV…", "error": "Could not load or export statistics.",
+      "minutes": "min", "daily": "Sessions per day", "hourly": "Sessions per hour (UTC)",
+      "topTours": "Most opened tours", "topScenes": "Most viewed scenes", "languages": "Sessions by language", "channels": "Sessions by channel",
+      "metrics": { "sessions": "Sessions", "averageDuration": "Average duration", "toursOpened": "Tours opened", "scenesViewed": "Scenes viewed", "hotspotClicks": "Hotspot clicks", "vrEntries": "VR entries", "qrScans": "QR scans" }
+    },
     "home": {
       "title": "Home"
     },

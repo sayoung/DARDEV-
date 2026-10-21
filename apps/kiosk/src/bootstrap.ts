@@ -79,6 +79,7 @@ import {
 } from './tour-cache.js';
 import { createTourCacheIndex } from './tour-cache-index.js';
 import { createUrlsForTour } from './urls-for-tour.js';
+import { startKioskStats, type KioskStats } from './stats.js';
 
 export interface BootstrapKioskOptions {
   apiUrl?: string;
@@ -106,6 +107,7 @@ export interface BootstrapKioskOptions {
   registerServiceWorker?: (nav: unknown) => Promise<unknown>;
   onSessionEnd?: (sessionId: string) => void;
   session?: SessionManager;
+  stats?: KioskStats;
 }
 
 interface ResponseWithJson {
@@ -319,6 +321,9 @@ export function bootstrapKiosk(
 ): KioskBootstrapInstance {
   const storage: Storage = options?.storage ?? win.localStorage;
   const apiUrl = resolveKioskApiUrl(options?.apiUrl);
+  const tourClientBaseUrl = apiUrl.endsWith('/api/v1')
+    ? apiUrl
+    : `${apiUrl}/api/v1`;
   const fetchFn = resolveFetchFn(win, options?.fetchFn);
   const cacheStorage = resolveCacheStorage(win, options?.cacheStorage);
 
@@ -354,17 +359,37 @@ export function bootstrapKiosk(
     manifest: initialManifest,
   });
 
+  const stats = options?.stats ?? startKioskStats({
+    apiBase: tourClientBaseUrl,
+    getToken: () => loadCredentials(storage)?.token ?? null,
+    getLang: () => state.getState().lang,
+    fetchFn,
+  });
+  const safelyTrack = (action: () => void): void => {
+    try {
+      action();
+    } catch {
+      // Les statistiques restent facultatives en mode kiosque.
+    }
+  };
+
   let hasDisplayedHome = false;
+  const startTrackedSession = (): void => {
+    session.start();
+    safelyTrack(() => { stats.startSession(); });
+  };
+  const endTrackedSession = (): string | null => {
+    const endedSessionId = session.end();
+    if (endedSessionId !== null) {
+      safelyTrack(() => { stats.endSession(); });
+      void stats.flush().catch(() => {});
+    }
+    return endedSessionId;
+  };
   if (state.getState().screen === 'HOME') {
     hasDisplayedHome = true;
-    // Démarrage de la session initiale au premier affichage de HOME (F-64).
-    // Le branchement des événements SESSION_START / SESSION_END vers l'API est reporté à M7 F-80.
-    session.start();
+    startTrackedSession();
   }
-
-  const tourClientBaseUrl = apiUrl.endsWith('/api/v1')
-    ? apiUrl
-    : `${apiUrl}/api/v1`;
 
   const tourCacheIndex = createTourCacheIndex(storage);
   const manifestUrlFor = (tourId: string): string | undefined => {
@@ -525,12 +550,12 @@ export function bootstrapKiosk(
 
   const defaultMountViewer: MountViewerFn =
     options?.mountViewer ??
-    ((container: HTMLElement, graph: TourGraph): ViewerInstance => {
+    ((container: HTMLElement, graph: TourGraph, callbacks): ViewerInstance => {
       if (typeof ShadowRoot === 'undefined') {
         return { destroy(): void {} };
       }
       try {
-        return coreMountViewer(container, graph);
+        return coreMountViewer(container, graph, callbacks);
       } catch {
         return { destroy(): void {} };
       }
@@ -625,6 +650,10 @@ export function bootstrapKiosk(
             },
             loadTour: defaultLoadTour,
             mountViewer: defaultMountViewer,
+            onTourOpen: (id) => { safelyTrack(() => { stats.openTour(id); }); },
+            onSceneChange: (id, sceneId) => { safelyTrack(() => { stats.sceneView(id, sceneId); }); },
+            onHotspotClick: (id, sceneId, hotspotId) => { safelyTrack(() => { stats.hotspotClick(id, sceneId, hotspotId); }); },
+            onAudioPlay: (id, sceneId) => { safelyTrack(() => { stats.audioPlay(id, sceneId); }); },
           });
 
     currentTourHandle = handle ?? null;
@@ -754,13 +783,17 @@ export function bootstrapKiosk(
   });
 
   let previousSessionScreen = state.getState().screen;
+  let previousStatsLang = state.getState().lang;
   const unsubscribeSession = state.subscribe((nextState) => {
+    if (nextState.lang !== previousStatsLang) {
+      previousStatsLang = nextState.lang;
+      safelyTrack(() => { stats.langChange(nextState.lang); });
+    }
     const nextScreen = nextState.screen;
 
     if (nextScreen === 'ATTRACT' && previousSessionScreen !== 'ATTRACT') {
-      // Clôture de la session lors du passage en veille ATTRACT (action IDLE) (F-64).
-      // Le branchement des événements SESSION_START / SESSION_END vers l'API est reporté à M7 F-80.
-      const endedSessionId = session.end();
+      // Clôture de la session lors du passage en veille ATTRACT (action IDLE) (F-64/M7).
+      const endedSessionId = endTrackedSession();
       if (endedSessionId !== null && options?.onSessionEnd !== undefined) {
         options.onSessionEnd(endedSessionId);
       }
@@ -769,9 +802,8 @@ export function bootstrapKiosk(
       (!hasDisplayedHome && nextScreen === 'HOME')
     ) {
       hasDisplayedHome = true;
-      // Démarrage de session lors de la sortie de veille vers HOME (action WAKE) ou au premier affichage de HOME (F-64).
-      // Le branchement des événements SESSION_START / SESSION_END vers l'API est reporté à M7 F-80.
-      session.start();
+      // Démarrage de session lors de la sortie de veille vers HOME ou au premier affichage.
+      startTrackedSession();
     }
 
     previousSessionScreen = nextScreen;
@@ -793,6 +825,8 @@ export function bootstrapKiosk(
     unsubscribeTour();
     unsubscribeManifest();
     unsubscribeSession();
+    endTrackedSession();
+    void stats.destroy().catch(() => {});
     attractRotation = null;
     currentRotationManifest = null;
     if (currentTourHandle !== null) {

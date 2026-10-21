@@ -71,6 +71,16 @@ describe('createSceneAudioPlayer', () => {
     destroy();
   });
 
+  it('notifie le démarrage effectif de la narration', async () => {
+    const onPlay = vi.fn();
+    const { apply, destroy } = createSceneAudioPlayer(doc, labels, createMockAudio, onPlay);
+    apply(null, createScene('1', 'narration.mp3'));
+    (doc.getElementById('scene-audio-btn') as HTMLButtonElement).click();
+    await Promise.resolve();
+    expect(onPlay).toHaveBeenCalledOnce();
+    destroy();
+  });
+
   it('stops the old track when scene changes', () => {
     const mockPause = vi.fn();
     let lastAudio = doc.createElement('audio');

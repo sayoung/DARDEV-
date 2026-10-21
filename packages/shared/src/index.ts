@@ -228,4 +228,5 @@ export {
   type EventChannel,
   type EventType,
 } from './events.js';
+export { StatsDashboardSchema, StatsSummarySchema, type StatsDashboard } from './stats.js';
 

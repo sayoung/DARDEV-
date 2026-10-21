@@ -4,7 +4,8 @@ import { audioPlan } from '@xplor/viewer-core';
 export function createSceneAudioPlayer(
   doc: Document,
   labels: { play: string; pause: string },
-  factory?: (url: string) => HTMLAudioElement
+  factory?: (url: string) => HTMLAudioElement,
+  onPlay?: () => void,
 ) {
   const defaultFactory = (url: string) => new Audio(url);
   const createAudio = factory || defaultFactory;
@@ -37,7 +38,7 @@ export function createSceneAudioPlayer(
       btn.setAttribute('aria-label', labels.play);
       btn.textContent = '▶';
     } else {
-      narrationAudio.play().catch(() => {});
+      narrationAudio.play().then(() => onPlay?.()).catch(() => {});
       isPlayingNarration = true;
       btn.setAttribute('aria-label', labels.pause);
       btn.textContent = '⏸';

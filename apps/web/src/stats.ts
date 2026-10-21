@@ -34,6 +34,7 @@ export interface WebStats {
   sceneView(tourId: string, sceneId: string): void;
   hotspotClick(tourId: string, sceneId: string, hotspotId: string): void;
   audioPlay(tourId: string, sceneId: string): void;
+  qrShown?(tourId?: string): void;
   langChange(lang: string): void;
   flush(): Promise<void>;
   destroy(): Promise<void>;
@@ -121,6 +122,14 @@ export function startWebStats({
     }
   }
 
+  function qrShown(tourId?: string): void {
+    try {
+      tracker.qrShown(tourId);
+    } catch {
+      // Résilience absolue : aucune exception ne remonte
+    }
+  }
+
   async function flush(): Promise<void> {
     try {
       await session.flush();
@@ -145,6 +154,7 @@ export function startWebStats({
     sceneView,
     hotspotClick,
     audioPlay,
+    qrShown,
     langChange,
     flush,
     destroy,

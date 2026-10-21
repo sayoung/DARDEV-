@@ -975,7 +975,7 @@ describe('bootstrapKiosk (M5 F-60)', () => {
     const fakeViewer: ViewerInstance = {
       destroy: destroyViewerSpy,
     };
-    const mountViewerMock: MountViewerFn = vi.fn(() => fakeViewer);
+    const mountViewerMock = vi.fn<MountViewerFn>(() => fakeViewer);
 
     const testApiUrl = 'http://api.kiosk.test';
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
@@ -1055,10 +1055,11 @@ describe('bootstrapKiosk (M5 F-60)', () => {
     });
 
     if (viewerContainer instanceof HTMLDivElement) {
-      expect(mountViewerMock).toHaveBeenCalledWith(
-        viewerContainer,
-        expect.objectContaining({ id: testTour.id, title: testTourGraph.title }),
-      );
+      const mountArgs = mountViewerMock.mock.calls[0];
+      expect(mountArgs?.[0]).toBe(viewerContainer);
+      expect(mountArgs?.[1]).toMatchObject({ id: testTour.id, title: testTourGraph.title });
+      expect(typeof mountArgs?.[2]?.onSceneChange).toBe('function');
+      expect(typeof mountArgs?.[2]?.onHotspotClick).toBe('function');
     }
     expect(destroyViewerSpy).not.toHaveBeenCalled();
 
@@ -1532,6 +1533,25 @@ describe('bootstrapKiosk (M5 F-60)', () => {
   });
 
   describe('sessions du kiosque (M5 F-64)', () => {
+    it('relie la vie des sessions et les changements de langue au suivi M7', () => {
+      saveCredentials(fakeStorage, validCredentials);
+      const stats = {
+        startSession: vi.fn(), endSession: vi.fn(), openTour: vi.fn(), sceneView: vi.fn(),
+        hotspotClick: vi.fn(), audioPlay: vi.fn(), qrShown: vi.fn(), langChange: vi.fn(),
+        flush: vi.fn().mockResolvedValue(undefined), destroy: vi.fn().mockResolvedValue(undefined),
+      };
+      activeInstance = bootstrapKiosk(window, document, { manifest: validManifest, stats });
+
+      expect(stats.startSession).toHaveBeenCalledOnce();
+      activeInstance.state.dispatch({ type: 'SELECT_LANG', lang: 'ar' });
+      expect(stats.langChange).toHaveBeenCalledExactlyOnceWith('ar');
+      activeInstance.state.dispatch({ type: 'IDLE' });
+      expect(stats.endSession).toHaveBeenCalledOnce();
+      expect(stats.flush).toHaveBeenCalledOnce();
+      activeInstance.dispose();
+      expect(stats.destroy).toHaveBeenCalledOnce();
+    });
+
     it('nouvel identifiant à chaque sortie de veille', () => {
       saveCredentials(fakeStorage, validCredentials);
 

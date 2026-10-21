@@ -135,6 +135,27 @@ describe('createViewerController', () => {
     expect(goToScene).toHaveBeenCalledWith('s2');
   });
 
+  it('envoie les changements de scène et les clics hotspot aux statistiques sans bloquer', async () => {
+    const { load, mountScene } = setupDeps();
+    const stats = { sceneView: vi.fn(), hotspotClick: vi.fn(), audioPlay: vi.fn() };
+    const controller = createViewerController(doc, { load, mountScene, labels, stats });
+    await controller.start('token1');
+    controller.onSceneChange('s2');
+    expect(stats.sceneView).toHaveBeenCalledWith('t1', 's2');
+    await controller.onHotspotClick('hs_info');
+    expect(stats.hotspotClick).toHaveBeenCalledWith('t1', 's2', 'hs_info');
+
+    const brokenStats = {
+      sceneView: vi.fn(() => { throw new Error('offline'); }),
+      hotspotClick: vi.fn(() => { throw new Error('offline'); }),
+      audioPlay: vi.fn(() => { throw new Error('offline'); }),
+    };
+    const resilient = createViewerController(doc, { load, mountScene, labels, stats: brokenStats });
+    await expect(resilient.start('token1')).resolves.toBeUndefined();
+    expect(() => { resilient.onSceneChange('s2'); }).not.toThrow();
+    await expect(resilient.onHotspotClick('hs_info')).resolves.toBeUndefined();
+  });
+
   it('TOUR_LINK refusé -> aucun chargement', async () => {
     const { load, mountScene } = setupDeps();
     const controller = createViewerController(doc, { load, mountScene, labels });
@@ -300,8 +321,9 @@ describe('createViewerController', () => {
     vi.spyOn(mockAudio, 'pause').mockImplementation(() => { audioPaused = true; });
 
     const audioFactory = vi.fn().mockReturnValue(mockAudio);
+    const stats = { sceneView: vi.fn(), hotspotClick: vi.fn(), audioPlay: vi.fn() };
 
-    const controller = createViewerController(doc, { load, mountScene, labels, audioFactory });
+    const controller = createViewerController(doc, { load, mountScene, labels, audioFactory, stats });
     
     await controller.start('token3');
     
@@ -316,6 +338,8 @@ describe('createViewerController', () => {
     audioBtn.click();
     expect(audioPlayed).toBe(true);
     expect(audioBtn.getAttribute('aria-label')).toBe('Pause');
+    await Promise.resolve();
+    expect(stats.audioPlay).toHaveBeenCalledWith('t3', 's4');
 
     // Change scene to s5 (no narration)
     controller.onSceneChange('s5');

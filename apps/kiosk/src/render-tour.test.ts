@@ -105,6 +105,51 @@ describe('renderTour (F-62/F-61)', () => {
       }
     });
 
+    it('relaye les événements statistiques de la visite, scène, hotspot et narration', async () => {
+      const graph = createMockTourGraph('tour-stats');
+      const scene = graph.scenes[0];
+      if (!scene) throw new Error('scene missing');
+      scene.narrationUrl = 'narration.mp3';
+      const audio = document.createElement('audio');
+      audio.play = vi.fn().mockResolvedValue(undefined);
+      audio.pause = vi.fn();
+      let callbacks: Parameters<MountViewerFn>[2] | undefined;
+      const mountViewer = vi.fn<MountViewerFn>((_container, _graph, options) => {
+        callbacks = options;
+        return { destroy: vi.fn() };
+      });
+      const onTourOpen = vi.fn();
+      const onSceneChange = vi.fn();
+      const onHotspotClick = vi.fn();
+      const onAudioPlay = vi.fn();
+
+      renderTour(document, root, {
+        tourId: graph.id,
+        lang: 'fr',
+        onClose: vi.fn(),
+        loadTour: () => graph,
+        mountViewer,
+        audioFactory: () => audio,
+        onTourOpen,
+        onSceneChange,
+        onHotspotClick,
+        onAudioPlay,
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(onTourOpen).toHaveBeenCalledExactlyOnceWith(graph.id);
+      callbacks?.onSceneChange?.('scene-2');
+      callbacks?.onHotspotClick?.('hotspot-1');
+      expect(onSceneChange).toHaveBeenCalledWith(graph.id, 'scene-2');
+      expect(onHotspotClick).toHaveBeenCalledWith(graph.id, 'scene-2', 'hotspot-1');
+
+      callbacks?.onSceneChange?.(graph.startSceneId);
+      (root.querySelector('[data-testid="kiosk-tour-audio-btn"]') as HTMLButtonElement).click();
+      await Promise.resolve();
+      expect(onAudioPlay).toHaveBeenCalledWith(graph.id, graph.startSceneId);
+    });
+
     it('affiche le bouton Retour avec la clé i18n et supporte RTL', () => {
       const loadTour = vi.fn((tourId: string) => Promise.resolve(createMockTourGraph(tourId)));
       const mountViewer: MountViewerFn = vi.fn(() => ({

@@ -1,34 +1,42 @@
 # Suivi — Xplor
 
-## Jalon en cours : M5 — Hôtels & kiosque
+## Jalon en cours : M7 — Statistiques
 
-Exigences : F-50 à F-54, F-60 à F-67, API-01 à 03, API-26/27
+Exigences : F-80 à F-83, API-04 et API-29
 
-Livrable : Démo 2 : kiosque de test enrôlé, fonctionnant réseau coupé
+Livrable : tableau de bord alimenté par une semaine d’usage simulé
 
 | # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | Toutes les exigences implémentées et CA vérifiés | à faire | - |
-| 2 | Tests automatisés ajoutés et verts en CI (unitaires, int, e2e) | à faire | - |
-| 3 | pnpm lint, pnpm typecheck sans erreur | à faire | - |
-| 4 | Migrations appliquées, seed à jour | à faire | - |
-| 5 | Chaînes d'interface dans les 3 langues ; RTL vérifié | reporté (D-82) | - |
-| 6 | PROGRESS.md à jour, DECISIONS.md complété, OpenAPI à jour | à faire | - |
-| 7 | Démo avec données pertinentes | à faire | - |
+| 1 | F-80 et API-29/F-81/F-82 implémentés ; agrégation et vérification de bout en bout | partiel | F-80, API-29 et export faits ; StatsDaily reste bloquée par PostgreSQL local indisponible |
+| 2 | Tests automatisés verts (unitaires, intégration, e2e) | partiel | Tests unitaires ciblés verts ; intégration réelle à relancer après démarrage de PostgreSQL |
+| 3 | pnpm lint, pnpm typecheck sans erreur | fait | lint, typecheck verts le 21/10/2026 |
+| 4 | Migration StatsDaily appliquée, données de démonstration générées | bloqué | Docker Desktop n’est pas démarré ; migration `prisma migrate dev` impossible |
+| 5 | Chaînes d’interface fr/ar/en ; RTL vérifié | partiel | Chaînes ajoutées ; vérification RTL visuelle à faire |
+| 6 | PROGRESS.md, DECISIONS.md et OpenAPI à jour | fait | `docs/openapi.json` régénéré |
+| 7 | Démo avec données pertinentes | partiel | Script `pnpm --filter @xplor/api stats:demo -- --confirm-dev` ajouté ; non exécuté faute de DB |
 | 8 | Démo au porteur et retours consignés | à faire | - |
 
-DoD M5 remplie : non
+DoD M7 remplie : non
 
-Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRESS-M4.md
+Jalons M0 à M6 marqués validés dans Orch.
 
 ## Session en cours
+
+- 21/10/2026 — M7 : branchement F-80 web/kiosque, comptage des visites QR `src=kiosk`, API-29, tableau admin, filtres et export CSV ; `pnpm lint`, `pnpm typecheck` et `pnpm test` verts (231 fichiers, 2 463 tests). Aucun déploiement.
 
 ## État des tâches
 
 ### En cours
-- Aucun.
+- M7 F-80 — créer `StatsDaily` et son job BullMQ horaire via `prisma migrate dev`, puis vérifier le recalcul sur PostgreSQL. Bloqué localement : Docker Desktop/PostgreSQL indisponible ; aucune migration générée ni appliquée.
+- M7 F-81/F-82 — API, tableau admin, filtres, séries et export CSV implémentés et tests unitaires verts ; validation avec données PostgreSQL et vérification RTL visuelle restent à faire.
+- M7 F-83 — rapport mensuel PDF/courriel non implémenté. Le cahier le déclare reportable en phase 2 si le jalon prend du retard.
 
 ### Fait
+
+- 21/10/2026 — M7 F-80 : branche la collecte aux parcours web et kiosque (session, visite, scène, point d’intérêt, audio, langue), avec résistance aux erreurs et file IndexedDB. Le test du kiosque hors ligne est adapté à la nouvelle signature.
+- 21/10/2026 — M7 F-81/F-82/API-29 : ajoute les requêtes statistiques filtrées par rôle/hôtel, le tableau admin (indicateurs, courbes journalières, histogramme horaire, classements, langues/canaux), l’export CSV UTF-8 BOM/`;`, les schémas partagés et OpenAPI.
+- 21/10/2026 — M7 démo : ajoute le générateur déterministe d’une semaine d’événements anonymes et la commande `stats:demo`, protégée par `--confirm-dev` et refusée en production. Non exécutée faute de PostgreSQL local.
 
 - 20/10/2026 — M7 F-80 : dans apps/web/src, crée `stats.ts` et `stats.test.ts`, sans toucher aux autres fichiers. `stats.ts` expose `startWebStats({ apiBase, getLang })`, qui… — stats.ts et stats.test.ts respectent la spec (canal WEB sans jeton, adaptateurs minces au tracker, erreurs avalées, qrShown inutilisé) et lint/typecheck/tests passent. (e501f6e)
 - 20/10/2026 — M7 F-80 : dans packages/viewer-core/src, crée `stats-session.ts` et `stats-session.test.ts` : `createStatsSession({ apiBase, channel, getLang, getToken?, storeF… — stats-session.ts assemble correctement store/sender/batcher/tracker avec flush et destroy résilients, écouteur visibilitychange gardé, tests couvrant les cas demandés, contrôles verts. (c58d384)

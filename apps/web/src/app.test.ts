@@ -131,6 +131,36 @@ describe('startViewer', () => {
     expect(typeof args[2].onHotspotClick).toBe('function');
   });
 
+  it('enregistre l’ouverture de visite et le changement de langue sans bloquer l’interface', async () => {
+    mockLoad.mockResolvedValue(mockGraph);
+    const stats = { openTour: vi.fn(), langChange: vi.fn() };
+
+    await startViewer(
+      doc,
+      { pathname: '/v/validToken', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate, stats }
+    );
+
+    expect(stats.openTour).toHaveBeenCalledExactlyOnceWith(mockGraph.id);
+    const language = doc.getElementById('lang-switcher') as HTMLSelectElement;
+    language.value = 'ar';
+    language.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(stats.langChange).toHaveBeenCalledExactlyOnceWith('ar');
+    expect(mockNavigate).toHaveBeenCalledWith('?lang=ar');
+
+    const throwingStats = {
+      openTour: vi.fn(() => { throw new Error('stats offline'); }),
+      langChange: vi.fn(() => { throw new Error('stats offline'); }),
+    };
+    const secondDoc = document.implementation.createHTMLDocument();
+    await expect(startViewer(
+      secondDoc,
+      { pathname: '/v/validToken', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate, stats: throwingStats }
+    )).resolves.toBeUndefined();
+    expect(mockMount).toHaveBeenCalledTimes(2);
+  });
+
   it('erreur de montage: affiche loadError et ne reste pas masquée', async () => {
     mockLoad.mockResolvedValue(mockGraph);
 
@@ -147,6 +177,17 @@ describe('startViewer', () => {
     const status = doc.getElementById('status');
     expect(status?.textContent).toBe(resources.fr.viewer.loadError);
     expect(status?.hidden).toBe(false);
+  });
+
+  it('enregistre un scan QR pour les visites web marquées src=kiosk', async () => {
+    mockLoad.mockResolvedValue(mockGraph);
+    const qrShown = vi.fn();
+    await startViewer(
+      doc,
+      { pathname: '/v/validToken', search: '?src=kiosk&lang=fr' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate, stats: { openTour: vi.fn(), langChange: vi.fn(), qrShown } },
+    );
+    expect(qrShown).toHaveBeenCalledWith(mockGraph.id);
   });
 
   it('preview: appelle loadPreview et affiche le bandeau', async () => {

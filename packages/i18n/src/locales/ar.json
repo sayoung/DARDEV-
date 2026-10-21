@@ -225,7 +225,8 @@
     "tours": "الزيارات",
     "cities": "المدن",
     "categories": "الفئات",
-    "media": "الوسائط"
+    "media": "الوسائط",
+    "stats": "الإحصاءات"
   },
   "media": {
     "title": "مكتبة الوسائط",
@@ -266,6 +267,16 @@
     }
   },
   "page": {
+    "stats": {
+      "title": "الإحصاءات", "subtitle": "نشاط الجولات خلال الفترة المحددة.",
+      "from": "من", "to": "إلى", "hotel": "الفندق", "allHotels": "كل الفنادق المتاحة",
+      "tour": "الجولة", "allTours": "كل الجولات", "channel": "القناة", "allChannels": "كل القنوات",
+      "language": "اللغة", "allLanguages": "كل اللغات", "apply": "تطبيق المرشحات",
+      "export": "تصدير CSV", "exporting": "جارٍ إعداد CSV…", "error": "تعذر تحميل الإحصاءات أو تصديرها.",
+      "minutes": "دقيقة", "daily": "الجلسات يومياً", "hourly": "الجلسات حسب الساعة (UTC)",
+      "topTours": "أكثر الجولات فتحاً", "topScenes": "أكثر المشاهد مشاهدة", "languages": "الجلسات حسب اللغة", "channels": "الجلسات حسب القناة",
+      "metrics": { "sessions": "الجلسات", "averageDuration": "متوسط المدة", "toursOpened": "الجولات المفتوحة", "scenesViewed": "المشاهدات", "hotspotClicks": "نقرات النقاط", "vrEntries": "مرات دخول VR", "qrScans": "مسح QR" }
+    },
     "home": {
       "title": "الرئيسية"
     },

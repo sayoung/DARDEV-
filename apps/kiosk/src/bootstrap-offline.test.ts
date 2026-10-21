@@ -406,13 +406,11 @@ describe('M5 F-62 Démo 2 : fonctionnement kiosque avec réseau coupé (offline)
     });
 
     if (viewerContainer instanceof HTMLDivElement) {
-      expect(mountViewerMock).toHaveBeenCalledWith(
-        viewerContainer,
-        expect.objectContaining({
-          id: testTour.id,
-          title: testTourGraph.title,
-        }),
-      );
+      const mountCall = vi.mocked(mountViewerMock).mock.calls[0];
+      expect(mountCall?.[0]).toBe(viewerContainer);
+      expect(mountCall?.[1]).toMatchObject({ id: testTour.id, title: testTourGraph.title });
+      expect(mountCall?.[2]?.onSceneChange).toBeTypeOf('function');
+      expect(mountCall?.[2]?.onHotspotClick).toBeTypeOf('function');
     }
 
     // Étape 7 : Vérifie qu'aucun appel réseau n'a abouti pendant la phase hors-ligne

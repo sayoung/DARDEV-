@@ -5,6 +5,7 @@ import { TourNotFoundError } from '@xplor/viewer-core';
 import { parseViewerRoute, resolveLang } from './route.js';
 import { createLangSwitcher } from './lang-switcher.js';
 import { createViewerController } from './viewer-controller.js';
+import type { WebStats } from './stats.js';
 
 export async function startViewer(
   doc: Document,
@@ -22,6 +23,8 @@ export async function startViewer(
       }
     ) => { goToScene(id: string): Promise<void>; destroy(): void; gyroscopeSupported(): Promise<boolean>; toggleGyroscope(): void };
     navigate: (url: string) => void;
+    stats?: Pick<WebStats, 'openTour' | 'langChange'> & Partial<Pick<WebStats, 'qrShown'>> &
+      Partial<Pick<WebStats, 'sceneView' | 'hotspotClick' | 'audioPlay'>>;
     mountVr?: (container: HTMLElement, sceneId: string, graph: TourGraph) => Promise<{ destroy(): void }>;
   }
 ): Promise<void> {
@@ -35,6 +38,11 @@ export async function startViewer(
   };
 
   createLangSwitcher(doc, lang, resources.fr.viewer.language, (newLang) => {
+    try {
+      deps.stats?.langChange(newLang);
+    } catch {
+      // La collecte ne doit jamais bloquer la navigation.
+    }
     deps.navigate(`?lang=${newLang}`);
   });
 
@@ -77,6 +85,15 @@ export async function startViewer(
     const graph = await (isPreview ? deps.loadPreview(token, lang) : deps.load(token, lang));
     doc.title = graph.title;
 
+    try {
+      deps.stats?.openTour(graph.id);
+      if (!isPreview && new URLSearchParams(location.search).get('src') === 'kiosk') {
+        deps.stats?.qrShown?.(graph.id);
+      }
+    } catch {
+      // La collecte ne doit jamais bloquer l’affichage de la visite.
+    }
+
     let initialLoad = true;
     const controller = createViewerController(doc, {
       load: async (t) => {
@@ -87,6 +104,7 @@ export async function startViewer(
         return deps.load(t, lang);
       },
       labels,
+      stats: deps.stats,
       mountScene: (g, sceneId) => {
         return deps.mount(viewer, g, {
           sceneId,

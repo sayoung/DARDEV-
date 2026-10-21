@@ -26,6 +26,8 @@ const ROUTES = [
   { path: '/api/v1/admin/hotels/{id}', method: 'patch' },
   { path: '/api/v1/admin/hotels/{id}', method: 'delete' },
   { path: '/api/v1/admin/kiosks', method: 'get' },
+  { path: '/api/v1/admin/stats', method: 'get' },
+  { path: '/api/v1/admin/stats/export.csv', method: 'get' },
   { path: '/api/v1/admin/kiosks', method: 'post' },
   { path: '/api/v1/admin/kiosks/{id}', method: 'get' },
   { path: '/api/v1/admin/kiosks/{id}', method: 'patch' },

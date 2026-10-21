@@ -11,6 +11,7 @@ import { confirmGoTo } from './confirm-dialog.js';
 import { openInfoPanel } from './info-panel.js';
 import { textToHtml, mapLinkHtml } from './text-html.js';
 import { createSceneAudioPlayer } from './scene-audio-player.js';
+import type { WebStats } from './stats.js';
 
 export interface ViewerLabels {
   nav?: string;
@@ -44,6 +45,7 @@ export interface ViewerDeps {
   openUrl?: (url: string) => void;
   audioFactory?: (url: string) => HTMLAudioElement;
   mountVr?: (container: HTMLElement, sceneId: string, graph: TourGraph) => Promise<{ destroy(): void }>;
+  stats?: Partial<Pick<WebStats, 'sceneView' | 'hotspotClick' | 'audioPlay'>>;
 }
 
 export function createViewerController(doc: Document, deps: ViewerDeps) {
@@ -102,7 +104,16 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
       player = createSceneAudioPlayer(
         doc,
         { play: deps.labels.play, pause: deps.labels.pause },
-        deps.audioFactory
+        deps.audioFactory,
+        () => {
+          const current = navigator.current();
+          if (!current) return;
+          try {
+            deps.stats?.audioPlay?.(current.graph.id, current.sceneId);
+          } catch {
+            // La collecte ne doit jamais perturber la lecture audio.
+          }
+        }
       );
       prevScene = null;
     }
@@ -309,6 +320,12 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
       const state = navigator.current();
       if (!state) return;
 
+      try {
+        deps.stats?.hotspotClick?.(state.graph.id, state.sceneId, hotspotId);
+      } catch {
+        // La collecte ne doit jamais bloquer l’interaction.
+      }
+
       const link = resolveTourLink(state.graph, hotspotId);
       if (link) {
         const confirmed = await confirmGoTo(doc, link.title, deps.labels);
@@ -360,6 +377,11 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
       const state = navigator.current();
       if (state) {
         state.sceneId = sceneId;
+        try {
+          deps.stats?.sceneView?.(state.graph.id, sceneId);
+        } catch {
+          // La collecte ne doit jamais bloquer la navigation.
+        }
         applyAudio(false, sceneId);
         updateControls();
         if (deps.onSceneChange) {

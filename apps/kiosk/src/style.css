@@ -908,6 +908,27 @@ button:disabled {
   user-select: none;
 }
 
+.kiosk-tour-audio-btn {
+  position: absolute;
+  inset-block-end: 1.5rem;
+  inset-inline-start: 1.5rem;
+  z-index: 100;
+  inline-size: 3.25rem;
+  block-size: 3.25rem;
+  color: #FFFFFF;
+  background-color: var(--brand-color);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.kiosk-tour-audio-btn:focus-visible {
+  outline: 3px solid var(--brand-light);
+  outline-offset: 2px;
+}
+
 .kiosk-tour-back-btn:hover:not(:disabled) {
   background-color: var(--brand-dark);
 }

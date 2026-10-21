@@ -68,6 +68,8 @@ import {
   SelectionResponseSchema,
   SelectionUpdateSchema,
   LANGS,
+  EventChannelSchema,
+  StatsDashboardSchema,
 } from '@xplor/shared';
 import { z, type ZodType } from 'zod';
 
@@ -451,6 +453,7 @@ registerCatalogCrud({
 registerHotelManagers();
 registerHotelSelection();
 registerKiosks();
+registerStatsRoutes();
 
 registerAssetReads();
 registerAssetUpload();
@@ -469,6 +472,39 @@ registerHotspotItem();
 registerPublicTour();
 registerTourPreviewToken();
 registerPublicPreview();
+
+function registerStatsRoutes(): void {
+  const query = z.object({
+    from: z.iso.datetime(),
+    to: z.iso.datetime(),
+    hotelId: z.uuid().optional(),
+    tourId: z.uuid().optional(),
+    channel: EventChannelSchema.optional(),
+    lang: z.string().min(1).max(8).optional(),
+  });
+  registry.registerPath({
+    method: 'get', path: '/api/v1/admin/stats', summary: 'Lire les statistiques agrégées', tags: ['Statistiques'],
+    security: sessionAndCsrfSecurity, request: { query },
+    responses: {
+      '200': jsonResponse('Indicateurs, séries temporelles et classements filtrés par AccessPolicy.', StatsDashboardSchema),
+      '400': jsonResponse('Période ou filtre invalide.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Accès refusé.', forbiddenError),
+      '404': jsonResponse('Hôtel hors périmètre.', notFoundError),
+    },
+  });
+  registry.registerPath({
+    method: 'get', path: '/api/v1/admin/stats/export.csv', summary: 'Exporter les statistiques filtrées en CSV', tags: ['Statistiques'],
+    security: sessionAndCsrfSecurity, request: { query },
+    responses: {
+      '200': { description: 'CSV UTF-8 avec BOM et séparateur point-virgule.', content: { 'text/csv': { schema: { type: 'string' } } } },
+      '400': jsonResponse('Période ou filtre invalide.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Accès refusé.', forbiddenError),
+      '404': jsonResponse('Hôtel hors périmètre.', notFoundError),
+    },
+  });
+}
 
 function registerCatalogCrud(resource: {
   collection: string;

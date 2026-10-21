@@ -17,6 +17,7 @@ import { HotspotDetailPage } from './pages/HotspotDetailPage.js';
 import { HotelsPage } from './pages/HotelsPage.js';
 import { SelectionPage } from './pages/SelectionPage.js';
 import { KiosksPage } from './pages/KiosksPage.js';
+import { StatsPage } from './pages/StatsPage.js';
 import { useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
@@ -66,6 +67,7 @@ function AdminShell() {
       {isAuthenticated && route.name === 'cities' ? <CitiesPage /> : null}
       {isAuthenticated && route.name === 'hotels' ? <HotelsPage /> : null}
       {isAuthenticated && route.name === 'kiosks' ? <KiosksPage /> : null}
+      {isAuthenticated && route.name === 'stats' ? <StatsPage /> : null}
       {isAuthenticated && route.name === 'hotel-selection' ? <SelectionPage hotelId={route.id} /> : null}
       {isAuthenticated && route.name === 'categories' ? <CategoriesPage /> : null}
       {isAuthenticated && route.name === 'tours' ? <ToursPage /> : null}
