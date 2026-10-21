@@ -13,14 +13,36 @@ const { mockLoadAsync, mockSetAnimationLoop } = vi.hoisted(() => ({
   mockSetAnimationLoop: vi.fn<(cb: ((time: number) => void) | null) => void>(),
 }));
 
+let lastControllers: import('three').Group[] = [];
+
+function getLastControllers(): readonly import('three').Group[] {
+  return lastControllers;
+}
+
 vi.mock('three', async (importOriginal) => {
   const actual = await importOriginal<typeof import('three')>();
   class MockWebGLRenderer {
     domElement = document.createElement('canvas');
+    controllers: import('three').Group[] = [
+      new actual.Group(),
+      new actual.Group(),
+    ];
     xr = {
       enabled: false,
       setReferenceSpaceType: vi.fn(),
       setSession: vi.fn().mockResolvedValue(undefined),
+      getController: (index: number) => {
+        while (this.controllers.length <= index) {
+          this.controllers.push(new actual.Group());
+        }
+        const ctrl = this.controllers[index];
+        if (ctrl !== undefined) {
+          return ctrl;
+        }
+        const fallback = new actual.Group();
+        this.controllers.push(fallback);
+        return fallback;
+      },
     };
     setSize = vi.fn();
     render = vi.fn();
@@ -28,6 +50,10 @@ vi.mock('three', async (importOriginal) => {
     setAnimationLoop = (cb: ((time: number) => void) | null) => {
       mockSetAnimationLoop(cb);
     };
+
+    constructor() {
+      lastControllers = this.controllers;
+    }
   }
   class MockTextureLoader {
     loadAsync = (url: string): Promise<import('three').Texture> => {
@@ -90,6 +116,7 @@ describe('mountVr (M6 F-70, F-71)', () => {
       Promise.resolve(new THREE.Texture()),
     );
     mockSetAnimationLoop.mockReset();
+    lastControllers = [];
   });
 
   it('exporte mountVr depuis index.ts', () => {
@@ -692,5 +719,577 @@ describe('mountVr (M6 F-70, F-71)', () => {
     expect(showSceneSpy).not.toHaveBeenCalled();
 
     handle.destroy();
+  });
+
+  describe('Navigation VR par visée main/manette (M6 F-71)', () => {
+    class OpaqueXRSpace {
+      readonly __brand = 'XRSpace';
+    }
+
+    const graphWithSceneLink = TourGraphSchema.parse({
+      id: '01990000-0000-7000-8000-00000000000b',
+      contentVersion: 1,
+      lang: 'fr',
+      title: 'Visite multi-scène VR',
+      summary: 'Résumé',
+      city: 'Rabat',
+      categories: ['Monument'],
+      coverUrl: 'http://example.com/cover.jpg',
+      practicalInfo: null,
+      location: null,
+      startSceneId: 'scene-1',
+      linkedTours: [],
+      scenes: [
+        {
+          id: 'scene-1',
+          title: 'Scène 1',
+          caption: null,
+          panorama: {
+            preview: 'http://example.com/preview1.jpg',
+            web: 'http://example.com/web1.jpg',
+            tiles: {
+              width: 4096,
+              cols: 8,
+              rows: 4,
+              baseUrl: 'http://example.com/tiles1/{col}_{row}.jpg',
+            },
+          },
+          initialView: { yaw: 0, pitch: 0, zoom: 50 },
+          narrationUrl: null,
+          ambientUrl: null,
+          thumb: 'http://example.com/thumb1.jpg',
+          hotspots: [
+            {
+              type: HotspotType.SCENE_LINK,
+              id: 'hs-link-scene-2',
+              yaw: 0,
+              pitch: 0,
+              label: 'Vers scène 2',
+              icon: HotspotIcon.ARROW,
+              targetSceneId: 'scene-2',
+              arrivalYaw: 1.57,
+            },
+          ],
+        },
+        {
+          id: 'scene-2',
+          title: 'Scène 2',
+          caption: null,
+          panorama: {
+            preview: 'http://example.com/preview2.jpg',
+            web: 'http://example.com/web2.jpg',
+            tiles: {
+              width: 4096,
+              cols: 8,
+              rows: 4,
+              baseUrl: 'http://example.com/tiles2/{col}_{row}.jpg',
+            },
+          },
+          initialView: { yaw: 0, pitch: 0, zoom: 50 },
+          narrationUrl: null,
+          ambientUrl: null,
+          thumb: 'http://example.com/thumb2.jpg',
+          hotspots: [],
+        },
+      ],
+    });
+
+    it('affiche un rayon de visée visible attaché au contrôleur Three.js dans la scène', async () => {
+      const opaqueSpace = new OpaqueXRSpace();
+      const fakeInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const fakeSession = {
+        inputSources: [fakeInputSource],
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(fakeSession.addEventListener).toHaveBeenCalledWith(
+          'select',
+          expect.any(Function),
+        );
+      });
+
+      const controllers = getLastControllers();
+      expect(controllers.length).toBeGreaterThan(0);
+      const controller = controllers[0];
+      expect(controller).toBeDefined();
+      if (controller !== undefined) {
+        const ray = controller.getObjectByName('xplor-vr-ray');
+        expect(ray).toBeDefined();
+        expect(ray).toBeInstanceOf(THREE.Line);
+        expect(controller.parent).not.toBeNull();
+      }
+
+      handle.destroy();
+    });
+
+    it('active le hotspot visé via selectNow lors d un événement select réaliste avec XRSpace opaque', async () => {
+      const selectListeners: ((event: unknown) => void)[] = [];
+      const opaqueSpace = new OpaqueXRSpace();
+      const fakeInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const fakeSession = {
+        inputSources: [fakeInputSource],
+        addEventListener: vi.fn((type: string, listener: (ev: unknown) => void) => {
+          if (type === 'select') {
+            selectListeners.push(listener);
+          }
+        }),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const showSceneSpy = vi.fn().mockResolvedValue(undefined);
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: showSceneSpy,
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(selectListeners.length).toBeGreaterThan(0);
+        expect(mockSetAnimationLoop).toHaveBeenCalled();
+      });
+
+      const controller = getLastControllers()[0];
+      expect(controller).toBeDefined();
+      if (controller !== undefined) {
+        // Le contrôleur pointe par défaut le long de son axe local -Z (yaw: 0, pitch: 0),
+        // aligné sur le hotspot hs-link-scene-2 situé à yaw: 0, pitch: 0
+        controller.rotation.set(0, 0, 0);
+        controller.updateMatrixWorld();
+      }
+
+      // Événement WebXR réaliste émis sur la session avec un XRSpace opaque
+      const selectCallback = selectListeners[0];
+      expect(selectCallback).toBeDefined();
+      if (selectCallback !== undefined) {
+        selectCallback({
+          type: 'select',
+          inputSource: fakeInputSource,
+          timeStamp: 100,
+        });
+      }
+
+      const animationCallback = mockSetAnimationLoop.mock.calls[0]?.[0];
+      expect(animationCallback).toBeDefined();
+      if (animationCallback !== undefined && animationCallback !== null) {
+        animationCallback(0);
+        animationCallback(150);
+        animationCallback(300);
+      }
+
+      await vi.waitFor(() => {
+        expect(showSceneSpy).toHaveBeenCalledWith('scene-2');
+      });
+
+      handle.destroy();
+    });
+
+    it('n active aucune sélection lorsque select est déclenché alors que le contrôleur ne vise aucun hotspot', async () => {
+      const selectListeners: ((event: unknown) => void)[] = [];
+      const opaqueSpace = new OpaqueXRSpace();
+      const fakeInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const fakeSession = {
+        inputSources: [fakeInputSource],
+        addEventListener: vi.fn((type: string, listener: (ev: unknown) => void) => {
+          if (type === 'select') {
+            selectListeners.push(listener);
+          }
+        }),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const showSceneSpy = vi.fn().mockResolvedValue(undefined);
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: showSceneSpy,
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(selectListeners.length).toBeGreaterThan(0);
+        expect(mockSetAnimationLoop).toHaveBeenCalled();
+      });
+
+      const controller = getLastControllers()[0];
+      expect(controller).toBeDefined();
+      if (controller !== undefined) {
+        // Vise le zénith (pitch: π/2) en dehors de tout hotspot
+        controller.rotation.x = Math.PI / 2;
+        controller.updateMatrixWorld();
+      }
+
+      const selectCallback = selectListeners[0];
+      expect(selectCallback).toBeDefined();
+      if (selectCallback !== undefined) {
+        selectCallback({
+          type: 'select',
+          inputSource: fakeInputSource,
+          timeStamp: 100,
+        });
+      }
+
+      const animationCallback = mockSetAnimationLoop.mock.calls[0]?.[0];
+      expect(animationCallback).toBeDefined();
+      if (animationCallback !== undefined && animationCallback !== null) {
+        animationCallback(0);
+        animationCallback(150);
+        animationCallback(300);
+      }
+
+      expect(showSceneSpy).not.toHaveBeenCalled();
+
+      handle.destroy();
+    });
+
+    it('maintient le regard avec dwell de 2 s comme secours lorsque la manette n est pas utilisée', async () => {
+      const opaqueSpace = new OpaqueXRSpace();
+      const fakeInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const fakeSession = {
+        inputSources: [fakeInputSource],
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const showSceneSpy = vi.fn().mockResolvedValue(undefined);
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: showSceneSpy,
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(mockSetAnimationLoop).toHaveBeenCalled();
+      });
+
+      const animationCallback = mockSetAnimationLoop.mock.calls[0]?.[0];
+      expect(animationCallback).toBeDefined();
+      if (animationCallback !== undefined && animationCallback !== null) {
+        // Aucune interaction par manette : regard maintenu pendant 2 s (dwell de fixation)
+        animationCallback(0);
+        animationCallback(1000);
+        animationCallback(2000);
+        animationCallback(2150);
+      }
+
+      await vi.waitFor(() => {
+        expect(showSceneSpy).toHaveBeenCalledWith('scene-2');
+      });
+
+      handle.destroy();
+    });
+
+    it('nettoie les écouteurs XR et détache/dispose les rayons lors d un événement end émis par la session WebXR', async () => {
+      const endListeners: (() => void)[] = [];
+      const opaqueSpace = new OpaqueXRSpace();
+      const fakeInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const fakeSession = {
+        inputSources: [fakeInputSource],
+        addEventListener: vi.fn((type: string, listener: () => void) => {
+          if (type === 'end') {
+            endListeners.push(listener);
+          }
+        }),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(endListeners.length).toBeGreaterThan(0);
+      });
+
+      const controller = getLastControllers()[0];
+      expect(controller).toBeDefined();
+      if (controller !== undefined) {
+        expect(controller.getObjectByName('xplor-vr-ray')).toBeDefined();
+        expect(controller.parent).not.toBeNull();
+      }
+
+      // Émission de l'événement 'end' par le casque ou runtime WebXR
+      const endCallback = endListeners[0];
+      expect(endCallback).toBeDefined();
+      if (endCallback !== undefined) {
+        endCallback();
+      }
+
+      // Les écouteurs WebXR sont retirés
+      expect(fakeSession.removeEventListener).toHaveBeenCalledWith(
+        'select',
+        expect.any(Function),
+      );
+      expect(fakeSession.removeEventListener).toHaveBeenCalledWith(
+        'end',
+        expect.any(Function),
+      );
+
+      // Le rayon est détaché et le contrôleur est retiré de la scène
+      if (controller !== undefined) {
+        expect(controller.getObjectByName('xplor-vr-ray')).toBeUndefined();
+        expect(controller.parent).toBeNull();
+      }
+
+      handle.destroy();
+    });
+
+    it('nettoie les écouteurs XR et détache/dispose les rayons au destroy() du handle', async () => {
+      const opaqueSpace = new OpaqueXRSpace();
+      const fakeInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const fakeSession = {
+        inputSources: [fakeInputSource],
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(fakeSession.addEventListener).toHaveBeenCalledWith(
+          'select',
+          expect.any(Function),
+        );
+      });
+
+      const controller = getLastControllers()[0];
+      expect(controller).toBeDefined();
+      if (controller !== undefined) {
+        expect(controller.getObjectByName('xplor-vr-ray')).toBeDefined();
+        expect(controller.parent).not.toBeNull();
+      }
+
+      // Destruction du handle
+      handle.destroy();
+
+      // Les écouteurs WebXR sont retirés
+      expect(fakeSession.removeEventListener).toHaveBeenCalledWith(
+        'select',
+        expect.any(Function),
+      );
+      expect(fakeSession.removeEventListener).toHaveBeenCalledWith(
+        'end',
+        expect.any(Function),
+      );
+
+      // Le rayon est détaché et le contrôleur retiré de la scène
+      if (controller !== undefined) {
+        expect(controller.getObjectByName('xplor-vr-ray')).toBeUndefined();
+        expect(controller.parent).toBeNull();
+      }
+    });
+
+    it('calcule la direction à partir d une pose XR explicite dans l événement select si fournie', async () => {
+      const selectListeners: ((event: unknown) => void)[] = [];
+      const opaqueSpace = new OpaqueXRSpace();
+      const fakeInputSource = {
+        targetRaySpace: opaqueSpace,
+        targetRayMode: 'tracked-pointer',
+        handedness: 'right',
+      };
+      const fakeSession = {
+        inputSources: [fakeInputSource],
+        addEventListener: vi.fn((type: string, listener: (ev: unknown) => void) => {
+          if (type === 'select') {
+            selectListeners.push(listener);
+          }
+        }),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const showSceneSpy = vi.fn().mockResolvedValue(undefined);
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: graphWithSceneLink,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: showSceneSpy,
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(selectListeners.length).toBeGreaterThan(0);
+        expect(mockSetAnimationLoop).toHaveBeenCalled();
+      });
+
+      // Événement WebXR réaliste avec XRPose explicite orientée vers l'axe -Z (yaw: 0, pitch: 0)
+      const selectCallback = selectListeners[0];
+      expect(selectCallback).toBeDefined();
+      if (selectCallback !== undefined) {
+        selectCallback({
+          type: 'select',
+          inputSource: fakeInputSource,
+          pose: {
+            transform: {
+              orientation: { x: 0, y: 0, z: 0, w: 1 },
+            },
+          },
+          timeStamp: 50,
+        });
+      }
+
+      const animationCallback = mockSetAnimationLoop.mock.calls[0]?.[0];
+      expect(animationCallback).toBeDefined();
+      if (animationCallback !== undefined && animationCallback !== null) {
+        animationCallback(0);
+        animationCallback(150);
+        animationCallback(300);
+      }
+
+      await vi.waitFor(() => {
+        expect(showSceneSpy).toHaveBeenCalledWith('scene-2');
+      });
+
+      handle.destroy();
+    });
   });
 });

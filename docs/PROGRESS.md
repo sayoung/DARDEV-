@@ -22,11 +22,12 @@ DoD M5 remplie : non
 Jalon précédent : M4 validé par le porteur ; détail dans docs/archive/PROGRESS-M4.md
 
 ## Session en cours
+- M6 F-71 (2/2) : Protocole Quest Browser rédigé dans docs/VALIDATION_QUEST.md (entrée VR, rayons contrôleur/main, visée flèche/info, pincement/gâchette, déclenchement unique anti-rebond, fondu de confort, regard-dwell de secours, sortie nadir/système, console propre). Validation matérielle marquée « à faire sur Quest » (aucun casque physique connecté localement). Suite de tests automatisés (18 tests VR mount-vr) et contrôles lint/typecheck verts.
 
 ## État des tâches
 
 ### En cours
-- Aucun.
+- M6 F-71 : Validation matérielle de la navigation main/manette sur casque Meta Quest Browser (à faire sur Quest selon docs/VALIDATION_QUEST.md).
 
 ### Fait
 
