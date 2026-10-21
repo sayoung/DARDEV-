@@ -8,10 +8,10 @@ Livrable : tableau de bord alimenté par une semaine d’usage simulé
 
 | # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | F-80 et API-29/F-81/F-82 implémentés ; agrégation et vérification de bout en bout | partiel | F-80, API-29 et export faits ; StatsDaily reste bloquée par PostgreSQL local indisponible |
+| 1 | F-80 et API-29/F-81/F-82 implémentés ; agrégation et vérification de bout en bout | partiel | F-80, API-29 et export faits ; migration StatsDaily appliquée, job horaire de recalcul encore à implémenter |
 | 2 | Tests automatisés verts (unitaires, intégration, e2e) | partiel | Tests unitaires ciblés verts ; intégration réelle à relancer après démarrage de PostgreSQL |
 | 3 | pnpm lint, pnpm typecheck sans erreur | fait | lint, typecheck verts le 21/10/2026 |
-| 4 | Migration StatsDaily appliquée, données de démonstration générées | bloqué | Docker Desktop n’est pas démarré ; migration `prisma migrate dev` impossible |
+| 4 | Migration StatsDaily appliquée, données de démonstration générées | partiel | Migration `20261021134205_stats_daily` appliquée sur `xplor` de développement par tunnel ; 418 événements / 84 sessions de démo créés ; table StatsDaily reste vide en attendant le job de recalcul |
 | 5 | Chaînes d’interface fr/ar/en ; RTL vérifié | partiel | Chaînes ajoutées ; vérification RTL visuelle à faire |
 | 6 | PROGRESS.md, DECISIONS.md et OpenAPI à jour | fait | `docs/openapi.json` régénéré |
 | 7 | Démo avec données pertinentes | partiel | Script `pnpm --filter @xplor/api stats:demo -- --confirm-dev` ajouté ; non exécuté faute de DB |
@@ -23,13 +23,14 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ## Session en cours
 
+- 21/10/2026 — Reprendre StatsDaily via le tunnel SSH du VPS de développement : schéma et migration `20261021134205_stats_daily` créés/appliqués sur `xplor`, Prisma Client régénéré, 418 événements de démonstration vérifiés (84 sessions). Le PostgreSQL de production n’est pas publié par le tunnel. Le job de recalcul quotidien reste à coder.
 - 21/10/2026 — M7 : branchement F-80 web/kiosque, comptage des visites QR `src=kiosk`, API-29, tableau admin, filtres et export CSV ; `pnpm lint`, `pnpm typecheck` et `pnpm test` verts (231 fichiers, 2 463 tests). Aucun déploiement.
 
 ## État des tâches
 
 ### En cours
-- M7 F-80 — créer `StatsDaily` et son job BullMQ horaire via `prisma migrate dev`, puis vérifier le recalcul sur PostgreSQL. Bloqué localement : Docker Desktop/PostgreSQL indisponible ; aucune migration générée ni appliquée.
-- M7 F-81/F-82 — API, tableau admin, filtres, séries et export CSV implémentés et tests unitaires verts ; validation avec données PostgreSQL et vérification RTL visuelle restent à faire.
+- M7 F-80 — modèle et migration StatsDaily appliqués sur la base de développement ; ajouter le job BullMQ horaire qui remplace les agrégats d’hier et d’aujourd’hui et tester son idempotence. Aucun accès à la base de production.
+- M7 F-81/F-82 — API, tableau admin, filtres, séries et export CSV implémentés ; 418 événements / 84 sessions de démonstration insérés dans la base de développement. Validation visuelle RTL et exercice du tableau sur les données de démo restent à faire.
 - M7 F-83 — rapport mensuel PDF/courriel non implémenté. Le cahier le déclare reportable en phase 2 si le jalon prend du retard.
 
 ### Fait

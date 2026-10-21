@@ -436,3 +436,27 @@ model Event {
   @@index([kioskId, receivedAt])
   @@index([tourId, receivedAt])
 }
+
+/// Agrégats statistiques quotidiens, recalculables depuis Event (F-80/F-81).
+model StatsDaily {
+  id                    BigInt       @id @default(autoincrement())
+  day                   DateTime     @db.Date
+  bucketKey             String       @db.VarChar(128)
+  hotelId               String?      @db.Uuid
+  tourId                String?      @db.Uuid
+  channel               EventChannel
+  lang                  String       @db.VarChar(8)
+  sessions              Int          @default(0)
+  toursOpened           Int          @default(0)
+  scenesViewed          Int          @default(0)
+  hotspotClicks         Int          @default(0)
+  audioPlays            Int          @default(0)
+  vrEntries             Int          @default(0)
+  qrShown               Int          @default(0)
+  sessionDurationMs     BigInt       @default(0)
+  updatedAt             DateTime     @updatedAt
+
+  @@unique([day, bucketKey])
+  @@index([hotelId, day])
+  @@index([tourId, day])
+}
