@@ -418,6 +418,62 @@ describe('PrismaStatsDailyRepository', () => {
       expect(fakePrisma.statsInDb).toHaveLength(1);
       expect(fakePrisma.createCalls).toHaveLength(0);
     });
+
+    it('rejette les enregistrements dont le jour ne correspond pas au jour cible', async () => {
+      const fakePrisma = new InMemoryPrismaClient();
+      const repo = new PrismaStatsDailyRepository(fakePrisma);
+
+      const initialDay1: StatsDailyCreateData = {
+        day: day1,
+        bucketKey: 'hotel-a:tour-a:WEB:fr',
+        hotelId: 'hotel-a',
+        tourId: 'tour-a',
+        channel: EVENT_CHANNELS.WEB,
+        lang: 'fr',
+        sessions: 3,
+        toursOpened: 3,
+        scenesViewed: 6,
+        hotspotClicks: 1,
+        audioPlays: 0,
+        vrEntries: 0,
+        qrShown: 0,
+        sessionDurationMs: 60_000n,
+      };
+      fakePrisma.statsInDb = [initialDay1];
+
+      const recordWithOtherDay: StatsDailyRecord = {
+        day: day2, // jour différent du jour cible day1
+        bucketKey: 'hotel-b:tour-b:KIOSK:ar',
+        hotelId: 'hotel-b',
+        tourId: 'tour-b',
+        channel: EVENT_CHANNELS.KIOSK,
+        lang: 'ar',
+        sessions: 1,
+        toursOpened: 1,
+        scenesViewed: 1,
+        hotspotClicks: 0,
+        audioPlays: 0,
+        vrEntries: 0,
+        qrShown: 0,
+        sessionDurationMs: 10_000n,
+      };
+
+      await expect(
+        repo.replaceStatsForDay(day1, [recordWithOtherDay]),
+      ).rejects.toThrow(
+        `Le jour de l'enregistrement (${day2.toISOString()}) ne correspond pas au jour cible (${day1.toISOString()}).`,
+      );
+
+      // Aucune opération de transaction ni écriture n'a été exécutée, la base reste intacte
+      expect(fakePrisma.transactionCalls).toBe(0);
+      expect(fakePrisma.deleteCalls).toHaveLength(0);
+      expect(fakePrisma.createCalls).toHaveLength(0);
+      expect(fakePrisma.statsInDb).toHaveLength(1);
+      const preserved = fakePrisma.statsInDb[0];
+      if (preserved !== undefined) {
+        expect(preserved.sessions).toBe(3);
+      }
+    });
   });
 
   describe('sécurité et garanties d’écriture', () => {

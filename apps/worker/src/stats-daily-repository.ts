@@ -128,13 +128,22 @@ export class PrismaStatsDailyRepository implements StatsDailyRepository {
 
   /**
    * Remplace de manière idempotente les agrégats StatsDaily d'un jour donné dans une transaction :
-   * 1. Supprime les agrégats existants pour ce jour (`deleteMany`).
-   * 2. Insère les nouveaux agrégats (`createMany`), s'il y en a.
+   * 1. Valide que chaque enregistrement correspond bien au jour cible.
+   * 2. Supprime les agrégats existants pour ce jour (`deleteMany`).
+   * 3. Insère les nouveaux agrégats (`createMany`), s'il y en a, en forçant le jour cible.
    */
   async replaceStatsForDay(
     day: Date,
     records: readonly StatsDailyRecord[],
   ): Promise<void> {
+    for (const record of records) {
+      if (record.day.getTime() !== day.getTime()) {
+        throw new Error(
+          `Le jour de l'enregistrement (${record.day.toISOString()}) ne correspond pas au jour cible (${day.toISOString()}).`,
+        );
+      }
+    }
+
     await this.prisma.$transaction(async (tx) => {
       await tx.statsDaily.deleteMany({
         where: {
@@ -144,7 +153,7 @@ export class PrismaStatsDailyRepository implements StatsDailyRepository {
 
       if (records.length > 0) {
         const createData: StatsDailyCreateData[] = records.map((record) => ({
-          day: record.day,
+          day,
           bucketKey: record.bucketKey,
           hotelId: record.hotelId,
           tourId: record.tourId,
