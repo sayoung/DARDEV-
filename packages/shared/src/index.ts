@@ -228,5 +228,14 @@ export {
   type EventChannel,
   type EventType,
 } from './events.js';
-export { StatsDashboardSchema, StatsSummarySchema, type StatsDashboard } from './stats.js';
+export {
+  STATS_DAILY_INTERVAL_MS,
+  STATS_DAILY_JOB_ID,
+  STATS_DAILY_QUEUE_NAME,
+  StatsDailyRecordSchema,
+  StatsDashboardSchema,
+  StatsSummarySchema,
+  type StatsDailyRecord,
+  type StatsDashboard,
+} from './stats.js';
 
