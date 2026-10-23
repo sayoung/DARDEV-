@@ -4,10 +4,15 @@ import {
   type TourGraph,
   type TourGraphHotspot,
 } from '@xplor/shared';
+import {
+  pickHotspot,
+  vectorToSpherical,
+  type SphericalPosition,
+} from './vr-geometry.js';
 import { isVrSupported } from './vr-support.js';
 import { mountVrButton } from './vr-button.js';
 import { createVrRenderer } from './vr-renderer.js';
-import { createVrScene } from './vr-scene.js';
+import { createVrScene, type VrMarkerTarget } from './vr-scene.js';
 import { createInfoPanel } from './vr-info-panel-mesh.js';
 import { createGazeSelector } from './gaze-selector.js';
 import { createVrFade } from './vr-fade.js';
@@ -45,6 +50,10 @@ export interface MountVrHandle {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function isThreeObject(value: unknown): value is THREE.Object3D {
+  return value instanceof THREE.Object3D;
 }
 
 function isXrSession(value: unknown): value is XRSession {
@@ -139,6 +148,338 @@ function getSceneData(
   return null;
 }
 
+interface XrSessionInputsLike {
+  inputSources?: readonly unknown[];
+  addEventListener(type: string, listener: (event: unknown) => void): void;
+  removeEventListener(type: string, listener: (event: unknown) => void): void;
+}
+
+interface RendererWithXrControllers {
+  xr: {
+    getController(index: number): unknown;
+  };
+}
+
+function isRendererWithXrControllers(
+  value: unknown,
+): value is RendererWithXrControllers {
+  if (!isRecord(value) || !isRecord(value.xr)) {
+    return false;
+  }
+  return typeof value.xr.getController === 'function';
+}
+
+function isControllerTargetRay(
+  value: unknown,
+): value is ReturnType<THREE.WebGLRenderer['xr']['getController']> {
+  return value instanceof THREE.Object3D;
+}
+
+function isXrSessionInputsLike(value: unknown): value is XrSessionInputsLike {
+  return (
+    isRecord(value) &&
+    typeof value.addEventListener === 'function' &&
+    typeof value.removeEventListener === 'function'
+  );
+}
+
+function resolveDirectionFromController(
+  controller: THREE.Object3D,
+): SphericalPosition | null {
+  const dir = new THREE.Vector3(0, 0, -1);
+  const quat = new THREE.Quaternion();
+  controller.getWorldQuaternion(quat);
+  dir.applyQuaternion(quat);
+  if (dir.lengthSq() === 0) {
+    return null;
+  }
+  return vectorToSpherical(dir);
+}
+
+function resolveDirectionFromPose(pose: unknown): SphericalPosition | null {
+  if (!isRecord(pose) || !isRecord(pose.transform)) {
+    return null;
+  }
+  const orientation = pose.transform.orientation;
+  if (!isRecord(orientation)) {
+    return null;
+  }
+  const { x, y, z, w } = orientation;
+  if (
+    typeof x === 'number' &&
+    Number.isFinite(x) &&
+    typeof y === 'number' &&
+    Number.isFinite(y) &&
+    typeof z === 'number' &&
+    Number.isFinite(z) &&
+    typeof w === 'number' &&
+    Number.isFinite(w)
+  ) {
+    const dir = new THREE.Vector3(0, 0, -1);
+    const quat = new THREE.Quaternion(x, y, z, w);
+    dir.applyQuaternion(quat);
+    if (dir.lengthSq() === 0) {
+      return null;
+    }
+    return vectorToSpherical(dir);
+  }
+  return null;
+}
+
+interface XrInputTracker {
+  bindSession(session: unknown): void;
+  dispose(): void;
+}
+
+interface CreateXrInputTrackerOptions {
+  renderer: THREE.WebGLRenderer;
+  scene: THREE.Scene;
+  getTargets: () => VrMarkerTarget[];
+  onSelectHotspot: (hotspotId: string, customTime?: number) => void;
+}
+
+function createRayLine(): THREE.Line {
+  const geometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, -8),
+  ]);
+  const material = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.75,
+  });
+  const line = new THREE.Line(geometry, material);
+  line.name = 'xplor-vr-ray';
+  return line;
+}
+
+function disposeRayLine(ray: THREE.Line): void {
+  if (ray.parent !== null) {
+    ray.parent.remove(ray);
+  }
+  ray.geometry.dispose();
+  if (Array.isArray(ray.material)) {
+    for (const mat of ray.material) {
+      mat.dispose();
+    }
+  } else {
+    ray.material.dispose();
+  }
+}
+
+type XrTargetRay = ReturnType<THREE.WebGLRenderer['xr']['getController']>;
+
+interface TrackedController {
+  controller: XrTargetRay;
+  ray: THREE.Line;
+  removeListeners: () => void;
+}
+
+function createXrInputTracker(
+  opts: CreateXrInputTrackerOptions,
+): XrInputTracker {
+  let isDisposed = false;
+  const trackedControllers: TrackedController[] = [];
+  const inputSourceToController = new Map<unknown, XrTargetRay>();
+  let activeSession: XrSessionInputsLike | null = null;
+  let sessionSelectListener: ((ev: unknown) => void) | null = null;
+  let sessionEndListener: (() => void) | null = null;
+  let sessionInputsListener: ((ev: unknown) => void) | null = null;
+
+  function handleSelect(
+    controller: THREE.Object3D,
+    sourceOrEvent: unknown,
+  ): void {
+    if (isDisposed) {
+      return;
+    }
+
+    let dir: SphericalPosition | null = resolveDirectionFromController(controller);
+
+    if (dir === null && isRecord(sourceOrEvent)) {
+      if ('pose' in sourceOrEvent) {
+        dir = resolveDirectionFromPose(sourceOrEvent.pose);
+      }
+    }
+
+    if (dir === null) {
+      return;
+    }
+
+    const targets = opts.getTargets();
+    const hitId = pickHotspot(dir, targets);
+    if (hitId !== null) {
+      let customTime: number | undefined = undefined;
+      if (
+        isRecord(sourceOrEvent) &&
+        typeof sourceOrEvent.timeStamp === 'number' &&
+        Number.isFinite(sourceOrEvent.timeStamp)
+      ) {
+        customTime = sourceOrEvent.timeStamp;
+      }
+      opts.onSelectHotspot(hitId, customTime);
+    }
+  }
+
+  // Contrôleurs Three.js depuis renderer.xr
+  if (isRendererWithXrControllers(opts.renderer)) {
+    for (let i = 0; i < 2; i++) {
+      const candidate: unknown = opts.renderer.xr.getController(i);
+      if (isControllerTargetRay(candidate)) {
+        const ray = createRayLine();
+        candidate.add(ray);
+        opts.scene.add(candidate);
+
+        const onCtrlSelect = (e: unknown): void => {
+          handleSelect(candidate, e);
+        };
+        candidate.addEventListener('select', onCtrlSelect);
+
+        const onConnected = (e: unknown): void => {
+          if (isRecord(e) && 'data' in e && isRecord(e.data)) {
+            inputSourceToController.set(e.data, candidate);
+          }
+        };
+        candidate.addEventListener('connected', onConnected);
+
+        const onDisconnected = (e: unknown): void => {
+          if (isRecord(e) && 'data' in e && isRecord(e.data)) {
+            inputSourceToController.delete(e.data);
+          }
+        };
+        candidate.addEventListener('disconnected', onDisconnected);
+
+        trackedControllers.push({
+          controller: candidate,
+          ray,
+          removeListeners: () => {
+            candidate.removeEventListener('select', onCtrlSelect);
+            candidate.removeEventListener('connected', onConnected);
+            candidate.removeEventListener('disconnected', onDisconnected);
+          },
+        });
+      }
+    }
+  }
+
+  function bindSession(session: unknown): void {
+    if (isDisposed || !isXrSessionInputsLike(session)) {
+      return;
+    }
+    activeSession = session;
+
+    const onSessionSelect = (e: unknown): void => {
+      let matchedController: THREE.Object3D | null = null;
+
+      if (isRecord(e) && 'inputSource' in e && isRecord(e.inputSource)) {
+        const inputSource = e.inputSource;
+        const mapped = inputSourceToController.get(inputSource);
+        if (mapped !== undefined) {
+          matchedController = mapped;
+        } else if (Array.isArray(session.inputSources)) {
+          const index = session.inputSources.indexOf(inputSource);
+          if (index >= 0 && index < trackedControllers.length) {
+            const entry = trackedControllers[index];
+            if (entry !== undefined) {
+              matchedController = entry.controller;
+            }
+          }
+        }
+      }
+
+      if (matchedController === null && isRecord(e) && isThreeObject(e.target)) {
+        matchedController = e.target;
+      }
+
+      if (matchedController === null) {
+        return;
+      }
+
+      handleSelect(matchedController, e);
+    };
+    sessionSelectListener = onSessionSelect;
+    session.addEventListener('select', onSessionSelect);
+
+    const onSessionEnd = (): void => {
+      dispose();
+    };
+    sessionEndListener = onSessionEnd;
+    session.addEventListener('end', onSessionEnd);
+
+    const onSessionInputs = (e: unknown): void => {
+      if (isRecord(e) && Array.isArray(e.added)) {
+        const addedList: readonly unknown[] = e.added;
+        for (let i = 0; i < addedList.length; i++) {
+          const src: unknown = addedList[i];
+          if (isRecord(src) && i < trackedControllers.length) {
+            const entry = trackedControllers[i];
+            if (entry !== undefined) {
+              inputSourceToController.set(src, entry.controller);
+            }
+          }
+        }
+      }
+    };
+    sessionInputsListener = onSessionInputs;
+    session.addEventListener('inputsourceschange', onSessionInputs);
+
+    if (Array.isArray(session.inputSources)) {
+      const sources: readonly unknown[] = session.inputSources;
+      for (let i = 0; i < sources.length; i++) {
+        const src: unknown = sources[i];
+        if (isRecord(src) && i < trackedControllers.length) {
+          const entry = trackedControllers[i];
+          if (entry !== undefined) {
+            inputSourceToController.set(src, entry.controller);
+          }
+        }
+      }
+    }
+  }
+
+  function dispose(): void {
+    if (isDisposed) {
+      return;
+    }
+    isDisposed = true;
+
+    if (activeSession !== null) {
+      if (sessionSelectListener !== null) {
+        activeSession.removeEventListener('select', sessionSelectListener);
+      }
+      if (sessionEndListener !== null) {
+        activeSession.removeEventListener('end', sessionEndListener);
+      }
+      if (sessionInputsListener !== null) {
+        activeSession.removeEventListener(
+          'inputsourceschange',
+          sessionInputsListener,
+        );
+      }
+    }
+    activeSession = null;
+    sessionSelectListener = null;
+    sessionEndListener = null;
+    sessionInputsListener = null;
+
+    for (const item of trackedControllers) {
+      item.removeListeners();
+      item.controller.remove(item.ray);
+      disposeRayLine(item.ray);
+      if (item.controller.parent !== null) {
+        item.controller.parent.remove(item.controller);
+      }
+    }
+    trackedControllers.length = 0;
+    inputSourceToController.clear();
+  }
+
+  return {
+    bindSession,
+    dispose,
+  };
+}
+
 /**
  * Monte le contrôleur VR WebXR dans le conteneur hôte (M6 F-70, F-71).
  *
@@ -150,6 +491,7 @@ function getSceneData(
  * - Détecteur de regard fixe `createGazeSelector`
  * - Fondu au noir confort `createVrFade`
  * - Coordinateur d'interactions VR `createVrInteraction`
+ * - Suivi des sources et visée manette/main `createXrInputTracker` (M6 F-71)
  * - Gestionnaire de session immersive `createVrSession`
  * - Lecteur de visite `createVrPlayer`
  *
@@ -239,22 +581,6 @@ export async function mountVr(
       const infoPanel = createInfoPanel();
       vrScene.scene.add(infoPanel.mesh);
 
-      let isDisposed = false;
-      const teardown = (): void => {
-        if (isDisposed) {
-          return;
-        }
-        isDisposed = true;
-        infoPanel.dispose();
-        vrScene.dispose();
-        rendererHandle.dispose();
-        if (currentTeardown === teardown) {
-          currentTeardown = null;
-        }
-        currentSession = null;
-      };
-      currentTeardown = teardown;
-
       // 3. Détection de la scène courante et configuration des marqueurs avec cible de sortie VR
       const currentSceneId = opts.getCurrentSceneId();
       const currentScene =
@@ -282,6 +608,39 @@ export async function mountVr(
         },
       });
 
+      let currentFrameTime = 0;
+
+      // 5. Suivi des manettes et mains XR avec rayon visible (M6 F-71)
+      const xrInputTracker = createXrInputTracker({
+        renderer: rendererHandle.renderer,
+        scene: vrScene.scene,
+        getTargets: () => vrScene.getMarkerTargets(),
+        onSelectHotspot: (hotspotId: string, customTime?: number) => {
+          const timeToUse =
+            typeof customTime === 'number' && Number.isFinite(customTime)
+              ? customTime
+              : currentFrameTime;
+          interaction.selectNow(hotspotId, timeToUse);
+        },
+      });
+
+      let isDisposed = false;
+      const teardown = (): void => {
+        if (isDisposed) {
+          return;
+        }
+        isDisposed = true;
+        xrInputTracker.dispose();
+        infoPanel.dispose();
+        vrScene.dispose();
+        rendererHandle.dispose();
+        if (currentTeardown === teardown) {
+          currentTeardown = null;
+        }
+        currentSession = null;
+      };
+      currentTeardown = teardown;
+
       const xrSystem = getXrSystem(opts.navigatorLike);
       if (xrSystem === null) {
         teardown();
@@ -301,6 +660,7 @@ export async function mountVr(
             if (isXrSession(s)) {
               await rendererHandle.renderer.xr.setSession(s);
             }
+            xrInputTracker.bindSession(s);
           },
         },
         setAnimationLoop: (cb: ((time: number) => void) | null): void => {
@@ -312,6 +672,7 @@ export async function mountVr(
         xr: xrSystem,
         renderer: vrRendererAdapter,
         onFrame: (time: number) => {
+          currentFrameTime = time;
           if (player !== null) {
             player.frame(time);
           }
@@ -352,11 +713,11 @@ export async function mountVr(
         openTourLink: opts.openTourLink,
       });
 
-      // 5. Entrée en session immersive synchrone dans le geste du clic avant tout await
+      // 6. Entrée en session immersive synchrone dans le geste du clic avant tout await
       const entered = session.enter({ optionalFeatures: ['local-floor'] });
       entered.catch(() => {});
 
-      // 6. Ensuite seulement : chargement de la texture (fond noir pendant le chargement)
+      // 7. Ensuite seulement : chargement de la texture (fond noir pendant le chargement)
       if (currentScene !== undefined) {
         try {
           const initialTexture = await loadTextureForScene(currentScene.id);
