@@ -18,6 +18,11 @@ import {
   type KioskOfflineMailMessage,
 } from './kiosk-offline-check.js';
 import { startKioskOfflineJob } from './kiosk-offline.job.js';
+import { PrismaStatsDailyRepository } from './stats-daily-repository.js';
+import {
+  recalculateStatsDaily,
+  startStatsDailyJob,
+} from './stats-daily.job.js';
 
 function loadLocalEnvFile(): void {
   const path = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
@@ -31,6 +36,7 @@ export interface BootFactories {
   createPrisma: () => PrismaClient;
   startWorker: typeof startPanoramaWorker;
   startKioskOfflineJob: typeof startKioskOfflineJob;
+  startStatsDailyJob: typeof startStatsDailyJob;
   createSmtpSender?: typeof createSmtpSender;
 }
 
@@ -38,6 +44,7 @@ const defaultFactories: BootFactories = {
   createPrisma: () => new PrismaClient(),
   startWorker: startPanoramaWorker,
   startKioskOfflineJob,
+  startStatsDailyJob,
 };
 
 export async function boot(
@@ -60,6 +67,7 @@ export async function boot(
   const prisma = factories.createPrisma();
 
   let worker: { close(): Promise<void> } | undefined;
+  let statsDailyJob: { close(): Promise<void> } | undefined;
   let kioskOfflineJob: { close(): Promise<void> } | undefined;
 
   try {
@@ -78,6 +86,17 @@ export async function boot(
 
     log(`worker prêt (file ${PANORAMA_QUEUE_NAME}, concurrence ${String(PANORAMA_WORKER_CONCURRENCY)})`);
 
+    const statsDailyRepo = new PrismaStatsDailyRepository(prisma);
+    statsDailyJob = await factories.startStatsDailyJob({
+      redisUrl: env.REDIS_URL,
+      recalculate: () =>
+        recalculateStatsDaily({
+          repo: statsDailyRepo,
+          log,
+        }),
+      log,
+    });
+
     const store = createPrismaKioskOfflineStore(prisma);
     const sendMail = (mail: KioskOfflineMailMessage): Promise<void> =>
       smtpSender.sendMail(mail);
@@ -89,6 +108,7 @@ export async function boot(
     });
 
     const activeWorker = worker;
+    const activeStatsDailyJob = statsDailyJob;
     const activeKioskJob = kioskOfflineJob;
 
     return async () => {
@@ -96,12 +116,16 @@ export async function boot(
         await activeKioskJob.close();
       } finally {
         try {
-          await activeWorker.close();
+          await activeStatsDailyJob.close();
         } finally {
           try {
-            smtpSender.close();
+            await activeWorker.close();
           } finally {
-            await prisma.$disconnect();
+            try {
+              smtpSender.close();
+            } finally {
+              await prisma.$disconnect();
+            }
           }
         }
       }
@@ -113,14 +137,20 @@ export async function boot(
       }
     } finally {
       try {
-        if (worker !== undefined) {
-          await worker.close();
+        if (statsDailyJob !== undefined) {
+          await statsDailyJob.close();
         }
       } finally {
         try {
-          smtpSender.close();
+          if (worker !== undefined) {
+            await worker.close();
+          }
         } finally {
-          await prisma.$disconnect();
+          try {
+            smtpSender.close();
+          } finally {
+            await prisma.$disconnect();
+          }
         }
       }
     }
