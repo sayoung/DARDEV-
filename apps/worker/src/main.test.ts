@@ -6,6 +6,7 @@ import { boot, type BootFactories } from './main.js';
 import { generateFlatDerivatives } from './derivatives/panorama.derivatives.js';
 import { generateTiles } from './derivatives/panorama.tiles.js';
 import type { KioskOfflineJobHandle } from './kiosk-offline.job.js';
+import type { StatsDailyJobHandle } from './stats-daily.job.js';
 import type { SmtpSender } from './smtp-sender.js';
 
 describe('boot', () => {
@@ -20,16 +21,44 @@ describe('boot', () => {
     SMTP_PORT: '1025',
   };
 
-  it("valide l'environnement puis journalise worker prêt, démarre et ferme le worker panorama et le job hors-ligne", async () => {
+  it("valide l'environnement puis journalise worker prêt, démarre et ferme le worker panorama, le job stats et le job hors-ligne", async () => {
     const messages: string[] = [];
 
     const mockDisconnect = vi.fn().mockResolvedValue(undefined);
     const mockKioskFindMany = vi.fn().mockResolvedValue([]);
     const mockKioskUpdate = vi.fn().mockResolvedValue({ id: 'kiosk-1' });
     const mockUserFindMany = vi.fn().mockResolvedValue([]);
+    const mockEventFindMany = vi.fn().mockResolvedValue([]);
+    const mockStatsDailyDeleteMany = vi.fn().mockResolvedValue({ count: 0 });
+    const mockStatsDailyCreateMany = vi.fn().mockResolvedValue({ count: 0 });
+    const mockTransaction = vi.fn().mockImplementation(
+      async <T>(
+        cb: (tx: {
+          statsDaily: {
+            deleteMany: typeof mockStatsDailyDeleteMany;
+            createMany: typeof mockStatsDailyCreateMany;
+          };
+        }) => Promise<T>,
+      ): Promise<T> => {
+        return cb({
+          statsDaily: {
+            deleteMany: mockStatsDailyDeleteMany,
+            createMany: mockStatsDailyCreateMany,
+          },
+        });
+      },
+    );
 
     const mockPrisma = {
       $disconnect: mockDisconnect,
+      $transaction: mockTransaction,
+      event: {
+        findMany: mockEventFindMany,
+      },
+      statsDaily: {
+        deleteMany: mockStatsDailyDeleteMany,
+        createMany: mockStatsDailyCreateMany,
+      },
       kiosk: {
         findMany: mockKioskFindMany,
         update: mockKioskUpdate,
@@ -45,6 +74,14 @@ describe('boot', () => {
     } as unknown as Worker;
 
     const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockReturnValue(mockWorker);
+
+    const mockCloseStatsDailyJob = vi.fn().mockResolvedValue(undefined);
+    const mockStatsDailyJob: StatsDailyJobHandle = {
+      close: mockCloseStatsDailyJob,
+    };
+    const mockStartStatsDailyJob = vi
+      .fn<BootFactories['startStatsDailyJob']>()
+      .mockResolvedValue(mockStatsDailyJob);
 
     const mockCloseJob = vi.fn().mockResolvedValue(undefined);
     const mockJob: KioskOfflineJobHandle = {
@@ -68,6 +105,7 @@ describe('boot', () => {
       {
         createPrisma: () => mockPrisma,
         startWorker: mockStartWorker,
+        startStatsDailyJob: mockStartStatsDailyJob,
         startKioskOfflineJob: mockStartKioskOfflineJob,
         createSmtpSender: mockCreateSmtpSender,
       },
@@ -98,6 +136,24 @@ describe('boot', () => {
     expect(senderCall[0].SMTP_HOST).toBe(validEnv.SMTP_HOST);
     expect(senderCall[0].SMTP_PORT).toBe(1025);
 
+    // Vérifie le démarrage du job StatsDaily avec dépôt et redis
+    expect(mockStartStatsDailyJob).toHaveBeenCalledTimes(1);
+    const statsCall = mockStartStatsDailyJob.mock.calls[0];
+    if (!statsCall) {
+      expect.fail('startStatsDailyJob non appelé');
+    }
+    const statsArgs = statsCall[0];
+    expect(statsArgs.redisUrl).toBe(validEnv.REDIS_URL);
+    expect(typeof statsArgs.log).toBe('function');
+    expect(typeof statsArgs.recalculate).toBe('function');
+
+    // Vérifie l'exécution du callback recalculate (avec le dépôt instancié sur prisma)
+    const recalculateResult = await statsArgs.recalculate();
+    expect(recalculateResult.yesterday.bucketsCount).toBe(0);
+    expect(recalculateResult.today.bucketsCount).toBe(0);
+    expect(mockEventFindMany).toHaveBeenCalledTimes(2);
+    expect(mockStatsDailyDeleteMany).toHaveBeenCalledTimes(2);
+
     // Vérifie le démarrage du job de surveillance des kiosques hors-ligne
     expect(mockStartKioskOfflineJob).toHaveBeenCalledTimes(1);
     const kioskCall = mockStartKioskOfflineJob.mock.calls[0];
@@ -118,22 +174,26 @@ describe('boot', () => {
     await shutdown();
 
     expect(mockCloseJob).toHaveBeenCalledTimes(1);
+    expect(mockCloseStatsDailyJob).toHaveBeenCalledTimes(1);
     expect(mockCloseWorker).toHaveBeenCalledTimes(1);
     expect(mockCloseSender).toHaveBeenCalledTimes(1);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
 
     const jobOrder = mockCloseJob.mock.invocationCallOrder[0];
+    const statsOrder = mockCloseStatsDailyJob.mock.invocationCallOrder[0];
     const workerOrder = mockCloseWorker.mock.invocationCallOrder[0];
     const senderOrder = mockCloseSender.mock.invocationCallOrder[0];
     const disconnectOrder = mockDisconnect.mock.invocationCallOrder[0];
 
     if (
       jobOrder !== undefined &&
+      statsOrder !== undefined &&
       workerOrder !== undefined &&
       senderOrder !== undefined &&
       disconnectOrder !== undefined
     ) {
-      expect(jobOrder).toBeLessThan(workerOrder);
+      expect(jobOrder).toBeLessThan(statsOrder);
+      expect(statsOrder).toBeLessThan(workerOrder);
       expect(workerOrder).toBeLessThan(disconnectOrder);
       expect(senderOrder).toBeLessThan(disconnectOrder);
     } else {
@@ -180,6 +240,12 @@ describe('boot', () => {
       const mockWorker = { close: mockCloseWorker } as unknown as Worker;
       const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockReturnValue(mockWorker);
 
+      const mockCloseStatsDailyJob = vi.fn().mockResolvedValue(undefined);
+      const mockStatsDailyJob: StatsDailyJobHandle = { close: mockCloseStatsDailyJob };
+      const mockStartStatsDailyJob = vi
+        .fn<BootFactories['startStatsDailyJob']>()
+        .mockResolvedValue(mockStatsDailyJob);
+
       const mockCloseJob = vi.fn().mockResolvedValue(undefined);
       const mockJob: KioskOfflineJobHandle = { close: mockCloseJob };
       const mockStartKioskOfflineJob = vi.fn<BootFactories['startKioskOfflineJob']>().mockResolvedValue(mockJob);
@@ -198,6 +264,7 @@ describe('boot', () => {
         {
           createPrisma: () => mockPrisma,
           startWorker: mockStartWorker,
+          startStatsDailyJob: mockStartStatsDailyJob,
           startKioskOfflineJob: mockStartKioskOfflineJob,
           createSmtpSender: mockCreateSmtpSender,
         },
@@ -247,6 +314,12 @@ describe('boot', () => {
     const mockWorker = { close: vi.fn().mockResolvedValue(undefined) } as unknown as Worker;
     const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockReturnValue(mockWorker);
 
+    const mockCloseStatsDailyJob = vi.fn().mockResolvedValue(undefined);
+    const mockStatsDailyJob: StatsDailyJobHandle = { close: mockCloseStatsDailyJob };
+    const mockStartStatsDailyJob = vi
+      .fn<BootFactories['startStatsDailyJob']>()
+      .mockResolvedValue(mockStatsDailyJob);
+
     const mockJob: KioskOfflineJobHandle = { close: vi.fn().mockResolvedValue(undefined) };
     const mockStartKioskOfflineJob = vi.fn<BootFactories['startKioskOfflineJob']>().mockResolvedValue(mockJob);
 
@@ -256,6 +329,7 @@ describe('boot', () => {
       {
         createPrisma: () => mockPrisma,
         startWorker: mockStartWorker,
+        startStatsDailyJob: mockStartStatsDailyJob,
         startKioskOfflineJob: mockStartKioskOfflineJob,
       },
     );
@@ -263,13 +337,19 @@ describe('boot', () => {
     await expect(shutdown()).resolves.toBeUndefined();
   });
 
-  it('ferme le worker, le sender et déconnecte prisma si startKioskOfflineJob échoue au démarrage', async () => {
+  it('ferme le job StatsDaily, le worker, le sender et déconnecte prisma si startKioskOfflineJob échoue au démarrage', async () => {
     const mockDisconnect = vi.fn().mockResolvedValue(undefined);
     const mockPrisma = { $disconnect: mockDisconnect } as unknown as PrismaClient;
 
     const mockCloseWorker = vi.fn().mockResolvedValue(undefined);
     const mockWorker = { close: mockCloseWorker } as unknown as Worker;
     const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockReturnValue(mockWorker);
+
+    const mockCloseStatsDailyJob = vi.fn().mockResolvedValue(undefined);
+    const mockStatsDailyJob: StatsDailyJobHandle = { close: mockCloseStatsDailyJob };
+    const mockStartStatsDailyJob = vi
+      .fn<BootFactories['startStatsDailyJob']>()
+      .mockResolvedValue(mockStatsDailyJob);
 
     const mockStartKioskOfflineJob = vi.fn<BootFactories['startKioskOfflineJob']>().mockRejectedValue(
       new Error('Erreur connexion Redis job'),
@@ -289,12 +369,59 @@ describe('boot', () => {
         {
           createPrisma: () => mockPrisma,
           startWorker: mockStartWorker,
+          startStatsDailyJob: mockStartStatsDailyJob,
           startKioskOfflineJob: mockStartKioskOfflineJob,
           createSmtpSender: mockCreateSmtpSender,
         },
       ),
     ).rejects.toThrow('Erreur connexion Redis job');
 
+    expect(mockCloseStatsDailyJob).toHaveBeenCalledTimes(1);
+    expect(mockCloseWorker).toHaveBeenCalledTimes(1);
+    expect(mockCloseSender).toHaveBeenCalledTimes(1);
+    expect(mockDisconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('ferme le worker, le sender et déconnecte prisma si startStatsDailyJob échoue au démarrage', async () => {
+    const mockDisconnect = vi.fn().mockResolvedValue(undefined);
+    const mockPrisma = { $disconnect: mockDisconnect } as unknown as PrismaClient;
+
+    const mockCloseWorker = vi.fn().mockResolvedValue(undefined);
+    const mockWorker = { close: mockCloseWorker } as unknown as Worker;
+    const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockReturnValue(mockWorker);
+
+    const mockStartStatsDailyJob = vi
+      .fn<BootFactories['startStatsDailyJob']>()
+      .mockRejectedValue(new Error('Erreur démarrage StatsDaily'));
+
+    const mockCloseKioskJob = vi.fn().mockResolvedValue(undefined);
+    const mockKioskJob: KioskOfflineJobHandle = { close: mockCloseKioskJob };
+    const mockStartKioskOfflineJob = vi
+      .fn<BootFactories['startKioskOfflineJob']>()
+      .mockResolvedValue(mockKioskJob);
+
+    const mockCloseSender = vi.fn();
+    const mockSender: SmtpSender = {
+      sendMail: vi.fn().mockResolvedValue(undefined),
+      close: mockCloseSender,
+    };
+    const mockCreateSmtpSender = vi.fn<NonNullable<BootFactories['createSmtpSender']>>().mockReturnValue(mockSender);
+
+    await expect(
+      boot(
+        validEnv,
+        () => {},
+        {
+          createPrisma: () => mockPrisma,
+          startWorker: mockStartWorker,
+          startStatsDailyJob: mockStartStatsDailyJob,
+          startKioskOfflineJob: mockStartKioskOfflineJob,
+          createSmtpSender: mockCreateSmtpSender,
+        },
+      ),
+    ).rejects.toThrow('Erreur démarrage StatsDaily');
+
+    expect(mockStartKioskOfflineJob).not.toHaveBeenCalled();
     expect(mockCloseWorker).toHaveBeenCalledTimes(1);
     expect(mockCloseSender).toHaveBeenCalledTimes(1);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
@@ -307,6 +434,12 @@ describe('boot', () => {
     const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockImplementation(() => {
       throw new Error('Erreur initialisation worker panorama');
     });
+
+    const mockCloseStatsDailyJob = vi.fn().mockResolvedValue(undefined);
+    const mockStatsDailyJob: StatsDailyJobHandle = { close: mockCloseStatsDailyJob };
+    const mockStartStatsDailyJob = vi
+      .fn<BootFactories['startStatsDailyJob']>()
+      .mockResolvedValue(mockStatsDailyJob);
 
     const mockJob: KioskOfflineJobHandle = { close: vi.fn().mockResolvedValue(undefined) };
     const mockStartKioskOfflineJob = vi.fn<BootFactories['startKioskOfflineJob']>().mockResolvedValue(mockJob);
@@ -325,12 +458,14 @@ describe('boot', () => {
         {
           createPrisma: () => mockPrisma,
           startWorker: mockStartWorker,
+          startStatsDailyJob: mockStartStatsDailyJob,
           startKioskOfflineJob: mockStartKioskOfflineJob,
           createSmtpSender: mockCreateSmtpSender,
         },
       ),
     ).rejects.toThrow('Erreur initialisation worker panorama');
 
+    expect(mockStartStatsDailyJob).not.toHaveBeenCalled();
     expect(mockStartKioskOfflineJob).not.toHaveBeenCalled();
     expect(mockCloseSender).toHaveBeenCalledTimes(1);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
@@ -347,6 +482,12 @@ describe('boot', () => {
     const mockCloseWorker = vi.fn().mockResolvedValue(undefined);
     const mockWorker = { close: mockCloseWorker } as unknown as Worker;
     const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockReturnValue(mockWorker);
+
+    const mockCloseStatsDailyJob = vi.fn().mockResolvedValue(undefined);
+    const mockStatsDailyJob: StatsDailyJobHandle = { close: mockCloseStatsDailyJob };
+    const mockStartStatsDailyJob = vi
+      .fn<BootFactories['startStatsDailyJob']>()
+      .mockResolvedValue(mockStatsDailyJob);
 
     const mockCloseJob = vi.fn().mockRejectedValue(new Error('Erreur close job'));
     const mockJob: KioskOfflineJobHandle = { close: mockCloseJob };
@@ -365,6 +506,7 @@ describe('boot', () => {
       {
         createPrisma: () => mockPrisma,
         startWorker: mockStartWorker,
+        startStatsDailyJob: mockStartStatsDailyJob,
         startKioskOfflineJob: mockStartKioskOfflineJob,
         createSmtpSender: mockCreateSmtpSender,
       },
@@ -373,6 +515,57 @@ describe('boot', () => {
     await expect(shutdown()).rejects.toThrow('Erreur close job');
 
     expect(mockCloseJob).toHaveBeenCalledTimes(1);
+    expect(mockCloseStatsDailyJob).toHaveBeenCalledTimes(1);
+    expect(mockCloseWorker).toHaveBeenCalledTimes(1);
+    expect(mockCloseSender).toHaveBeenCalledTimes(1);
+    expect(mockDisconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('continue la fermeture du worker, sender et prisma même si statsDailyJob échoue à la fermeture', async () => {
+    const mockDisconnect = vi.fn().mockResolvedValue(undefined);
+    const mockPrisma = {
+      $disconnect: mockDisconnect,
+      kiosk: { findMany: vi.fn().mockResolvedValue([]), update: vi.fn().mockResolvedValue(undefined) },
+      user: { findMany: vi.fn().mockResolvedValue([]) },
+    } as unknown as PrismaClient;
+
+    const mockCloseWorker = vi.fn().mockResolvedValue(undefined);
+    const mockWorker = { close: mockCloseWorker } as unknown as Worker;
+    const mockStartWorker = vi.fn<BootFactories['startWorker']>().mockReturnValue(mockWorker);
+
+    const mockCloseStatsDailyJob = vi.fn().mockRejectedValue(new Error('Erreur close StatsDaily'));
+    const mockStatsDailyJob: StatsDailyJobHandle = { close: mockCloseStatsDailyJob };
+    const mockStartStatsDailyJob = vi
+      .fn<BootFactories['startStatsDailyJob']>()
+      .mockResolvedValue(mockStatsDailyJob);
+
+    const mockCloseJob = vi.fn().mockResolvedValue(undefined);
+    const mockJob: KioskOfflineJobHandle = { close: mockCloseJob };
+    const mockStartKioskOfflineJob = vi.fn<BootFactories['startKioskOfflineJob']>().mockResolvedValue(mockJob);
+
+    const mockCloseSender = vi.fn();
+    const mockSender: SmtpSender = {
+      sendMail: vi.fn().mockResolvedValue(undefined),
+      close: mockCloseSender,
+    };
+    const mockCreateSmtpSender = vi.fn<NonNullable<BootFactories['createSmtpSender']>>().mockReturnValue(mockSender);
+
+    const shutdown = await boot(
+      validEnv,
+      () => {},
+      {
+        createPrisma: () => mockPrisma,
+        startWorker: mockStartWorker,
+        startStatsDailyJob: mockStartStatsDailyJob,
+        startKioskOfflineJob: mockStartKioskOfflineJob,
+        createSmtpSender: mockCreateSmtpSender,
+      },
+    );
+
+    await expect(shutdown()).rejects.toThrow('Erreur close StatsDaily');
+
+    expect(mockCloseJob).toHaveBeenCalledTimes(1);
+    expect(mockCloseStatsDailyJob).toHaveBeenCalledTimes(1);
     expect(mockCloseWorker).toHaveBeenCalledTimes(1);
     expect(mockCloseSender).toHaveBeenCalledTimes(1);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
