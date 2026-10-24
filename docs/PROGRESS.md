@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 24/10/2026 — M7 F-81/F-82 (1/4, a) — Reprendre dans apps/api/test/stats.int.test.ts le fichier de la branche non fusionnée agent/20261024-105440-m7-f-81-f-82-1-4-creer-apps-… — Correctif sûr et conforme à la tâche. (9317452)
 - 23/10/2026 — M7 F-80 (2/2, b.3) — Câbler le job StatsDaily dans apps/worker/src/main.ts. Prérequis : stats-daily-repository.ts et stats-daily.job.ts sont fusionnés. Calque l… — Câblage StatsDaily et couverture des cas d’arrêt conformes à la tâche. (dd90916)
 - 23/10/2026 — M7 F-80 (2/2, b.2) — Reprendre le job horaire StatsDaily. Prérequis : stats-daily-repository.ts est fusionné. Depuis la branche agent/20261023-165242-m7-f-80-2-… — Le job StatsDaily et ses tests répondent aux exigences de la tâche. (236f2b9)
 - 23/10/2026 — M7 F-80 (2/2, b.1) — Reprendre le dépôt StatsDaily. Depuis la branche agent/20261023-165242-m7-f-80-2-2-b-reprendre-le-depot-statsda (lecture seule : `git show… — Le dépôt et ses tests répondent à la tâche, sans défaut bloquant relevé. (3fbdb6b)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 19/10/2026 — M4 Cahier — précision F-22 (documentation seule, aucun code) : dans CAHIER_DES_CHARGES_XPLOR.md à la racine, remplace la ligne F-22 par : « **F-22 — Édition dir… — La ligne F-22 du cahier des charges est remplacée exactement comme demandé, sans autre modification. (831098f)
 - 19/10/2026 — M4 Audit 4/4 — Raccourcis clavier et aperçu : (a) les gestionnaires `keydown` attachés à `window` dans packages/viewer-core/src/scene-editor.ts (l.~215) et apps… — Les gardes de focus (éditeur 360 et SceneDetailPage) et l'ouverture synchrone de l'aperçu avec repli par lien sont en place, testés, et lint/typecheck/vitest passent. (33d9b8e)
 - 19/10/2026 — M4 Audit 3/4 (c) — Bouton « Modifier » dans le panneau du marqueur sélectionné : dans apps/admin/src/pages/SceneDetailPage.tsx, branche `selectedHotspotId` (l.~… — Bouton « Modifier » et édition du marqueur conformes à la demande (état local, HotspotForm pré-rempli, gestion d'erreur, i18n, 3 tests), contrôles verts. (637a9a0)
-- 19/10/2026 — M6 VR plantage Quest 3/3 — gestion d'erreur au clic avec message i18n. Dans packages/viewer-core/src/vr/mount-vr.ts : le `onClick` du bouton (`void handleClick(… — Gestion d'erreur au clic correctement implémentée (teardown, console.error, alerte role=alert 4 s retirée dans destroy), clé vr.startFailed ajoutée en fr/en/ar, option câblée dans apps/web, tests ajou… (934ed7a)
