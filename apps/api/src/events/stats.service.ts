@@ -35,25 +35,25 @@ export class StatsService {
     const where = this.buildWhere(principal, filters);
     const summaryQuery = Prisma.sql`
       SELECT
-        COUNT(DISTINCT "sessionId") FILTER (WHERE type = 'SESSION_START') AS sessions,
-        COALESCE(AVG("durationMs") FILTER (WHERE type = 'SESSION_END'), 0)::bigint AS "averageSessionDurationMs",
+        COUNT(DISTINCT e."sessionId") FILTER (WHERE type = 'SESSION_START') AS sessions,
+        COALESCE(AVG(e."durationMs") FILTER (WHERE type = 'SESSION_END'), 0)::bigint AS "averageSessionDurationMs",
         COUNT(*) FILTER (WHERE type = 'TOUR_OPEN') AS "toursOpened",
         COUNT(*) FILTER (WHERE type = 'SCENE_VIEW') AS "scenesViewed",
         COUNT(*) FILTER (WHERE type = 'HOTSPOT_CLICK') AS "hotspotClicks",
         COUNT(*) FILTER (WHERE type = 'VR_ENTER') AS "vrEntries",
         COUNT(*) FILTER (WHERE type = 'QR_SHOWN') AS "qrScans"
-      FROM "Event" WHERE ${where}`;
+      FROM "Event" e WHERE ${where}`;
     const dailyQuery = Prisma.sql`
-      SELECT to_char(date_trunc('day', "occurredAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS key,
-        COUNT(DISTINCT "sessionId") FILTER (WHERE type = 'SESSION_START') AS sessions,
+      SELECT to_char(date_trunc('day', e."occurredAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS key,
+        COUNT(DISTINCT e."sessionId") FILTER (WHERE type = 'SESSION_START') AS sessions,
         COUNT(*) FILTER (WHERE type = 'TOUR_OPEN') AS "toursOpened",
         COUNT(*) FILTER (WHERE type = 'SCENE_VIEW') AS "scenesViewed"
-      FROM "Event" WHERE ${where}
-      GROUP BY date_trunc('day', "occurredAt" AT TIME ZONE 'UTC') ORDER BY 1`;
+      FROM "Event" e WHERE ${where}
+      GROUP BY date_trunc('day', e."occurredAt" AT TIME ZONE 'UTC') ORDER BY 1`;
     const hourlyQuery = Prisma.sql`
-      SELECT EXTRACT(HOUR FROM "occurredAt" AT TIME ZONE 'UTC')::int AS key,
-        COUNT(DISTINCT "sessionId") FILTER (WHERE type = 'SESSION_START') AS sessions
-      FROM "Event" WHERE ${where} GROUP BY 1 ORDER BY 1`;
+      SELECT EXTRACT(HOUR FROM e."occurredAt" AT TIME ZONE 'UTC')::int AS key,
+        COUNT(DISTINCT e."sessionId") FILTER (WHERE type = 'SESSION_START') AS sessions
+      FROM "Event" e WHERE ${where} GROUP BY 1 ORDER BY 1`;
     const topToursQuery = Prisma.sql`
       SELECT e."tourId"::text AS key,
         COALESCE(t.title->>'fr', t.title->>'en', e."tourId"::text) AS label,
@@ -69,13 +69,13 @@ export class StatsService {
       WHERE ${where} AND e.type = 'SCENE_VIEW' AND e."sceneId" IS NOT NULL
       GROUP BY e."sceneId", s.title ORDER BY count DESC, label LIMIT 10`;
     const languagesQuery = Prisma.sql`
-      SELECT lang AS key, COUNT(DISTINCT "sessionId") AS count
-      FROM "Event" WHERE ${where} AND type = 'SESSION_START'
-      GROUP BY lang ORDER BY count DESC, lang`;
+      SELECT e.lang AS key, COUNT(DISTINCT e."sessionId") AS count
+      FROM "Event" e WHERE ${where} AND e.type = 'SESSION_START'
+      GROUP BY e.lang ORDER BY count DESC, e.lang`;
     const channelsQuery = Prisma.sql`
-      SELECT channel AS key, COUNT(DISTINCT "sessionId") AS count
-      FROM "Event" WHERE ${where} AND type = 'SESSION_START'
-      GROUP BY channel ORDER BY count DESC, channel`;
+      SELECT e.channel AS key, COUNT(DISTINCT e."sessionId") AS count
+      FROM "Event" e WHERE ${where} AND e.type = 'SESSION_START'
+      GROUP BY e.channel ORDER BY count DESC, e.channel`;
 
     const [summaryRows, dailyRows, hourlyRows, topTours, topScenes, languages, channels] = await Promise.all([
       this.prisma.$queryRaw<Array<Record<string, number | bigint | null>>>(summaryQuery),
@@ -155,14 +155,14 @@ export class StatsService {
       throw new NotFoundException();
     }
     const clauses: Prisma.Sql[] = [
-      Prisma.sql`"receivedAt" >= ${filters.from}`,
-      Prisma.sql`"receivedAt" < ${filters.to}`,
+      Prisma.sql`e."receivedAt" >= ${filters.from}`,
+      Prisma.sql`e."receivedAt" < ${filters.to}`,
     ];
-    if (filters.hotelId !== undefined) clauses.push(Prisma.sql`"hotelId" = ${filters.hotelId}::uuid`);
-    else if (scope !== 'ALL') clauses.push(Prisma.sql`"hotelId" IN (${Prisma.join(scope.map((id) => Prisma.sql`${id}::uuid`))})`);
-    if (filters.tourId !== undefined) clauses.push(Prisma.sql`"tourId" = ${filters.tourId}::uuid`);
-    if (filters.channel !== undefined) clauses.push(Prisma.sql`channel = ${filters.channel}::"EventChannel"`);
-    if (filters.lang !== undefined) clauses.push(Prisma.sql`lang = ${filters.lang}`);
+    if (filters.hotelId !== undefined) clauses.push(Prisma.sql`e."hotelId" = ${filters.hotelId}::uuid`);
+    else if (scope !== 'ALL') clauses.push(Prisma.sql`e."hotelId" IN (${Prisma.join(scope.map((id) => Prisma.sql`${id}::uuid`))})`);
+    if (filters.tourId !== undefined) clauses.push(Prisma.sql`e."tourId" = ${filters.tourId}::uuid`);
+    if (filters.channel !== undefined) clauses.push(Prisma.sql`e.channel = ${filters.channel}::"EventChannel"`);
+    if (filters.lang !== undefined) clauses.push(Prisma.sql`e.lang = ${filters.lang}`);
     return Prisma.join(clauses, ' AND ');
   }
 }
