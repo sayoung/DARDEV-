@@ -32,6 +32,7 @@ import { AppModule } from '../src/app.module.js';
 import { PasswordService } from '../src/auth/password.service.js';
 import { toPrismaRole } from '../src/auth/prisma-role.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-cookie.js';
+import { sessionKey, userSessionsKey } from '../src/auth/session-store.js';
 import { loadEnv, type Env } from '../src/config/env.js';
 import { REDIS } from '../src/redis/redis.module.js';
 import { buildSeedUsers } from '../src/seed/seed-users.js';
@@ -81,12 +82,14 @@ async function cleanupCreatedSessions(client: Redis): Promise<void> {
   if (createdSessions.length === 0) {
     return;
   }
-  const keySet = new Set<string>();
+  const sessionKeys: string[] = [];
   for (const session of createdSessions) {
-    keySet.add(`sess:${session.sessionId}`);
-    keySet.add(`user-sess:${session.userId}`);
+    sessionKeys.push(sessionKey(session.sessionId));
+    await client.srem(userSessionsKey(session.userId), session.sessionId);
   }
-  await client.del(...Array.from(keySet));
+  if (sessionKeys.length > 0) {
+    await client.del(...sessionKeys);
+  }
   createdSessions.length = 0;
 }
 
