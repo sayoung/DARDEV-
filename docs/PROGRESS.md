@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.1.1.a) — Rendre Node accessible et vérifier l'environnement, SANS rien modifier (aucun fichier suivi, aucune opération git d'écritu… — Vérification en lecture seule terminée selon la branche d’arrêt prévue, les deux ports répondent. (d5de9c3)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.1) — Diagnostic d'environnement SEUL : ne modifier aucun fichier du dépôt (ni docs/PROGRESS.md), aucune opération git d'écriture, jamai… — Le diagnostic demandé est terminé sans modification du dépôt; le tunnel PostgreSQL répond, mais pnpm et Node sont introuvables dans cet environnement. (56c93fd)
 - 24/10/2026 — M7 F-81/F-82 (1/4, a) — Reprendre dans apps/api/test/stats.int.test.ts le fichier de la branche non fusionnée agent/20261024-105440-m7-f-81-f-82-1-4-creer-apps-… — Correctif sûr et conforme à la tâche. (9317452)
 - 23/10/2026 — M7 F-80 (2/2, b.3) — Câbler le job StatsDaily dans apps/worker/src/main.ts. Prérequis : stats-daily-repository.ts et stats-daily.job.ts sont fusionnés. Calque l… — Câblage StatsDaily et couverture des cas d’arrêt conformes à la tâche. (dd90916)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 19/10/2026 — M7 F-80 (décision) : dans docs/DECISIONS.md uniquement, ajoute à la fin du fichier (après D-129, laisse l'ancien D-118 « Réordonnancement de la sélection » inta… — D-130 ajouté en fin de docs/DECISIONS.md après D-129, au bon format et sans autre modification ; D-118 intact et contrôles verts. (7e3967e)
 - 19/10/2026 — M7 F-80 / API-04 : dans packages/shared, crée src/events.ts (exporté par index.ts) avec les schémas Zod et types du cahier §5.9 : enum EVENT_TYPES (SESSION_STAR… — events.ts et ses tests conformes à F-80/API-04 (schémas Zod, bornes 1–200, aucune donnée personnelle), lint/typecheck OK. (53f47ed)
 - 19/10/2026 — M4 Cahier — précision F-22 (documentation seule, aucun code) : dans CAHIER_DES_CHARGES_XPLOR.md à la racine, remplace la ligne F-22 par : « **F-22 — Édition dir… — La ligne F-22 du cahier des charges est remplacée exactement comme demandé, sans autre modification. (831098f)
-- 19/10/2026 — M4 Audit 4/4 — Raccourcis clavier et aperçu : (a) les gestionnaires `keydown` attachés à `window` dans packages/viewer-core/src/scene-editor.ts (l.~215) et apps… — Les gardes de focus (éditeur 360 et SceneDetailPage) et l'ouverture synchrone de l'aperçu avec repli par lien sont en place, testés, et lint/typecheck/vitest passent. (33d9b8e)
