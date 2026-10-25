@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.2) — LECTURE SEULE, aucun fichier du dépôt modifié, ni git (hors `git status`), ni docker. Lance le test ciblé et recopie l… — Le test ciblé réussit avec 10 tests passés et le dépôt reste propre. (2885539)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.3) — LECTURE SEULE. Vérifier que le test apps/admin/src/pages/TourForm.test.tsx est lançable, sans le corriger. Avec des… — Le test TourForm est lançable et ses 10 tests passent. (77e0008)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.2) — LECTURE SEULE. Créer le journal de diagnostic et vérifier qu'il est ignoré, avec des appels PowerShell SÉPARÉS, un s… — Le fichier de diagnostic existe et est ignoré par Git ; aucun écart n’est visible. (97cfcdd)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.1) — LECTURE SEULE, aucun fichier suivi modifié, aucune opération git hors `git status`, pas de docker. Détecter pnpm ave… — La vérification demandée est effectuée : pnpm est indisponible et aucun des replis ne fonctionne. (fc5731d)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 20/10/2026 — M7 F-80 : lot 2/3 des tests d'intégration de apps/api (catalog, hotel-managers, hotels). Utilise UNIQUEMENT l'outil PowerShell au premier plan, avec timeout 300… — Aucun fichier modifié, conforme au cas « tout vert » du lot 2/3 ; lint et typecheck passent. (a9af4ec)
 - 19/10/2026 — M7 F-80 : en PowerShell, au PREMIER PLAN (jamais run_in_background), vérifie le tunnel avec `Test-NetConnection localhost -Port 5432 -InformationLevel Quiet`. S… — Aucun changement de code ni de fichier interdit, ce qui est cohérent avec une exécution verte ou un tunnel injoignable; la sortie du test d'intégration n'était pas disponible, donc le résultat n'est p… (ca9368b)
 - 19/10/2026 — M7 F-80 : lance `pnpm typecheck` au PREMIER PLAN (jamais run_in_background), en PowerShell, avec timeout 600000 : `$env:CI='1'; pnpm typecheck *> .tmp-typecheck… — Typecheck et lint passent (code 0) sans aucune modification nécessaire; arbre propre, log temporaire supprimé, PROGRESS.md intact. (9ef88fc)
-- 19/10/2026 — M7 F-80 : lance `pnpm lint` au PREMIER PLAN (jamais run_in_background), en PowerShell, avec timeout 600000 : `$env:CI='1'; pnpm lint *> .tmp-lint.log; Get-Conte… — Lint déjà vert, aucune correction nécessaire; le fichier de test d'intégration existe, .tmp-lint.log est supprimé et l'arbre est propre. (a8b0af0)
