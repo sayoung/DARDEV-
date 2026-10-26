@@ -278,6 +278,7 @@ describe('TourForm Pages', () => {
       }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/scenes')) { return Promise.resolve(jsonResponse(200, [])); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
@@ -330,6 +331,7 @@ describe('TourForm Pages', () => {
       }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/scenes')) { return Promise.resolve(jsonResponse(200, [])); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
@@ -390,6 +392,7 @@ describe('TourForm Pages', () => {
       }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/scenes')) { return Promise.resolve(jsonResponse(200, [])); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
@@ -434,6 +437,7 @@ describe('TourForm Pages', () => {
       }
       if (url.includes('/admin/assets')) return Promise.resolve(jsonResponse(200, mockAssets));
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/graph')) { return Promise.resolve(jsonResponse(200, { nodes: [], edges: [] })); }
+      if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f/scenes')) { return Promise.resolve(jsonResponse(200, [])); }
       if (url.includes('/admin/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f') && !url.includes('/graph') && !url.includes('/scenes') && method === 'GET') {
         return Promise.resolve(jsonResponse(200, mockTour));
       }
