@@ -441,7 +441,7 @@ beforeAll(async () => {
   // 5. Créer deux visites avec scènes
   const tourA = await prisma.tour.create({
     data: {
-      title: { fr: 'Visite Tour Hassan', en: 'Hassan Tour' },
+      title: { fr: 'Visite Tour Hassan (صومعة حسان) — Édition Découverte', en: 'Hassan Tour' },
       summary: { fr: 'Découvrez la Tour Hassan' },
       cityId: city.id,
       coverAssetId: coverAsset.id,
@@ -453,7 +453,7 @@ beforeAll(async () => {
   const sceneA = await prisma.scene.create({
     data: {
       tourId: tourA.id,
-      title: { fr: 'Minaret Hassan', en: 'Hassan Minaret' },
+      title: { fr: 'Minaret Hassan (منارة حسان) — Vue détaillée', en: 'Hassan Minaret' },
       panoramaAssetId: panoAsset.id,
       createdById: adminUser.id,
       weight: 0,
@@ -462,7 +462,7 @@ beforeAll(async () => {
 
   const tourB = await prisma.tour.create({
     data: {
-      title: { fr: 'Visite Kasbah Oudayas', en: 'Oudayas Tour' },
+      title: { fr: 'Visite Kasbah Oudayas (قصبة الأوداية) — Patrimoine', en: 'Oudayas Tour' },
       summary: { fr: 'Découvrez les Oudayas' },
       cityId: city.id,
       coverAssetId: coverAsset.id,
@@ -474,7 +474,7 @@ beforeAll(async () => {
   const sceneB = await prisma.scene.create({
     data: {
       tourId: tourB.id,
-      title: { fr: 'Jardin Oudayas', en: 'Oudayas Garden' },
+      title: { fr: 'Jardin Oudayas (حديقة الأوداية) — Vue panoramique', en: 'Oudayas Garden' },
       panoramaAssetId: panoAsset.id,
       createdById: adminUser.id,
       weight: 0,
@@ -512,10 +512,10 @@ beforeAll(async () => {
   fixtures = {
     hotelA: { id: hotelA.id, name: hotelA.name },
     hotelB: { id: hotelB.id, name: hotelB.name },
-    tourA: { id: tourA.id, title: 'Visite Tour Hassan' },
-    tourB: { id: tourB.id, title: 'Visite Kasbah Oudayas' },
-    sceneA: { id: sceneA.id, title: 'Minaret Hassan' },
-    sceneB: { id: sceneB.id, title: 'Jardin Oudayas' },
+    tourA: { id: tourA.id, title: 'Visite Tour Hassan (صومعة حسان) — Édition Découverte' },
+    tourB: { id: tourB.id, title: 'Visite Kasbah Oudayas (قصبة الأوداية) — Patrimoine' },
+    sceneA: { id: sceneA.id, title: 'Minaret Hassan (منارة حسان) — Vue détaillée' },
+    sceneB: { id: sceneB.id, title: 'Jardin Oudayas (حديقة الأوداية) — Vue panoramique' },
     expectedDays: days,
     subWindowFrom: `${day1}T00:00:00.000Z`,
     subWindowTo: `${day3}T00:00:00.000Z`,
@@ -802,6 +802,13 @@ describe('GET /api/admin/stats (M7 F-81/F-82)', () => {
       expect(data.topScenes).toEqual([
         { id: fixtures.sceneA.id, label: fixtures.sceneA.title, views: 84 },
       ]);
+      expect(data.topTours.some((t) => t.id === fixtures.tourB.id)).toBe(false);
+      expect(data.topScenes.some((s) => s.id === fixtures.sceneB.id)).toBe(false);
+    });
+
+    it('(12b) un éditeur n’a aucun accès aux statistiques (GET /api/v1/admin/stats) même avec filtre hôtel (403 Forbidden)', async () => {
+      const res = await getStats(editorSession, { hotelId: fixtures.hotelA.id });
+      expect(res.statusCode).toBe(403);
     });
 
     it('(13) le gestionnaire de l’hôtel A peut filtrer explicitement sur son hôtel A', async () => {
@@ -878,40 +885,266 @@ describe('GET /api/admin/stats (M7 F-81/F-82)', () => {
   });
 
   describe('export CSV (GET /api/admin/stats/export.csv)', () => {
-    it('(22) renvoie un fichier CSV UTF-8 BOM avec les totaux, séries journalières et classements', async () => {
-      const res = await getExportCsv(adminSession);
-      expect(res.statusCode).toBe(200);
-      expect(res.headers['content-type']).toBe('text/csv; charset=utf-8');
-      expect(res.headers['content-disposition']).toBe('attachment; filename="xplor-statistiques.csv"');
+    describe('contrôle d’accès et isolation multi-tenant sur l’export CSV', () => {
+      it('(22) répond 401 si aucun cookie de session n’est fourni pour l’export CSV', async () => {
+        const res = await getExportCsv();
+        expect(res.statusCode).toBe(401);
+      });
 
-      // Doit commencer par le BOM UTF-8 (\uFEFF)
-      expect(res.body.startsWith('\uFEFF')).toBe(true);
+      it('(23) répond 403 si l’utilisateur a le rôle EDITOR pour l’export CSV (avec ou sans filtre)', async () => {
+        const res = await getExportCsv(editorSession);
+        expect(res.statusCode).toBe(403);
 
-      // Vérifier les lignes clés
-      expect(res.body).toContain('"Indicateur";"Valeur"');
-      expect(res.body).toContain('"Sessions";"168"');
-      expect(res.body).toContain('"Visites ouvertes";"168"');
-      expect(res.body).toContain('"Scènes vues";"168"');
-      expect(res.body).toContain('"Clics sur les points";"84"');
-      expect(res.body).toContain('"Entrées VR";"56"');
-      expect(res.body).toContain('"Scans QR";"24"');
-      expect(res.body).toContain('"Jour";"Sessions";"Visites ouvertes";"Scènes vues"');
-      expect(res.body).toContain('"Top visites";"Ouvertures"');
-      expect(res.body).toContain('"Top scènes";"Vues"');
+        const resWithFilter = await getExportCsv(editorSession, { hotelId: fixtures.hotelA.id });
+        expect(resWithFilter.statusCode).toBe(403);
+      });
+
+      it('(24) répond 403 pour un gestionnaire sans hôtel rattaché pour l’export CSV', async () => {
+        const res = await getExportCsv(managerUnattachedSession);
+        expect(res.statusCode).toBe(403);
+      });
+
+      it('(25) un gestionnaire de l’hôtel A ne voit aucune donnée ni ligne de l’hôtel B dans le CSV (par défaut)', async () => {
+        const res = await getExportCsv(managerASession);
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toContain('"Sessions";"84"');
+        expect(res.body).toContain('"Visites ouvertes";"84"');
+        expect(res.body).toContain(`"${fixtures.tourA.title}";"84"`);
+        expect(res.body).toContain(`"${fixtures.sceneA.title}";"84"`);
+
+        // Vérification stricte : aucune ligne, titre ni référence à l'hôtel B
+        expect(res.body).not.toContain(fixtures.tourB.title);
+        expect(res.body).not.toContain(fixtures.sceneB.title);
+        expect(res.body).not.toContain(fixtures.hotelB.name);
+        expect(res.body).not.toContain('قصبة الأوداية');
+        expect(res.body).not.toContain('حديقة الأوداية');
+      });
+
+      it('(26) un gestionnaire de l’hôtel A reçoit 404 s’il tente de filtrer avec hotelId=B sur le CSV (AccessPolicy)', async () => {
+        const res = await getExportCsv(managerASession, { hotelId: fixtures.hotelB.id });
+        expect(res.statusCode).toBe(404);
+      });
+
+      it('(27) un gestionnaire de l’hôtel B ne voit que l’hôtel B dans le CSV et reçoit 404 sur hotelId=A', async () => {
+        const resDefault = await getExportCsv(managerBSession);
+        expect(resDefault.statusCode).toBe(200);
+        expect(resDefault.body).toContain('"Sessions";"84"');
+        expect(resDefault.body).toContain(`"${fixtures.tourB.title}";"84"`);
+        expect(resDefault.body).not.toContain(fixtures.tourA.title);
+        expect(resDefault.body).not.toContain(fixtures.sceneA.title);
+        expect(resDefault.body).not.toContain(fixtures.hotelA.name);
+
+        const resForbidden = await getExportCsv(managerBSession, { hotelId: fixtures.hotelA.id });
+        expect(resForbidden.statusCode).toBe(404);
+      });
     });
 
-    it('(23) applique le cloisonnement multi-tenant sur l’export CSV pour un gestionnaire d’hôtel', async () => {
-      const res = await getExportCsv(managerASession);
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toContain('"Sessions";"84"');
-      expect(res.body).toContain('"Visites ouvertes";"84"');
-      expect(res.body).toContain(`"${fixtures.tourA.title}";"84"`);
-      expect(res.body).not.toContain(`"${fixtures.tourB.title}"`);
+    describe('format du fichier, encodage UTF-8 BOM, séparateur et caractères spéciaux', () => {
+      it('(28) renvoie un fichier CSV UTF-8 BOM avec le Content-Type text/csv, séparateur point-virgule et en-têtes', async () => {
+        const res = await getExportCsv(adminSession);
+        expect(res.statusCode).toBe(200);
+
+        // Content-Type text/csv avec charset utf-8
+        const contentType = res.headers['content-type'];
+        expect(typeof contentType).toBe('string');
+        if (typeof contentType === 'string') {
+          expect(contentType).toMatch(/^text\/csv/);
+          expect(contentType).toContain('charset=utf-8');
+        }
+
+        const contentDisposition = res.headers['content-disposition'];
+        expect(typeof contentDisposition).toBe('string');
+        if (typeof contentDisposition === 'string') {
+          expect(contentDisposition).toBe('attachment; filename="xplor-statistiques.csv"');
+        }
+
+        // BOM UTF-8 au niveau binaire : 0xEF 0xBB 0xBF
+        const payloadBytes = res.rawPayload;
+        const byte0 = payloadBytes[0];
+        const byte1 = payloadBytes[1];
+        const byte2 = payloadBytes[2];
+        expect(byte0).toBe(0xef);
+        expect(byte1).toBe(0xbb);
+        expect(byte2).toBe(0xbf);
+
+        // BOM au niveau décodage string
+        expect(res.body.startsWith('\uFEFF')).toBe(true);
+
+        // Séparateur point-virgule (;) sur chaque ligne non vide
+        const rawBodyWithoutBom = res.body.slice(1);
+        const csvLines = rawBodyWithoutBom
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0);
+        expect(csvLines.length).toBeGreaterThan(10);
+        for (const line of csvLines) {
+          expect(line).toContain(';');
+        }
+
+        // En-têtes : indicateurs totaux, séries journalières, top visites, top scènes
+        expect(csvLines[0]).toBe('"Indicateur";"Valeur"');
+        expect(res.body).toContain('"Jour";"Sessions";"Visites ouvertes";"Scènes vues"');
+        expect(res.body).toContain('"Top visites";"Ouvertures"');
+        expect(res.body).toContain('"Top scènes";"Vues"');
+
+        // Totaux
+        expect(res.body).toContain('"Sessions";"168"');
+        expect(res.body).toContain('"Visites ouvertes";"168"');
+        expect(res.body).toContain('"Scènes vues";"168"');
+        expect(res.body).toContain('"Clics sur les points";"84"');
+        expect(res.body).toContain('"Entrées VR";"56"');
+        expect(res.body).toContain('"Scans QR";"24"');
+      });
+
+      it('(29) préserve les caractères accentués et arabes intacts sans corruption ni perte d’encodage', async () => {
+        const res = await getExportCsv(adminSession);
+        expect(res.statusCode).toBe(200);
+
+        // Caractères arabes intacts dans le libellé des visites et scènes
+        expect(res.body).toContain('صومعة حسان');
+        expect(res.body).toContain('منارة حسان');
+        expect(res.body).toContain('قصبة الأوداية');
+        expect(res.body).toContain('حديقة الأوداية');
+
+        // Caractères accentués intacts dans les libellés et les indicateurs
+        expect(res.body).toContain('Édition Découverte');
+        expect(res.body).toContain('Vue détaillée');
+        expect(res.body).toContain('Patrimoine');
+        expect(res.body).toContain('Vue panoramique');
+        expect(res.body).toContain('Durée moyenne de session (ms)');
+        expect(res.body).toContain('Scènes vues');
+        expect(res.body).toContain('Entrées VR');
+
+        // Absence de tout caractère de remplacement Unicode (\uFFFD)
+        expect(res.body).not.toContain('\uFFFD');
+      });
     });
 
-    it('(24) répond 403 sur l’export CSV si l’utilisateur est EDITOR', async () => {
-      const res = await getExportCsv(editorSession);
-      expect(res.statusCode).toBe(403);
+    describe('prise en compte des mêmes filtres que le tableau de bord sur l’export CSV', () => {
+      it('(30) filtre par hôtel (hotelId) : restreint l’export CSV à l’hôtel demandé', async () => {
+        const resA = await getExportCsv(adminSession, { hotelId: fixtures.hotelA.id });
+        expect(resA.statusCode).toBe(200);
+        expect(resA.body).toContain('"Sessions";"84"');
+        expect(resA.body).toContain('"Visites ouvertes";"84"');
+        expect(resA.body).toContain(`"${fixtures.tourA.title}";"84"`);
+        expect(resA.body).toContain(`"${fixtures.sceneA.title}";"84"`);
+        expect(resA.body).not.toContain(fixtures.tourB.title);
+        expect(resA.body).not.toContain(fixtures.sceneB.title);
+
+        const resB = await getExportCsv(adminSession, { hotelId: fixtures.hotelB.id });
+        expect(resB.statusCode).toBe(200);
+        expect(resB.body).toContain('"Sessions";"84"');
+        expect(resB.body).toContain(`"${fixtures.tourB.title}";"84"`);
+        expect(resB.body).toContain(`"${fixtures.sceneB.title}";"84"`);
+        expect(resB.body).not.toContain(fixtures.tourA.title);
+        expect(resB.body).not.toContain(fixtures.sceneA.title);
+      });
+
+      it('(31) filtre par visite (tourId) : restreint l’export CSV à la visite demandée', async () => {
+        const res = await getExportCsv(adminSession, { tourId: fixtures.tourA.id });
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toContain('"Visites ouvertes";"84"');
+        expect(res.body).toContain('"Scènes vues";"84"');
+        expect(res.body).toContain(`"${fixtures.tourA.title}";"84"`);
+        expect(res.body).not.toContain(fixtures.tourB.title);
+      });
+
+      it('(32) filtre par canal (channel=KIOSK, VR, WEB) sur l’export CSV', async () => {
+        const resKiosk = await getExportCsv(adminSession, { channel: EVENT_CHANNELS.KIOSK });
+        expect(resKiosk.statusCode).toBe(200);
+        expect(resKiosk.body).toContain('"Sessions";"56"');
+        expect(resKiosk.body).toContain('"Entrées VR";"0"');
+        expect(resKiosk.body).toContain('"Scans QR";"0"');
+
+        const resVr = await getExportCsv(adminSession, { channel: EVENT_CHANNELS.VR });
+        expect(resVr.statusCode).toBe(200);
+        expect(resVr.body).toContain('"Sessions";"56"');
+        expect(resVr.body).toContain('"Entrées VR";"56"');
+        expect(resVr.body).toContain('"Scans QR";"0"');
+
+        const resWeb = await getExportCsv(adminSession, { channel: EVENT_CHANNELS.WEB });
+        expect(resWeb.statusCode).toBe(200);
+        expect(resWeb.body).toContain('"Sessions";"56"');
+        expect(resWeb.body).toContain('"Entrées VR";"0"');
+        expect(resWeb.body).toContain('"Scans QR";"24"');
+      });
+
+      it('(33) filtre par langue (lang=fr, ar, en) sur l’export CSV', async () => {
+        const targetLanguages = ['fr', 'ar', 'en'];
+        for (const lang of targetLanguages) {
+          const res = await getExportCsv(adminSession, { lang });
+          expect(res.statusCode).toBe(200);
+          expect(res.body).toContain('"Sessions";"56"');
+        }
+      });
+
+      it('(34) filtre par période (from et to) sur 2 jours sur l’export CSV', async () => {
+        const res = await getExportCsv(adminSession, {
+          from: fixtures.subWindowFrom,
+          to: fixtures.subWindowTo,
+        });
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toContain('"Sessions";"48"');
+        expect(res.body).toContain('"Visites ouvertes";"48"');
+        expect(res.body).toContain('"Scènes vues";"48"');
+
+        const day1 = fixtures.expectedDays[1];
+        const day2 = fixtures.expectedDays[2];
+        const day0 = fixtures.expectedDays[0];
+        const day3 = fixtures.expectedDays[3];
+        if (day1 === undefined || day2 === undefined || day0 === undefined || day3 === undefined) {
+          throw new Error('Jours attendus introuvables');
+        }
+        expect(res.body).toContain(`"${day1}";"24";"24";"24"`);
+        expect(res.body).toContain(`"${day2}";"24";"24";"24"`);
+        expect(res.body).not.toContain(`"${day0}";`);
+        expect(res.body).not.toContain(`"${day3}";`);
+      });
+
+      it('(35) combine hôtel, canal et période sur l’export CSV', async () => {
+        const res = await getExportCsv(adminSession, {
+          hotelId: fixtures.hotelB.id,
+          channel: EVENT_CHANNELS.VR,
+          from: fixtures.subWindowFrom,
+          to: fixtures.subWindowTo,
+        });
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toContain('"Sessions";"8"');
+        expect(res.body).toContain('"Entrées VR";"8"');
+        expect(res.body).toContain(`"${fixtures.tourB.title}";"8"`);
+        expect(res.body).not.toContain(fixtures.tourA.title);
+      });
+    });
+
+    describe('validation des filtres sur l’export CSV (requêtes erronées 400)', () => {
+      it('(36) répond 400 sur l’export CSV si from > to', async () => {
+        const res = await getExportCsv(adminSession, {
+          from: '2026-06-15T00:00:00.000Z',
+          to: '2026-06-01T00:00:00.000Z',
+        });
+        expect(res.statusCode).toBe(400);
+      });
+
+      it('(37) répond 400 sur l’export CSV si l’intervalle dépasse 366 jours', async () => {
+        const res = await getExportCsv(adminSession, {
+          from: '2024-01-01T00:00:00.000Z',
+          to: '2026-01-01T00:00:00.000Z',
+        });
+        expect(res.statusCode).toBe(400);
+      });
+
+      it('(38) répond 400 sur l’export CSV si le canal est invalide', async () => {
+        const res = await getExportCsv(adminSession, { channel: 'CANAL_INEXISTANT' });
+        expect(res.statusCode).toBe(400);
+      });
+
+      it('(39) répond 400 sur l’export CSV si hotelId ou tourId n’est pas un UUID valide', async () => {
+        const resHotel = await getExportCsv(adminSession, { hotelId: 'pas-un-uuid' });
+        expect(resHotel.statusCode).toBe(400);
+
+        const resTour = await getExportCsv(adminSession, { tourId: 'pas-un-uuid' });
+        expect(resTour.statusCode).toBe(400);
+      });
     });
   });
 });
