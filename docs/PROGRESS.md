@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-1) — Cas (4) de stats.int.test.ts. Modifier UNIQUEMENT apps/api/test/stats.int.test.ts, dans le cas (4) « filtre par hôtel (hotelId… — Diff ciblé correct et conforme à la demande, contrôles fournis verts. (93658f7)
 - 26/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.b.1) — Modifier UNIQUEMENT apps/admin/src/pages/TourForm.test.tsx (aucune opération git, aucun autre fichier, pas de docker, ne l… — Les quatre mocks /scenes sont présents au bon endroit et les contrôles fournis passent. (c99e57f)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.2) — LECTURE SEULE, aucun fichier du dépôt modifié, ni git (hors `git status`), ni docker. Lance le test ciblé et recopie l… — Le test ciblé réussit avec 10 tests passés et le dépôt reste propre. (2885539)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.3) — LECTURE SEULE. Vérifier que le test apps/admin/src/pages/TourForm.test.tsx est lançable, sans le corriger. Avec des… — Le test TourForm est lançable et ses 10 tests passent. (77e0008)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 20/10/2026 — M7 F-80 API-04 (2/2) : tests de apps/api/src/events/events-ingest.service.ts. Reprends comme base `git show agent/20261020-100706-m7-f-80-api-04-dans-apps-api-s… — Les tests de EventsIngestService couvrent tous les cas demandés (forçage du contexte, rejet à +24 h, ignorance à -7 j avec le bon compteur, lot ignoré sans createMany, absence d'ip/headers), dans le s… (67a3788)
 - 20/10/2026 — M7 F-80 API-04 (1/2) : reprendre le service et le module depuis la branche partielle, sans les réécrire de zéro. Exécute `git show agent/20261020-100706-m7-f-80… — EventsIngestService repris fidèlement, conforme au modèle Prisma Event et aux règles de fenêtre temporelle, module et test mis à jour, contrôles verts. (924359d)
 - 20/10/2026 — M7 F-80 : lot 2/3 des tests d'intégration de apps/api (catalog, hotel-managers, hotels). Utilise UNIQUEMENT l'outil PowerShell au premier plan, avec timeout 300… — Aucun fichier modifié, conforme au cas « tout vert » du lot 2/3 ; lint et typecheck passent. (a9af4ec)
-- 19/10/2026 — M7 F-80 : en PowerShell, au PREMIER PLAN (jamais run_in_background), vérifie le tunnel avec `Test-NetConnection localhost -Port 5432 -InformationLevel Quiet`. S… — Aucun changement de code ni de fichier interdit, ce qui est cohérent avec une exécution verte ou un tunnel injoignable; la sortie du test d'intégration n'était pas disponible, donc le résultat n'est p… (ca9368b)
