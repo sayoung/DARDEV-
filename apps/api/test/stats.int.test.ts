@@ -638,6 +638,22 @@ describe('GET /api/admin/stats (M7 F-81/F-82)', () => {
       expect(dataA.topScenes).toEqual([
         { id: fixtures.sceneA.id, label: fixtures.sceneA.title, views: 84 },
       ]);
+      expect(dataA.daily).toHaveLength(7);
+      for (const dayEntry of dataA.daily) {
+        expect(dayEntry.sessions).toBe(12);
+        expect(dayEntry.toursOpened).toBe(12);
+        expect(dayEntry.scenesViewed).toBe(12);
+      }
+      expect(dataA.languages).toEqual([
+        { lang: 'ar', sessions: 28 },
+        { lang: 'en', sessions: 28 },
+        { lang: 'fr', sessions: 28 },
+      ]);
+      expect(dataA.channels).toEqual([
+        { channel: EVENT_CHANNELS.KIOSK, sessions: 28 },
+        { channel: EVENT_CHANNELS.VR, sessions: 28 },
+        { channel: EVENT_CHANNELS.WEB, sessions: 28 },
+      ]);
 
       // Filtrer sur l'hôtel B
       const resB = await getStats(adminSession, { hotelId: fixtures.hotelB.id });
@@ -645,6 +661,8 @@ describe('GET /api/admin/stats (M7 F-81/F-82)', () => {
       const dataB = StatsDashboardSchema.parse(parseJson(resB.body));
 
       expect(dataB.summary.sessions).toBe(84);
+      expect(dataB.summary.toursOpened).toBe(84);
+      expect(dataB.summary.scenesViewed).toBe(84);
       expect(dataB.topTours).toEqual([
         { id: fixtures.tourB.id, label: fixtures.tourB.title, opens: 84 },
       ]);
