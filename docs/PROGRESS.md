@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.2.a) — Vérification seule, aucun fichier modifié, ni docker, ni ssh, ni tâche d'arrière-plan. Utilise l'outil PowerShell… — Les ports 5432 et 6379 répondent et l’arbre Git est propre. (be29adb)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.1.b) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md, pas de run_in_background. Étape uniq… — Diagnostic exécuté, échec pnpm consigné et dépôt propre. (80dab7b)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.1.a) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md, pas de run_in_background. Étape uniq… — Vérifications demandées effectuées : ports accessibles, Node v22.23.3 présent et dépôt propre. (6a8fe0a)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.1) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md. Faire UN seul appel PowerShell (timeout:… — Vérification terminée : PostgreSQL et Redis répondent, aucun fichier n’a été modifié. (b7aef8c)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 23/10/2026 — M7 F-80 (2/2, a) — Reprendre l'agrégation pure et définir l'attribution des sessions. Lis d'abord docs/DECISIONS.md (grep StatsDaily, session). Récupère depuis… — L’agrégation et ses tests sont cohérents avec la règle demandée et le modèle Prisma, et les contrôles fournis passent. (c24d0e4)
 - 21/10/2026 — M7 F-80 : branche la collecte aux parcours web et kiosque (session, visite, scène, point d’intérêt, audio, langue), avec résistance aux erreurs et file IndexedDB. Le test du kiosque hors ligne est adapté à la nouvelle signature.
 - 21/10/2026 — M7 F-81/F-82/API-29 : ajoute les requêtes statistiques filtrées par rôle/hôtel, le tableau admin (indicateurs, courbes journalières, histogramme horaire, classements, langues/canaux), l’export CSV UTF-8 BOM/`;`, les schémas partagés et OpenAPI.
-- 21/10/2026 — M7 démo : ajoute le générateur déterministe d’une semaine d’événements anonymes et la commande `stats:demo`, protégée par `--confirm-dev` et refusée en production. Non exécutée faute de PostgreSQL local.
