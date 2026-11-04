@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.1) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md. Faire UN seul appel PowerShell (timeout:… — Vérification terminée : PostgreSQL et Redis répondent, aucun fichier n’a été modifié. (b7aef8c)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.1) — Diagnostiquer l'échec de `pnpm test`, cause du refus du relecteur. Lance en PowerShell, un seul appel, sans `;`, avec run_… — Aucun échec de tests reproduit : 2 524 tests réussis et diff vide. (4eb9123)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.c) — Restituer la seconde moitié du journal `%TEMP%\unit.log` (lignes ceil(N/2)+1 à N, N étant le nombre total de lignes, à rec… — Extraction complète et contrôles fournis réussis ; le dépôt est propre. (dce4ded)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.4.3) — Lecture seule : aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le journal %TEMP%\unit.log exi… — Extraction des lignes 671–733 et mesure du journal effectuées conformément à la demande. (bdb0664)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 21/10/2026 — M7 démo : ajoute le générateur déterministe d’une semaine d’événements anonymes et la commande `stats:demo`, protégée par `--confirm-dev` et refusée en production. Non exécutée faute de PostgreSQL local.
 - 20/10/2026 — M7 F-80 : dans apps/web/src, crée `stats.ts` et `stats.test.ts`, sans toucher aux autres fichiers. `stats.ts` expose `startWebStats({ apiBase, getLang })`, qui… — stats.ts et stats.test.ts respectent la spec (canal WEB sans jeton, adaptateurs minces au tracker, erreurs avalées, qrShown inutilisé) et lint/typecheck/tests passent. (e501f6e)
 - 20/10/2026 — M7 F-80 : dans packages/viewer-core/src, crée `stats-session.ts` et `stats-session.test.ts` : `createStatsSession({ apiBase, channel, getLang, getToken?, storeF… — stats-session.ts assemble correctement store/sender/batcher/tracker avec flush et destroy résilients, écouteur visibilitychange gardé, tests couvrant les cas demandés, contrôles verts. (c58d384)
-- 20/10/2026 — M7 F-80 : dans packages/viewer-core/src, crée `stats-tracker.test.ts` (Vitest, sans DOM) pour `createStatsTracker` de `stats-tracker.ts`. Utilise un batcher fac… — Les tests de createStatsTracker couvrent les 6 points demandés avec des doubles conformes à la consigne; lint, typecheck et test passent et PROGRESS.md n'est pas touché. (f603313)
