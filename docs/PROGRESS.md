@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 04/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.a.1) — Diagnostic d'environnement seul (aucun fichier du dépôt modifié ni lu, pas de docker/ssh/tâche d'arrière-p… — Diagnostic d’environnement effectué, dépôt propre et aucun diff à examiner. (8b07466)
 - 04/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.1) — Constat de l'environnement, en lecture seule. Ne modifie aucun fichier, ne lis aucun fichier du dépôt, ne lanc… — Constat en lecture seule effectué ; pnpm.cmd existe mais sa version est inaccessible car node n’est pas reconnu, et les deux ports répondent. (f65077f)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.2.b) — Vérification seule, aucun fichier modifié, ni docker, ni ssh, ni installation. IMPORTANT : l'outil PowerShell refu… — La vérification demandée est terminée, le dépôt est propre et les contrôles fournis passent, mais pnpm n’a pas pu être lancé. (1ee11ad)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.2.a) — Vérification seule, aucun fichier modifié, ni docker, ni ssh, ni tâche d'arrière-plan. Utilise l'outil PowerShell… — Les ports 5432 et 6379 répondent et l’arbre Git est propre. (be29adb)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 23/10/2026 — M7 F-80 (2/2, b.3) — Câbler le job StatsDaily dans apps/worker/src/main.ts. Prérequis : stats-daily-repository.ts et stats-daily.job.ts sont fusionnés. Calque l… — Câblage StatsDaily et couverture des cas d’arrêt conformes à la tâche. (dd90916)
 - 23/10/2026 — M7 F-80 (2/2, b.2) — Reprendre le job horaire StatsDaily. Prérequis : stats-daily-repository.ts est fusionné. Depuis la branche agent/20261023-165242-m7-f-80-2-… — Le job StatsDaily et ses tests répondent aux exigences de la tâche. (236f2b9)
 - 23/10/2026 — M7 F-80 (2/2, b.1) — Reprendre le dépôt StatsDaily. Depuis la branche agent/20261023-165242-m7-f-80-2-2-b-reprendre-le-depot-statsda (lecture seule : `git show… — Le dépôt et ses tests répondent à la tâche, sans défaut bloquant relevé. (3fbdb6b)
-- 23/10/2026 — M7 F-80 (2/2, a) — Reprendre l'agrégation pure et définir l'attribution des sessions. Lis d'abord docs/DECISIONS.md (grep StatsDaily, session). Récupère depuis… — L’agrégation et ses tests sont cohérents avec la règle demandée et le modèle Prisma, et les contrôles fournis passent. (c24d0e4)
