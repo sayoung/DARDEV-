@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.1.a) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md, pas de run_in_background. Étape uniq… — Vérifications demandées effectuées : ports accessibles, Node v22.23.3 présent et dépôt propre. (6a8fe0a)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.1) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md. Faire UN seul appel PowerShell (timeout:… — Vérification terminée : PostgreSQL et Redis répondent, aucun fichier n’a été modifié. (b7aef8c)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.1) — Diagnostiquer l'échec de `pnpm test`, cause du refus du relecteur. Lance en PowerShell, un seul appel, sans `;`, avec run_… — Aucun échec de tests reproduit : 2 524 tests réussis et diff vide. (4eb9123)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.c) — Restituer la seconde moitié du journal `%TEMP%\unit.log` (lignes ceil(N/2)+1 à N, N étant le nombre total de lignes, à rec… — Extraction complète et contrôles fournis réussis ; le dépôt est propre. (dce4ded)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 21/10/2026 — M7 F-81/F-82/API-29 : ajoute les requêtes statistiques filtrées par rôle/hôtel, le tableau admin (indicateurs, courbes journalières, histogramme horaire, classements, langues/canaux), l’export CSV UTF-8 BOM/`;`, les schémas partagés et OpenAPI.
 - 21/10/2026 — M7 démo : ajoute le générateur déterministe d’une semaine d’événements anonymes et la commande `stats:demo`, protégée par `--confirm-dev` et refusée en production. Non exécutée faute de PostgreSQL local.
 - 20/10/2026 — M7 F-80 : dans apps/web/src, crée `stats.ts` et `stats.test.ts`, sans toucher aux autres fichiers. `stats.ts` expose `startWebStats({ apiBase, getLang })`, qui… — stats.ts et stats.test.ts respectent la spec (canal WEB sans jeton, adaptateurs minces au tracker, erreurs avalées, qrShown inutilisé) et lint/typecheck/tests passent. (e501f6e)
-- 20/10/2026 — M7 F-80 : dans packages/viewer-core/src, crée `stats-session.ts` et `stats-session.test.ts` : `createStatsSession({ apiBase, channel, getLang, getToken?, storeF… — stats-session.ts assemble correctement store/sender/batcher/tracker avec flush et destroy résilients, écouteur visibilitychange gardé, tests couvrant les cas demandés, contrôles verts. (c58d384)
