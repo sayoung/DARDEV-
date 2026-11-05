@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.2.a.2.1.a) — Lancer UNE SEULE FOIS le test ciblé (4) de apps/api/test/stats.int.test.ts (filtre par hôtel), depuis la r… — Le test ciblé a réussi et l’arbre Git est propre. (385e06a)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.1) — Précontrôle en lecture seule, à finir en moins de 5 minutes. Ne modifie aucun fichier, ne lance ni docker ni ssh,… — Précontrôle bloqué conformément aux consignes, sans modification de fichier. (5342591)
 - 05/11/2026 — M7 F-81/F-82 (2/2, a) — Découverte d'environnement, lecture seule : ne modifie aucun fichier, ne lance ni docker, ni ssh, ni tâche d'arrière-plan, ne touche pas… — Découverte en lecture seule terminée : environnement bloqué, aucun Node ni pnpm trouvé aux emplacements demandés. (d0456c5)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.3) — LECTURE SEULE, aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docker,… — Relecture approuvée : aucun diff, dépôt propre et contrôles fournis réussis. (6648dca)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-1) — Cas (4) de stats.int.test.ts. Modifier UNIQUEMENT apps/api/test/stats.int.test.ts, dans le cas (4) « filtre par hôtel (hotelId… — Diff ciblé correct et conforme à la demande, contrôles fournis verts. (93658f7)
 - 26/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.b.1) — Modifier UNIQUEMENT apps/admin/src/pages/TourForm.test.tsx (aucune opération git, aucun autre fichier, pas de docker, ne l… — Les quatre mocks /scenes sont présents au bon endroit et les contrôles fournis passent. (c99e57f)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.2) — LECTURE SEULE, aucun fichier du dépôt modifié, ni git (hors `git status`), ni docker. Lance le test ciblé et recopie l… — Le test ciblé réussit avec 10 tests passés et le dépôt reste propre. (2885539)
-- 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.3) — LECTURE SEULE. Vérifier que le test apps/admin/src/pages/TourForm.test.tsx est lançable, sans le corriger. Avec des… — Le test TourForm est lançable et ses 10 tests passent. (77e0008)
