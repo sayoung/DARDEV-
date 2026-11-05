@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.1) — Diagnostic node/pnpm, partie 1 (lecture seule). Ne modifie ni ne lis aucun fichier du dépôt ; pas de doc… — Le diagnostic demandé a été exécuté en lecture seule et git status est vide. (bd59e9e)
 - 04/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.1) — Diagnostic d'environnement 1/2 : localiser node.exe. Ne modifie ni ne lis aucun fichier du dépôt ; pas de… — Diagnostic effectué : Node.js 22.23.3 est présent au chemin retenu et le dépôt est inchangé. (6f884ad)
 - 04/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.a.1) — Diagnostic d'environnement seul (aucun fichier du dépôt modifié ni lu, pas de docker/ssh/tâche d'arrière-p… — Diagnostic d’environnement effectué, dépôt propre et aucun diff à examiner. (8b07466)
 - 04/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.1) — Constat de l'environnement, en lecture seule. Ne modifie aucun fichier, ne lis aucun fichier du dépôt, ne lanc… — Constat en lecture seule effectué ; pnpm.cmd existe mais sa version est inaccessible car node n’est pas reconnu, et les deux ports répondent. (f65077f)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.1) — Diagnostic d'environnement SEUL : ne modifier aucun fichier du dépôt (ni docs/PROGRESS.md), aucune opération git d'écriture, jamai… — Le diagnostic demandé est terminé sans modification du dépôt; le tunnel PostgreSQL répond, mais pnpm et Node sont introuvables dans cet environnement. (56c93fd)
 - 24/10/2026 — M7 F-81/F-82 (1/4, a) — Reprendre dans apps/api/test/stats.int.test.ts le fichier de la branche non fusionnée agent/20261024-105440-m7-f-81-f-82-1-4-creer-apps-… — Correctif sûr et conforme à la tâche. (9317452)
 - 23/10/2026 — M7 F-80 (2/2, b.3) — Câbler le job StatsDaily dans apps/worker/src/main.ts. Prérequis : stats-daily-repository.ts et stats-daily.job.ts sont fusionnés. Calque l… — Câblage StatsDaily et couverture des cas d’arrêt conformes à la tâche. (dd90916)
-- 23/10/2026 — M7 F-80 (2/2, b.2) — Reprendre le job horaire StatsDaily. Prérequis : stats-daily-repository.ts est fusionné. Depuis la branche agent/20261023-165242-m7-f-80-2-… — Le job StatsDaily et ses tests répondent aux exigences de la tâche. (236f2b9)
