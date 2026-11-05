@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.a) — LECTURE SEULE : aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docke… — La vérification de lint est réussie et aucun fichier n’a été modifié. (6b79709)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-3.1.2) — LECTURE SEULE, aucun fichier modifié, aucun docker, aucune installation, aucune opération git.… — Sonde terminée : aucun node.exe trouvé dans les trois chemins et git status est vide. (68f182b)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-3.1.1) — LECTURE SEULE, aucun fichier modifié, aucun docker, aucune installation, aucune opération git.… — La sonde en lecture seule a trouvé node.exe à son chemin attendu, n’a trouvé pnpm dans les chemins testés et a laissé Git propre. (bafbdf8)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-2) — LECTURE SEULE : aucun fichier modifié, aucun docker, aucune installation, aucune opération git. Ob… — Diagnostic demandé exécuté sans modification ; pnpm reste introuvable et les contrôles fournis sont verts. (06d3e84)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.1) — Contrôle d'environnement SANS édition de fichier du dépôt, sans git ni docker, sans aucun test. Depuis la racine D:\DARD… — Le contrôle d’environnement a été exécuté et ses échecs d’accès à pnpm et à TEMP sont rapportés. (97ba46c)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.c) — Corriger le cas (3) de apps/api/test/stats.int.test.ts (agrégats complets : totaux, séries journalières, histogramme horaire, classe… — Aucune correction n’était nécessaire : le cas (3) passe déjà et le diff est vide. (1423bbe)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.b) — Corriger dans apps/api/test/stats.int.test.ts les cas (1) 401 et (2) 403 s'ils échouent (corriger le test, pas le service, sauf bug… — Les cas (1) et (2) sont déjà couverts et leur réussite est consignée ; aucun fichier n’a été modifié. (624eb5f)
-- 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.3) — Diagnostic seul, lecture seule, aucun fichier modifié, aucune opération git d'écriture. Pour chaque échec relevé dans $env:TEMP\… — Diagnostic terminé : aucun échec dans les cas (1), (2) ou (3) ; 24 tests réussis. (fe88e1a)
