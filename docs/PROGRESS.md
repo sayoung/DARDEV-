@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.3) — LECTURE SEULE, aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docker,… — Relecture approuvée : aucun diff, dépôt propre et contrôles fournis réussis. (6648dca)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.c) — LECTURE SEULE : exécuter uniquement `git status --short` à la racine du dépôt D:\DARDEV\local\xplor_… — Tâche de lecture seule effectuée ; statut Git propre et contrôles fournis réussis. (1889c6d)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.b) — LECTURE SEULE : aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docke… — Vérification en lecture seule réussie, sans modification du dépôt. (90ec56d)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.a) — LECTURE SEULE : aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docke… — La vérification de lint est réussie et aucun fichier n’a été modifié. (6b79709)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.3) — LECTURE SEULE. Vérifier que le test apps/admin/src/pages/TourForm.test.tsx est lançable, sans le corriger. Avec des… — Le test TourForm est lançable et ses 10 tests passent. (77e0008)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.2) — LECTURE SEULE. Créer le journal de diagnostic et vérifier qu'il est ignoré, avec des appels PowerShell SÉPARÉS, un s… — Le fichier de diagnostic existe et est ignoré par Git ; aucun écart n’est visible. (97cfcdd)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.1) — LECTURE SEULE, aucun fichier suivi modifié, aucune opération git hors `git status`, pas de docker. Détecter pnpm ave… — La vérification demandée est effectuée : pnpm est indisponible et aucun des replis ne fonctionne. (fc5731d)
-- 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.1) — Contrôle d'environnement SANS édition de fichier du dépôt, sans git ni docker, sans aucun test. Depuis la racine D:\DARD… — Le contrôle d’environnement a été exécuté et ses échecs d’accès à pnpm et à TEMP sont rapportés. (97ba46c)
