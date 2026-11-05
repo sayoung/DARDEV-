@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.2.a.2.2) — À partir du résultat de la sous-tâche précédente (sortie du test ciblé stats « (4) » dans apps/api), identif… — Le test ciblé des statistiques a réussi sans échec signalé. (44d360d)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.2.a.2.1.b) — Lecture seule : lire avec l'outil Read (pas de relance du test) les fichiers stats4.exit.log, stats4.out.l… — Lecture des journaux terminée ; 24 tests réussis, 16 ignorés, aucun échec et dépôt propre. (2d293c3)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.2.a.2.1.a) — Lancer UNE SEULE FOIS le test ciblé (4) de apps/api/test/stats.int.test.ts (filtre par hôtel), depuis la r… — Le test ciblé a réussi et l’arbre Git est propre. (385e06a)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.1) — Précontrôle en lecture seule, à finir en moins de 5 minutes. Ne modifie aucun fichier, ne lance ni docker ni ssh,… — Précontrôle bloqué conformément aux consignes, sans modification de fichier. (5342591)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2) — Sorties complètes de `pnpm lint` et `pnpm typecheck`. Ne modifier aucun fichier (ni docs/PROGRESS.md, ni le cas (5), ni Stat… — Tâche conforme : lint et typecheck réussis, aucun fichier modifié. (061c851)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.1.a) — Vérification de l'infrastructure avant la preuve du cas (4) de apps/api/test/stats.int.test.ts. Aucun fichier à lire ni à… — Vérification effectuée : les ports PostgreSQL et Redis répondent, mais aucune variante de pnpm n’est disponible. (a766b68)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-1) — Cas (4) de stats.int.test.ts. Modifier UNIQUEMENT apps/api/test/stats.int.test.ts, dans le cas (4) « filtre par hôtel (hotelId… — Diff ciblé correct et conforme à la demande, contrôles fournis verts. (93658f7)
-- 26/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.b.1) — Modifier UNIQUEMENT apps/admin/src/pages/TourForm.test.tsx (aucune opération git, aucun autre fichier, pas de docker, ne l… — Les quatre mocks /scenes sont présents au bon endroit et les contrôles fournis passent. (c99e57f)
