@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.c) — LECTURE SEULE : exécuter uniquement `git status --short` à la racine du dépôt D:\DARDEV\local\xplor_… — Tâche de lecture seule effectuée ; statut Git propre et contrôles fournis réussis. (1889c6d)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.b) — LECTURE SEULE : aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docke… — Vérification en lecture seule réussie, sans modification du dépôt. (90ec56d)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.a) — LECTURE SEULE : aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docke… — La vérification de lint est réussie et aucun fichier n’a été modifié. (6b79709)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-3.1.2) — LECTURE SEULE, aucun fichier modifié, aucun docker, aucune installation, aucune opération git.… — Sonde terminée : aucun node.exe trouvé dans les trois chemins et git status est vide. (68f182b)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.2) — LECTURE SEULE. Créer le journal de diagnostic et vérifier qu'il est ignoré, avec des appels PowerShell SÉPARÉS, un s… — Le fichier de diagnostic existe et est ignoré par Git ; aucun écart n’est visible. (97cfcdd)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.1) — LECTURE SEULE, aucun fichier suivi modifié, aucune opération git hors `git status`, pas de docker. Détecter pnpm ave… — La vérification demandée est effectuée : pnpm est indisponible et aucun des replis ne fonctionne. (fc5731d)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.1) — Contrôle d'environnement SANS édition de fichier du dépôt, sans git ni docker, sans aucun test. Depuis la racine D:\DARD… — Le contrôle d’environnement a été exécuté et ses échecs d’accès à pnpm et à TEMP sont rapportés. (97ba46c)
-- 24/10/2026 — M7 F-81/F-82 (1/4, b.1.c) — Corriger le cas (3) de apps/api/test/stats.int.test.ts (agrégats complets : totaux, séries journalières, histogramme horaire, classe… — Aucune correction n’était nécessaire : le cas (3) passe déjà et le diff est vide. (1423bbe)
