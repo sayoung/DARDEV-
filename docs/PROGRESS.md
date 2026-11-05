@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-2) — LECTURE SEULE : aucun fichier modifié, aucun docker, aucune installation, aucune opération git. Ob… — Diagnostic demandé exécuté sans modification ; pnpm reste introuvable et les contrôles fournis sont verts. (06d3e84)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-1) — LECTURE SEULE, aucun fichier modifié, aucun docker, aucune installation. Trouver où se trouvent no… — Diagnostic effectué en lecture seule, dépôt propre et contrôles fournis réussis. (d400856)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.b) — LECTURE SEULE, aucun fichier modifié, aucun git hors `git status`, jamais docker. Si pnpm est introu… — Diagnostic en lecture seule effectué, dépôt propre et contrôles fournis réussis. (207a09f)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.a) — LECTURE SEULE, aucun fichier modifié, aucune opération git hors `git status`, jamais docker. Depuis… — Les trois recherches PowerShell ont été effectuées sans modification du dépôt et n’ont retourné aucun chemin. (235e1fc)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.3) — Diagnostic seul, lecture seule, aucun fichier modifié, aucune opération git d'écriture. Pour chaque échec relevé dans $env:TEMP\… — Diagnostic terminé : aucun échec dans les cas (1), (2) ou (3) ; 24 tests réussis. (fe88e1a)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.2) — Diagnostic seul, lecture seule : lire $env:TEMP\stats-int.log (produit par la sous-tâche précédente ; s'il est absent, vide ou… — Diagnostic du journal terminé ; les cas 2 et 3 réussissent, le cas 1 n’est pas documenté. (655d9b0)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.1.2) — Contrôler et citer le log $env:TEMP\stats-int.log produit par la sous-tâche précédente. Aucune modification de fichier du dé… — Log vérifié : 24 tests passés, aucun échec ni test sauté, et les alias SQL du diff sont cohérents. (5f839bc)
-- 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.1.1.c) — Lire le log des tests d'intégration stats, en lecture seule (aucune modification, aucune opération git d'écriture, jamais… — La vérification en lecture seule du journal de repli est faite, mais il ne contient ni résultat de test ni code de sortie. (1b7df4c)
