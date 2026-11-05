@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.3) — Seulement si le cas (4) de apps/api/test/stats.int.test.ts (ligne 623) échoue (EXIT non nul ou « failed » dans $env:TEMP\i… — La vérification conditionnelle est satisfaite selon le résultat ciblé déjà consigné ; aucun changement n’est nécessaire. (28c0b4a)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.3) — Seulement si la sous-tâche précédente a signalé un blocage ou un échec : diagnostic en lecture seule, aucun fichie… — Aucun diagnostic nécessaire : la sous-tâche précédente a réussi et le diff est vide. (96568f9)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.2.c) — Diagnostic en lecture seule, uniquement si la sous-tâche b a signalé un TIMEOUT ou un échec dans le setup (sinon… — Diagnostic sans objet : aucun TIMEOUT ni échec de setup signalé. (9983e97)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.2.b) — Lire les résultats du test lancé par la tâche précédente (Id dans $env:TEMP\stats4.pid.txt), sans modifier de fi… — La tâche de lecture seule est terminée et le test ciblé s’est achevé sans échec. (44cb556)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.1.b) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le fichier %TEMP%\unit.log exis… — Les lignes 1 à 92 du journal ont été restituées en deux plages sans relancer les tests. (a596ab7)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.1.a) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Exécuter en PowerShell : Test-P… — Le journal existe et a été mesuré ; les valeurs obtenues (1518 lignes, 119021 caractères) diffèrent des valeurs attendues indiquées. (ec7f78e)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.a.2) — Mesurer le journal `$env:TEMP\unit.log` produit par la tâche précédente (ne pas relancer `pnpm test` sauf si le fichier… — Mesure effectuée : code 0, 235 fichiers et 2524 tests passés, dépôt propre. (8ce86d3)
-- 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.a.1) — Lancer `pnpm test` en arrière-plan SANS attendre en direct, sans modifier aucun fichier du dépôt et sans docker. En Powe… — Tâche de vérification terminée sans modification du dépôt; pnpm test est indiqué réussi. (234486e)
