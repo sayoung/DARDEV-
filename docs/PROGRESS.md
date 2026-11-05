@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.b) — LECTURE SEULE, aucun fichier modifié, aucun git hors `git status`, jamais docker. Si pnpm est introu… — Diagnostic en lecture seule effectué, dépôt propre et contrôles fournis réussis. (207a09f)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.a) — LECTURE SEULE, aucun fichier modifié, aucune opération git hors `git status`, jamais docker. Depuis… — Les trois recherches PowerShell ont été effectuées sans modification du dépôt et n’ont retourné aucun chemin. (235e1fc)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.2) — Diagnostic node/pnpm, partie 2, LECTURE SEULE : ne modifie, ne lis et ne commite aucun fichier du dépôt… — Diagnostic en lecture seule effectué : Node et pnpm sont introuvables, et git status --short est vide. (ea51513)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.1) — Diagnostic node/pnpm, partie 1 (lecture seule). Ne modifie ni ne lis aucun fichier du dépôt ; pas de doc… — Le diagnostic demandé a été exécuté en lecture seule et git status est vide. (bd59e9e)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.1.2) — Contrôler et citer le log $env:TEMP\stats-int.log produit par la sous-tâche précédente. Aucune modification de fichier du dé… — Log vérifié : 24 tests passés, aucun échec ni test sauté, et les alias SQL du diff sont cohérents. (5f839bc)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.1.1.c) — Lire le log des tests d'intégration stats, en lecture seule (aucune modification, aucune opération git d'écriture, jamais… — La vérification en lecture seule du journal de repli est faite, mais il ne contient ni résultat de test ni code de sortie. (1b7df4c)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.1.1.a) — Rendre Node accessible et vérifier l'environnement, SANS rien modifier (aucun fichier suivi, aucune opération git d'écritu… — Vérification en lecture seule terminée selon la branche d’arrêt prévue, les deux ports répondent. (d5de9c3)
-- 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.1) — Diagnostic d'environnement SEUL : ne modifier aucun fichier du dépôt (ni docs/PROGRESS.md), aucune opération git d'écriture, jamai… — Le diagnostic demandé est terminé sans modification du dépôt; le tunnel PostgreSQL répond, mais pnpm et Node sont introuvables dans cet environnement. (56c93fd)
