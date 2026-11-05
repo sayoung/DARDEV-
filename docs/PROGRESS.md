@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.3.1) — Précontrôle en lecture seule, à finir en moins de 5 minutes. Ne modifie aucun fichier, ne lance ni docker ni ssh,… — Précontrôle bloqué conformément aux consignes, sans modification de fichier. (5342591)
 - 05/11/2026 — M7 F-81/F-82 (2/2, a) — Découverte d'environnement, lecture seule : ne modifie aucun fichier, ne lance ni docker, ni ssh, ni tâche d'arrière-plan, ne touche pas… — Découverte en lecture seule terminée : environnement bloqué, aucun Node ni pnpm trouvé aux emplacements demandés. (d0456c5)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.3) — LECTURE SEULE, aucun fichier du dépôt modifié, aucune opération git hors `git status`, jamais docker,… — Relecture approuvée : aucun diff, dépôt propre et contrôles fournis réussis. (6648dca)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.2.c) — LECTURE SEULE : exécuter uniquement `git status --short` à la racine du dépôt D:\DARDEV\local\xplor_… — Tâche de lecture seule effectuée ; statut Git propre et contrôles fournis réussis. (1889c6d)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 26/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.b.1) — Modifier UNIQUEMENT apps/admin/src/pages/TourForm.test.tsx (aucune opération git, aucun autre fichier, pas de docker, ne l… — Les quatre mocks /scenes sont présents au bon endroit et les contrôles fournis passent. (c99e57f)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.2) — LECTURE SEULE, aucun fichier du dépôt modifié, ni git (hors `git status`), ni docker. Lance le test ciblé et recopie l… — Le test ciblé réussit avec 10 tests passés et le dépôt reste propre. (2885539)
 - 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.3) — LECTURE SEULE. Vérifier que le test apps/admin/src/pages/TourForm.test.tsx est lançable, sans le corriger. Avec des… — Le test TourForm est lançable et ses 10 tests passent. (77e0008)
-- 25/10/2026 — M7 F-81/F-82 (1/4, b.2.a.1.b.1.a.2.2.1.2) — LECTURE SEULE. Créer le journal de diagnostic et vérifier qu'il est ignoré, avec des appels PowerShell SÉPARÉS, un s… — Le fichier de diagnostic existe et est ignoré par Git ; aucun écart n’est visible. (97cfcdd)
