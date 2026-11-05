@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-3.1.2) — LECTURE SEULE, aucun fichier modifié, aucun docker, aucune installation, aucune opération git.… — Sonde terminée : aucun node.exe trouvé dans les trois chemins et git status est vide. (68f182b)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-3.1.1) — LECTURE SEULE, aucun fichier modifié, aucun docker, aucune installation, aucune opération git.… — La sonde en lecture seule a trouvé node.exe à son chemin attendu, n’a trouvé pnpm dans les chemins testés et a laissé Git propre. (bafbdf8)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-2) — LECTURE SEULE : aucun fichier modifié, aucun docker, aucune installation, aucune opération git. Ob… — Diagnostic demandé exécuté sans modification ; pnpm reste introuvable et les contrôles fournis sont verts. (06d3e84)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-1) — LECTURE SEULE, aucun fichier modifié, aucun docker, aucune installation. Trouver où se trouvent no… — Diagnostic effectué en lecture seule, dépôt propre et contrôles fournis réussis. (d400856)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.c) — Corriger le cas (3) de apps/api/test/stats.int.test.ts (agrégats complets : totaux, séries journalières, histogramme horaire, classe… — Aucune correction n’était nécessaire : le cas (3) passe déjà et le diff est vide. (1423bbe)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.b) — Corriger dans apps/api/test/stats.int.test.ts les cas (1) 401 et (2) 403 s'ils échouent (corriger le test, pas le service, sauf bug… — Les cas (1) et (2) sont déjà couverts et leur réussite est consignée ; aucun fichier n’a été modifié. (624eb5f)
 - 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.3) — Diagnostic seul, lecture seule, aucun fichier modifié, aucune opération git d'écriture. Pour chaque échec relevé dans $env:TEMP\… — Diagnostic terminé : aucun échec dans les cas (1), (2) ou (3) ; 24 tests réussis. (fe88e1a)
-- 24/10/2026 — M7 F-81/F-82 (1/4, b.1.a.2.2.2) — Diagnostic seul, lecture seule : lire $env:TEMP\stats-int.log (produit par la sous-tâche précédente ; s'il est absent, vide ou… — Diagnostic du journal terminé ; les cas 2 et 3 réussissent, le cas 1 n’est pas documenté. (655d9b0)
