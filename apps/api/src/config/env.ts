@@ -30,6 +30,7 @@ const envKeys = [
   'PUBLIC_WEB_URL',
   'API_CORS_ORIGINS',
   'API_TRUST_PROXY',
+  'TOTP_ENCRYPTION_KEY',
 ] as const;
 
 export const envSchema = z.object({
@@ -67,12 +68,25 @@ export const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((val) => val === 'true'),
+  TOTP_ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, {
+      message: 'Doit être une clé hexadécimale de 64 caractères (32 octets)',
+    })
+    .optional(),
 })
 .superRefine((env, ctx) => {
   if (env.NODE_ENV === 'production' && !env.API_CORS_ORIGINS) {
     ctx.addIssue({
       code: 'custom',
       path: ['API_CORS_ORIGINS'],
+      message: 'Obligatoire en production',
+    });
+  }
+  if (env.NODE_ENV === 'production' && !env.TOTP_ENCRYPTION_KEY) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['TOTP_ENCRYPTION_KEY'],
       message: 'Obligatoire en production',
     });
   }
