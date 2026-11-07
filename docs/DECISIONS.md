@@ -1087,4 +1087,12 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** déclenchement manuel ou cron système externe type crontab OS (rejeté car la pile impose BullMQ et Redis dans le conteneur worker) ; traitement transactionnel bloquant tout le lot en cas d'erreur isolée (rejeté pour des raisons de résilience réseau SMTP).
 - **À valider :** non
 
+## D-137 — TOTP en pur node:crypto (M8 F-90)
+
+- **Date :** 07/11/2026
+- **Décision :** TOTP en node:crypto plutôt qu'otplib (aucune dépendance, ~80 lignes, vecteurs RFC testés). Fonctions exportées : base32Encode/base32Decode (RFC 4648, sans padding) ; generateTotpSecret() de 20 octets aléatoires (crypto.randomBytes) encodés en base32 ; totpCode(secret, timeMs, step = 30, digits = 6) en HMAC-SHA1 avec troncature dynamique ; verifyTotp(secret, code, timeMs, window = 1) avec comparaison crypto.timingSafeEqual, qui refuse tout code non composé de 6 chiffres ; otpauthUri(secret, accountEmail, issuer = 'Xplor').
+- **Alternatives :** paquet npm `otplib` (rejeté : ajoute une dépendance externe pour un algorithme standard RFC 6238 / RFC 4226 simple à sécuriser et tester avec `node:crypto`).
+- **À valider :** non
+
+
 
