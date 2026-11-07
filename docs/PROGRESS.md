@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 07/11/2026 — M7 F-81/F-82 (b.2.a.2.a.1.a) — LECTURE SEULE : aucun fichier du dépôt modifié, aucun commit, pas de docker, aucune commande sur le VPS, docs/PROGRESS.md intact.… — Tâche en lecture seule : le diff est vide, aucun fichier modifié et les contrôles passent. Le compte rendu de l'agent (LIGNES, EXIT, 5 premières lignes) n'a pas pu être vérifié. (0b17f49)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.1.c-2.3.2.a) — Rediriger le cache Vite de apps/api/vitest.int.config.ts hors de node_modules. Cause du refus précédent : EPERM à la création… — Redirection du cache conforme à la demande et contrôles fournis réussis. (089fc43)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.1.c-2.3.1.b) — Localiser node/pnpm, LECTURE SEULE : ne rien modifier, aucune opération git, pas de docker, pas de VPS. UN SEUL appel PowerSh… — Diagnostic exécuté en lecture seule ; node et pnpm restent introuvables dans les résultats. (ffa3eda)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.1.c-2.3.1.a) — Diagnostic LECTURE SEULE sans dépendre de node : ne rien modifier, aucune opération git, pas de docker, pas de VPS. UN SEUL a… — Le diagnostic demandé a été exécuté en un seul appel et sa sortie est recopiée telle quelle. (3c38214)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.4.3) — Lecture seule : aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le journal %TEMP%\unit.log exi… — Extraction des lignes 671–733 et mesure du journal effectuées conformément à la demande. (bdb0664)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.4.2) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le journal %TEMP%\unit.log exis… — La plage demandée a été extraite sans relancer les tests ni modifier le dépôt. (e98aa6f)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.4.1) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le journal %TEMP%\unit.log exis… — La commande demandée a été exécutée une seule fois et sa sortie a été restituée. (70ecd52)
-- 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.3) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le journal %TEMP%\unit.log existe… — Extraction en lecture seule terminée et contrôles fournis réussis ; le journal contient 1 287 lignes, contrairement aux 1 466 annoncées. (fa8a1b4)
