@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 07/11/2026 — M7 F-81/F-82 (2/4, b.2.b.2) — Exécuter le cas (7) seul, sans rien modifier (aucun fichier, aucune opération git, jamais docker ni VPS, ne pas toucher docs/PROGR… — Aucune modification dans le diff, comme demandé pour cette tâche d'exécution seule ; les résultats du cas (7) n'ont pas pu être relus dans les fichiers de sortie. (3dfc724)
 - 07/11/2026 — M7 F-81/F-82 (1/4, b.2.b.1) — Exécuter le cas (6) seul, sans rien modifier (aucun fichier, aucune opération git, jamais docker ni VPS, ne pas toucher docs/PROGR… — Aucune modification de fichier, conforme à une tâche d'exécution seule ; les contrôles lint, typecheck et test sont au vert. (1be9c88)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.1.c-2.3.2.b) — Preuve d'exécution du cas (4), LECTURE SEULE : ne modifie aucun fichier, aucune opération git, pas de docker, pas de VPS, pas… — Tâche de preuve en lecture seule : aucun fichier modifié (diff vide) et contrôles automatiques verts ; la sortie brute livrée n'a pas pu être vérifiée. (167e2ab)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.2.c) — À la racine du dépôt, lancer `pnpm lint` puis `pnpm typecheck` (jamais docker ni VPS ; si `node`/`pnpm` introuvable, utiliser le chem… — Lint et typecheck passent (code 0) et aucun fichier n'a été modifié, comme demandé. (ea2faf6)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 04/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.1) — Constat de l'environnement, en lecture seule. Ne modifie aucun fichier, ne lis aucun fichier du dépôt, ne lanc… — Constat en lecture seule effectué ; pnpm.cmd existe mais sa version est inaccessible car node n’est pas reconnu, et les deux ports répondent. (f65077f)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.2.b) — Vérification seule, aucun fichier modifié, ni docker, ni ssh, ni installation. IMPORTANT : l'outil PowerShell refu… — La vérification demandée est terminée, le dépôt est propre et les contrôles fournis passent, mais pnpm n’a pas pu être lancé. (1ee11ad)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.2.a) — Vérification seule, aucun fichier modifié, ni docker, ni ssh, ni tâche d'arrière-plan. Utilise l'outil PowerShell… — Les ports 5432 et 6379 répondent et l’arbre Git est propre. (be29adb)
-- 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.1.b) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md, pas de run_in_background. Étape uniq… — Diagnostic exécuté, échec pnpm consigné et dépôt propre. (80dab7b)
