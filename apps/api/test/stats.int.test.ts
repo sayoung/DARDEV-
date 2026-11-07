@@ -807,7 +807,7 @@ describe('GET /api/admin/stats (M7 F-81/F-82)', () => {
     });
   });
 
-  describe('contrôle d’accès et isolation multi-tenant (D-04, AGENTS.md)', () => {
+  describe("contrôle d'accès et isolation multi-tenant (D-04, AGENTS.md)", () => {
     it('(12) le gestionnaire de l’hôtel A ne voit que les statistiques de l’hôtel A (par défaut)', async () => {
       const res = await getStats(managerASession);
       expect(res.statusCode).toBe(200);
