@@ -246,4 +246,15 @@ export {
   type StatsDashboard,
   type StatsSummary,
 } from './stats.js';
+export {
+  AUDIT_ACTIONS,
+  AuditActionSchema,
+  AuditLogEntrySchema,
+  AuditLogQuerySchema,
+  type AuditAction,
+  type AuditLogEntry,
+  type AuditLogQuery,
+} from './audit.js';
+
+
 
