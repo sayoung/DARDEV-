@@ -255,6 +255,17 @@ export {
   type AuditLogEntry,
   type AuditLogQuery,
 } from './audit.js';
+export {
+  LoginTwoFactorBody,
+  LoginTwoFactorBodySchema,
+  TwoFactorCodeBody,
+  TwoFactorCodeBodySchema,
+  TwoFactorCodeSchema,
+  TwoFactorSetupResponse,
+  TwoFactorSetupResponseSchema,
+  twoFactorCodeRegex,
+} from './two-factor.js';
+
 
 
 

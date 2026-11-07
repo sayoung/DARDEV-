@@ -93,6 +93,21 @@ describe('clés i18n', () => {
     }
   });
 
+  it('définit les clés 2FA en français', () => {
+    expect(resources.fr.auth.twoFactor.title).toBe('Authentification à deux facteurs');
+    expect(resources.fr.auth.twoFactor.enable).toBe('Activer');
+    expect(resources.fr.auth.twoFactor.code).toBe('Code à 6 chiffres');
+    expect(resources.fr.auth.twoFactor.invalidCode).toBe('Code invalide');
+    expect(resources.fr.auth.twoFactor.requiredForAdmin).toBe('2FA obligatoire pour ADMIN');
+    expect(Object.keys(resources.fr.auth.twoFactor).sort()).toEqual([
+      'code',
+      'enable',
+      'invalidCode',
+      'requiredForAdmin',
+      'title',
+    ]);
+  });
+
   it('définit les clés kiosque en français', () => {
     expect(resources.fr.kiosk.unavailable).toBe('Service momentanément indisponible');
     expect(resources.fr.kiosk.touchToExplore).toBe("Touchez l'écran pour explorer");
