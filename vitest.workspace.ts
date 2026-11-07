@@ -64,7 +64,7 @@ const workspace: TestProjectConfiguration[] = [
       name: '@xplor/worker',
       root: resolve(__dirname, './apps/worker'),
       environment: 'node',
-      include: ['src/**/*.test.ts'],
+      include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
       exclude: [...exclude],
     },
   },
