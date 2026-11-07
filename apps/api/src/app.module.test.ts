@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
 
 import { AppModule } from './app.module.js';
+import { AuditService } from './audit/audit.service.js';
 import { AuthController } from './auth/auth.controller.js';
 import { CategoriesController } from './catalog/categories.controller.js';
 import { CitiesController } from './catalog/cities.controller.js';
@@ -48,6 +49,7 @@ describe('AppModule', () => {
     expect(moduleRef.get(HotspotsController)).toBeInstanceOf(HotspotsController);
     expect(moduleRef.get(HealthController)).toBeInstanceOf(HealthController);
     expect(moduleRef.get(EventsPartitionService)).toBeInstanceOf(EventsPartitionService);
+    expect(moduleRef.get(AuditService)).toBeInstanceOf(AuditService);
     await moduleRef.close();
   });
 });
