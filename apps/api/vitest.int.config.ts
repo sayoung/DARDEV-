@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -5,6 +7,7 @@ import { defineConfig } from 'vitest/config';
  * Il n'est pas dans `vitest.workspace.ts` : `pnpm test` ne le charge pas.
  */
 export default defineConfig({
+  cacheDir: path.join(os.tmpdir(), 'xplor-vitest-int-cache'),
   test: {
     name: 'api-int',
     environment: 'node',
