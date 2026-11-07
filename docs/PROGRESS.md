@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 07/11/2026 — M7 F-81/F-82 (b.2.a.1.c-2.3.1.a) — Diagnostic LECTURE SEULE sans dépendre de node : ne rien modifier, aucune opération git, pas de docker, pas de VPS. UN SEUL a… — Le diagnostic demandé a été exécuté en un seul appel et sa sortie est recopiée telle quelle. (3c38214)
 - 05/11/2026 — M7 F-81/F-82 (2/2, b.2.a.1.c-2.2.2.a.2.2.c.2.2.b.2.3.1.c-3.2) — LECTURE SEULE, aucun fichier modifié (y compris docs/PROGRESS.md), aucun docker, aucun appel au… — Vérification en lecture seule réussie : Node 22.23.3, code 0 et dépôt Git propre. (237cd05)
 - 05/11/2026 — M7 F-81/F-82 (b.2.a.1.c-2.2.2.a.2.2.c.1) — Sonde d'environnement en lecture seule, SANS modifier, créer ni lire aucun fichier du dépôt, sans docker ni ssh. N'ut… — Sonde en lecture seule effectuée ; dépôt propre, mais pnpm ne s’exécute pas car node n’est pas reconnu. (770129a)
 - 05/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.3) — Seulement si le cas (4) de apps/api/test/stats.int.test.ts (ligne 623) échoue (EXIT non nul ou « failed » dans $env:TEMP\i… — La vérification conditionnelle est satisfaite selon le résultat ciblé déjà consigné ; aucun changement n’est nécessaire. (28c0b4a)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.3) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le journal %TEMP%\unit.log existe… — Extraction en lecture seule terminée et contrôles fournis réussis ; le journal contient 1 287 lignes, contrairement aux 1 466 annoncées. (fa8a1b4)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.2) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le journal %TEMP%\unit.log existe… — L’extrait demandé du journal a été affiché intégralement et les contrôles fournis passent. (d6239c9)
 - 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.1.c) — Lecture seule : aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test, ne rien analyser ni corriger.… — Comptage confirmé à 1518 et lignes 93 à 184 affichées. (b759249)
-- 03/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.3.b.1.b) — Lecture seule, aucune modification du dépôt, pas de docker, ne PAS relancer pnpm test. Le fichier %TEMP%\unit.log exis… — Les lignes 1 à 92 du journal ont été restituées en deux plages sans relancer les tests. (a596ab7)
