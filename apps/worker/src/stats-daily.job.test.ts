@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EVENT_CHANNELS, EVENT_TYPES, type StatsDailyRecord } from '@xplor/shared';
 import {
+  MAX_STATS_DAILY_RANGE_DAYS,
   STATS_DAILY_INTERVAL_MS,
   STATS_DAILY_JOB_ID,
   STATS_DAILY_QUEUE_NAME,
@@ -9,6 +10,7 @@ import {
   defaultCreateStatsDailyWorker,
   defaultCreateWorker,
   recalculateStatsDaily,
+  recalculateStatsDailyRange,
   startStatsDailyJob,
   type StatsDailyJobProcessor,
   type StatsDailyQueueLike,
@@ -258,6 +260,220 @@ describe('stats-daily.job', () => {
       await expect(recalculateStatsDaily({ repo }, now)).rejects.toThrow(
         'Erreur écriture StatsDaily',
       );
+    });
+  });
+
+  describe('recalculateStatsDailyRange', () => {
+    it('traite 7 jours et remplace les agrégats de chaque jour dans l’ordre', async () => {
+      const repo = new FakeStatsDailyRepo();
+      const from = new Date('2026-10-01T00:00:00.000Z');
+      const to = new Date('2026-10-07T00:00:00.000Z');
+
+      repo.eventsToReturn = [
+        {
+          occurredAt: new Date('2026-10-01T10:00:00.000Z'),
+          channel: EVENT_CHANNELS.WEB,
+          lang: 'fr',
+          sessionId: 's-day1',
+          type: EVENT_TYPES.SESSION_START,
+        },
+        {
+          occurredAt: new Date('2026-10-04T12:00:00.000Z'),
+          channel: EVENT_CHANNELS.KIOSK,
+          lang: 'fr',
+          sessionId: 's-day4',
+          type: EVENT_TYPES.SESSION_START,
+        },
+      ];
+
+      const logs: string[] = [];
+      const summaries = await recalculateStatsDailyRange(
+        { repo, log: (m) => logs.push(m) },
+        from,
+        to,
+      );
+
+      expect(summaries).toHaveLength(7);
+      expect(repo.findCalls).toHaveLength(7);
+      expect(repo.replaceCalls).toHaveLength(7);
+
+      const expectedDays = [
+        '2026-10-01',
+        '2026-10-02',
+        '2026-10-03',
+        '2026-10-04',
+        '2026-10-05',
+        '2026-10-06',
+        '2026-10-07',
+      ];
+
+      for (let i = 0; i < 7; i += 1) {
+        const expectedDay = expectedDays[i];
+        expect(expectedDay).toBeDefined();
+        if (expectedDay !== undefined) {
+          expect(repo.findCalls[i]?.dayStart.toISOString()).toBe(`${expectedDay}T00:00:00.000Z`);
+          expect(repo.replaceCalls[i]?.day.toISOString()).toBe(`${expectedDay}T00:00:00.000Z`);
+          expect(summaries[i]?.day).toBe(expectedDay);
+        }
+      }
+
+      expect(summaries[0]?.bucketsCount).toBe(1);
+      expect(summaries[1]?.bucketsCount).toBe(0);
+      expect(summaries[2]?.bucketsCount).toBe(0);
+      expect(summaries[3]?.bucketsCount).toBe(1);
+      expect(summaries[4]?.bucketsCount).toBe(0);
+      expect(summaries[5]?.bucketsCount).toBe(0);
+      expect(summaries[6]?.bucketsCount).toBe(0);
+
+      // Journalisation d'une ligne par jour via deps.log
+      expect(logs).toHaveLength(7);
+      for (let i = 0; i < 7; i += 1) {
+        const expectedDay = expectedDays[i];
+        if (expectedDay !== undefined) {
+          expect(logs[i]).toContain(expectedDay);
+        }
+      }
+    });
+
+    it('est idempotent : deux exécutions successives donnent les mêmes appels et résultats', async () => {
+      const repo = new FakeStatsDailyRepo();
+      const from = new Date('2026-10-01T00:00:00.000Z');
+      const to = new Date('2026-10-03T00:00:00.000Z');
+
+      repo.eventsToReturn = [
+        {
+          occurredAt: new Date('2026-10-02T15:00:00.000Z'),
+          channel: EVENT_CHANNELS.VR,
+          lang: 'fr',
+          sessionId: 's-day2',
+          type: EVENT_TYPES.SESSION_START,
+        },
+      ];
+
+      // Première exécution
+      const result1 = await recalculateStatsDailyRange({ repo }, from, to);
+      const findCalls1 = repo.findCalls.map((c) => ({
+        dayStart: c.dayStart.toISOString(),
+        dayEnd: c.dayEnd.toISOString(),
+      }));
+      const replaceCalls1 = repo.replaceCalls.map((c) => ({
+        day: c.day.toISOString(),
+        records: c.records,
+      }));
+
+      // Réinitialisation des traces d'appels pour la seconde exécution
+      repo.findCalls = [];
+      repo.replaceCalls = [];
+
+      // Deuxième exécution
+      const result2 = await recalculateStatsDailyRange({ repo }, from, to);
+      const findCalls2 = repo.findCalls.map((c) => ({
+        dayStart: c.dayStart.toISOString(),
+        dayEnd: c.dayEnd.toISOString(),
+      }));
+      const replaceCalls2 = repo.replaceCalls.map((c) => ({
+        day: c.day.toISOString(),
+        records: c.records,
+      }));
+
+      expect(result1).toEqual(result2);
+      expect(findCalls1).toEqual(findCalls2);
+      expect(replaceCalls1).toEqual(replaceCalls2);
+      expect(replaceCalls1).toHaveLength(3);
+    });
+
+    it('rejette les cas où from > to sans toucher au dépôt', async () => {
+      const repo = new FakeStatsDailyRepo();
+
+      // Cas 1 : date postérieure de plusieurs jours
+      const fromPost = new Date('2026-10-10T00:00:00.000Z');
+      const toAnt = new Date('2026-10-05T00:00:00.000Z');
+
+      await expect(
+        recalculateStatsDailyRange({ repo }, fromPost, toAnt),
+      ).rejects.toThrow(
+        'La date de début (from) doit être antérieure ou égale à la date de fin (to)',
+      );
+      expect(repo.findCalls).toHaveLength(0);
+      expect(repo.replaceCalls).toHaveLength(0);
+
+      // Cas 2 : même date calendaire mais heure de début postérieure
+      const fromHour = new Date('2026-10-05T14:00:00.000Z');
+      const toHour = new Date('2026-10-05T10:00:00.000Z');
+
+      await expect(
+        recalculateStatsDailyRange({ repo }, fromHour, toHour),
+      ).rejects.toThrow(
+        'La date de début (from) doit être antérieure ou égale à la date de fin (to)',
+      );
+      expect(repo.findCalls).toHaveLength(0);
+      expect(repo.replaceCalls).toHaveLength(0);
+    });
+
+    it('rejette une période qui dépasse 92 jours sans toucher au dépôt', async () => {
+      const repo = new FakeStatsDailyRepo();
+      const from = new Date('2026-01-01T00:00:00.000Z');
+      // 93 jours inclus (0 à 92 = 93 jours)
+      const to93 = new Date(Date.UTC(2026, 0, 1 + 92));
+
+      await expect(
+        recalculateStatsDailyRange({ repo }, from, to93),
+      ).rejects.toThrow(
+        `La période demandée (93 jours) dépasse la limite maximale de ${String(MAX_STATS_DAILY_RANGE_DAYS)} jours`,
+      );
+      expect(repo.findCalls).toHaveLength(0);
+      expect(repo.replaceCalls).toHaveLength(0);
+    });
+
+    it('accepte une période de 92 jours exactement (limite maximale)', async () => {
+      const repo = new FakeStatsDailyRepo();
+      const from = new Date('2026-01-01T00:00:00.000Z');
+      // 92 jours inclus (0 à 91 = 92 jours)
+      const to92 = new Date(Date.UTC(2026, 0, 1 + 91));
+
+      const summaries = await recalculateStatsDailyRange({ repo }, from, to92);
+      expect(summaries).toHaveLength(92);
+      expect(repo.findCalls).toHaveLength(92);
+      expect(repo.replaceCalls).toHaveLength(92);
+    });
+
+    it('rejette les dates invalides sans toucher au dépôt', async () => {
+      const repo = new FakeStatsDailyRepo();
+      const invalidDate = new Date('date-invalide');
+      const validDate = new Date('2026-10-01T00:00:00.000Z');
+
+      await expect(
+        recalculateStatsDailyRange({ repo }, invalidDate, validDate),
+      ).rejects.toThrow('Les dates fournies sont invalides');
+
+      await expect(
+        recalculateStatsDailyRange({ repo }, validDate, invalidDate),
+      ).rejects.toThrow('Les dates fournies sont invalides');
+
+      expect(repo.findCalls).toHaveLength(0);
+      expect(repo.replaceCalls).toHaveLength(0);
+    });
+
+    it('propage l’erreur si la lecture d’événements échoue', async () => {
+      const repo = new FakeStatsDailyRepo();
+      repo.failFind = true;
+      const from = new Date('2026-10-01T00:00:00.000Z');
+      const to = new Date('2026-10-01T00:00:00.000Z');
+
+      await expect(
+        recalculateStatsDailyRange({ repo }, from, to),
+      ).rejects.toThrow('Erreur lecture Event');
+    });
+
+    it('propage l’erreur si le remplacement StatsDaily échoue', async () => {
+      const repo = new FakeStatsDailyRepo();
+      repo.failReplace = true;
+      const from = new Date('2026-10-01T00:00:00.000Z');
+      const to = new Date('2026-10-01T00:00:00.000Z');
+
+      await expect(
+        recalculateStatsDailyRange({ repo }, from, to),
+      ).rejects.toThrow('Erreur écriture StatsDaily');
     });
   });
 
