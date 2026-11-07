@@ -1,7 +1,13 @@
 import { z } from '@xplor/shared';
-import type { VirtualTourPluginConfig, VirtualTourLink } from '@photo-sphere-viewer/virtual-tour-plugin';
+import type {
+  VirtualTourPluginConfig,
+  VirtualTourLink,
+  VirtualTourNode,
+  VirtualTourTransitionOptions,
+} from '@photo-sphere-viewer/virtual-tour-plugin';
 import type { TourGraph } from '@xplor/shared';
 import { toTourNodes } from './tour-nodes.js';
+import { computeSceneOrientation } from './orientation.js';
 
 export const TRANSITION_MS = 800;
 export const ARROW_SIZE = 56;
@@ -60,9 +66,27 @@ export function tourPluginOptions(graph: TourGraph, sceneId?: string | null): Vi
     renderMode: '2d',
     startNodeId,
     preload: true,
-    transitionOptions: {
-      effect: 'fade',
-      speed: TRANSITION_MS,
+    transitionOptions: (
+      toNode: VirtualTourNode,
+      _fromNode?: VirtualTourNode,
+      fromLink?: VirtualTourLink
+    ): VirtualTourTransitionOptions => {
+      const scene = graph.scenes.find((s) => s.id === toNode.id);
+      if (!scene) {
+        return {
+          effect: 'fade',
+          speed: TRANSITION_MS,
+          rotation: false,
+        };
+      }
+      const { yaw, pitch, zoom } = computeSceneOrientation(scene, fromLink);
+      return {
+        effect: 'fade',
+        speed: TRANSITION_MS,
+        rotation: false,
+        rotateTo: { yaw, pitch },
+        ...(zoom != null ? { zoomTo: zoom } : {}),
+      };
     },
     arrowStyle: {
       size: { width: ARROW_SIZE, height: ARROW_SIZE },

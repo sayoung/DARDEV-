@@ -99,12 +99,15 @@ describe('tourPluginOptions (2D navigation arrows)', () => {
     expect(options.preload).toBe(true);
   });
 
-  it('configures transition options with fade effect and 800ms speed', () => {
+  it('configures transition options as a function returning fade effect and 800ms speed', () => {
     const options = tourPluginOptions(validGraph);
-    expect(options.transitionOptions).toEqual({
-      effect: 'fade',
-      speed: TRANSITION_MS
-    });
+    expect(typeof options.transitionOptions).toBe('function');
+    if (typeof options.transitionOptions === 'function') {
+      const res = options.transitionOptions({ id: 'scene-1', panorama: 'p1' });
+      expect(res.effect).toBe('fade');
+      expect(res.speed).toBe(TRANSITION_MS);
+      expect(res.rotation).toBe(false);
+    }
   });
 
   it('configures arrowStyle with 56px size, circular element, and drop shadow', () => {
@@ -230,10 +233,7 @@ describe('tourPluginOptions (2D navigation arrows)', () => {
   it('verifies arrival orientation works in 2D and link click changes scene with fade', () => {
     const options = tourPluginOptions(validGraph);
     expect(options.renderMode).toBe('2d');
-    expect(options.transitionOptions).toEqual({
-      effect: 'fade',
-      speed: TRANSITION_MS,
-    });
+    expect(typeof options.transitionOptions).toBe('function');
 
     const link = options.nodes?.[0]?.links?.[0];
     expect(link).toBeDefined();
@@ -247,6 +247,147 @@ describe('tourPluginOptions (2D navigation arrows)', () => {
     expect(orientation).toEqual({
       yaw: 0.8,
       pitch: 0,
+    });
+  });
+
+  describe('transitionOptions callback (vue d\'arrivée sans saut)', () => {
+    it('avec un lien qui a un arrivalYaw, rotateTo.yaw vaut cet arrivalYaw', () => {
+      const options = tourPluginOptions(validGraph);
+      if (typeof options.transitionOptions !== 'function') {
+        throw new Error('transitionOptions should be a function');
+      }
+
+      const link: VirtualTourLink = {
+        nodeId: 'scene-2',
+        data: {
+          arrivalYaw: 0.8,
+        },
+      };
+
+      const result = options.transitionOptions(
+        { id: 'scene-2', panorama: 'p2' },
+        undefined,
+        link
+      );
+
+      expect(result.effect).toBe('fade');
+      expect(result.speed).toBe(TRANSITION_MS);
+      expect(result.rotation).toBe(false);
+      expect(result.rotateTo?.yaw).toBe(0.8);
+      expect(result.rotateTo?.pitch).toBe(0);
+      expect('zoomTo' in result).toBe(false);
+    });
+
+    it('sans lien (fromLink absent, cas de goToScene), rotateTo vaut l\'initialView de la cible', () => {
+      const options = tourPluginOptions(validGraph);
+      if (typeof options.transitionOptions !== 'function') {
+        throw new Error('transitionOptions should be a function');
+      }
+
+      const scene2 = validGraph.scenes.find((s) => s.id === 'scene-2');
+      if (!scene2) {
+        throw new Error('scene-2 not found');
+      }
+
+      const result = options.transitionOptions({ id: 'scene-2', panorama: 'p2' });
+
+      expect(result.effect).toBe('fade');
+      expect(result.speed).toBe(TRANSITION_MS);
+      expect(result.rotation).toBe(false);
+      expect(result.rotateTo?.yaw).toBe(scene2.initialView.yaw);
+      expect(result.rotateTo?.pitch).toBe(scene2.initialView.pitch);
+      expect(result.zoomTo).toBe(scene2.initialView.zoom);
+    });
+
+    it('rotation vaut false', () => {
+      const options = tourPluginOptions(validGraph);
+      if (typeof options.transitionOptions !== 'function') {
+        throw new Error('transitionOptions should be a function');
+      }
+
+      const linkWithArrival: VirtualTourLink = {
+        nodeId: 'scene-2',
+        data: { arrivalYaw: 1.2 },
+      };
+      const resultWithLink = options.transitionOptions(
+        { id: 'scene-2', panorama: 'p2' },
+        undefined,
+        linkWithArrival
+      );
+      expect(resultWithLink.rotation).toBe(false);
+
+      const resultWithoutLink = options.transitionOptions({ id: 'scene-2', panorama: 'p2' });
+      expect(resultWithoutLink.rotation).toBe(false);
+
+      const resultUnknown = options.transitionOptions({ id: 'scene-unknown', panorama: 'none' });
+      expect(resultUnknown.rotation).toBe(false);
+    });
+
+    it('zoomTo n\'est présent que si zoom est défini', () => {
+      const options = tourPluginOptions(validGraph);
+      if (typeof options.transitionOptions !== 'function') {
+        throw new Error('transitionOptions should be a function');
+      }
+
+      // Cas 1 : sans lien, la scène cible a un zoom défini (zoom: 1) -> zoomTo est présent et vaut 1
+      const withoutLink = options.transitionOptions({ id: 'scene-2', panorama: 'p2' });
+      expect('zoomTo' in withoutLink).toBe(true);
+      expect(withoutLink.zoomTo).toBe(1);
+
+      // Cas 2 : avec lien ayant arrivalYaw -> computeSceneOrientation ne renvoie pas zoom -> zoomTo est absent
+      const withArrivalLink: VirtualTourLink = {
+        nodeId: 'scene-2',
+        data: { arrivalYaw: 0.8 },
+      };
+      const withArrival = options.transitionOptions(
+        { id: 'scene-2', panorama: 'p2' },
+        undefined,
+        withArrivalLink
+      );
+      expect('zoomTo' in withArrival).toBe(false);
+      expect(withArrival.zoomTo).toBeUndefined();
+
+      // Cas 3 : avec un graphe dont la scène a un zoom explicite différent (ex: 0)
+      const scene0 = validGraph.scenes.find((s) => s.id === 'scene-1');
+      const scene1 = validGraph.scenes.find((s) => s.id === 'scene-2');
+      if (!scene0 || !scene1) {
+        throw new Error('fixtures scenes not found');
+      }
+      const customGraph = TourGraphSchema.parse({
+        ...validGraph,
+        scenes: [
+          scene0,
+          {
+            ...scene1,
+            id: 'scene-zoom-zero',
+            initialView: { yaw: 0, pitch: 0, zoom: 0 },
+          },
+        ],
+      });
+      const customOptions = tourPluginOptions(customGraph);
+      if (typeof customOptions.transitionOptions !== 'function') {
+        throw new Error('transitionOptions should be a function');
+      }
+      const resZero = customOptions.transitionOptions({ id: 'scene-zoom-zero', panorama: 'p2' });
+      expect('zoomTo' in resZero).toBe(true);
+      expect(resZero.zoomTo).toBe(0);
+    });
+
+    it('si la scène est introuvable, renvoie seulement fade, speed et rotation: false', () => {
+      const options = tourPluginOptions(validGraph);
+      if (typeof options.transitionOptions !== 'function') {
+        throw new Error('transitionOptions should be a function');
+      }
+
+      const result = options.transitionOptions({ id: 'scene-inconnue', panorama: 'px' });
+
+      expect(result).toEqual({
+        effect: 'fade',
+        speed: TRANSITION_MS,
+        rotation: false,
+      });
+      expect('rotateTo' in result).toBe(false);
+      expect('zoomTo' in result).toBe(false);
     });
   });
 });
