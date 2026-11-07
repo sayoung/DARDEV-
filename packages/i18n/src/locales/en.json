@@ -78,6 +78,11 @@
       "subject": "Reset your Xplor password",
       "text": "To choose a new password, open this link (valid for 1 hour): {link}",
       "html": "<p><a href=\"{link}\">Choose a new password</a> (link valid for 1 hour).</p>"
+    },
+    "monthlyReport": {
+      "subject": "Xplor monthly statistical report — {hotelName} ({period})",
+      "text": "Hello,\n\nPlease find attached the monthly statistical report for {hotelName} for the period {period}.\n\nThe Xplor Team",
+      "html": "<p>Hello,</p><p>Please find attached the monthly statistical report for <strong>{hotelName}</strong> covering the period <strong>{period}</strong>.</p><p>The Xplor Team</p>"
     }
   },
   "catalog": {
@@ -395,6 +400,47 @@
       "reenroll": "Re-enroll",
       "confirmReenroll": "Are you sure you want to re-enroll this kiosk? All local data will be reset.",
       "close": "Close"
+    }
+  },
+  "report": {
+    "monthly": {
+      "title": "Monthly Statistical Report",
+      "subtitle": "Performance and usage of immersive tours",
+      "period": "Period",
+      "generatedAt": "Generated on",
+      "hotel": "Hotel",
+      "metrics": {
+        "title": "Key metrics",
+        "sessions": "Sessions",
+        "averageDuration": "Average duration (min)",
+        "toursOpened": "Tours opened",
+        "scenesViewed": "Scenes viewed",
+        "hotspotClicks": "Hotspot clicks",
+        "vrEntries": "VR entries",
+        "qrScans": "QR code scans"
+      },
+      "topTours": {
+        "title": "Most viewed tours",
+        "opens": "Opens",
+        "empty": "No tours opened during this period"
+      },
+      "topScenes": {
+        "title": "Most viewed scenes",
+        "views": "Views",
+        "empty": "No scenes viewed during this period"
+      },
+      "languages": {
+        "title": "Breakdown by language",
+        "sessions": "Sessions"
+      },
+      "channels": {
+        "title": "Breakdown by channel",
+        "sessions": "Sessions"
+      },
+      "footer": {
+        "tagline": "Your journey begins here",
+        "confidential": "Confidential report automatically generated without any collection of personal data."
+      }
     }
   },
   "vr": {
