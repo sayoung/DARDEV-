@@ -1,27 +1,34 @@
 # Suivi — Xplor
 
-## Jalon en cours : M7 — Statistiques
+## Jalon en cours : M8 — Durcissement & pilote
 
-Exigences : F-80 à F-83, API-04 et API-29
+Exigences : NF-01 à NF-05, F-90 (2FA), F-91, API-28 et API-30
 
-Livrable : tableau de bord alimenté par une semaine d’usage simulé
+Livrable : PV de recette, rapport de pilote et correctifs
 
-| # | Critère | État | Preuve |
+| # | Critère | État | Constat initial vérifié dans le code |
 |---|---|---|---|
-| 1 | F-80 : collecte d’événements, partitionnement `Event`, agrégation BullMQ et rattrapage | fait | Ingestion API-04 par lots ≤ 200, table partitionnée, modèle StatsDaily, job horaire avec recalcul de plage idempotent, script `stats:backfill` |
-| 2 | API-29, F-81 et F-82 : tableau de bord, filtres, export CSV et vérification de bout en bout | fait | API-29 avec isolation multi-tenant (hôtel A ne voit pas B), tableau admin avec courbes SVG, filtres combinés, export CSV UTF-8 BOM, script `stats:verify`, 24 tests d'intégration verts |
-| 3 | F-83 : rapport mensuel hôtel en PDF et envoi courriel planifié | fait | Schéma partagé, génération PDF A4 (pdf-lib), dépôt avec isolation par hôtel, job BullMQ `0 6 1 * *`, script `report:preview`, tests unitaires complets |
-| 4 | Tests automatisés (unitaires et intégration) verts | fait | 243 fichiers / 2 628 tests passés (07/11/2026), 24 tests d'intégration stats |
-| 5 | pnpm lint, pnpm typecheck sans erreur | fait | `pnpm lint` et `pnpm typecheck` code 0 sans erreur (07/11/2026) |
-| 6 | Chaînes d’interface fr/ar/en ; RTL vérifié | reporté (décision du 30/09/2026) | Décision du 30/09/2026 : fr obligatoire, traductions ar/en et vérification visuelle RTL suspendues jusqu’au M8 |
-| 7 | Démo avec données pertinentes (scripts stats:demo, backfill, verify) | fait | 418 événements et 84 sessions simulés sur 7 jours, backfill StatsDaily, script de cohérence stats:verify et scénario docs/DEMO_M7.md |
-| 8 | Démo au porteur et retours consignés | à faire | Scénario pas à pas rédigé dans docs/DEMO_M7.md ; validation finale à réaliser par le porteur |
+| 1 | NF-01 : sécurité (helmet/CSP, throttler, CORS, pnpm audit) | à faire | Helmet/CSP et CORS configurés sur Fastify, ThrottlerGuard en place (auth, kiosks, public-tours), limiteur Redis sur /events ; 54 vulnérabilités relevées par `pnpm audit` et audit sécurité complet à finaliser |
+| 2 | NF-02 : loi 09-08 (pas d'IP dans Event, mentions légales) | à faire | Pas d'adresse IP stockée dans `Event` (anonymat par conception), hash SHA-256 IP éphémère Redis pour rate-limiting ; mentions légales et politique de confidentialité sur la page publique absentes |
+| 3 | NF-03 : performance (k6) | à faire | Aucun script k6 dans le dépôt ; seuils P95 (API < 300 ms, manifeste < 200 ms, insertion 200 événements < 100 ms) à mesurer et valider sous tests de charge |
+| 4 | NF-04 : /api/health | fait | Endpoint `/api/health` opérationnel avec sondes actives db (Postgres), redis et storage (MinIO/S3), délai max 2 000 ms, code 200/503 et tests unitaires verts |
+| 5 | NF-05 : accessibilité (axe) | à faire | `@axe-core/playwright` absent des dépendances et de la suite E2E ; conformité WCAG 2.1 AA (contrastes, navigation clavier, libellés) à auditer et automatiser |
+| 6 | F-90 : 2FA TOTP ADMIN (champs présents, logique absente) | à faire | Champs `totpSecret` et `totpEnabled` présents dans le modèle Prisma `User` ; logique TOTP (setup, verify, challenge au login, obligation pour ADMIN) absente |
+| 7 | F-91 : AuditLog (modèle absent) | à faire | Modèle `AuditLog` absent de `schema.prisma` ; journalisation des événements sensibles (connexions, rôles, publications, sélection, kiosques) absente |
+| 8 | API-28 : CRUD utilisateurs (seules les invitations existent) | à faire | Seul `POST /admin/users/invitations` est implémenté ; endpoints CRUD (liste, consultation, mise à jour, désactivation, rattachement hôtels) absents |
+| 9 | API-30 : /admin/audit (absent) | à faire | Endpoint `GET /admin/audit` et contrôleur d'interrogation du journal d'audit absents |
+| 10 | Lot « traductions ar/en complètes + vérification RTL + réactivation des contrôles 3 langues » (décision du 30/09/2026, à faire avant le pilote) | à faire | Infrastructure i18n et RTL en place mais contenus ar/en partiels (repli sur fr) et contrôles stricts suspendus (D-03 / D-82) ; à compléter et réactiver avant le pilote |
+| 11 | Recette | à faire | Scénarios de recette fonctionnelle globale de bout en bout et procès-verbal (PV) de recette à exécuter et rédiger |
+| 12 | Pilote dans un hôtel | à faire | Déploiement pilote en conditions réelles dans un hôtel partenaire, observation d'usage, rapport de pilote et correctifs à produire |
+| 13 | Lint, typecheck et test | fait | `pnpm lint`, `pnpm typecheck` code 0 sans erreur, `pnpm test` vert (243 fichiers, 2 628 tests passés au 07/11/2026) |
 
-DoD M7 remplie : non
+DoD M8 remplie : non
 
-Jalons M0 à M6 marqués validés dans Orch.
+M7 validé par le porteur (démo)
+Jalons M0 à M7 marqués validés dans Orch.
 
 ## Session en cours
+- 07/11/2026 — M8 (bilan) : Bilan d'entrée du jalon M8 — Durcissement & pilote, remplacement de la section M7 par M8 avec tableau de DoD détaillant l'état initial vérifié dans le code (NF-01 à NF-05, F-90, F-91, API-28, API-30, lot 3 langues/RTL, recette, pilote, lint/typecheck/test), mention « M7 validé par le porteur (démo) ». Contrôles lint, typecheck et test vérifiés verts (243 fichiers, 2 628 tests).
 - 07/11/2026 — M7 DoD (4/4) : Bilan du jalon M7, réécriture du tableau de DoD M7 avec état réel et preuves, nettoyage des tâches obsolètes dans En cours, création de docs/DEMO_M7.md (scénario pas à pas complet avec commandes stats:demo, stats:backfill, stats:verify, filtres dashboard, isolation multi-tenant, export CSV et report:preview). Contrôles lint, typecheck et test vérifiés verts (243 fichiers, 2 628 tests).
 - M6 F-71 (2/2) : Protocole Quest Browser rédigé dans docs/VALIDATION_QUEST.md (entrée VR, rayons contrôleur/main, visée flèche/info, pincement/gâchette, déclenchement unique anti-rebond, fondu de confort, regard-dwell de secours, sortie nadir/système, console propre). Validation matérielle marquée « à faire sur Quest » (aucun casque physique connecté localement). Suite de tests automatisés (19 tests VR mount-vr dont rejet des événements sans contrôleur correspondant) et contrôles lint/typecheck verts.
 
