@@ -14,10 +14,12 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1142.0",
     "@prisma/client": "^6.19.3",
+    "@xplor/i18n": "workspace:^",
     "@xplor/shared": "workspace:^",
     "bullmq": "^6.3.11",
     "ioredis": "^6.0.0",
     "nodemailer": "^10.0.12",
+    "pdf-lib": "^1.17.1",
     "sharp": "^0.35.5",
     "zod": "^4.6.5"
   },

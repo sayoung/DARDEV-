@@ -86,6 +86,11 @@
       "subject": "Réinitialisation de votre mot de passe Xplor",
       "text": "Pour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) : {link}",
       "html": "<p><a href=\"{link}\">Choisir un nouveau mot de passe</a> (lien valable 1 heure).</p>"
+    },
+    "monthlyReport": {
+      "subject": "Rapport statistique mensuel Xplor — {hotelName} ({period})",
+      "text": "Bonjour,\n\nVeuillez trouver ci-joint le rapport statistique mensuel pour {hotelName} pour la période {period}.\n\nL'équipe Xplor",
+      "html": "<p>Bonjour,</p><p>Veuillez trouver ci-joint le rapport statistique mensuel pour <strong>{hotelName}</strong> couvrant la période <strong>{period}</strong>.</p><p>L'équipe Xplor</p>"
     }
   },
   "catalog": {
@@ -637,6 +642,47 @@
       "reenroll": "Réenrôler",
       "confirmReenroll": "Voulez-vous vraiment réenrôler ce kiosque ? Toutes les données locales seront réinitialisées.",
       "close": "Fermer"
+    }
+  },
+  "report": {
+    "monthly": {
+      "title": "Rapport statistique mensuel",
+      "subtitle": "Performances et usage des visites immersives",
+      "period": "Période",
+      "generatedAt": "Généré le",
+      "hotel": "Hôtel",
+      "metrics": {
+        "title": "Indicateurs clés",
+        "sessions": "Sessions",
+        "averageDuration": "Durée moyenne (min)",
+        "toursOpened": "Visites ouvertes",
+        "scenesViewed": "Scènes vues",
+        "hotspotClicks": "Points d'intérêt cliqués",
+        "vrEntries": "Entrées en réalité virtuelle",
+        "qrScans": "Scans de QR code"
+      },
+      "topTours": {
+        "title": "Visites les plus consultées",
+        "opens": "Ouvertures",
+        "empty": "Aucune visite ouverte sur la période"
+      },
+      "topScenes": {
+        "title": "Scènes les plus consultées",
+        "views": "Vues",
+        "empty": "Aucune scène vue sur la période"
+      },
+      "languages": {
+        "title": "Répartition par langue",
+        "sessions": "Sessions"
+      },
+      "channels": {
+        "title": "Répartition par canal",
+        "sessions": "Sessions"
+      },
+      "footer": {
+        "tagline": "Votre voyage commence ici",
+        "confidential": "Rapport confidentiel généré automatiquement sans aucune collecte de données personnelles."
+      }
     }
   },
   "vr": {

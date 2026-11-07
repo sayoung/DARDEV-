@@ -34,6 +34,8 @@ export const StatsSummarySchema = z.object({
   qrScans: z.number().int().nonnegative(),
 });
 
+export type StatsSummary = z.infer<typeof StatsSummarySchema>;
+
 export const StatsDashboardSchema = z.object({
   summary: StatsSummarySchema,
   daily: z.array(
@@ -79,3 +81,50 @@ export const StatsDashboardSchema = z.object({
 });
 
 export type StatsDashboard = z.infer<typeof StatsDashboardSchema>;
+
+export const HOTEL_MONTHLY_REPORT_QUEUE_NAME = 'hotel-monthly-report';
+export const HOTEL_MONTHLY_REPORT_JOB_ID = 'hotel-monthly-report';
+export const HOTEL_MONTHLY_REPORT_CRON_PATTERN = '0 6 1 * *';
+
+export const HotelMonthlyReportPeriodSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+  label: z.string().min(1),
+});
+
+export type HotelMonthlyReportPeriod = z.infer<typeof HotelMonthlyReportPeriodSchema>;
+
+export const HotelMonthlyReportDataSchema = z.object({
+  hotelId: z.uuid(),
+  hotelName: z.string().min(1),
+  period: HotelMonthlyReportPeriodSchema,
+  summary: StatsSummarySchema,
+  topTours: z.array(
+    z.object({
+      id: z.string(),
+      label: z.string(),
+      opens: z.number().int().nonnegative(),
+    }),
+  ),
+  topScenes: z.array(
+    z.object({
+      id: z.string(),
+      label: z.string(),
+      views: z.number().int().nonnegative(),
+    }),
+  ),
+  languages: z.array(
+    z.object({
+      lang: z.string(),
+      sessions: z.number().int().nonnegative(),
+    }),
+  ),
+  channels: z.array(
+    z.object({
+      channel: z.string(),
+      sessions: z.number().int().nonnegative(),
+    }),
+  ),
+});
+
+export type HotelMonthlyReportData = z.infer<typeof HotelMonthlyReportDataSchema>;
