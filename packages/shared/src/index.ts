@@ -229,6 +229,13 @@ export {
   type EventType,
 } from './events.js';
 export {
+  HOTEL_MONTHLY_REPORT_CRON_PATTERN,
+  HOTEL_MONTHLY_REPORT_JOB_ID,
+  HOTEL_MONTHLY_REPORT_QUEUE_NAME,
+  HotelMonthlyReportDataSchema,
+  HotelMonthlyReportPeriodSchema,
+  type HotelMonthlyReportData,
+  type HotelMonthlyReportPeriod,
   STATS_DAILY_INTERVAL_MS,
   STATS_DAILY_JOB_ID,
   STATS_DAILY_QUEUE_NAME,
@@ -237,5 +244,6 @@ export {
   StatsSummarySchema,
   type StatsDailyRecord,
   type StatsDashboard,
+  type StatsSummary,
 } from './stats.js';
 

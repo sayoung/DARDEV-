@@ -1062,3 +1062,15 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Décision :** le kiosque expose un contrôle de lecture de la narration de scène afin que l’événement `AUDIO_PLAY` corresponde à une action réelle. Le contrôle réutilise les libellés i18n existants et ne demande aucun nouveau paquet.
 - **Alternatives :** omettre `AUDIO_PLAY` côté kiosque jusqu’à l’existence d’un contrôle accessible ; détecter l’audio lancé automatiquement, ce qui ne correspond pas au geste utilisateur.
 - **À valider :** oui
+
+## D-135 — Génération des rapports mensuels PDF via pdf-lib (M7 F-83)
+
+- **Date :** 02/11/2026
+- **Décision :** Ajout de la dépendance `pdf-lib` (1.17.1, licence MIT) au package `@xplor/worker` pour la génération des rapports statistiques mensuels des hôtels en PDF A4 (M7 F-83). Cette solution pure TypeScript/JavaScript s'exécute dans l'image Docker de production (`node:22-bookworm-slim`) sans exiger l'installation lourde de Chromium et de dépendances graphiques système (requises par Playwright pour `page.pdf()`), et permet des tests unitaires rapides et déterministes.
+- **Alternatives rejetées :** Playwright Chromium en headless dans le worker (rejeté car Chromium et ses bibliothèques C++ ne sont pas présents dans l'image Debian slim du worker de production) ; Puppeteer (même contrainte) ; PDFKit (dépendances natives et flux streams plus complexes).
+- **À valider :** non
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| pdf-lib | Génération de documents PDF vectoriels A4 pour le rapport mensuel hôtel F-83 | MIT |
+
