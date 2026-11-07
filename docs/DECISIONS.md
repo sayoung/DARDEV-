@@ -1074,3 +1074,17 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | --- | --- | --- |
 | pdf-lib | Génération de documents PDF vectoriels A4 pour le rapport mensuel hôtel F-83 | MIT |
 
+## D-136 — Planification et distribution du rapport mensuel hôtel (M7 F-83)
+
+- **Date :** 07/11/2026
+- **Décision :** Câblage et automatisation de l'envoi du rapport mensuel statistique par hôtel (F-83) :
+  - **Cron BullMQ :** job récurrent planifié avec l'expression `0 6 1 * *` UTC (`HOTEL_MONTHLY_REPORT_CRON_PATTERN`), s'exécutant le 1er de chaque mois à 06:00 UTC pour traiter l'intervalle complet du mois civil précédent (calculé via `getPreviousMonthUtcRange`).
+  - **Destinataires :** résolution automatique via `resolveHotelReportRecipients` agrégeant les gestionnaires `HOTEL_MANAGER` actifs assignés à l'hôtel et l'adresse e-mail de contact de l'hôtel. Un hôtel sans aucun destinataire configuré est tracé et ignoré proprement (`SKIPPED_NO_RECIPIENTS`) sans lever d'erreur ni bloquer les autres établissements.
+  - **Sessions et dédoublonnage :** décompte des sessions distinctes du mois par événement `SESSION_START` pour éliminer tout double comptage entre visites, avec repli sur la somme des agrégats `StatsDaily` si les événements bruts sont absents.
+  - **Tolérance aux pannes et isolation :** isolation stricte des données et pièces jointes PDF entre hôtels. L'échec d'envoi ou de génération pour un hôtel est journalisé (`FAILED`) sans interrompre le traitement du lot pour les autres hôtels.
+  - **Sécurité :** échappement systématique des données interpolées (`escapeHtml`) dans les corps de courriels HTML.
+  - **DoD (3 langues/RTL reporté) :** conformément à la consigne porteur du 30/09/2026 suspendant les vérifications RTL et les contenus ar/en jusqu'à M8, les clés i18n sont intégrées aux 3 catalogues (`fr.json`, `en.json`, `ar.json`) avec repli automatique sur le français pour la génération PDF vectorielle et les e-mails en arabe ; le critère 3 langues/RTL de la DoD M7 est ainsi reporté à la phase de réactivation prévue avant M8.
+- **Alternatives :** déclenchement manuel ou cron système externe type crontab OS (rejeté car la pile impose BullMQ et Redis dans le conteneur worker) ; traitement transactionnel bloquant tout le lot en cas d'erreur isolée (rejeté pour des raisons de résilience réseau SMTP).
+- **À valider :** non
+
+

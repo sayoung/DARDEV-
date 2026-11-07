@@ -23,6 +23,9 @@ import {
   recalculateStatsDaily,
   startStatsDailyJob,
 } from './stats-daily.job.js';
+import { PrismaHotelMonthlyReportRepository } from './hotel-monthly-report-repository.js';
+import { sendMonthlyHotelReports } from './hotel-monthly-report.service.js';
+import { startHotelMonthlyReportJob } from './hotel-monthly-report.job.js';
 
 function loadLocalEnvFile(): void {
   const path = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
@@ -37,6 +40,7 @@ export interface BootFactories {
   startWorker: typeof startPanoramaWorker;
   startKioskOfflineJob: typeof startKioskOfflineJob;
   startStatsDailyJob: typeof startStatsDailyJob;
+  startHotelMonthlyReportJob?: typeof startHotelMonthlyReportJob;
   createSmtpSender?: typeof createSmtpSender;
 }
 
@@ -45,6 +49,7 @@ const defaultFactories: BootFactories = {
   startWorker: startPanoramaWorker,
   startKioskOfflineJob,
   startStatsDailyJob,
+  startHotelMonthlyReportJob,
 };
 
 export async function boot(
@@ -69,6 +74,7 @@ export async function boot(
   let worker: { close(): Promise<void> } | undefined;
   let statsDailyJob: { close(): Promise<void> } | undefined;
   let kioskOfflineJob: { close(): Promise<void> } | undefined;
+  let hotelMonthlyReportJob: { close(): Promise<void> } | undefined;
 
   try {
     const repo = new PrismaAssetRepository(prisma);
@@ -107,24 +113,45 @@ export async function boot(
       log,
     });
 
+    if (factories.startHotelMonthlyReportJob !== undefined) {
+      const hotelReportRepo = new PrismaHotelMonthlyReportRepository(prisma);
+      hotelMonthlyReportJob = await factories.startHotelMonthlyReportJob({
+        redisUrl: env.REDIS_URL,
+        sendReports: () =>
+          sendMonthlyHotelReports({
+            repo: hotelReportRepo,
+            sendMail: (mail) => smtpSender.sendMail(mail),
+            log,
+          }),
+        log,
+      });
+    }
+
     const activeWorker = worker;
     const activeStatsDailyJob = statsDailyJob;
     const activeKioskJob = kioskOfflineJob;
+    const activeHotelMonthlyReportJob = hotelMonthlyReportJob;
 
     return async () => {
       try {
-        await activeKioskJob.close();
+        if (activeHotelMonthlyReportJob !== undefined) {
+          await activeHotelMonthlyReportJob.close();
+        }
       } finally {
         try {
-          await activeStatsDailyJob.close();
+          await activeKioskJob.close();
         } finally {
           try {
-            await activeWorker.close();
+            await activeStatsDailyJob.close();
           } finally {
             try {
-              smtpSender.close();
+              await activeWorker.close();
             } finally {
-              await prisma.$disconnect();
+              try {
+                smtpSender.close();
+              } finally {
+                await prisma.$disconnect();
+              }
             }
           }
         }
@@ -132,24 +159,30 @@ export async function boot(
     };
   } catch (error) {
     try {
-      if (kioskOfflineJob !== undefined) {
-        await kioskOfflineJob.close();
+      if (hotelMonthlyReportJob !== undefined) {
+        await hotelMonthlyReportJob.close();
       }
     } finally {
       try {
-        if (statsDailyJob !== undefined) {
-          await statsDailyJob.close();
+        if (kioskOfflineJob !== undefined) {
+          await kioskOfflineJob.close();
         }
       } finally {
         try {
-          if (worker !== undefined) {
-            await worker.close();
+          if (statsDailyJob !== undefined) {
+            await statsDailyJob.close();
           }
         } finally {
           try {
-            smtpSender.close();
+            if (worker !== undefined) {
+              await worker.close();
+            }
           } finally {
-            await prisma.$disconnect();
+            try {
+              smtpSender.close();
+            } finally {
+              await prisma.$disconnect();
+            }
           }
         }
       }
