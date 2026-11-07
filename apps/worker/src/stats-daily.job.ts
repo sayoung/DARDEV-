@@ -32,29 +32,87 @@ export interface RecalculateStatsDailyDeps {
   log?: (message: string) => void;
 }
 
+export const MAX_STATS_DAILY_RANGE_DAYS = 92;
+
+/**
+ * Recalcule les agrégats StatsDaily pour chaque jour UTC de from à to inclus.
+ * Parcourt chaque jour UTC (getDayUtcRange → findEventsForDay → aggregateEventsForDay → replaceStatsForDay),
+ * journalise une ligne par jour via deps.log et refuse (throw) si from > to ou si la période dépasse 92 jours.
+ */
+export async function recalculateStatsDailyRange(
+  deps: RecalculateStatsDailyDeps,
+  from: Date,
+  to: Date,
+): Promise<StatsDailyJobDaySummary[]> {
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+    throw new Error('Les dates fournies sont invalides');
+  }
+
+  if (from.getTime() > to.getTime()) {
+    throw new Error(
+      'La date de début (from) doit être antérieure ou égale à la date de fin (to)',
+    );
+  }
+
+  const startDay = new Date(
+    Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()),
+  );
+  const endDay = new Date(
+    Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate()),
+  );
+
+  const MS_PER_DAY = 86_400_000;
+  const dayCount =
+    Math.round((endDay.getTime() - startDay.getTime()) / MS_PER_DAY) + 1;
+
+  if (dayCount > MAX_STATS_DAILY_RANGE_DAYS) {
+    throw new Error(
+      `La période demandée (${String(dayCount)} jours) dépasse la limite maximale de ${String(MAX_STATS_DAILY_RANGE_DAYS)} jours`,
+    );
+  }
+
+  const summaries: StatsDailyJobDaySummary[] = [];
+  const current = new Date(startDay.getTime());
+
+  while (current.getTime() <= endDay.getTime()) {
+    const { dayStart, dayEnd } = getDayUtcRange(current);
+    const events = await deps.repo.findEventsForDay(dayStart, dayEnd);
+    const aggregates = aggregateEventsForDay(events, current);
+    await deps.repo.replaceStatsForDay(dayStart, aggregates);
+
+    const dayStr = dayStart.toISOString().slice(0, 10);
+    summaries.push({
+      day: dayStr,
+      bucketsCount: aggregates.length,
+    });
+
+    if (deps.log !== undefined) {
+      deps.log(
+        `Agrégation StatsDaily (${dayStr}) : ${String(aggregates.length)} compartiment(s)`,
+      );
+    }
+
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  return summaries;
+}
+
 /**
  * Recalcule les agrégats StatsDaily d'hier et d'aujourd'hui depuis la table Event.
  * Ne modifie jamais les événements bruts (lecture seule sur Event).
- * Remplace les agrégats de façon idempotente par jour.
+ * Remplace les agrégats de façon idempotente par jour en s'appuyant sur recalculateStatsDailyRange.
  */
 export async function recalculateStatsDaily(
   deps: RecalculateStatsDailyDeps,
   now: Date = new Date(),
 ): Promise<StatsDailyJobResult> {
   const { yesterday, today } = getYesterdayAndTodayUtc(now);
-  const days = [yesterday, today];
-  const summaries: StatsDailyJobDaySummary[] = [];
-
-  for (const day of days) {
-    const { dayStart, dayEnd } = getDayUtcRange(day);
-    const events = await deps.repo.findEventsForDay(dayStart, dayEnd);
-    const aggregates = aggregateEventsForDay(events, day);
-    await deps.repo.replaceStatsForDay(dayStart, aggregates);
-    summaries.push({
-      day: dayStart.toISOString().slice(0, 10),
-      bucketsCount: aggregates.length,
-    });
-  }
+  const summaries = await recalculateStatsDailyRange(
+    { repo: deps.repo },
+    yesterday,
+    today,
+  );
 
   const yesterdaySummary = summaries[0] ?? {
     day: yesterday.toISOString().slice(0, 10),
