@@ -162,4 +162,58 @@ describe('loadEnv', () => {
       /API_TRUST_PROXY/,
     );
   });
+
+  it('validates TOTP_ENCRYPTION_KEY optional outside production and mandatory in production', () => {
+    // Optional outside production
+    const devEnv = loadEnv(exampleEnv());
+    expect(devEnv.TOTP_ENCRYPTION_KEY).toBeUndefined();
+
+    // Valid outside production
+    const validKey = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    const devWithKey = loadEnv({ ...exampleEnv(), TOTP_ENCRYPTION_KEY: validKey });
+    expect(devWithKey.TOTP_ENCRYPTION_KEY).toBe(validKey);
+
+    // Invalid length or characters rejected
+    expect(() =>
+      loadEnv({ ...exampleEnv(), TOTP_ENCRYPTION_KEY: 'trop-court' }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
+    expect(() =>
+      loadEnv({ ...exampleEnv(), TOTP_ENCRYPTION_KEY: 'a'.repeat(63) }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
+    expect(() =>
+      loadEnv({ ...exampleEnv(), TOTP_ENCRYPTION_KEY: 'a'.repeat(65) }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
+    expect(() =>
+      loadEnv({ ...exampleEnv(), TOTP_ENCRYPTION_KEY: 'g'.repeat(64) }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
+
+    // Missing in production rejected
+    expect(() =>
+      loadEnv({
+        ...exampleEnv(),
+        NODE_ENV: 'production',
+        API_CORS_ORIGINS: 'https://admin.xplor.ma',
+        TOTP_ENCRYPTION_KEY: undefined,
+      }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
+
+    // Empty string in production rejected
+    expect(() =>
+      loadEnv({
+        ...exampleEnv(),
+        NODE_ENV: 'production',
+        API_CORS_ORIGINS: 'https://admin.xplor.ma',
+        TOTP_ENCRYPTION_KEY: '',
+      }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
+
+    // Valid in production accepted
+    const prodEnv = loadEnv({
+      ...exampleEnv(),
+      NODE_ENV: 'production',
+      API_CORS_ORIGINS: 'https://admin.xplor.ma',
+      TOTP_ENCRYPTION_KEY: validKey,
+    });
+    expect(prodEnv.TOTP_ENCRYPTION_KEY).toBe(validKey);
+  });
 });
