@@ -38,6 +38,7 @@ Jalons M0 à M6 marqués validés dans Orch.
 
 ### Fait
 
+- 07/11/2026 — M7 F-81/F-82 (b.2.a.2.c) — À la racine du dépôt, lancer `pnpm lint` puis `pnpm typecheck` (jamais docker ni VPS ; si `node`/`pnpm` introuvable, utiliser le chem… — Lint et typecheck passent (code 0) et aucun fichier n'a été modifié, comme demandé. (ea2faf6)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.2.b) — Dans apps/api, lancer UNIQUEMENT `pnpm --filter @xplor/api test:int -- stats -t "(4)"` (jamais docker ni VPS ; services via tunnel SS… — Diff vide, conforme à la consigne de ne modifier aucun fichier ; lint, typecheck et tests unitaires passent, mais la sortie du test d'intégration (4) n'a pas pu être vue. (6cc48f3)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.2.b) — Conditionnelle : à faire SEULEMENT si le cas « (5) filtre par visite (tourId) » de apps/api/test/stats.int.test.ts (~l.674) a échoué… — Tâche conditionnelle sans effet : diff vide, aucun fichier modifié (PROGRESS.md et stats.service.ts intacts), lint et typecheck au vert, mais le cas (5) n'a pas pu être confirmé comme réussi. (865f8ea)
 - 07/11/2026 — M7 F-81/F-82 (b.2.a.2.a.1.c) — LECTURE SEULE. Lancer `git status --short` dans D:\DARDEV\local\xplor_smit et coller sa sortie dans un bloc de code (vide si rien… — Tâche en lecture seule : aucun fichier modifié (diff vide), contrôles lint/typecheck/test au vert. (000bd55)
@@ -77,4 +78,3 @@ Jalons M0 à M6 marqués validés dans Orch.
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.1.b) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md, pas de run_in_background. Étape uniq… — Diagnostic exécuté, échec pnpm consigné et dépôt propre. (80dab7b)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.2.1.a) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md, pas de run_in_background. Étape uniq… — Vérifications demandées effectuées : ports accessibles, Node v22.23.3 présent et dépôt propre. (6a8fe0a)
 - 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.2.a.1) — Aucun fichier modifié, jamais docker ni ssh, ne pas toucher docs/PROGRESS.md. Faire UN seul appel PowerShell (timeout:… — Vérification terminée : PostgreSQL et Redis répondent, aucun fichier n’a été modifié. (b7aef8c)
-- 04/11/2026 — M7 F-81/F-82 (1/4, b.2.a.1.c-2.2.1) — Diagnostiquer l'échec de `pnpm test`, cause du refus du relecteur. Lance en PowerShell, un seul appel, sans `;`, avec run_… — Aucun échec de tests reproduit : 2 524 tests réussis et diff vide. (4eb9123)
