@@ -58,6 +58,13 @@
       "successReset": "Votre mot de passe a été mis à jour. Vous pouvez vous connecter.",
       "successInvite": "Votre mot de passe est défini. Vous pouvez vous connecter."
     },
+    "twoFactor": {
+      "title": "Authentification à deux facteurs",
+      "enable": "Activer",
+      "code": "Code à 6 chiffres",
+      "invalidCode": "Code invalide",
+      "requiredForAdmin": "2FA obligatoire pour ADMIN"
+    },
     "errors": {
       "TOKEN_INVALID": "Ce lien n'est plus valable.",
       "PASSWORD_TOO_COMMON": "Ce mot de passe est trop courant.",
