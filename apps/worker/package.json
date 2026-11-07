@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "prisma:generate": "prisma generate --schema ../api/prisma/schema.prisma",
     "prebuild": "pnpm prisma:generate",
-    "stats:backfill": "tsx --conditions=development scripts/stats-backfill.ts"
+    "stats:backfill": "tsx --conditions=development scripts/stats-backfill.ts",
+    "report:preview": "tsx --conditions=development scripts/monthly-report-preview.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1142.0",
