@@ -543,7 +543,7 @@ afterAll(async () => {
   }
 });
 
-describe('GET /api/admin/stats (M7 F-81/F-82)', () => {
+describe('GET /api/v1/admin/stats (M7 F-81/F-82)', () => {
   it('(1) répond 401 si aucun cookie de session n’est fourni', async () => {
     const response = await getStats();
     expect(response.statusCode).toBe(401);
@@ -902,7 +902,7 @@ describe('GET /api/admin/stats (M7 F-81/F-82)', () => {
     });
   });
 
-  describe('export CSV (GET /api/admin/stats/export.csv)', () => {
+  describe('export CSV (GET /api/v1/admin/stats/export.csv)', () => {
     describe('contrôle d’accès et isolation multi-tenant sur l’export CSV', () => {
       it('(22) répond 401 si aucun cookie de session n’est fourni pour l’export CSV', async () => {
         const res = await getExportCsv();
