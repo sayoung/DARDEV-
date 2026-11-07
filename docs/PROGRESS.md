@@ -8,20 +8,21 @@ Livrable : tableau de bord alimenté par une semaine d’usage simulé
 
 | # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | F-80 et API-29/F-81/F-82 implémentés ; agrégation et vérification de bout en bout | partiel | F-80, API-29 et export faits ; migration StatsDaily appliquée, job horaire de recalcul encore à implémenter |
-| 2 | Tests automatisés verts (unitaires, intégration, e2e) | partiel | Tests unitaires ciblés verts ; intégration réelle à relancer après démarrage de PostgreSQL |
-| 3 | pnpm lint, pnpm typecheck sans erreur | fait | lint, typecheck verts le 21/10/2026 |
-| 4 | Migration StatsDaily appliquée, données de démonstration générées | partiel | Migration `20261021134205_stats_daily` appliquée sur `xplor` de développement par tunnel ; 418 événements / 84 sessions de démo créés ; table StatsDaily reste vide en attendant le job de recalcul |
-| 5 | Chaînes d’interface fr/ar/en ; RTL vérifié | partiel | Chaînes ajoutées ; vérification RTL visuelle à faire |
-| 6 | PROGRESS.md, DECISIONS.md et OpenAPI à jour | fait | `docs/openapi.json` régénéré |
-| 7 | Démo avec données pertinentes | partiel | `stats:demo -- --confirm-dev` exécuté en développement : 418 événements et 84 sessions ; job d’agrégation et validation de l’interface restent à faire |
-| 8 | Démo au porteur et retours consignés | à faire | - |
+| 1 | F-80 : collecte d’événements, partitionnement `Event`, agrégation BullMQ et rattrapage | fait | Ingestion API-04 par lots ≤ 200, table partitionnée, modèle StatsDaily, job horaire avec recalcul de plage idempotent, script `stats:backfill` |
+| 2 | API-29, F-81 et F-82 : tableau de bord, filtres, export CSV et vérification de bout en bout | fait | API-29 avec isolation multi-tenant (hôtel A ne voit pas B), tableau admin avec courbes SVG, filtres combinés, export CSV UTF-8 BOM, script `stats:verify`, 24 tests d'intégration verts |
+| 3 | F-83 : rapport mensuel hôtel en PDF et envoi courriel planifié | fait | Schéma partagé, génération PDF A4 (pdf-lib), dépôt avec isolation par hôtel, job BullMQ `0 6 1 * *`, script `report:preview`, tests unitaires complets |
+| 4 | Tests automatisés (unitaires et intégration) verts | fait | 243 fichiers / 2 628 tests passés (07/11/2026), 24 tests d'intégration stats |
+| 5 | pnpm lint, pnpm typecheck sans erreur | fait | `pnpm lint` et `pnpm typecheck` code 0 sans erreur (07/11/2026) |
+| 6 | Chaînes d’interface fr/ar/en ; RTL vérifié | reporté (décision du 30/09/2026) | Décision du 30/09/2026 : fr obligatoire, traductions ar/en et vérification visuelle RTL suspendues jusqu’au M8 |
+| 7 | Démo avec données pertinentes (scripts stats:demo, backfill, verify) | fait | 418 événements et 84 sessions simulés sur 7 jours, backfill StatsDaily, script de cohérence stats:verify et scénario docs/DEMO_M7.md |
+| 8 | Démo au porteur et retours consignés | à faire | Scénario pas à pas rédigé dans docs/DEMO_M7.md ; validation finale à réaliser par le porteur |
 
 DoD M7 remplie : non
 
 Jalons M0 à M6 marqués validés dans Orch.
 
 ## Session en cours
+- 07/11/2026 — M7 DoD (4/4) : Bilan du jalon M7, réécriture du tableau de DoD M7 avec état réel et preuves, nettoyage des tâches obsolètes dans En cours, création de docs/DEMO_M7.md (scénario pas à pas complet avec commandes stats:demo, stats:backfill, stats:verify, filtres dashboard, isolation multi-tenant, export CSV et report:preview). Contrôles lint, typecheck et test vérifiés verts (243 fichiers, 2 628 tests).
 - M6 F-71 (2/2) : Protocole Quest Browser rédigé dans docs/VALIDATION_QUEST.md (entrée VR, rayons contrôleur/main, visée flèche/info, pincement/gâchette, déclenchement unique anti-rebond, fondu de confort, regard-dwell de secours, sortie nadir/système, console propre). Validation matérielle marquée « à faire sur Quest » (aucun casque physique connecté localement). Suite de tests automatisés (19 tests VR mount-vr dont rejet des événements sans contrôleur correspondant) et contrôles lint/typecheck verts.
 
 - 21/10/2026 — Reprendre StatsDaily via le tunnel SSH du VPS de développement : schéma et migration `20261021134205_stats_daily` créés/appliqués sur `xplor`, Prisma Client régénéré, 418 événements de démonstration vérifiés (84 sessions). Le PostgreSQL de production n’est pas publié par le tunnel. Le job de recalcul quotidien reste à coder.
@@ -31,9 +32,6 @@ Jalons M0 à M6 marqués validés dans Orch.
 ## État des tâches
 
 ### En cours
-- M7 F-80 — modèle et migration StatsDaily appliqués sur la base de développement ; ajouter le job BullMQ horaire qui remplace les agrégats d’hier et d’aujourd’hui et tester son idempotence. Aucun accès à la base de production.
-- M7 F-81/F-82 — API, tableau admin, filtres, séries et export CSV implémentés ; 418 événements / 84 sessions de démonstration insérés dans la base de développement. Validation visuelle RTL et exercice du tableau sur les données de démo restent à faire.
-- M7 F-83 — rapport mensuel PDF/courriel non implémenté. Le cahier le déclare reportable en phase 2 si le jalon prend du retard.
 - M6 F-71 : Validation matérielle de la navigation main/manette sur casque Meta Quest Browser (à faire sur Quest selon docs/VALIDATION_QUEST.md).
 
 ### Fait
