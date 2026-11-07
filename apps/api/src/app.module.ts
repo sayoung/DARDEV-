@@ -1,5 +1,6 @@
 import { Module, type DynamicModule } from '@nestjs/common';
 
+import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { ConfigModule } from './config/config.module.js';
@@ -39,6 +40,7 @@ export class AppModule {
         ViewerModule,
         HealthModule,
         OpenApiModule,
+        AuditModule,
       ],
     };
   }
