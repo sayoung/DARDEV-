@@ -181,4 +181,22 @@ describe('stats-verify (M7 F-81 / F-82)', () => {
     expect(result).toEqual({ ok: true, demoPresent: true });
     expect(logs.some((l) => l.includes('Cohérence statistique validée'))).toBe(true);
   });
+
+  it('ne modifie ni process.env ni process.exitCode et ne déclenche pas main() à l’import', async () => {
+    const originalEnv = { ...process.env };
+    const initialExitCode = process.exitCode;
+
+    const mockDb: VerifyDb = {
+      event: {
+        count: vi.fn().mockResolvedValue(0),
+        groupBy: vi.fn().mockResolvedValue([]),
+      },
+    };
+
+    await runStatsVerify(mockDb, new Date(), (): void => {});
+
+    expect(process.exitCode).toBe(initialExitCode);
+    expect(process.env).toEqual(originalEnv);
+  });
 });
+
