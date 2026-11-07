@@ -8,7 +8,7 @@ Livrable : PV de recette, rapport de pilote et correctifs
 
 | # | Critère | État | Constat initial vérifié dans le code |
 |---|---|---|---|
-| 1 | NF-01 : sécurité (helmet/CSP, throttler, CORS, pnpm audit) | à faire | Helmet/CSP et CORS configurés sur Fastify, ThrottlerGuard en place (auth, kiosks, public-tours), limiteur Redis sur /events ; 54 vulnérabilités relevées par `pnpm audit` et audit sécurité complet à finaliser |
+| 1 | NF-01 : sécurité (helmet/CSP, throttler, CORS, pnpm audit) | à faire | Helmet/CSP et CORS configurés sur Fastify, ThrottlerGuard en place (auth, kiosks, public-tours), limiteur Redis sur /events ; audit CI en place avec overrides (voir D-60), résultat actuel de `pnpm audit` à re-mesurer et audit sécurité complet à finaliser |
 | 2 | NF-02 : loi 09-08 (pas d'IP dans Event, mentions légales) | à faire | Pas d'adresse IP stockée dans `Event` (anonymat par conception), hash SHA-256 IP éphémère Redis pour rate-limiting ; mentions légales et politique de confidentialité sur la page publique absentes |
 | 3 | NF-03 : performance (k6) | à faire | Aucun script k6 dans le dépôt ; seuils P95 (API < 300 ms, manifeste < 200 ms, insertion 200 événements < 100 ms) à mesurer et valider sous tests de charge |
 | 4 | NF-04 : /api/health | fait | Endpoint `/api/health` opérationnel avec sondes actives db (Postgres), redis et storage (MinIO/S3), délai max 2 000 ms, code 200/503 et tests unitaires verts |
