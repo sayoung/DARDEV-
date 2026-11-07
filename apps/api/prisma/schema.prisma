@@ -34,6 +34,7 @@ model User {
   scenesCreated    Scene[]     @relation("SceneCreatedBy")
   hotspotsCreated  Hotspot[]   @relation("HotspotCreatedBy")
   hotels           UserHotel[]
+  auditLogs        AuditLog[]
 }
 
 enum UserTokenType {
@@ -379,6 +380,7 @@ model Kiosk {
   deletedAt             DateTime?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
+  auditLogs             AuditLog[]
 
   @@index([hotelId])
 }
@@ -460,3 +462,23 @@ model StatsDaily {
   @@index([hotelId, day])
   @@index([tourId, day])
 }
+
+/// Journal d'audit (cahier des charges §5.10, F-91).
+model AuditLog {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  userId     String?  @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  kioskId    String?  @db.Uuid
+  kiosk      Kiosk?   @relation(fields: [kioskId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  diff       Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([action])
+}
+
