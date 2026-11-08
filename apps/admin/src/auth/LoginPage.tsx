@@ -11,6 +11,7 @@ import { Label } from '../components/ui/Label.js';
 import { Button } from '../components/ui/Button.js';
 import { Alert } from '../components/ui/Alert.js';
 import { AuthLayout } from './AuthLayout.js';
+import { TwoFactorStep } from './TwoFactorStep.js';
 type LoginErrorKey = 'auth.login.error' | 'auth.login.locked' | 'auth.login.failed';
 
 export function LoginPage() {
@@ -19,6 +20,10 @@ export function LoginPage() {
   const { notice } = useAppLocation();
   const [errorKey, setErrorKey] = useState<LoginErrorKey | null>(null);
   const [pending, setPending] = useState(false);
+
+  if (auth.state.status === 'two-factor') {
+    return <TwoFactorStep />;
+  }
 
   function onSubmit(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
