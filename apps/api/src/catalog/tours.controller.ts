@@ -139,7 +139,7 @@ export class ToursController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Req() request: SessionRequest, @Param('id') id: string): Promise<void> {
-    requireContentManager(request);
-    await this.tours.remove(parseResourceId(id));
+    const principal = requireContentManager(request);
+    await this.tours.remove(parseResourceId(id), principal.userId);
   }
 }
