@@ -5,11 +5,17 @@ export const SESSION_IDLE_SECONDS = 8 * 60 * 60;
 
 export const SESSION_IDLE_MS = SESSION_IDLE_SECONDS * 1000;
 
+/** Durée de vie d'une session en attente de second facteur (F-90) : 5 minutes (300 s), non renouvelable. */
+export const PENDING_2FA_TTL_SECONDS = 300;
+
+export const PENDING_2FA_TTL_MS = PENDING_2FA_TTL_SECONDS * 1000;
+
 /** Contenu stocké d'une session. `createdAt` est une date ISO 8601, inchangée par `touch`. */
 export type SessionRecord = {
   userId: string;
   csrfToken: string;
   createdAt: string;
+  pending2fa?: true;
 };
 
 export interface SessionStore {
@@ -46,25 +52,31 @@ export function userSessionsKey(userId: string): string {
 export function parseSession(raw: string): SessionRecord | null {
   let value: unknown;
   try {
-    value = JSON.parse(raw) as unknown;
+    value = JSON.parse(raw);
   } catch {
     return null;
   }
   return isSessionRecord(value) ? value : null;
 }
 
-function isSessionRecord(value: unknown): value is SessionRecord {
+export function isSessionRecord(value: unknown): value is SessionRecord {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
   if (!('userId' in value) || !('csrfToken' in value) || !('createdAt' in value)) {
     return false;
   }
-  return (
-    typeof value.userId === 'string' &&
-    typeof value.csrfToken === 'string' &&
-    typeof value.createdAt === 'string'
-  );
+  if (
+    typeof value.userId !== 'string' ||
+    typeof value.csrfToken !== 'string' ||
+    typeof value.createdAt !== 'string'
+  ) {
+    return false;
+  }
+  if ('pending2fa' in value && value.pending2fa !== true && value.pending2fa !== undefined) {
+    return false;
+  }
+  return true;
 }
 
 /** Sous-ensemble d'ioredis utilisé par `RedisSessionStore`. */

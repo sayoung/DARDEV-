@@ -1,5 +1,6 @@
 import {
   createSessionId,
+  PENDING_2FA_TTL_MS,
   SESSION_IDLE_MS,
   type SessionRecord,
   type SessionStore,
@@ -25,7 +26,8 @@ export class InMemorySessionStore implements SessionStore {
 
   create(data: SessionRecord): Promise<string> {
     const id = this.allocateId();
-    this.sessions.set(id, { data, expiresAt: this.now() + SESSION_IDLE_MS });
+    const ttlMs = data.pending2fa === true ? PENDING_2FA_TTL_MS : SESSION_IDLE_MS;
+    this.sessions.set(id, { data, expiresAt: this.now() + ttlMs });
     const ids = this.byUser.get(data.userId) ?? new Set<string>();
     ids.add(id);
     this.byUser.set(data.userId, ids);
@@ -39,7 +41,7 @@ export class InMemorySessionStore implements SessionStore {
 
   touch(id: string): Promise<void> {
     const stored = this.live(id);
-    if (stored) {
+    if (stored && stored.data.pending2fa !== true) {
       stored.expiresAt = this.now() + SESSION_IDLE_MS;
     }
     return Promise.resolve();

@@ -109,6 +109,47 @@ describe('SessionGuard', () => {
       UnauthorizedException,
     );
   });
+
+  it('refuse une session pending2fa (401) et ne renseigne pas le principal, session normale inchangée', async () => {
+    let now = 0;
+    const store = new InMemorySessionStore(() => now);
+    const users = lookupOf([activeUser]);
+    const guard = new SessionGuard(store, users);
+
+    const pendingSessionId = await store.create({
+      ...sessionData,
+      pending2fa: true,
+    });
+    const pendingRequest: SessionRequest = {
+      method: 'GET',
+      cookies: { [SESSION_COOKIE_NAME]: pendingSessionId },
+      headers: {},
+    };
+
+    await expect(guard.canActivate(httpContext(pendingRequest))).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(pendingRequest.principal).toBeUndefined();
+    expect(pendingRequest.session).toBeUndefined();
+    expect(pendingRequest.sessionId).toBeUndefined();
+
+    const normalSessionId = await store.create(sessionData);
+    const normalRequest: SessionRequest = {
+      method: 'GET',
+      cookies: { [SESSION_COOKIE_NAME]: normalSessionId },
+      headers: {},
+    };
+
+    now = SESSION_IDLE_MS - 1;
+    await expect(guard.canActivate(httpContext(normalRequest))).resolves.toBe(true);
+    expect(normalRequest.principal).toEqual({
+      userId: 'user-1',
+      role: Role.EDITOR,
+      hotelIds: [],
+    });
+    expect(normalRequest.session).toEqual(sessionData);
+    expect(normalRequest.sessionId).toBe(normalSessionId);
+  });
 });
 
 describe('CsrfGuard', () => {

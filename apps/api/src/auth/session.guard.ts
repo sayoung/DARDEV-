@@ -29,6 +29,9 @@ export class SessionGuard implements CanActivate {
     if (!session) {
       throw new UnauthorizedException();
     }
+    if (session.pending2fa === true) {
+      throw new UnauthorizedException();
+    }
     const user = await this.users.findById(session.userId);
     if (!user || !user.active) {
       throw new UnauthorizedException();
