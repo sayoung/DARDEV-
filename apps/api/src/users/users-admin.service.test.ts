@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma, Role as PrismaRole } from '@prisma/client';
 import { Role } from '@xplor/shared';
@@ -17,12 +18,15 @@ import {
   UsersAdminService,
   buildUserAdminWhereInput,
   toAdminUser,
+  type HotelAdminFindManyArgs,
+  type HotelAdminSummaryRow,
   type UserAdminCountArgs,
   type UserAdminFindManyArgs,
   type UserAdminFindUniqueArgs,
   type UserAdminRow,
   type UserAdminUpdateArgs,
   type UsersAdminPrismaClient,
+  type UsersAdminTransactionClient,
 } from './users-admin.service.js';
 
 interface FakeUserRecord {
@@ -82,18 +86,42 @@ class FakeSessionStore implements SessionStore {
   }
 }
 
+const USER_ID_1 = '01990000-0000-7000-8000-000000000001';
+const USER_ID_2 = '01990000-0000-7000-8000-000000000002';
+const USER_ID_3 = '01990000-0000-7000-8000-000000000003';
+const USER_ID_4 = '01990000-0000-7000-8000-000000000004';
+const USER_ID_5 = '01990000-0000-7000-8000-000000000005';
+const UNKNOWN_USER_ID = '01990000-0000-7000-8000-000000000099';
+
+const HOTEL_ID_1 = '01990000-0000-7000-8000-000000000101';
+const HOTEL_ID_2 = '01990000-0000-7000-8000-000000000102';
+const HOTEL_ID_3 = '01990000-0000-7000-8000-000000000103';
+const UNKNOWN_HOTEL_ID = '01990000-0000-7000-8000-000000000199';
+
 class FakeUsersAdminPrismaClient implements UsersAdminPrismaClient {
   public findManyCalls: UserAdminFindManyArgs[] = [];
   public countCalls: UserAdminCountArgs[] = [];
   public findUniqueCalls: UserAdminFindUniqueArgs[] = [];
   public updateCalls: UserAdminUpdateArgs[] = [];
+  public hotelFindManyCalls: HotelAdminFindManyArgs[] = [];
+  public deleteManyCalls: ({ where?: Prisma.UserHotelWhereInput } | undefined)[] = [];
+  public createManyCalls: { data: Prisma.UserHotelCreateManyInput[] }[] = [];
   public records: FakeUserRecord[] = [];
+  public hotels: { id: string }[] = [];
 
-  constructor(records: FakeUserRecord[] = []) {
+  constructor(
+    records: FakeUserRecord[] = [],
+    hotels: { id: string }[] = [
+      { id: HOTEL_ID_1 },
+      { id: HOTEL_ID_2 },
+      { id: HOTEL_ID_3 },
+    ],
+  ) {
     this.records = records.map((record) => ({
       ...record,
       hotels: [...record.hotels],
     }));
+    this.hotels = hotels.map((h) => ({ id: h.id }));
   }
 
   public readonly user = {
@@ -216,6 +244,54 @@ class FakeUsersAdminPrismaClient implements UsersAdminPrismaClient {
     },
   };
 
+  public readonly hotel = {
+    findMany: (args: HotelAdminFindManyArgs): Promise<HotelAdminSummaryRow[]> => {
+      this.hotelFindManyCalls.push(args);
+      const idFilter = args.where?.id;
+      if (typeof idFilter === 'object') {
+        const candidateIn = idFilter.in;
+        if (Array.isArray(candidateIn)) {
+          return Promise.resolve(
+            this.hotels.filter((h) => candidateIn.includes(h.id)),
+          );
+        }
+      }
+      return Promise.resolve([...this.hotels]);
+    },
+  };
+
+  public readonly userHotel = {
+    deleteMany: (args?: { where?: Prisma.UserHotelWhereInput }): Promise<Prisma.BatchPayload> => {
+      this.deleteManyCalls.push(args);
+      const userId = args?.where?.userId;
+      if (typeof userId === 'string') {
+        const target = this.records.find((r) => r.id === userId);
+        if (target !== undefined) {
+          const count = target.hotels.length;
+          target.hotels = [];
+          return Promise.resolve({ count });
+        }
+      }
+      return Promise.resolve({ count: 0 });
+    },
+    createMany: (args: { data: Prisma.UserHotelCreateManyInput[] }): Promise<Prisma.BatchPayload> => {
+      this.createManyCalls.push(args);
+      for (const item of args.data) {
+        const target = this.records.find((r) => r.id === item.userId);
+        if (target !== undefined) {
+          target.hotels.push({ hotelId: item.hotelId });
+        }
+      }
+      return Promise.resolve({ count: args.data.length });
+    },
+  };
+
+  public $transaction<T>(fn: (tx: UsersAdminTransactionClient) => Promise<T>): Promise<T> {
+    return fn({
+      userHotel: this.userHotel,
+    });
+  }
+
   private matchesWhere(item: FakeUserRecord, where: Prisma.UserWhereInput): boolean {
     if (where.role !== undefined && item.role !== where.role) {
       return false;
@@ -255,16 +331,6 @@ function extractNeedle(filter: unknown): string | null {
   }
   return null;
 }
-
-const USER_ID_1 = '01990000-0000-7000-8000-000000000001';
-const USER_ID_2 = '01990000-0000-7000-8000-000000000002';
-const USER_ID_3 = '01990000-0000-7000-8000-000000000003';
-const USER_ID_4 = '01990000-0000-7000-8000-000000000004';
-const USER_ID_5 = '01990000-0000-7000-8000-000000000005';
-const UNKNOWN_USER_ID = '01990000-0000-7000-8000-000000000099';
-
-const HOTEL_ID_1 = '01990000-0000-7000-8000-000000000101';
-const HOTEL_ID_2 = '01990000-0000-7000-8000-000000000102';
 
 const sampleRecords: FakeUserRecord[] = [
   {
@@ -1150,6 +1216,106 @@ describe('UsersAdminService', () => {
       expect(user).not.toHaveProperty('totpSecret');
       expect(user).not.toHaveProperty('failedLoginCount');
       expect(user).not.toHaveProperty('lockedUntil');
+    });
+
+    it('garantit que l’objet retourné par setHotels n’expose aucun secret', async () => {
+      const user = await service.setHotels(USER_ID_2, [HOTEL_ID_1]);
+
+      expect(user).not.toHaveProperty('passwordHash');
+      expect(user).not.toHaveProperty('totpSecret');
+      expect(user).not.toHaveProperty('failedLoginCount');
+      expect(user).not.toHaveProperty('lockedUntil');
+    });
+  });
+
+  describe('setHotels', () => {
+    it('remplace les hôtels existants par la nouvelle liste fournie', async () => {
+      const updated = await service.setHotels(USER_ID_2, [HOTEL_ID_1]);
+
+      expect(updated.id).toBe(USER_ID_2);
+      expect(updated.hotelIds).toEqual([HOTEL_ID_1]);
+      expect(fakePrisma.deleteManyCalls).toHaveLength(1);
+      const deleteCall = fakePrisma.deleteManyCalls[0];
+      expect(deleteCall?.where).toEqual({ userId: USER_ID_2 });
+      expect(fakePrisma.createManyCalls).toHaveLength(1);
+      const createCall = fakePrisma.createManyCalls[0];
+      expect(createCall?.data).toEqual([
+        { userId: USER_ID_2, hotelId: HOTEL_ID_1 },
+      ]);
+    });
+
+    it('dédoublonne la liste fournie avant affectation', async () => {
+      const updated = await service.setHotels(USER_ID_2, [
+        HOTEL_ID_1,
+        HOTEL_ID_1,
+        HOTEL_ID_2,
+        HOTEL_ID_1,
+      ]);
+
+      expect(updated.hotelIds).toEqual([HOTEL_ID_1, HOTEL_ID_2]);
+      expect(fakePrisma.createManyCalls).toHaveLength(1);
+      const createCall = fakePrisma.createManyCalls[0];
+      expect(createCall?.data).toEqual([
+        { userId: USER_ID_2, hotelId: HOTEL_ID_1 },
+        { userId: USER_ID_2, hotelId: HOTEL_ID_2 },
+      ]);
+    });
+
+    it('détache tous les hôtels si la liste fournie est vide', async () => {
+      const updated = await service.setHotels(USER_ID_2, []);
+
+      expect(updated.id).toBe(USER_ID_2);
+      expect(updated.hotelIds).toEqual([]);
+      expect(fakePrisma.deleteManyCalls).toHaveLength(1);
+      const deleteCall = fakePrisma.deleteManyCalls[0];
+      expect(deleteCall?.where).toEqual({ userId: USER_ID_2 });
+      expect(fakePrisma.createManyCalls).toHaveLength(0);
+      expect(fakePrisma.hotelFindManyCalls).toHaveLength(0);
+    });
+
+    it('lève 400 (BadRequestException) si au moins un hotelId n’existe pas', async () => {
+      await expect(
+        service.setHotels(USER_ID_2, [HOTEL_ID_1, UNKNOWN_HOTEL_ID]),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(fakePrisma.deleteManyCalls).toHaveLength(0);
+      expect(fakePrisma.createManyCalls).toHaveLength(0);
+    });
+
+    it('lève 422 (UnprocessableEntityException) si le rôle est EDITOR', async () => {
+      await expect(
+        service.setHotels(USER_ID_4, [HOTEL_ID_1]),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      expect(fakePrisma.deleteManyCalls).toHaveLength(0);
+      expect(fakePrisma.createManyCalls).toHaveLength(0);
+    });
+
+    it('lève 422 (UnprocessableEntityException) si le rôle est ADMIN', async () => {
+      await expect(
+        service.setHotels(USER_ID_1, [HOTEL_ID_1]),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      expect(fakePrisma.deleteManyCalls).toHaveLength(0);
+      expect(fakePrisma.createManyCalls).toHaveLength(0);
+    });
+
+    it('lève 404 (NotFoundException) si l’utilisateur est inconnu', async () => {
+      await expect(
+        service.setHotels(UNKNOWN_USER_ID, [HOTEL_ID_1]),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(fakePrisma.deleteManyCalls).toHaveLength(0);
+      expect(fakePrisma.createManyCalls).toHaveLength(0);
+    });
+
+    it('permet l’affectation d’hôtels pour un utilisateur au rôle PARTNER', async () => {
+      const updated = await service.setHotels(USER_ID_5, [HOTEL_ID_2]);
+
+      expect(updated.id).toBe(USER_ID_5);
+      expect(updated.hotelIds).toEqual([HOTEL_ID_2]);
+      expect(fakePrisma.deleteManyCalls).toHaveLength(1);
+      expect(fakePrisma.createManyCalls).toHaveLength(1);
     });
   });
 
