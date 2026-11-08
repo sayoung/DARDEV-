@@ -19,6 +19,7 @@ import {
   ForgotPasswordRequestSchema,
   LoginRequestSchema,
   ResetPasswordRequestSchema,
+  type LoginResponse,
   type MeResponse,
 } from '@xplor/shared';
 import type { FastifyReply } from 'fastify';
@@ -50,7 +51,7 @@ export class AuthController {
   async login(
     @Body() body: unknown,
     @Res({ passthrough: true }) reply: FastifyReply,
-  ): Promise<MeResponse> {
+  ): Promise<LoginResponse> {
     const parsed = LoginRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException();
@@ -58,6 +59,9 @@ export class AuthController {
     try {
       const result = await this.auth.login(parsed.data);
       reply.setCookie(SESSION_COOKIE_NAME, result.sessionId, this.cookieOptions());
+      if ('twoFactorRequired' in result) {
+        return { twoFactorRequired: true };
+      }
       return result.me;
     } catch (error: unknown) {
       rethrowAsHttp(error);

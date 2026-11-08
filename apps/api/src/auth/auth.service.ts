@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { MeResponseSchema, type LoginRequest, type MeResponse } from '@xplor/shared';
+import {
+  MeResponseSchema,
+  Role,
+  type LoginRequest,
+  type MeResponse,
+} from '@xplor/shared';
 import { ZodError } from 'zod';
 
 import { ENV } from '../config/config.module.js';
@@ -22,6 +27,7 @@ import {
   validateNewPassword,
 } from './password.service.js';
 import { createCsrfToken, SESSION_STORE, type SessionStore } from './session-store.js';
+import { TwoFactorService } from './two-factor.service.js';
 import { UNIT_OF_WORK, type UnitOfWork } from './unit-of-work.js';
 import { USER_REPOSITORY, type AuthUser, type UserRepository } from './user.repository.js';
 import { USER_TOKEN_REPOSITORY, type UserTokenRepository } from './user-token.repository.js';
@@ -33,14 +39,18 @@ export type PasswordVerifier = {
   hash(password: string): Promise<string>;
 };
 
+/** Vérification du second facteur TOTP. `TwoFactorService` en production, un faux dans les tests. */
+export type TwoFactorVerifier = {
+  verifyLoginCode(userId: string, code: string): Promise<boolean>;
+};
+
 export const CLOCK = Symbol('CLOCK');
 
 export type Clock = () => Date;
 
-export type LoginResult = {
-  sessionId: string;
-  me: MeResponse;
-};
+export type LoginResult =
+  | { sessionId: string; me: MeResponse }
+  | { sessionId: string; twoFactorRequired: true };
 
 @Injectable()
 export class AuthService {
@@ -55,6 +65,10 @@ export class AuthService {
     @Inject(MAILER) private readonly mailer: Mailer,
     @Inject(ENV) private readonly env: Pick<Env, 'ADMIN_BASE_URL'>,
     @Inject(UNIT_OF_WORK) private readonly unitOfWork: UnitOfWork,
+    @Inject(TwoFactorService)
+    private readonly twoFactor: TwoFactorVerifier = {
+      verifyLoginCode: (): Promise<boolean> => Promise.resolve(false),
+    },
   ) {}
 
   async login(input: LoginRequest): Promise<LoginResult> {
@@ -81,8 +95,57 @@ export class AuthService {
       throw invalidCredentials();
     }
 
+    if (user.role === Role.ADMIN && user.totpEnabled) {
+      const csrfToken = createCsrfToken();
+      const sessionId = await this.sessions.create({
+        userId: user.id,
+        csrfToken,
+        createdAt: now.toISOString(),
+        pending2fa: true,
+      });
+      return { sessionId, twoFactorRequired: true };
+    }
+
     const reset = registerSuccess();
     await this.users.updateLoginState(user.id, { ...reset, lastLoginAt: now });
+    await this.sessions.destroyAllForUser(user.id);
+    const csrfToken = createCsrfToken();
+    const sessionId = await this.sessions.create({
+      userId: user.id,
+      csrfToken,
+      createdAt: now.toISOString(),
+    });
+    return { sessionId, me: toMe(user, csrfToken) };
+  }
+
+  async login2fa(
+    pendingSessionId: string,
+    code: string,
+  ): Promise<{ sessionId: string; me: MeResponse }> {
+    const session = await this.sessions.get(pendingSessionId);
+    if (!session || session.pending2fa !== true) {
+      throw invalidCredentials();
+    }
+
+    const user = await this.users.findById(session.userId);
+    if (!user || !user.active) {
+      throw invalidCredentials();
+    }
+
+    const now = this.clock();
+    if (isLocked(user, now)) {
+      throw accountLocked();
+    }
+
+    const valid = await this.twoFactor.verifyLoginCode(user.id, code);
+    if (!valid) {
+      await this.users.updateLoginState(user.id, registerFailure(user, now));
+      throw invalidCredentials();
+    }
+
+    const reset = registerSuccess();
+    await this.users.updateLoginState(user.id, { ...reset, lastLoginAt: now });
+    await this.sessions.destroy(pendingSessionId);
     await this.sessions.destroyAllForUser(user.id);
     const csrfToken = createCsrfToken();
     const sessionId = await this.sessions.create({
