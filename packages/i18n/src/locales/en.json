@@ -403,6 +403,23 @@
         "save": "Save",
         "saving": "Saving…",
         "back": "Back to users"
+      },
+      "hotels": {
+        "title": "Assigned hotels",
+        "description": "Select the hotels this user has access to.",
+        "loading": "Loading hotels…",
+        "loadError": "Unable to load hotel list.",
+        "noHotels": "No hotels available.",
+        "saveSuccess": "Hotels updated successfully.",
+        "saveError": "Unable to update hotels.",
+        "error": "Unable to update hotels.",
+        "errorIncompatibleRole": "This role does not allow assignment to hotels.",
+        "errorUnknownHotel": "One of the selected hotels is unknown.",
+        "save": "Save hotels",
+        "actions": {
+          "save": "Save hotels",
+          "saving": "Saving…"
+        }
       }
     }
   },
