@@ -21,6 +21,7 @@ describe('router', () => {
       expect(parsePathname('/kiosks')).toEqual({ name: 'kiosks' });
       expect(parsePathname('/media')).toEqual({ name: 'media' });
       expect(parsePathname('/stats')).toEqual({ name: 'stats' });
+      expect(parsePathname('/account/security')).toEqual({ name: 'account-security' });
     });
 
     it('decode id for hotel-selection', () => {

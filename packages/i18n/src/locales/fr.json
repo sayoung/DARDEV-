@@ -356,7 +356,8 @@
     "media": "Médias",
     "hotels": "Hôtels",
     "kiosks": "Kiosques",
-    "stats": "Statistiques"
+    "stats": "Statistiques",
+    "accountSecurity": "Sécurité du compte"
   },
   "media": {
     "title": "Médiathèque",
@@ -546,6 +547,31 @@
       "loadError": "Impossible de charger la sélection.",
       "empty": "Aucune visite sélectionnée.",
       "version": "Version {{version}}"
+    },
+    "accountSecurity": {
+      "title": "Sécurité du compte",
+      "subtitle": "Gérez l'authentification à deux facteurs de votre compte.",
+      "twoFactorTitle": "Authentification à deux facteurs (TOTP)",
+      "twoFactorDescription": "Renforcez la sécurité de votre compte en exigeant un code temporaire à chaque connexion.",
+      "status": "État",
+      "statusEnabled": "Activée",
+      "statusDisabled": "Désactivée",
+      "enableButton": "Activer",
+      "disableButton": "Désactiver",
+      "setupTitle": "Activer l'authentification à deux facteurs",
+      "setupInstructions": "Scannez ce code QR avec votre application d'authentification ou saisissez la clé secrète ci-dessous.",
+      "qrAlt": "Code QR pour l'authentification à deux facteurs",
+      "secretLabel": "Clé secrète",
+      "codeLabel": "Code à 6 chiffres",
+      "confirmButton": "Confirmer l'activation",
+      "confirming": "Confirmation…",
+      "activating": "Chargement…",
+      "disabling": "Désactivation…",
+      "cancel": "Annuler",
+      "successEnabled": "L'authentification à deux facteurs a été activée avec succès.",
+      "successDisabled": "L'authentification à deux facteurs a été désactivée.",
+      "invalidCode": "Code invalide",
+      "error": "Une erreur est survenue. Veuillez réessayer."
     }
   },
   "tour": {
