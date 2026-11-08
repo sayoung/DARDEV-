@@ -61,6 +61,8 @@ import {
   TourResponseSchema,
   TourUpdateSchema,
   TourValidationResponseSchema,
+  TwoFactorCodeBodySchema,
+  TwoFactorSetupResponseSchema,
   ValidationIssueSchema,
   TourGraphSchema,
   TourLinkMapSchema,
@@ -385,6 +387,53 @@ registry.registerPath({
       passwordChangeError,
     ),
     '429': tooManyRequests,
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/auth/2fa/setup',
+  summary: 'Initialiser la configuration 2FA TOTP (ADMIN uniquement)',
+  tags: ['Auth'],
+  security: sessionAndCsrfSecurity,
+  responses: {
+    '200': jsonResponse('Secret TOTP et URI otpauth générés.', TwoFactorSetupResponseSchema),
+    '401': jsonResponse('Session absente ou expirée.', unauthorizedError),
+    '403': jsonResponse('Jeton CSRF refusé ou rôle autre que ADMIN.', forbiddenError),
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/auth/2fa/confirm',
+  summary: 'Confirmer et activer la 2FA TOTP (ADMIN uniquement)',
+  tags: ['Auth'],
+  security: sessionAndCsrfSecurity,
+  request: {
+    body: jsonBody(TwoFactorCodeBodySchema, 'Code TOTP à 6 chiffres.'),
+  },
+  responses: {
+    '204': { description: '2FA activée. Corps vide.' },
+    '400': jsonResponse('Code invalide ou mal formé.', badRequestError),
+    '401': jsonResponse('Session absente ou expirée.', unauthorizedError),
+    '403': jsonResponse('Jeton CSRF refusé ou rôle autre que ADMIN.', forbiddenError),
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/auth/2fa/disable',
+  summary: 'Désactiver la 2FA TOTP (ADMIN uniquement)',
+  tags: ['Auth'],
+  security: sessionAndCsrfSecurity,
+  request: {
+    body: jsonBody(TwoFactorCodeBodySchema, 'Code TOTP à 6 chiffres.'),
+  },
+  responses: {
+    '204': { description: '2FA désactivée. Corps vide.' },
+    '400': jsonResponse('Code invalide ou mal formé.', badRequestError),
+    '401': jsonResponse('Session absente ou expirée.', unauthorizedError),
+    '403': jsonResponse('Jeton CSRF refusé ou rôle autre que ADMIN.', forbiddenError),
   },
 });
 
