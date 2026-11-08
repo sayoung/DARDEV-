@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/Table.js';
-import { navigateWithSearch, useAppLocation } from '../router.js';
+import { hrefFor, navigate, navigateWithSearch, useAppLocation } from '../router.js';
 
 const ROLE_LABEL: Record<Role, string> = {
   ADMIN: 'auth.role.ADMIN',
@@ -263,7 +263,27 @@ export function UsersPage() {
             <TableBody>
               {items.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <a
+                      href={hrefFor(`/users/${encodeURIComponent(user.id)}`)}
+                      onClick={(event) => {
+                        if (
+                          event.metaKey ||
+                          event.ctrlKey ||
+                          event.shiftKey ||
+                          event.altKey ||
+                          event.button > 0
+                        ) {
+                          return;
+                        }
+                        event.preventDefault();
+                        navigate(`/users/${encodeURIComponent(user.id)}`);
+                      }}
+                      className="text-primary underline-offset-4 hover:underline"
+                    >
+                      {user.name}
+                    </a>
+                  </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{t(ROLE_LABEL[user.role])}</Badge>
