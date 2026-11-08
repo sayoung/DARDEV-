@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { type Redis } from 'ioredis';
 
@@ -34,7 +34,7 @@ export const DEFAULT_TEST_TOTP_ENCRYPTION_KEY =
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60_000, limit: 5 }],
     }),
-    AuditModule,
+    forwardRef(() => AuditModule),
   ],
   controllers: [AuthController],
   providers: [
