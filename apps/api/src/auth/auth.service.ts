@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   MeResponseSchema,
   Role,
@@ -7,6 +7,7 @@ import {
 } from '@xplor/shared';
 import { ZodError } from 'zod';
 
+import { AuditService, type RecordAuditParams } from '../audit/audit.service.js';
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
 import { MAILER, type Mailer } from '../mail/mailer.js';
@@ -44,6 +45,15 @@ export type TwoFactorVerifier = {
   verifyLoginCode(userId: string, code: string): Promise<boolean>;
 };
 
+/** Enregistreur d'audit pour les connexions. `AuditService` en production, un faux dans les tests. */
+export type AuditRecorder = {
+  record(params: RecordAuditParams): Promise<void>;
+};
+
+export const NOOP_AUDIT: AuditRecorder = {
+  record: (): Promise<void> => Promise.resolve(),
+};
+
 export const CLOCK = Symbol('CLOCK');
 
 export type Clock = () => Date;
@@ -69,29 +79,73 @@ export class AuthService {
     private readonly twoFactor: TwoFactorVerifier = {
       verifyLoginCode: (): Promise<boolean> => Promise.resolve(false),
     },
+    @Inject(AuditService)
+    @Optional()
+    private readonly audit: AuditRecorder = NOOP_AUDIT,
   ) {}
 
-  async login(input: LoginRequest): Promise<LoginResult> {
+  private async safeAuditRecord(params: RecordAuditParams): Promise<void> {
+    try {
+      await this.audit.record(params);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Échec d'enregistrement d'audit: ${message}`);
+    }
+  }
+
+  async login(input: LoginRequest, ip?: string): Promise<LoginResult> {
     const email = input.email.trim().toLowerCase();
     const user = await this.users.findByEmail(email);
     const now = this.clock();
 
     if (!user) {
       await this.passwords.verify(DUMMY_PASSWORD_HASH, input.password);
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: null,
+        userId: null,
+        diff: { reason: 'invalid_credentials' },
+        ip: ip ?? null,
+      });
       throw invalidCredentials();
     }
 
     if (isLocked(user, now)) {
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'account_locked' },
+        ip: ip ?? null,
+      });
       throw accountLocked();
     }
 
     const passwordOk = await this.passwords.verify(user.passwordHash, input.password);
     if (!passwordOk) {
       await this.users.updateLoginState(user.id, registerFailure(user, now));
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'invalid_credentials' },
+        ip: ip ?? null,
+      });
       throw invalidCredentials();
     }
 
     if (!user.active) {
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'inactive' },
+        ip: ip ?? null,
+      });
       throw invalidCredentials();
     }
 
@@ -115,31 +169,83 @@ export class AuthService {
       csrfToken,
       createdAt: now.toISOString(),
     });
+    await this.safeAuditRecord({
+      action: 'auth.login',
+      entityType: 'User',
+      entityId: user.id,
+      userId: user.id,
+      ip: ip ?? null,
+    });
     return { sessionId, me: toMe(user, csrfToken) };
   }
 
   async login2fa(
     pendingSessionId: string,
     code: string,
+    ip?: string,
   ): Promise<{ sessionId: string; me: MeResponse }> {
     const session = await this.sessions.get(pendingSessionId);
     if (!session || session.pending2fa !== true) {
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: session ? session.userId : null,
+        userId: session ? session.userId : null,
+        diff: { reason: 'invalid_session' },
+        ip: ip ?? null,
+      });
       throw invalidCredentials();
     }
 
     const user = await this.users.findById(session.userId);
-    if (!user || !user.active) {
+    if (!user) {
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: session.userId,
+        userId: session.userId,
+        diff: { reason: 'invalid_credentials' },
+        ip: ip ?? null,
+      });
+      throw invalidCredentials();
+    }
+
+    if (!user.active) {
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'inactive' },
+        ip: ip ?? null,
+      });
       throw invalidCredentials();
     }
 
     const now = this.clock();
     if (isLocked(user, now)) {
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'account_locked' },
+        ip: ip ?? null,
+      });
       throw accountLocked();
     }
 
     const valid = await this.twoFactor.verifyLoginCode(user.id, code);
     if (!valid) {
       await this.users.updateLoginState(user.id, registerFailure(user, now));
+      await this.safeAuditRecord({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'invalid_code' },
+        ip: ip ?? null,
+      });
       throw invalidCredentials();
     }
 
@@ -152,6 +258,13 @@ export class AuthService {
       userId: user.id,
       csrfToken,
       createdAt: now.toISOString(),
+    });
+    await this.safeAuditRecord({
+      action: 'auth.login',
+      entityType: 'User',
+      entityId: user.id,
+      userId: user.id,
+      ip: ip ?? null,
     });
     return { sessionId, me: toMe(user, csrfToken) };
   }

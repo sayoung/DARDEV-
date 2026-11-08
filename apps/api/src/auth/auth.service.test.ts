@@ -1,6 +1,7 @@
 import { Role, type LoginRequest } from '@xplor/shared';
 import { describe, expect, it, vi } from 'vitest';
 
+import { type RecordAuditParams } from '../audit/audit.service.js';
 import { FakeMailer } from '../mail/fake-mailer.js';
 import { type Mailer, type MailMessage } from '../mail/mailer.js';
 import {
@@ -11,7 +12,12 @@ import {
   AuthRequestError,
   INVALID_CREDENTIALS,
 } from './auth.errors.js';
-import { AuthService, type PasswordVerifier, type TwoFactorVerifier } from './auth.service.js';
+import {
+  AuthService,
+  type AuditRecorder,
+  type PasswordVerifier,
+  type TwoFactorVerifier,
+} from './auth.service.js';
 import { DUMMY_PASSWORD_HASH } from './dummy-password.js';
 import { InMemorySessionStore } from './in-memory-session.store.js';
 import { type AuthTx, type UnitOfWork } from './unit-of-work.js';
@@ -253,12 +259,14 @@ function setup(
   tokens: MemoryTokens;
   mailer: FakeMailer;
   twoFactor: TwoFactorVerifier;
+  audit: AuditRecorder;
 };
 function setup(
   user: AuthUser | null,
   acceptPassword: boolean,
   mailer: Mailer,
   twoFactor?: TwoFactorVerifier,
+  audit?: AuditRecorder,
 ): {
   users: MemoryUsers;
   passwords: FakePasswords;
@@ -267,12 +275,14 @@ function setup(
   tokens: MemoryTokens;
   mailer: Mailer;
   twoFactor: TwoFactorVerifier;
+  audit: AuditRecorder;
 };
 function setup(
   user: AuthUser | null,
   acceptPassword: boolean,
   mailer: Mailer = new FakeMailer(),
   twoFactor: TwoFactorVerifier = { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+  audit: AuditRecorder = { record: vi.fn().mockResolvedValue(undefined) },
 ) {
   const users = new MemoryUsers(
     user === null ? new Map<string, AuthUser>() : new Map([[user.email, user]]),
@@ -294,8 +304,9 @@ function setup(
     { ADMIN_BASE_URL: 'http://admin.test' },
     unitOfWork,
     twoFactor,
+    audit,
   );
-  return { users, passwords, sessions, service, tokens, mailer, twoFactor };
+  return { users, passwords, sessions, service, tokens, mailer, twoFactor, audit };
 }
 
 function sentAt(mailer: FakeMailer, index: number): MailMessage {
@@ -1256,5 +1267,432 @@ describe('AuthService.acceptInvite', () => {
     expect(user.passwordHash).toBe('hash-ada');
     expect(users.activations).toEqual([]);
     expect(tokens.rows[0]?.usedAt).toBeNull();
+  });
+
+  describe('Audit des connexions (F-91)', () => {
+    it('enregistre auth.login avec userId et ip lors d’une connexion réussie', async () => {
+      const user = account();
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      const result = await service.login(credentials, '192.168.1.50');
+      expect(result).toHaveProperty('sessionId');
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        ip: '192.168.1.50',
+      });
+    });
+
+    it('enregistre auth.login_failed sans mot de passe ni email dans diff quand l’utilisateur est inconnu', async () => {
+      const recorded: RecordAuditParams[] = [];
+      const recordMock = vi.fn((params: RecordAuditParams) => {
+        recorded.push(params);
+        return Promise.resolve();
+      });
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        null,
+        false,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login({ email: 'inconnu@xplor.test', password: 'bad-password' }, '10.0.0.1'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: null,
+        userId: null,
+        diff: { reason: 'invalid_credentials' },
+        ip: '10.0.0.1',
+      });
+
+      const firstCall = recorded[0];
+      expect(firstCall).toBeDefined();
+      if (firstCall !== undefined) {
+        const serialized = JSON.stringify(firstCall.diff ?? {});
+        expect(serialized).not.toContain('bad-password');
+        expect(serialized).not.toContain('inconnu@xplor.test');
+      }
+    });
+
+    it('enregistre auth.login_failed avec entityId si l’utilisateur est connu lors d’un mot de passe erroné', async () => {
+      const user = account();
+      const recorded: RecordAuditParams[] = [];
+      const recordMock = vi.fn((params: RecordAuditParams) => {
+        recorded.push(params);
+        return Promise.resolve();
+      });
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        false,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login({ email: credentials.email, password: 'faux-mot-de-passe' }, '10.0.0.2'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'invalid_credentials' },
+        ip: '10.0.0.2',
+      });
+
+      const firstCall = recorded[0];
+      expect(firstCall).toBeDefined();
+      if (firstCall !== undefined) {
+        const serialized = JSON.stringify(firstCall.diff ?? {});
+        expect(serialized).not.toContain('faux-mot-de-passe');
+        expect(serialized).not.toContain(credentials.email);
+      }
+    });
+
+    it('enregistre auth.login_failed avec entityId si le compte est verrouillé', async () => {
+      const user = account({ lockedUntil: new Date('2026-09-29T12:30:00.000Z') });
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login(credentials, '10.0.0.3'),
+      ).rejects.toMatchObject({
+        statusCode: 423,
+        code: ACCOUNT_LOCKED,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'account_locked' },
+        ip: '10.0.0.3',
+      });
+    });
+
+    it('enregistre auth.login_failed avec entityId si le compte est inactif', async () => {
+      const user = account({ active: false });
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login(credentials, '10.0.0.4'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: user.id,
+        userId: user.id,
+        diff: { reason: 'inactive' },
+        ip: '10.0.0.4',
+      });
+    });
+
+    it('ne bloque pas la connexion si audit.record rejette une erreur', async () => {
+      const user = account();
+      const recordMock = vi.fn().mockRejectedValue(new Error('Erreur base audit'));
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      const result = await service.login(credentials, '192.168.1.50');
+      expect(result).toHaveProperty('sessionId');
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('ne bloque pas la connexion si audit.record lève une exception synchrone', async () => {
+      const user = account();
+      const recordMock = vi.fn().mockImplementation(() => {
+        throw new Error('Crash synchrone');
+      });
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      const result = await service.login(credentials, '192.168.1.50');
+      expect(result).toHaveProperty('sessionId');
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('login2fa : enregistre auth.login avec userId et ip lors d’un second facteur réussi', async () => {
+      const admin = account({
+        id: 'admin-2fa',
+        email: 'admin2fa@xplor.test',
+        role: Role.ADMIN,
+        totpEnabled: true,
+      });
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, sessions } = setup(
+        admin,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(true) },
+        fakeAudit,
+      );
+
+      const pendingSessionId = await sessions.create({
+        userId: admin.id,
+        csrfToken: 'csrf-pending',
+        createdAt: '2026-09-29T08:00:00.000Z',
+        pending2fa: true,
+      });
+
+      const result = await service.login2fa(pendingSessionId, '123456', '192.168.1.60');
+      expect(result).toHaveProperty('sessionId');
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login',
+        entityType: 'User',
+        entityId: admin.id,
+        userId: admin.id,
+        ip: '192.168.1.60',
+      });
+    });
+
+    it('login2fa : enregistre auth.login_failed avec reason invalid_code quand le code TOTP est faux', async () => {
+      const admin = account({
+        id: 'admin-2fa',
+        email: 'admin2fa@xplor.test',
+        role: Role.ADMIN,
+        totpEnabled: true,
+      });
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, sessions } = setup(
+        admin,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      const pendingSessionId = await sessions.create({
+        userId: admin.id,
+        csrfToken: 'csrf-pending',
+        createdAt: '2026-09-29T08:00:00.000Z',
+        pending2fa: true,
+      });
+
+      await expect(
+        service.login2fa(pendingSessionId, '000000', '192.168.1.61'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: admin.id,
+        userId: admin.id,
+        diff: { reason: 'invalid_code' },
+        ip: '192.168.1.61',
+      });
+    });
+
+    it('login2fa : enregistre auth.login_failed avec reason invalid_session quand la session est inconnue', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        null,
+        false,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login2fa('session-inconnue', '123456', '192.168.1.62'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: null,
+        userId: null,
+        diff: { reason: 'invalid_session' },
+        ip: '192.168.1.62',
+      });
+    });
+
+    it('login2fa : enregistre auth.login_failed avec reason account_locked quand le compte est verrouillé', async () => {
+      const admin = account({
+        id: 'admin-2fa',
+        email: 'admin2fa@xplor.test',
+        role: Role.ADMIN,
+        totpEnabled: true,
+        lockedUntil: new Date('2026-09-29T12:30:00.000Z'),
+      });
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, sessions } = setup(
+        admin,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(true) },
+        fakeAudit,
+      );
+
+      const pendingSessionId = await sessions.create({
+        userId: admin.id,
+        csrfToken: 'csrf-pending',
+        createdAt: '2026-09-29T08:00:00.000Z',
+        pending2fa: true,
+      });
+
+      await expect(
+        service.login2fa(pendingSessionId, '123456', '192.168.1.63'),
+      ).rejects.toMatchObject({
+        statusCode: 423,
+        code: ACCOUNT_LOCKED,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: admin.id,
+        userId: admin.id,
+        diff: { reason: 'account_locked' },
+        ip: '192.168.1.63',
+      });
+    });
+
+    it('login2fa : enregistre auth.login_failed avec reason inactive quand le compte est inactif', async () => {
+      const admin = account({
+        id: 'admin-2fa',
+        email: 'admin2fa@xplor.test',
+        role: Role.ADMIN,
+        totpEnabled: true,
+        active: false,
+      });
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, sessions } = setup(
+        admin,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(true) },
+        fakeAudit,
+      );
+
+      const pendingSessionId = await sessions.create({
+        userId: admin.id,
+        csrfToken: 'csrf-pending',
+        createdAt: '2026-09-29T08:00:00.000Z',
+        pending2fa: true,
+      });
+
+      await expect(
+        service.login2fa(pendingSessionId, '123456', '192.168.1.64'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'auth.login_failed',
+        entityType: 'User',
+        entityId: admin.id,
+        userId: admin.id,
+        diff: { reason: 'inactive' },
+        ip: '192.168.1.64',
+      });
+    });
+
+    it('login2fa : ne bloque pas la connexion si audit.record rejette une erreur', async () => {
+      const admin = account({
+        id: 'admin-2fa',
+        email: 'admin2fa@xplor.test',
+        role: Role.ADMIN,
+        totpEnabled: true,
+      });
+      const recordMock = vi.fn().mockRejectedValue(new Error('Erreur base audit'));
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, sessions } = setup(
+        admin,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(true) },
+        fakeAudit,
+      );
+
+      const pendingSessionId = await sessions.create({
+        userId: admin.id,
+        csrfToken: 'csrf-pending',
+        createdAt: '2026-09-29T08:00:00.000Z',
+        pending2fa: true,
+      });
+
+      const result = await service.login2fa(pendingSessionId, '123456', '192.168.1.65');
+      expect(result).toHaveProperty('sessionId');
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
   });
 });
