@@ -115,8 +115,15 @@ class RecordingTourPublicationService extends TourPublicationService {
 }
 
 class RecordingToursService extends ToursService {
+  readonly removeCalls: { id: string; actorId?: string }[] = [];
+
   constructor() {
     super(new PrismaService());
+  }
+
+  override remove(id: string, actorId?: string): Promise<void> {
+    this.removeCalls.push({ id, actorId });
+    return Promise.resolve();
   }
 }
 
@@ -232,6 +239,44 @@ describe('ToursController', () => {
       const req = makeSessionRequest({ principal: adminPrincipal });
       expect(() => controller.unpublish(req, 'invalid-uuid')).toThrow(BadRequestException);
       expect(publicationService.unpublishCalls).toHaveLength(0);
+    });
+  });
+
+  describe('remove', () => {
+    it('passe l id et le userId du principal ADMIN à tours.remove', async () => {
+      const req = makeSessionRequest({ principal: adminPrincipal });
+      await controller.remove(req, TOUR_ID);
+
+      expect(toursService.removeCalls).toEqual([
+        { id: TOUR_ID, actorId: ADMIN_USER_ID },
+      ]);
+    });
+
+    it('passe l id et le userId du principal EDITOR à tours.remove', async () => {
+      const req = makeSessionRequest({ principal: editorPrincipal });
+      await controller.remove(req, TOUR_ID);
+
+      expect(toursService.removeCalls).toEqual([
+        { id: TOUR_ID, actorId: EDITOR_USER_ID },
+      ]);
+    });
+
+    it('refuse avec 403 ForbiddenException si le principal est absent', async () => {
+      const req = makeSessionRequest();
+      await expect(controller.remove(req, TOUR_ID)).rejects.toThrow(ForbiddenException);
+      expect(toursService.removeCalls).toHaveLength(0);
+    });
+
+    it('refuse avec 403 ForbiddenException si le rôle n est pas gestionnaire de contenu', async () => {
+      const req = makeSessionRequest({ principal: hotelManagerPrincipal });
+      await expect(controller.remove(req, TOUR_ID)).rejects.toThrow(ForbiddenException);
+      expect(toursService.removeCalls).toHaveLength(0);
+    });
+
+    it('refuse avec 400 BadRequestException si l id n est pas un identifiant valide', async () => {
+      const req = makeSessionRequest({ principal: adminPrincipal });
+      await expect(controller.remove(req, 'invalid-uuid')).rejects.toThrow(BadRequestException);
+      expect(toursService.removeCalls).toHaveLength(0);
     });
   });
 });

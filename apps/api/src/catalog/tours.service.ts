@@ -1,4 +1,11 @@
-import { Inject, Injectable, NotFoundException, type HttpException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+  type HttpException,
+} from '@nestjs/common';
 import {
   HotspotType as PrismaHotspotType,
   Prisma,
@@ -17,6 +24,8 @@ import {
   type TourUpdate,
 } from '@xplor/shared';
 
+import { AuditService } from '../audit/audit.service.js';
+import { NOOP_AUDIT, type AuditRecorder } from '../audit/audit-recorder.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   CATEGORY_NOT_FOUND,
@@ -68,7 +77,14 @@ type TourRow = Prisma.TourGetPayload<{ include: typeof tourInclude }>;
 
 @Injectable()
 export class ToursService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ToursService.name);
+
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(AuditService)
+    @Optional()
+    private readonly audit: AuditRecorder = NOOP_AUDIT,
+  ) {}
 
   async list(query: TourListQuery): Promise<Paginated<TourResponse>> {
     const where = listWhere(query);
@@ -289,7 +305,7 @@ export class ToursService {
   }
 
   /** Suppression logique. La ligne reste, pour les clés étrangères `Restrict` (D-69). */
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actorId?: string): Promise<void> {
     await this.get(id);
     try {
       await this.prisma.tour.update({
@@ -301,6 +317,17 @@ export class ToursService {
         throw new NotFoundException();
       }
       throw error;
+    }
+    try {
+      await this.audit.record({
+        action: 'entity.delete',
+        entityType: 'Tour',
+        entityId: id,
+        userId: actorId,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Échec d'enregistrement d'audit: ${message}`);
     }
   }
 

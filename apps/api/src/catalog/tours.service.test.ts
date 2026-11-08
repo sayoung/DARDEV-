@@ -1,8 +1,9 @@
 import { HttpException, NotFoundException } from '@nestjs/common';
 import { Prisma, TourStatus as PrismaTourStatus } from '@prisma/client';
 import { TourStatus, type TourCreate } from '@xplor/shared';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import type { AuditRecorder } from '../audit/audit-recorder.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   CATEGORY_NOT_FOUND,
@@ -95,7 +96,7 @@ interface ListWhere {
   title?: { string_contains?: string; mode?: string };
 }
 
-function harness(): {
+function harness(audit?: AuditRecorder): {
   service: ToursService;
   tours: Map<string, StoredTour>;
   scenes: StoredScene[];
@@ -317,7 +318,7 @@ function harness(): {
   };
 
   return {
-    service: new ToursService(prisma as unknown as PrismaService),
+    service: new ToursService(prisma as unknown as PrismaService, audit),
     tours,
     scenes,
     cities,
@@ -783,6 +784,79 @@ describe('ToursService', () => {
     
     const deletedNode = map.nodes.find(n => n.id === deletedId);
     expect(deletedNode).toBeUndefined();
+  });
+
+  describe('Audit de suppression (M8 F-91)', () => {
+    it('suppression réussie : appelle record une fois avec action entity.delete', async () => {
+      const record = vi.fn().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service, tours } = harness(audit);
+      const created = await service.create(kasbah, USER_ID);
+
+      await service.remove(created.id, USER_ID);
+
+      expect(tours.get(created.id)?.deletedAt).toBeInstanceOf(Date);
+      expect(record).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenCalledWith({
+        action: 'entity.delete',
+        entityType: 'Tour',
+        entityId: created.id,
+        userId: USER_ID,
+      });
+    });
+
+    it('visite introuvable (404) : n appelle pas record', async () => {
+      const record = vi.fn().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service } = harness(audit);
+
+      await expect(service.remove(UNKNOWN_ID, USER_ID)).rejects.toBeInstanceOf(NotFoundException);
+      expect(record).not.toHaveBeenCalled();
+    });
+
+    it('visite déjà supprimée (404) : n appelle pas record lors de la seconde tentative', async () => {
+      const record = vi.fn().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service } = harness(audit);
+      const created = await service.create(kasbah, USER_ID);
+
+      await service.remove(created.id, USER_ID);
+      expect(record).toHaveBeenCalledTimes(1);
+      record.mockClear();
+
+      await expect(service.remove(created.id, USER_ID)).rejects.toBeInstanceOf(NotFoundException);
+      expect(record).not.toHaveBeenCalled();
+    });
+
+    it('record qui rejette : la suppression aboutit sans propager l erreur', async () => {
+      const record = vi.fn().mockRejectedValue(new Error('audit db error'));
+      const audit: AuditRecorder = { record };
+      const { service, tours } = harness(audit);
+      const created = await service.create(kasbah, USER_ID);
+
+      await expect(service.remove(created.id, USER_ID)).resolves.toBeUndefined();
+      expect(tours.get(created.id)?.deletedAt).toBeInstanceOf(Date);
+      expect(record).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenCalledWith({
+        action: 'entity.delete',
+        entityType: 'Tour',
+        entityId: created.id,
+        userId: USER_ID,
+      });
+    });
+
+    it('record qui lève une exception synchrone : la suppression aboutit sans propager l erreur', async () => {
+      const record = vi.fn().mockImplementation(() => {
+        throw new Error('sync audit error');
+      });
+      const audit: AuditRecorder = { record };
+      const { service, tours } = harness(audit);
+      const created = await service.create(kasbah, USER_ID);
+
+      await expect(service.remove(created.id, USER_ID)).resolves.toBeUndefined();
+      expect(tours.get(created.id)?.deletedAt).toBeInstanceOf(Date);
+      expect(record).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
