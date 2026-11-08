@@ -859,6 +859,102 @@ describe('TourPublicationService', () => {
       expect(draft.status).toBe(TourStatus.DRAFT);
     });
   });
+
+  describe('Audit de publication (M8 F-91 3/3)', () => {
+    it('(1) publication réussie avec publish(id, \'user-1\') : record appelé une fois avec { action: \'tour.publish\', entityType: \'Tour\', entityId: id, userId: \'user-1\' }', async () => {
+      const record = vi.fn().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service, addTour, addScene, addHotspot } = harness(audit);
+      addManualTour({ addTour, addScene, addHotspot }, true);
+      const id = VISITE;
+
+      const published = await service.publish(id, 'user-1');
+
+      expect(published.id).toBe(id);
+      expect(published.status).toBe(TourStatus.PUBLISHED);
+      expect(record).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenCalledWith({
+        action: 'tour.publish',
+        entityType: 'Tour',
+        entityId: id,
+        userId: 'user-1',
+      });
+    });
+
+    it('(2) publication refusée (422 non publiable) : la promesse est rejetée et record n\'est pas appelé', async () => {
+      const record = vi.fn().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service, addTour, addScene, addHotspot } = harness(audit);
+      addManualTour({ addTour, addScene, addHotspot }, false);
+      const id = VISITE;
+
+      await expect(service.publish(id, 'user-1')).rejects.toThrow();
+      await expectUnprocessable(
+        () => service.publish(id, 'user-1'),
+        [issue(ValidationIssueCode.SCENE_UNREACHABLE, UNREACHABLE, REMPARTS)],
+      );
+      expect(record).not.toHaveBeenCalled();
+    });
+
+    it('(3) record rejette (mockRejectedValue(new Error(\'boom\'))) : publish aboutit quand même et renvoie la visite', async () => {
+      const record = vi.fn().mockRejectedValue(new Error('boom'));
+      const audit: AuditRecorder = { record };
+      const { service, addTour, addScene, addHotspot } = harness(audit);
+      addManualTour({ addTour, addScene, addHotspot }, true);
+      const id = VISITE;
+
+      const published = await service.publish(id, 'user-1');
+
+      expect(published.id).toBe(id);
+      expect(published.status).toBe(TourStatus.PUBLISHED);
+      expect(record).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenCalledWith({
+        action: 'tour.publish',
+        entityType: 'Tour',
+        entityId: id,
+        userId: 'user-1',
+      });
+    });
+
+    it('(4) unpublish(id, \'user-1\') : record appelé avec l\'action \'tour.unpublish\'', async () => {
+      const record = vi.fn().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service, addTour } = harness(audit);
+      const id = VISITE;
+      addTour(
+        storedTour(id, PORTE, {
+          status: PrismaTourStatus.PUBLISHED,
+          publishedAt: new Date(),
+          contentVersion: 4,
+        }),
+      );
+
+      const draft = await service.unpublish(id, 'user-1');
+
+      expect(draft.id).toBe(id);
+      expect(draft.status).toBe(TourStatus.DRAFT);
+      expect(record).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenCalledWith({
+        action: 'tour.unpublish',
+        entityType: 'Tour',
+        entityId: id,
+        userId: 'user-1',
+      });
+    });
+
+    it('optionnel : unpublish sur une visite introuvable ne journalise rien', async () => {
+      const record = vi.fn().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service, addTour } = harness(audit);
+      const id = VISITE;
+      addTour(storedTour(id, null, { deletedAt: new Date() }));
+
+      await expectNotFound(() => service.unpublish(UNKNOWN, 'user-1'));
+      await expectNotFound(() => service.unpublish(id, 'user-1'));
+
+      expect(record).not.toHaveBeenCalled();
+    });
+  });
 });
 
 function addManualTour(
