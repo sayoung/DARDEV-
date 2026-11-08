@@ -1,7 +1,7 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { Role } from '@xplor/shared';
 
-import { CLOCK, type Clock } from './auth.service.js';
+import { CLOCK, type Clock } from './clock.js';
 import { decryptTotpSecret, encryptTotpSecret } from './totp-secret-cipher.js';
 import { generateTotpSecret, otpauthUri, verifyTotp } from './totp.js';
 
