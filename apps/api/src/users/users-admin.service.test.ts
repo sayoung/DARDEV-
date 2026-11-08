@@ -6,7 +6,9 @@ import {
 } from '@nestjs/common';
 import { Prisma, Role as PrismaRole } from '@prisma/client';
 import { Role } from '@xplor/shared';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { type AuditRecorder } from '../audit/audit-recorder.js';
 
 import {
   USER_ADMIN_SELECT,
@@ -722,6 +724,171 @@ describe('UsersAdminService', () => {
       await expect(service.update(USER_ID_1, USER_ID_2, { uiLang: 'de' })).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    describe('audit de changement de rôle (F-91, API-28)', () => {
+      it('enregistre user.role_change avec les bons champs lorsque le rôle change', async () => {
+        const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+
+        // USER_ID_2 est initialement HOTEL_MANAGER, USER_ID_1 est l'administrateur appelant
+        const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
+          role: Role.ADMIN,
+        });
+
+        expect(updated.id).toBe(USER_ID_2);
+        expect(updated.role).toBe(Role.ADMIN);
+
+        expect(recordMock).toHaveBeenCalledTimes(1);
+        expect(recordMock).toHaveBeenCalledWith({
+          action: 'user.role_change',
+          entityType: 'User',
+          entityId: USER_ID_2,
+          userId: USER_ID_1,
+          diff: {
+            from: Role.HOTEL_MANAGER,
+            to: Role.ADMIN,
+          },
+        });
+
+        const call = recordMock.mock.calls[0];
+        expect(call).toBeDefined();
+        if (call !== undefined) {
+          const diff = call[0].diff;
+          if (typeof diff === 'object' && diff !== null) {
+            expect(Object.keys(diff).sort()).toEqual(['from', 'to'].sort());
+          }
+        }
+      });
+
+      it('n’inclut que les rôles dans diff même si d’autres champs sont modifiés simultanément', async () => {
+        const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+
+        // USER_ID_4 est initialement EDITOR
+        const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_4, {
+          role: Role.HOTEL_MANAGER,
+          name: 'Youssef El Amrani Modifié',
+          uiLang: 'fr',
+          active: true,
+        });
+
+        expect(updated.id).toBe(USER_ID_4);
+        expect(updated.role).toBe(Role.HOTEL_MANAGER);
+        expect(updated.name).toBe('Youssef El Amrani Modifié');
+
+        expect(recordMock).toHaveBeenCalledTimes(1);
+        expect(recordMock).toHaveBeenCalledWith({
+          action: 'user.role_change',
+          entityType: 'User',
+          entityId: USER_ID_4,
+          userId: USER_ID_1,
+          diff: {
+            from: Role.EDITOR,
+            to: Role.HOTEL_MANAGER,
+          },
+        });
+
+        const call = recordMock.mock.calls[0];
+        expect(call).toBeDefined();
+        if (call !== undefined) {
+          const diff = call[0].diff;
+          if (typeof diff === 'object' && diff !== null) {
+            expect(Object.keys(diff).sort()).toEqual(['from', 'to'].sort());
+            expect(diff).toEqual({
+              from: Role.EDITOR,
+              to: Role.HOTEL_MANAGER,
+            });
+          }
+        }
+      });
+
+      it('n’appelle pas l’audit si le rôle est inchangé lors de la mise à jour d’autres champs', async () => {
+        const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+
+        await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
+          name: 'Karim Sans Changement De Rôle',
+          active: false,
+        });
+
+        expect(recordMock).not.toHaveBeenCalled();
+      });
+
+      it('n’appelle pas l’audit si le rôle fourni est identique au rôle actuel', async () => {
+        const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+
+        // USER_ID_2 est déjà HOTEL_MANAGER
+        await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
+          role: Role.HOTEL_MANAGER,
+          name: 'Karim Identique',
+        });
+
+        expect(recordMock).not.toHaveBeenCalled();
+      });
+
+      it('ne fait pas échouer update si audit.record rejette une erreur', async () => {
+        const recordMock = vi
+          .fn<AuditRecorder['record']>()
+          .mockRejectedValue(new Error('Audit DB unreachable'));
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+
+        const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
+          role: Role.ADMIN,
+        });
+
+        expect(updated.id).toBe(USER_ID_2);
+        expect(updated.role).toBe(Role.ADMIN);
+        expect(recordMock).toHaveBeenCalledTimes(1);
+
+        const dbRecord = fakePrisma.records.find((r) => r.id === USER_ID_2);
+        expect(dbRecord?.role).toBe(PrismaRole.ADMIN);
+      });
+
+      it('ne fait pas échouer update si audit.record lève une exception synchrone', async () => {
+        const recordMock = vi.fn<AuditRecorder['record']>().mockImplementation(() => {
+          throw new Error('Sync audit failure');
+        });
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+
+        const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
+          role: Role.ADMIN,
+        });
+
+        expect(updated.id).toBe(USER_ID_2);
+        expect(updated.role).toBe(Role.ADMIN);
+        expect(recordMock).toHaveBeenCalledTimes(1);
+      });
+
+      it('n’appelle pas l’audit si la validation ou l’autorisation échoue', async () => {
+        const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+
+        // Tentative d'auto-modification de rôle -> 403 ForbiddenException
+        await expect(
+          serviceWithAudit.update(USER_ID_1, USER_ID_1, { role: Role.EDITOR }),
+        ).rejects.toThrow(ForbiddenException);
+
+        // Tentative de rétrogradation du dernier administrateur actif -> 409 ConflictException
+        await expect(
+          serviceWithAudit.update(USER_ID_2, USER_ID_1, { role: Role.EDITOR }),
+        ).rejects.toThrow(ConflictException);
+
+        // Payload invalide -> 400 BadRequestException
+        await expect(
+          serviceWithAudit.update(USER_ID_1, USER_ID_2, { role: 'INVALIDE' }),
+        ).rejects.toThrow(BadRequestException);
+
+        expect(recordMock).not.toHaveBeenCalled();
+      });
     });
   });
 
