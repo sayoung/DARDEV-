@@ -9,6 +9,7 @@
     "start:prod": "node dist/main.js",
     "build": "nest build",
     "prebuild": "pnpm --filter @xplor/shared build && pnpm --filter @xplor/i18n build && prisma generate",
+    "smoke:dist": "node scripts/smoke-dist.mjs",
     "postinstall": "prisma generate",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
