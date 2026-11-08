@@ -24,6 +24,25 @@ export const MeResponseSchema = z.object({
 
 export type MeResponse = z.infer<typeof MeResponseSchema>;
 
+/** Réponse renvoyée par `login` lorsqu'un second facteur TOTP est requis (API-20, F-90). */
+export const TwoFactorRequiredResponseSchema = z.object({
+  twoFactorRequired: z.literal(true),
+});
+
+export type TwoFactorRequiredResponse = z.infer<typeof TwoFactorRequiredResponseSchema>;
+
+/** Réponse à `POST /auth/login` (API-20, F-90) : profil complet avec session ou étape 2FA requise. */
+export const LoginResponseSchema = z.union([MeResponseSchema, TwoFactorRequiredResponseSchema]);
+
+export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+
+/** Corps de `POST /auth/login/2fa` (API-20, F-90). */
+export const Login2faRequestSchema = z.object({
+  code: z.string().trim().min(6).max(12),
+});
+
+export type Login2faRequest = z.infer<typeof Login2faRequestSchema>;
+
 /** Corps de `POST /auth/password/forgot` (API-20). */
 export const ForgotPasswordRequestSchema = z.object({
   email: z.email(),

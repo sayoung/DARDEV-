@@ -14,6 +14,7 @@ type StoredUser = {
   role: PrismaRole;
   uiLang: string;
   active: boolean;
+  totpEnabled: boolean;
   lastLoginAt: Date | null;
   failedLoginCount: number;
   lockedUntil: Date | null;
@@ -27,6 +28,7 @@ const row: StoredUser = {
   role: PrismaRole.HOTEL_MANAGER,
   uiLang: 'en',
   active: true,
+  totpEnabled: false,
   lastLoginAt: null,
   failedLoginCount: 2,
   lockedUntil: null,
@@ -70,6 +72,7 @@ describe('PrismaUserRepository', () => {
       role: Role.HOTEL_MANAGER,
       uiLang: 'en',
       active: true,
+      totpEnabled: false,
       lastLoginAt: null,
       failedLoginCount: 2,
       lockedUntil: null,
@@ -117,6 +120,7 @@ describe('PrismaUserRepository', () => {
           role: true,
           uiLang: true,
           active: true,
+          totpEnabled: true,
           lastLoginAt: true,
           failedLoginCount: true,
           lockedUntil: true,
@@ -257,6 +261,7 @@ describe('PrismaUserRepository', () => {
           role: true,
           uiLang: true,
           active: true,
+          totpEnabled: true,
           lastLoginAt: true,
           failedLoginCount: true,
           lockedUntil: true,
@@ -333,6 +338,7 @@ describe('PrismaUserRepository', () => {
           role: true,
           uiLang: true,
           active: true,
+          totpEnabled: true,
           lastLoginAt: true,
           failedLoginCount: true,
           lockedUntil: true,
