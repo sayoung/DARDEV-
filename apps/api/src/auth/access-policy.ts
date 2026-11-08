@@ -45,3 +45,9 @@ export function scopeHotelIds(principal: Principal): 'ALL' | string[] {
 export function canViewRawStats(principal: Principal): boolean {
   return principal.role !== Role.PARTNER;
 }
+
+/** Seul ADMIN consulte les journaux d'audit (API-30). */
+export function canViewAuditLogs(principal: Principal): boolean {
+  return principal.role === Role.ADMIN;
+}
+

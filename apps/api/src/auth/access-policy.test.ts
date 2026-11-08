@@ -6,6 +6,7 @@ import {
   canManageCatalog,
   canManageContent,
   canManageUsers,
+  canViewAuditLogs,
   canViewRawStats,
   scopeHotelIds,
 } from './access-policy.js';
@@ -102,3 +103,13 @@ describe('canViewRawStats', () => {
     expect(canViewRawStats(principal(Role.HOTEL_MANAGER, [HOTEL_A]))).toBe(true);
   });
 });
+
+describe('canViewAuditLogs', () => {
+  it('autorise seulement ADMIN', () => {
+    expect(canViewAuditLogs(principal(Role.ADMIN))).toBe(true);
+    expect(canViewAuditLogs(principal(Role.EDITOR))).toBe(false);
+    expect(canViewAuditLogs(principal(Role.HOTEL_MANAGER, [HOTEL_A]))).toBe(false);
+    expect(canViewAuditLogs(principal(Role.PARTNER, [HOTEL_A]))).toBe(false);
+  });
+});
+
