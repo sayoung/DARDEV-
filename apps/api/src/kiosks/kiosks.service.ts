@@ -1,4 +1,13 @@
-import { ForbiddenException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { verify as argon2Verify } from '@node-rs/argon2';
 import {
   KioskCreateSchema,
@@ -20,6 +29,8 @@ import {
   LocalizedTextSchema,
 } from '@xplor/shared';
 
+import { NOOP_AUDIT, type AuditRecorder } from '../audit/audit-recorder.js';
+import { AuditService } from '../audit/audit.service.js';
 import { canAccessHotel, scopeHotelIds } from '../auth/access-policy.js';
 import {
   isRecordMissing,
@@ -200,10 +211,17 @@ export interface KioskPrismaClient {
   };
 }
 
+export { NOOP_AUDIT, type AuditRecorder };
+
 @Injectable()
 export class KioskService {
+  private readonly logger = new Logger(KioskService.name);
+
   constructor(
     @Inject(PrismaService) private readonly prisma: KioskPrismaClient,
+    @Inject(AuditService)
+    @Optional()
+    private readonly audit: AuditRecorder = NOOP_AUDIT,
   ) {}
 
   async authenticateDevice(token: string): Promise<Pick<KioskRow, 'id' | 'hotelId' | 'status'> | null> {
@@ -370,7 +388,9 @@ export class KioskService {
         idleTimeoutSeconds: valid.idleTimeoutSeconds ?? 90,
       },
     });
-    return toKioskResponse(row, await this.expectedManifestVersion(row.hotelId), new Date());
+    const kiosk = toKioskResponse(row, await this.expectedManifestVersion(row.hotelId), new Date());
+    await this.recordAudit('kiosk.create', kiosk.id, principal.userId, kiosk.hotelId);
+    return kiosk;
   }
 
   async get(principal: Principal, id: string): Promise<Kiosk> {
@@ -511,8 +531,9 @@ export class KioskService {
   async disable(principal: Principal, id: string): Promise<Kiosk> {
     this.assertAdmin(principal);
     const existing = await this.findActive(id);
+    let row: KioskRow;
     try {
-      const row = await this.prisma.kiosk.update({
+      row = await this.prisma.kiosk.update({
         where: { id },
         data: {
           status: 'DISABLED',
@@ -521,13 +542,15 @@ export class KioskService {
           enrollmentExpiresAt: null,
         },
       });
-      return toKioskResponse(row, await this.expectedManifestVersion(existing.hotelId), new Date());
     } catch (error: unknown) {
       if (isRecordMissing(error)) {
         throw this.notFound();
       }
       throw error;
     }
+    const kiosk = toKioskResponse(row, await this.expectedManifestVersion(existing.hotelId), new Date());
+    await this.recordAudit('kiosk.disable', kiosk.id, principal.userId, kiosk.hotelId);
+    return kiosk;
   }
 
   async forceSync(principal: Principal, id: string): Promise<Kiosk> {
@@ -577,6 +600,27 @@ export class KioskService {
       select: { version: true },
     });
     return selection === null ? null : String(selection.version);
+  }
+
+  private async recordAudit(
+    action: 'kiosk.create' | 'kiosk.disable',
+    kioskId: string,
+    userId: string,
+    hotelId: string,
+  ): Promise<void> {
+    try {
+      await this.audit.record({
+        action,
+        entityType: 'Kiosk',
+        entityId: kioskId,
+        kioskId,
+        userId,
+        diff: { hotelId },
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Échec d'enregistrement d'audit: ${message}`);
+    }
   }
 }
 
