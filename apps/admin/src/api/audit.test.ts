@@ -1,11 +1,16 @@
 import {
+  z,
   type AuditLogEntry,
   type AuditLogQuery,
   type PaginatedAuditLogResponse,
 } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { listAuditLogs } from './audit.js';
-import { clearCsrfToken, resetIsRedirectingForTests } from './client.js';
+import {
+  ApiError,
+  clearCsrfToken,
+  resetIsRedirectingForTests,
+} from './client.js';
 
 const sampleEntry: AuditLogEntry = {
   id: '018f3a38-c393-79d2-97b7-5f214f4df7e0',
@@ -58,6 +63,25 @@ function lastCall(): RecordedCall | undefined {
   const headers = new Headers(init?.headers);
   const body = typeof init?.body === 'string' ? init.body : null;
   return { url, method, headers, body };
+}
+
+async function expectApiError(
+  action: () => Promise<unknown>,
+  expectedStatus: number,
+  expectedCode?: string,
+): Promise<void> {
+  try {
+    await action();
+    expect.unreachable('La promesse aurait dû rejeter avec ApiError');
+  } catch (error) {
+    expect(error).toBeInstanceOf(ApiError);
+    if (error instanceof ApiError) {
+      expect(error.status).toBe(expectedStatus);
+      if (expectedCode !== undefined) {
+        expect(error.code).toBe(expectedCode);
+      }
+    }
+  }
 }
 
 describe('Client API du journal d audit (apps/admin/src/api/audit.ts)', () => {
@@ -130,6 +154,27 @@ describe('Client API du journal d audit (apps/admin/src/api/audit.ts)', () => {
       expect(url.searchParams.has('to')).toBe(false);
     });
 
+    it('convertit les paramètres numériques page et pageSize en chaînes dans l URL', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(200, sampleAuditPage));
+
+      await listAuditLogs({
+        page: 4,
+        pageSize: 20,
+      });
+
+      const call = lastCall();
+      expect(call).toBeDefined();
+      if (call === undefined) {
+        return;
+      }
+      expect(call.method).toBe('GET');
+      const url = new URL(call.url, 'http://localhost');
+      expect(url.pathname).toBe('/api/v1/admin/audit');
+      expect(url.searchParams.get('page')).toBe('4');
+      expect(url.searchParams.get('pageSize')).toBe('20');
+      expect(call.url).toBe('/api/v1/admin/audit?page=4&pageSize=20');
+    });
+
     it('valide et parse une réponse conforme au schéma PaginatedAuditLogResponseSchema', async () => {
       fetchMock.mockResolvedValueOnce(jsonResponse(200, sampleAuditPage));
 
@@ -142,7 +187,45 @@ describe('Client API du journal d audit (apps/admin/src/api/audit.ts)', () => {
       expect(result.total).toBe(1);
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(50);
+    });
 
+    it('rejette une réponse invalide avec un champ manquant via la validation Zod', async () => {
+      // Champ obligatoire "total" manquant dans la réponse paginée
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          items: [sampleEntry],
+          page: 1,
+          pageSize: 50,
+        }),
+      );
+
+      await expect(listAuditLogs()).rejects.toThrow(z.ZodError);
+
+      // Champ obligatoire "action" manquant dans une entrée d'audit
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          items: [
+            {
+              id: sampleEntry.id,
+              userId: sampleEntry.userId,
+              kioskId: sampleEntry.kioskId,
+              entityType: 'Tour',
+              entityId: sampleEntry.entityId,
+              diff: sampleEntry.diff,
+              ip: sampleEntry.ip,
+              createdAt: sampleEntry.createdAt,
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 50,
+        }),
+      );
+
+      await expect(listAuditLogs()).rejects.toThrow(z.ZodError);
+    });
+
+    it('rejette une réponse invalide avec des valeurs non conformes', async () => {
       fetchMock.mockResolvedValueOnce(
         jsonResponse(200, {
           items: [{ id: 'not-a-uuid', action: 'invalid.action' }],
@@ -152,7 +235,19 @@ describe('Client API du journal d audit (apps/admin/src/api/audit.ts)', () => {
         }),
       );
 
-      await expect(listAuditLogs()).rejects.toThrow();
+      await expect(listAuditLogs()).rejects.toThrow(z.ZodError);
+    });
+
+    it('convertit une réponse HTTP 403 en ApiError', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(403, {
+          statusCode: 403,
+          code: 'FORBIDDEN',
+          message: 'Accès refusé',
+        }),
+      );
+
+      await expectApiError(() => listAuditLogs(), 403, 'FORBIDDEN');
     });
   });
 });
