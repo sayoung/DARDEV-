@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '../audit/audit.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { KioskDeviceController } from './kiosk-device.controller.js';
 import { KioskTokenGuard } from './kiosk-token.guard.js';
@@ -8,7 +9,7 @@ import { KioskService } from './kiosks.service.js';
 import { OptionalKioskTokenGuard } from './optional-kiosk-token.guard.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AuditModule],
   controllers: [KiosksController, KioskDeviceController],
   providers: [KioskService, KioskTokenGuard, OptionalKioskTokenGuard],
   exports: [KioskService, KioskTokenGuard, OptionalKioskTokenGuard],

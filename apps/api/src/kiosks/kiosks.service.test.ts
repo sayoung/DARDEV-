@@ -9,11 +9,13 @@ import {
   type KioskCreate,
   type Principal,
 } from '@xplor/shared';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   KioskService,
+  NOOP_AUDIT,
   toKioskResponse,
+  type AuditRecorder,
   type KioskPrismaClient,
   type KioskRow,
 } from './kiosks.service.js';
@@ -41,6 +43,12 @@ const managerHotelA: Principal = {
   hotelIds: [HOTEL_A_ID],
 };
 
+const managerHotelB: Principal = {
+  userId: '01990000-0000-7000-8000-000000000203',
+  role: Role.HOTEL_MANAGER,
+  hotelIds: [HOTEL_B_ID],
+};
+
 function kioskRow(overrides: Partial<KioskRow> = {}): KioskRow {
   return {
     id: KIOSK_A_ID,
@@ -65,7 +73,10 @@ function kioskRow(overrides: Partial<KioskRow> = {}): KioskRow {
   };
 }
 
-function harness(initialRows: KioskRow[] = []): {
+function harness(
+  initialRows: KioskRow[] = [],
+  audit: AuditRecorder = NOOP_AUDIT,
+): {
   service: KioskService;
   rows: Map<string, KioskRow>;
   selections: Map<string, number>;
@@ -211,7 +222,7 @@ function harness(initialRows: KioskRow[] = []): {
     },
   };
   return {
-    service: new KioskService(prisma),
+    service: new KioskService(prisma, audit),
     rows,
     selections,
     selectionReads,
@@ -857,6 +868,109 @@ describe('KioskService', () => {
       );
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('Journal d’audit F-91', () => {
+    it('création → un appel "kiosk.create" dont JSON.stringify(diff) ne contient pas le jeton', async () => {
+      const record = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service } = harness([], audit);
+
+      const kiosk = await service.create(admin, kioskInput);
+
+      expect(record).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenCalledWith({
+        action: 'kiosk.create',
+        entityType: 'Kiosk',
+        entityId: kiosk.id,
+        kioskId: kiosk.id,
+        userId: admin.userId,
+        diff: { hotelId: HOTEL_A_ID },
+      });
+      const firstCall = record.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      if (firstCall !== undefined) {
+        const [params] = firstCall;
+        const diffJson = JSON.stringify(params.diff);
+        expect(diffJson).not.toContain('token');
+        expect(diffJson).not.toContain('enrollmentCode');
+        expect(diffJson).not.toContain('tokenHash');
+      }
+    });
+
+    it('désactivation → "kiosk.disable"', async () => {
+      const record = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const row = kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID, tokenHash: 'sensitive-token-hash' });
+      const { service } = harness([row], audit);
+
+      const kiosk = await service.disable(admin, KIOSK_A_ID);
+
+      expect(kiosk.status).toBe('DISABLED');
+      expect(record).toHaveBeenCalledTimes(1);
+      expect(record).toHaveBeenCalledWith({
+        action: 'kiosk.disable',
+        entityType: 'Kiosk',
+        entityId: KIOSK_A_ID,
+        kioskId: KIOSK_A_ID,
+        userId: admin.userId,
+        diff: { hotelId: HOTEL_A_ID },
+      });
+      const firstCall = record.mock.calls[0];
+      expect(firstCall).toBeDefined();
+      if (firstCall !== undefined) {
+        const [params] = firstCall;
+        const diffJson = JSON.stringify(params.diff);
+        expect(diffJson).not.toContain('token');
+        expect(diffJson).not.toContain('sensitive-token-hash');
+      }
+    });
+
+    it('refus d’accès (gestionnaire d’un autre hôtel) → aucun appel lors de la création', async () => {
+      const record = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const { service } = harness([], audit);
+
+      await expect(service.create(managerHotelB, kioskInput)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(record).not.toHaveBeenCalled();
+    });
+
+    it('refus d’accès (gestionnaire d’un autre hôtel) → aucun appel lors de la désactivation', async () => {
+      const record = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+      const audit: AuditRecorder = { record };
+      const row = kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID });
+      const { service } = harness([row], audit);
+
+      await expect(service.disable(managerHotelB, KIOSK_A_ID)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(record).not.toHaveBeenCalled();
+    });
+
+    it('record qui rejette (création) → l’opération aboutit sans lever d’erreur', async () => {
+      const record = vi.fn<AuditRecorder['record']>().mockRejectedValue(new Error('Audit DB down'));
+      const audit: AuditRecorder = { record };
+      const { service } = harness([], audit);
+
+      const kiosk = await service.create(admin, kioskInput);
+
+      expect(kiosk.status).toBe('PENDING');
+      expect(record).toHaveBeenCalledTimes(1);
+    });
+
+    it('record qui rejette (désactivation) → l’opération aboutit sans lever d’erreur', async () => {
+      const record = vi.fn<AuditRecorder['record']>().mockRejectedValue(new Error('Audit DB down'));
+      const audit: AuditRecorder = { record };
+      const row = kioskRow({ id: KIOSK_A_ID, hotelId: HOTEL_A_ID });
+      const { service } = harness([row], audit);
+
+      const kiosk = await service.disable(admin, KIOSK_A_ID);
+
+      expect(kiosk.status).toBe('DISABLED');
+      expect(record).toHaveBeenCalledTimes(1);
     });
   });
 });
