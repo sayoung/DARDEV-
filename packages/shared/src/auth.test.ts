@@ -5,9 +5,12 @@ import {
   ForgotPasswordRequestSchema,
   InviteUserRequestSchema,
   InviteUserResponseSchema,
+  Login2faRequestSchema,
   LoginRequestSchema,
+  LoginResponseSchema,
   MeResponseSchema,
   ResetPasswordRequestSchema,
+  TwoFactorRequiredResponseSchema,
 } from './auth.js';
 import { Role } from './role.js';
 
@@ -141,5 +144,61 @@ describe('AcceptInviteRequestSchema', () => {
     expect(
       AcceptInviteRequestSchema.safeParse({ token: 'jeton', password: 'a'.repeat(11) }).success,
     ).toBe(false);
+  });
+});
+
+describe('TwoFactorRequiredResponseSchema', () => {
+  it('accepte twoFactorRequired: true', () => {
+    expect(TwoFactorRequiredResponseSchema.parse({ twoFactorRequired: true })).toEqual({
+      twoFactorRequired: true,
+    });
+  });
+
+  it('refuse twoFactorRequired: false ou toute autre valeur', () => {
+    expect(TwoFactorRequiredResponseSchema.safeParse({ twoFactorRequired: false }).success).toBe(
+      false,
+    );
+    expect(TwoFactorRequiredResponseSchema.safeParse({ twoFactorRequired: 'true' }).success).toBe(
+      false,
+    );
+    expect(TwoFactorRequiredResponseSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('LoginResponseSchema', () => {
+  it('accepte un MeResponse complet', () => {
+    expect(LoginResponseSchema.parse(me)).toEqual(me);
+  });
+
+  it('accepte une demande de 2FA', () => {
+    expect(LoginResponseSchema.parse({ twoFactorRequired: true })).toEqual({
+      twoFactorRequired: true,
+    });
+  });
+
+  it('refuse une réponse non conforme aux deux variantes', () => {
+    expect(LoginResponseSchema.safeParse({ twoFactorRequired: false }).success).toBe(false);
+    expect(LoginResponseSchema.safeParse({}).success).toBe(false);
+    expect(LoginResponseSchema.safeParse({ ...me, role: 'INCONNU' }).success).toBe(false);
+  });
+});
+
+describe('Login2faRequestSchema', () => {
+  it('accepte un code TOTP de 6 à 12 caractères et retire les espaces superflus', () => {
+    expect(Login2faRequestSchema.parse({ code: '123456' })).toEqual({ code: '123456' });
+    expect(Login2faRequestSchema.parse({ code: '  654321  ' })).toEqual({ code: '654321' });
+    expect(Login2faRequestSchema.parse({ code: '123456789012' })).toEqual({ code: '123456789012' });
+  });
+
+  it('refuse un code de moins de 6 caractères ou de plus de 12 caractères', () => {
+    expect(Login2faRequestSchema.safeParse({ code: '12345' }).success).toBe(false);
+    expect(Login2faRequestSchema.safeParse({ code: '   123   ' }).success).toBe(false);
+    expect(Login2faRequestSchema.safeParse({ code: '1234567890123' }).success).toBe(false);
+  });
+
+  it('refuse un code vide ou non fourni', () => {
+    expect(Login2faRequestSchema.safeParse({ code: '' }).success).toBe(false);
+    expect(Login2faRequestSchema.safeParse({ code: '      ' }).success).toBe(false);
+    expect(Login2faRequestSchema.safeParse({}).success).toBe(false);
   });
 });

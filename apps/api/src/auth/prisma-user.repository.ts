@@ -22,6 +22,7 @@ const authUserSelect = {
   role: true,
   uiLang: true,
   active: true,
+  totpEnabled: true,
   lastLoginAt: true,
   failedLoginCount: true,
   lockedUntil: true,
@@ -35,6 +36,7 @@ type UserRow = {
   role: PrismaRole;
   uiLang: string;
   active: boolean;
+  totpEnabled: boolean;
   lastLoginAt: Date | null;
   failedLoginCount: number;
   lockedUntil: Date | null;
@@ -59,6 +61,7 @@ function toAuthUser(user: UserRow): AuthUser {
     role: toSharedRole(user.role),
     uiLang: toUiLang(user.uiLang),
     active: user.active,
+    totpEnabled: user.totpEnabled,
     lastLoginAt: user.lastLoginAt,
     failedLoginCount: user.failedLoginCount,
     lockedUntil: user.lockedUntil,

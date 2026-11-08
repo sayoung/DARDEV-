@@ -11,6 +11,7 @@ export type AuthUser = {
   role: Role;
   uiLang: Lang;
   active: boolean;
+  totpEnabled: boolean;
   /** Null tant que le compte ne s'est jamais connecté. */
   lastLoginAt: Date | null;
   failedLoginCount: number;
