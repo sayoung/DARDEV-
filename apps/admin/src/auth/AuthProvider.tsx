@@ -50,8 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     state,
     login: (input) => {
-      return requestLogin(input).then((profile) => {
-        setState({ status: 'authenticated', profile });
+      return requestLogin(input).then((result) => {
+        if ('twoFactorRequired' in result) {
+          return;
+        }
+        setState({ status: 'authenticated', profile: result });
         const url = new URL(window.location.href);
         if (url.searchParams.get('notice') === 'expired') {
           url.searchParams.delete('notice');

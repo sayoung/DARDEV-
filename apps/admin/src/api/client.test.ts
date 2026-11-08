@@ -16,6 +16,7 @@ import {
   fetchCurrentUser,
   forgotPassword,
   login,
+  login2fa,
   logout,
   resetPassword,
   requestJson,
@@ -101,6 +102,65 @@ describe('client auth', () => {
     await acceptInvite({ token: 'jeton', password });
     expect(lastCall()?.url).toBe('/api/v1/auth/invite/accept');
     expect(lastCall()?.init?.body).toBe(JSON.stringify({ token: 'jeton', password }));
+  });
+
+  it('login normal : renvoie le profil et mémorise le jeton CSRF', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, profile));
+    const result = await login({ email: 'ada@xplor.test', password: 'secret' });
+    expect(result).toEqual(profile);
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    await apiFetch('/api/v1/auth/logout', { method: 'POST' });
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe(profile.csrfToken);
+  });
+
+  it('login 2FA : renvoie { twoFactorRequired: true } sans toucher au jeton CSRF', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { twoFactorRequired: true }));
+    const result = await login({ email: 'ada@xplor.test', password: 'secret' });
+    expect(result).toEqual({ twoFactorRequired: true });
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    await apiFetch('/api/v1/auth/logout', { method: 'POST' });
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBeNull();
+  });
+
+  it('login2fa succès : valide le code, renvoie le profil et mémorise le jeton CSRF', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, profile));
+    const result = await login2fa('123456');
+    expect(result).toEqual(profile);
+
+    const call = lastCall();
+    expect(call?.url).toBe('/api/v1/auth/login/2fa');
+    expect(call?.method).toBe('POST');
+    expect(call?.credentials).toBe('include');
+    const bodyStr = typeof call?.init?.body === 'string' ? call.init.body : '';
+    expect(JSON.parse(bodyStr)).toEqual({ code: '123456' });
+
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+    await apiFetch('/api/v1/auth/logout', { method: 'POST' });
+    expect(headerOf(lastCall(), 'X-CSRF-Token')).toBe(profile.csrfToken);
+  });
+
+  it('login2fa : valide Login2faRequestSchema avant d’envoyer la requête', async () => {
+    await expect(login2fa('123')).rejects.toThrow();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('login2fa 401 : jette une ApiError avec status 401', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(401, { error: { code: 'INVALID_CREDENTIALS', message: 'Code TOTP erroné' } }),
+    );
+    let capturedError: unknown;
+    try {
+      await login2fa('123456');
+    } catch (error: unknown) {
+      capturedError = error;
+    }
+    expect(capturedError).toBeInstanceOf(ApiError);
+    if (capturedError instanceof ApiError) {
+      expect(capturedError.status).toBe(401);
+      expect(capturedError.code).toBe('INVALID_CREDENTIALS');
+    }
   });
 });
 
@@ -455,6 +515,12 @@ describe('session expiration', () => {
 
     await apiFetch('/api/v1/admin/tours');
     expect(pushStateSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('401 on POST /auth/login/2fa causes no redirection', async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 401 }));
+    await apiFetch('/api/v1/auth/login/2fa', { method: 'POST' });
+    expect(pushStateSpy).toHaveBeenCalledTimes(0);
   });
 
   it('401 on GET /auth/me causes no redirection', async () => {
