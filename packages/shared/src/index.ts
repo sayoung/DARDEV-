@@ -1,5 +1,17 @@
 export { z, type ZodType } from 'zod';
 export {
+  AdminUserListQuerySchema,
+  AdminUserSchema,
+  PaginatedAdminUsersResponseSchema,
+  SetUserHotelsRequestSchema,
+  UpdateAdminUserRequestSchema,
+  type AdminUser,
+  type AdminUserListQuery,
+  type PaginatedAdminUsersResponse,
+  type SetUserHotelsRequest,
+  type UpdateAdminUserRequest,
+} from './admin-users.js';
+export {
   AcceptInviteRequestSchema,
   ForgotPasswordRequestSchema,
   InviteUserRequestSchema,
