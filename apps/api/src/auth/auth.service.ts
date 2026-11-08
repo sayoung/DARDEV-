@@ -21,6 +21,7 @@ import {
   invalidCredentials,
   tokenInvalid,
 } from './auth.errors.js';
+import { CLOCK, type Clock } from './clock.js';
 import { DUMMY_PASSWORD_HASH } from './dummy-password.js';
 import { isLocked, registerFailure, registerSuccess } from './lockout.js';
 import {
@@ -47,10 +48,7 @@ export type TwoFactorVerifier = {
 };
 
 export { NOOP_AUDIT, type AuditRecorder };
-
-export const CLOCK = Symbol('CLOCK');
-
-export type Clock = () => Date;
+export { CLOCK, type Clock } from './clock.js';
 
 export type LoginResult =
   | { sessionId: string; me: MeResponse }

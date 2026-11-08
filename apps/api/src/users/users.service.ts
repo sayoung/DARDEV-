@@ -9,7 +9,8 @@ import {
   type Role,
 } from '@xplor/shared';
 
-import { CLOCK, type Clock, type PasswordVerifier } from '../auth/auth.service.js';
+import { type PasswordVerifier } from '../auth/auth.service.js';
+import { CLOCK, type Clock } from '../auth/clock.js';
 import { PasswordService } from '../auth/password.service.js';
 import { UNIT_OF_WORK, type AuthTx, type UnitOfWork } from '../auth/unit-of-work.js';
 import { USER_TOKEN_REPOSITORY, type UserTokenRepository } from '../auth/user-token.repository.js';
