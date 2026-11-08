@@ -63,6 +63,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Build de l'API
+        run: pnpm --filter @xplor/api build
+
+      - name: Test de fumée du build dist
+        run: pnpm --filter @xplor/api smoke:dist
+
       - name: Créer la base xplor_test
         run: |
           if ! command -v psql >/dev/null 2>&1; then
