@@ -1,10 +1,18 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, Role as PrismaRole } from '@prisma/client';
 import {
   AdminUserListQuerySchema,
   AdminUserSchema,
   LANGS,
   PaginatedAdminUsersResponseSchema,
+  UpdateAdminUserRequestSchema,
   type AdminUser,
   type AdminUserListQuery,
   type Lang,
@@ -47,11 +55,18 @@ export interface UserAdminFindUniqueArgs {
   select?: Prisma.UserSelect;
 }
 
+export interface UserAdminUpdateArgs {
+  where: Prisma.UserWhereUniqueInput;
+  data: Prisma.UserUpdateInput;
+  select?: Prisma.UserSelect;
+}
+
 export interface UsersAdminPrismaClient {
   user: {
     findMany(args?: UserAdminFindManyArgs): Promise<UserAdminRow[]>;
     count(args?: UserAdminCountArgs): Promise<number>;
     findUnique(args: UserAdminFindUniqueArgs): Promise<UserAdminRow | null>;
+    update(args: UserAdminUpdateArgs): Promise<UserAdminRow>;
   };
 }
 
@@ -176,5 +191,73 @@ export class UsersAdminService {
     }
 
     return toAdminUser(row);
+  }
+
+  async update(actorId: string, id: string, input: unknown): Promise<AdminUser> {
+    const validated = UpdateAdminUserRequestSchema.safeParse(input);
+    if (!validated.success) {
+      throw new BadRequestException('Données de mise à jour d’utilisateur invalides');
+    }
+    const valid = validated.data;
+
+    const existing = await this.prisma.user.findUnique({
+      where: { id },
+      select: USER_ADMIN_SELECT,
+    });
+
+    if (existing === null) {
+      throw new NotFoundException(`Utilisateur introuvable : ${id}`);
+    }
+
+    const isSelf = actorId === id;
+    if (isSelf) {
+      if (valid.active === false) {
+        throw new ForbiddenException('Un administrateur ne peut pas se désactiver lui-même');
+      }
+      if (valid.role !== undefined && toPrismaRole(valid.role) !== existing.role) {
+        throw new ForbiddenException('Un administrateur ne peut pas modifier son propre rôle');
+      }
+    }
+
+    const isTargetActiveAdmin = existing.role === PrismaRole.ADMIN && existing.active;
+    const isDeactivating = valid.active === false;
+    const isDemoting = valid.role !== undefined && toPrismaRole(valid.role) !== PrismaRole.ADMIN;
+
+    if (isTargetActiveAdmin && (isDeactivating || isDemoting)) {
+      const activeAdminCount = await this.prisma.user.count({
+        where: {
+          role: PrismaRole.ADMIN,
+          active: true,
+        },
+      });
+
+      if (activeAdminCount <= 1) {
+        throw new ConflictException(
+          'Impossible de désactiver ou rétrograder le dernier administrateur actif',
+        );
+      }
+    }
+
+    const data: Prisma.UserUpdateInput = {};
+    if (valid.name !== undefined) {
+      data.name = valid.name;
+    }
+    if (valid.role !== undefined) {
+      data.role = toPrismaRole(valid.role);
+    }
+    if (valid.active !== undefined) {
+      data.active = valid.active;
+    }
+    if (valid.uiLang !== undefined) {
+      data.uiLang = valid.uiLang;
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data,
+      select: USER_ADMIN_SELECT,
+    });
+
+    return toAdminUser(updated);
   }
 }

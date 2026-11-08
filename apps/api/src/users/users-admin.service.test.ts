@@ -1,4 +1,9 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, Role as PrismaRole } from '@prisma/client';
 import { Role } from '@xplor/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -12,6 +17,7 @@ import {
   type UserAdminFindManyArgs,
   type UserAdminFindUniqueArgs,
   type UserAdminRow,
+  type UserAdminUpdateArgs,
   type UsersAdminPrismaClient,
 } from './users-admin.service.js';
 
@@ -30,14 +36,27 @@ interface FakeUserRecord {
   hotels: { hotelId: string }[];
 }
 
+function isPrismaRole(value: unknown): value is PrismaRole {
+  return (
+    value === PrismaRole.ADMIN ||
+    value === PrismaRole.EDITOR ||
+    value === PrismaRole.HOTEL_MANAGER ||
+    value === PrismaRole.PARTNER
+  );
+}
+
 class FakeUsersAdminPrismaClient implements UsersAdminPrismaClient {
   public findManyCalls: UserAdminFindManyArgs[] = [];
   public countCalls: UserAdminCountArgs[] = [];
   public findUniqueCalls: UserAdminFindUniqueArgs[] = [];
+  public updateCalls: UserAdminUpdateArgs[] = [];
   public records: FakeUserRecord[] = [];
 
   constructor(records: FakeUserRecord[] = []) {
-    this.records = records;
+    this.records = records.map((record) => ({
+      ...record,
+      hotels: [...record.hotels],
+    }));
   }
 
   public readonly user = {
@@ -109,6 +128,54 @@ class FakeUsersAdminPrismaClient implements UsersAdminPrismaClient {
       }
 
       return Promise.resolve(null);
+    },
+
+    update: (args: UserAdminUpdateArgs): Promise<UserAdminRow> => {
+      this.updateCalls.push(args);
+      const targetId = args.where.id;
+      if (targetId === undefined) {
+        return Promise.reject(new Error('Missing id in where clause'));
+      }
+
+      const index = this.records.findIndex((item) => item.id === targetId);
+      if (index === -1) {
+        return Promise.reject(new Error(`User not found: ${targetId}`));
+      }
+
+      const existing = this.records[index];
+      if (existing === undefined) {
+        return Promise.reject(new Error(`User not found: ${targetId}`));
+      }
+
+      const data = args.data;
+      const name = typeof data.name === 'string' ? data.name : existing.name;
+      const role = isPrismaRole(data.role) ? data.role : existing.role;
+      const active = typeof data.active === 'boolean' ? data.active : existing.active;
+      const uiLang = typeof data.uiLang === 'string' ? data.uiLang : existing.uiLang;
+
+      const updatedRecord: FakeUserRecord = {
+        ...existing,
+        name,
+        role,
+        active,
+        uiLang,
+      };
+
+      this.records[index] = updatedRecord;
+
+      const row: UserAdminRow = {
+        id: updatedRecord.id,
+        email: updatedRecord.email,
+        name: updatedRecord.name,
+        role: updatedRecord.role,
+        active: updatedRecord.active,
+        totpEnabled: updatedRecord.totpEnabled,
+        lastLoginAt: updatedRecord.lastLoginAt,
+        uiLang: updatedRecord.uiLang,
+        hotels: updatedRecord.hotels,
+      };
+
+      return Promise.resolve(row);
     },
   };
 
@@ -431,6 +498,233 @@ describe('UsersAdminService', () => {
     });
   });
 
+  describe('update', () => {
+    it('met à jour le nom avec succès et retourne l’utilisateur mis à jour', async () => {
+      const updated = await service.update(USER_ID_1, USER_ID_2, {
+        name: 'Karim Mis À Jour',
+      });
+
+      expect(updated.id).toBe(USER_ID_2);
+      expect(updated.name).toBe('Karim Mis À Jour');
+      expect(updated.email).toBe('karim.bennani@xplor.local');
+      expect(updated.role).toBe(Role.HOTEL_MANAGER);
+      expect(updated.active).toBe(true);
+      expect(updated.uiLang).toBe('ar');
+      expect(updated.hotelIds).toEqual([HOTEL_ID_1, HOTEL_ID_2]);
+
+      expect(fakePrisma.updateCalls).toHaveLength(1);
+      const call = fakePrisma.updateCalls[0];
+      expect(call?.where.id).toBe(USER_ID_2);
+      expect(call?.data).toEqual({ name: 'Karim Mis À Jour' });
+      expect(call?.select).toEqual(USER_ADMIN_SELECT);
+    });
+
+    it('met à jour le rôle avec succès', async () => {
+      const updated = await service.update(USER_ID_1, USER_ID_2, {
+        role: Role.EDITOR,
+      });
+
+      expect(updated.id).toBe(USER_ID_2);
+      expect(updated.role).toBe(Role.EDITOR);
+
+      const call = fakePrisma.updateCalls[0];
+      expect(call?.data).toEqual({ role: PrismaRole.EDITOR });
+    });
+
+    it('met à jour le statut actif d’un non-admin avec succès (désactivation)', async () => {
+      const updated = await service.update(USER_ID_1, USER_ID_2, {
+        active: false,
+      });
+
+      expect(updated.id).toBe(USER_ID_2);
+      expect(updated.active).toBe(false);
+
+      const call = fakePrisma.updateCalls[0];
+      expect(call?.data).toEqual({ active: false });
+    });
+
+    it('met à jour uiLang avec succès', async () => {
+      const updated = await service.update(USER_ID_1, USER_ID_2, {
+        uiLang: 'en',
+      });
+
+      expect(updated.id).toBe(USER_ID_2);
+      expect(updated.uiLang).toBe('en');
+
+      const call = fakePrisma.updateCalls[0];
+      expect(call?.data).toEqual({ uiLang: 'en' });
+    });
+
+    it('met à jour plusieurs champs simultanément avec succès', async () => {
+      const updated = await service.update(USER_ID_1, USER_ID_4, {
+        name: 'Youssef Modifié',
+        role: Role.HOTEL_MANAGER,
+        active: false,
+        uiLang: 'fr',
+      });
+
+      expect(updated.id).toBe(USER_ID_4);
+      expect(updated.name).toBe('Youssef Modifié');
+      expect(updated.role).toBe(Role.HOTEL_MANAGER);
+      expect(updated.active).toBe(false);
+      expect(updated.uiLang).toBe('fr');
+
+      const call = fakePrisma.updateCalls[0];
+      expect(call?.data).toEqual({
+        name: 'Youssef Modifié',
+        role: PrismaRole.HOTEL_MANAGER,
+        active: false,
+        uiLang: 'fr',
+      });
+    });
+
+    it('lève NotFoundException si l’utilisateur est introuvable (404)', async () => {
+      await expect(
+        service.update(USER_ID_1, UNKNOWN_USER_ID, { name: 'Inconnu' }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(fakePrisma.updateCalls).toHaveLength(0);
+    });
+
+    it('lève ForbiddenException lors d’une tentative d’auto-désactivation (actorId === id, active: false)', async () => {
+      await expect(
+        service.update(USER_ID_1, USER_ID_1, { active: false }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(fakePrisma.updateCalls).toHaveLength(0);
+    });
+
+    it('lève ForbiddenException lors d’une tentative d’auto-changement de rôle (actorId === id, role modifié)', async () => {
+      await expect(
+        service.update(USER_ID_1, USER_ID_1, { role: Role.EDITOR }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(fakePrisma.updateCalls).toHaveLength(0);
+    });
+
+    it('autorise un utilisateur à modifier son propre nom ou uiLang sans modifier son rôle', async () => {
+      const updated = await service.update(USER_ID_1, USER_ID_1, {
+        name: 'Sara Nouvelle',
+        uiLang: 'en',
+      });
+
+      expect(updated.id).toBe(USER_ID_1);
+      expect(updated.name).toBe('Sara Nouvelle');
+      expect(updated.uiLang).toBe('en');
+      expect(updated.role).toBe(Role.ADMIN);
+      expect(updated.active).toBe(true);
+
+      expect(fakePrisma.updateCalls).toHaveLength(1);
+    });
+
+    it('autorise un utilisateur à fournir son propre rôle s’il est identique au rôle actuel', async () => {
+      const updated = await service.update(USER_ID_1, USER_ID_1, {
+        role: Role.ADMIN,
+        name: 'Sara Idrissi',
+      });
+
+      expect(updated.id).toBe(USER_ID_1);
+      expect(updated.role).toBe(Role.ADMIN);
+      expect(fakePrisma.updateCalls).toHaveLength(1);
+    });
+
+    it('lève ConflictException lors d’une tentative de désactivation du dernier ADMIN actif', async () => {
+      // USER_ID_1 est l'unique ADMIN actif dans sampleRecords. USER_ID_2 (un autre acteur) tente de le désactiver.
+      await expect(
+        service.update(USER_ID_2, USER_ID_1, { active: false }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(fakePrisma.updateCalls).toHaveLength(0);
+    });
+
+    it('lève ConflictException lors d’une tentative de rétrogradation du dernier ADMIN actif', async () => {
+      // USER_ID_1 est l'unique ADMIN actif dans sampleRecords. USER_ID_2 tente de le rétrograder en EDITOR.
+      await expect(
+        service.update(USER_ID_2, USER_ID_1, { role: Role.EDITOR }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(fakePrisma.updateCalls).toHaveLength(0);
+    });
+
+    it('autorise la désactivation d’un administrateur lorsqu’il existe au moins 2 ADMIN actifs', async () => {
+      const secondAdmin: FakeUserRecord = {
+        id: '01990000-0000-7000-8000-000000000006',
+        email: 'admin2@xplor.local',
+        name: 'Second Admin',
+        passwordHash: '$2b$12$secretPasswordHashAdmin2',
+        totpSecret: null,
+        role: PrismaRole.ADMIN,
+        active: true,
+        totpEnabled: false,
+        lastLoginAt: null,
+        uiLang: 'fr',
+        createdAt: new Date('2026-11-06T12:00:00.000Z'),
+        hotels: [],
+      };
+      fakePrisma.records.push(secondAdmin);
+
+      const updated = await service.update(USER_ID_1, secondAdmin.id, {
+        active: false,
+      });
+
+      expect(updated.id).toBe(secondAdmin.id);
+      expect(updated.active).toBe(false);
+      expect(fakePrisma.updateCalls).toHaveLength(1);
+    });
+
+    it('autorise la rétrogradation d’un administrateur lorsqu’il existe au moins 2 ADMIN actifs', async () => {
+      const secondAdmin: FakeUserRecord = {
+        id: '01990000-0000-7000-8000-000000000006',
+        email: 'admin2@xplor.local',
+        name: 'Second Admin',
+        passwordHash: '$2b$12$secretPasswordHashAdmin2',
+        totpSecret: null,
+        role: PrismaRole.ADMIN,
+        active: true,
+        totpEnabled: false,
+        lastLoginAt: null,
+        uiLang: 'fr',
+        createdAt: new Date('2026-11-06T12:00:00.000Z'),
+        hotels: [],
+      };
+      fakePrisma.records.push(secondAdmin);
+
+      const updated = await service.update(USER_ID_1, secondAdmin.id, {
+        role: Role.HOTEL_MANAGER,
+      });
+
+      expect(updated.id).toBe(secondAdmin.id);
+      expect(updated.role).toBe(Role.HOTEL_MANAGER);
+      expect(fakePrisma.updateCalls).toHaveLength(1);
+    });
+
+    it('ne lève pas ConflictException pour la désactivation d’un utilisateur non-admin', async () => {
+      // USER_ID_2 est HOTEL_MANAGER
+      const updated = await service.update(USER_ID_1, USER_ID_2, { active: false });
+      expect(updated.id).toBe(USER_ID_2);
+      expect(updated.active).toBe(false);
+    });
+
+    it('lève BadRequestException si le payload de mise à jour est invalide', async () => {
+      // Payload vide (UpdateAdminUserRequestSchema exige au moins un champ)
+      await expect(service.update(USER_ID_1, USER_ID_2, {})).rejects.toThrow(
+        BadRequestException,
+      );
+      // Nom vide
+      await expect(service.update(USER_ID_1, USER_ID_2, { name: '' })).rejects.toThrow(
+        BadRequestException,
+      );
+      // Rôle invalide
+      await expect(
+        service.update(USER_ID_1, USER_ID_2, { role: 'SUPER_ADMIN' }),
+      ).rejects.toThrow(BadRequestException);
+      // Langue invalide
+      await expect(service.update(USER_ID_1, USER_ID_2, { uiLang: 'de' })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
   describe('absence formelle des champs secrets', () => {
     it('exclut formellement passwordHash et totpSecret de la sélection Prisma', () => {
       expect(USER_ADMIN_SELECT).not.toHaveProperty('passwordHash');
@@ -452,6 +746,17 @@ describe('UsersAdminService', () => {
 
     it('garantit que l’objet retourné par get n’expose aucun secret', async () => {
       const user = await service.get(USER_ID_1);
+
+      expect(user).not.toHaveProperty('passwordHash');
+      expect(user).not.toHaveProperty('totpSecret');
+      expect(user).not.toHaveProperty('failedLoginCount');
+      expect(user).not.toHaveProperty('lockedUntil');
+    });
+
+    it('garantit que l’objet retourné par update n’expose aucun secret', async () => {
+      const user = await service.update(USER_ID_1, USER_ID_2, {
+        name: 'Karim Sans Secrets',
+      });
 
       expect(user).not.toHaveProperty('passwordHash');
       expect(user).not.toHaveProperty('totpSecret');
