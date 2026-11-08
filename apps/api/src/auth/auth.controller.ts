@@ -75,6 +75,7 @@ export class AuthController {
   async login(
     @Body() body: unknown,
     @Res({ passthrough: true }) reply: FastifyReply,
+    @Req() request?: SessionRequest,
   ): Promise<LoginResponse> {
     if (this.auth === undefined) {
       throw new Error('AuthService not available');
@@ -84,7 +85,8 @@ export class AuthController {
       throw new BadRequestException();
     }
     try {
-      const result = await this.auth.login(parsed.data);
+      const ip = typeof request?.ip === 'string' ? request.ip : undefined;
+      const result = await this.auth.login(parsed.data, ip);
       reply.setCookie(SESSION_COOKIE_NAME, result.sessionId, this.cookieOptions());
       if ('twoFactorRequired' in result) {
         return { twoFactorRequired: true };
@@ -116,7 +118,8 @@ export class AuthController {
       throw new UnauthorizedException();
     }
     try {
-      const result = await this.auth.login2fa(sessionId, parsed.data.code);
+      const ip = typeof request.ip === 'string' ? request.ip : undefined;
+      const result = await this.auth.login2fa(sessionId, parsed.data.code, ip);
       reply.setCookie(SESSION_COOKIE_NAME, result.sessionId, this.cookieOptions());
       return result.me;
     } catch (error: unknown) {

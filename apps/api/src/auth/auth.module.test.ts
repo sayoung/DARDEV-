@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
 
 import { ENV } from '../config/config.module.js';
+import { AuditService } from '../audit/audit.service.js';
 import { MAILER } from '../mail/mailer.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { REDIS } from '../redis/redis.module.js';
@@ -112,5 +113,14 @@ describe('AuthModule wiring', () => {
 
     const twoFactorService = moduleRef.get<TwoFactorService>(TwoFactorService);
     expect(twoFactorService).toBeInstanceOf(TwoFactorService);
+  });
+
+  it('résout AuditService via AuditModule importé dans AuthModule (F-91)', async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [MockAuthDependenciesModule, AuthModule],
+    }).compile();
+
+    const auditService = moduleRef.get<AuditService>(AuditService);
+    expect(auditService).toBeInstanceOf(AuditService);
   });
 });

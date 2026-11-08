@@ -10,4 +10,5 @@ export type SessionRequest = {
   principal?: Principal;
   session?: SessionRecord;
   sessionId?: string;
+  ip?: string;
 };
