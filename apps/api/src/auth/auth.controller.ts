@@ -17,6 +17,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
   AcceptInviteRequestSchema,
   ForgotPasswordRequestSchema,
+  Login2faRequestSchema,
   LoginRequestSchema,
   ResetPasswordRequestSchema,
   type LoginResponse,
@@ -30,7 +31,7 @@ import type { Env } from '../config/env.js';
 import { AuthRejectedError, AuthRequestError, PASSWORD_INVALID } from './auth.errors.js';
 import { AuthService } from './auth.service.js';
 import { CsrfGuard } from './csrf.guard.js';
-import { SESSION_COOKIE_NAME, sessionCookieOptions } from './session-cookie.js';
+import { SESSION_COOKIE_NAME, readSessionId, sessionCookieOptions } from './session-cookie.js';
 import type { SessionRequest } from './session-request.js';
 import { SessionGuard } from './session.guard.js';
 
@@ -68,6 +69,32 @@ export class AuthController {
     }
   }
 
+  @Post('login/2fa')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(FIVE_PER_MINUTE)
+  @UseGuards(ThrottlerGuard)
+  async login2fa(
+    @Body() body: unknown,
+    @Req() request: SessionRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<MeResponse> {
+    const parsed = Login2faRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException();
+    }
+    const sessionId = readSessionId(request);
+    if (sessionId === null) {
+      throw new UnauthorizedException();
+    }
+    try {
+      const result = await this.auth.login2fa(sessionId, parsed.data.code);
+      reply.setCookie(SESSION_COOKIE_NAME, result.sessionId, this.cookieOptions());
+      return result.me;
+    } catch (error: unknown) {
+      rethrowAsHttp(error);
+    }
+  }
+
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(SessionGuard, CsrfGuard)
@@ -88,7 +115,7 @@ export class AuthController {
   async me(@Req() request: SessionRequest): Promise<MeResponse> {
     const userId = request.principal?.userId;
     const csrfToken = request.session?.csrfToken;
-    if (userId === undefined || csrfToken === undefined) {
+    if (userId === undefined || csrfToken === undefined || request.session?.pending2fa === true) {
       throw new UnauthorizedException();
     }
     try {
