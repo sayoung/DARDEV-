@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   Role,
@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   SelectionService,
+  type AuditRecorder,
   type HotelSummaryRow,
   type SelectionPrismaClient,
   type SelectionRow,
@@ -27,6 +28,8 @@ const TOUR_1_ID = '01990000-0000-7000-8000-000000000301';
 const TOUR_2_ID = '01990000-0000-7000-8000-000000000302';
 const TOUR_3_ID = '01990000-0000-7000-8000-000000000303';
 const TOUR_4_ID = '01990000-0000-7000-8000-000000000304';
+const DRAFT_TOUR_ID = '01990000-0000-7000-8000-000000000305';
+const UNKNOWN_TOUR_ID = '01990000-0000-7000-8000-000000000399';
 
 const ADMIN_ID = '01990000-0000-7000-8000-000000000201';
 const MANAGER_A_ID = '01990000-0000-7000-8000-000000000202';
@@ -69,11 +72,13 @@ const SELECTION_A_UPDATED_AT = new Date('2026-10-01T15:45:00.000Z');
 const SELECTION_B_CREATED_AT = new Date('2026-10-02T11:30:00.000Z');
 const SELECTION_B_UPDATED_AT = new Date('2026-10-02T16:20:00.000Z');
 
-function harness(): {
+function harness(audit?: AuditRecorder): {
   service: SelectionService;
+  prisma: SelectionPrismaClient;
   hotels: Map<string, HotelSummaryRow>;
   selections: Map<string, SelectionRow>;
   tours: Map<string, { id: string; status: 'PUBLISHED' | 'DRAFT'; deletedAt: Date | null }>;
+  recordMock: ReturnType<typeof vi.fn<AuditRecorder['record']>>;
   upsertMock: ReturnType<
     typeof vi.fn<(args: Prisma.SelectionUpsertArgs) => Promise<{ id: string }>>
   >;
@@ -135,6 +140,7 @@ function harness(): {
     [TOUR_2_ID, { id: TOUR_2_ID, status: 'PUBLISHED', deletedAt: null }],
     [TOUR_3_ID, { id: TOUR_3_ID, status: 'PUBLISHED', deletedAt: null }],
     [TOUR_4_ID, { id: TOUR_4_ID, status: 'PUBLISHED', deletedAt: null }],
+    [DRAFT_TOUR_ID, { id: DRAFT_TOUR_ID, status: 'DRAFT', deletedAt: null }],
   ]);
 
   const upsertMock = vi.fn(
@@ -228,11 +234,17 @@ function harness(): {
     },
   };
 
+  const recordMock =
+    vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+  const auditRecorder: AuditRecorder = audit ?? { record: recordMock };
+
   return {
-    service: new SelectionService(prisma),
+    service: new SelectionService(prisma, auditRecorder),
+    prisma,
     hotels,
     selections,
     tours,
+    recordMock,
     upsertMock,
     deleteManyMock,
     createManyMock,
@@ -333,8 +345,8 @@ describe('SelectionService', () => {
       attractTourIds: [TOUR_1_ID],
     });
 
-    it('un gestionnaire de l’hôtel B ne peut pas remplacer la sélection de l’hôtel A → NotFoundException, aucune écriture', async () => {
-      const { service, upsertMock, deleteManyMock, createManyMock } = harness();
+    it('un gestionnaire de l’hôtel B ne peut pas remplacer la sélection de l’hôtel A → NotFoundException, aucune écriture ni audit', async () => {
+      const { service, recordMock, upsertMock, deleteManyMock, createManyMock } = harness();
 
       await expect(
         service.replace(managerHotelB, HOTEL_A_ID, sampleUpdate),
@@ -343,10 +355,11 @@ describe('SelectionService', () => {
       expect(upsertMock).not.toHaveBeenCalled();
       expect(deleteManyMock).not.toHaveBeenCalled();
       expect(createManyMock).not.toHaveBeenCalled();
+      expect(recordMock).not.toHaveBeenCalled();
     });
 
-    it('ADMIN reçoit 404 pour un hôtel supprimé (deletedAt non nul) ou inconnu', async () => {
-      const { service, upsertMock, deleteManyMock, createManyMock } = harness();
+    it('ADMIN reçoit 404 pour un hôtel supprimé (deletedAt non nul) ou inconnu → aucun audit', async () => {
+      const { service, recordMock, upsertMock, deleteManyMock, createManyMock } = harness();
 
       await expect(
         service.replace(admin, HOTEL_DELETED_ID, sampleUpdate),
@@ -359,6 +372,144 @@ describe('SelectionService', () => {
       expect(upsertMock).not.toHaveBeenCalled();
       expect(deleteManyMock).not.toHaveBeenCalled();
       expect(createManyMock).not.toHaveBeenCalled();
+      expect(recordMock).not.toHaveBeenCalled();
+    });
+
+    it('refus si une visite de la sélection est inconnue → 422 SELECTION_TOUR_INVALID, aucune écriture ni audit', async () => {
+      const { service, recordMock, upsertMock } = harness();
+      const invalidUpdate: SelectionUpdate = SelectionUpdateSchema.parse({
+        featuredTourId: null,
+        tourIds: [UNKNOWN_TOUR_ID],
+        attractTourIds: [],
+      });
+
+      await expect(
+        service.replace(admin, HOTEL_A_ID, invalidUpdate),
+      ).rejects.toThrow();
+
+      expect(upsertMock).not.toHaveBeenCalled();
+      expect(recordMock).not.toHaveBeenCalled();
+    });
+
+    it('refus si une visite de la sélection n’est pas PUBLISHED (ex. DRAFT) → 422, aucun audit', async () => {
+      const { service, recordMock, upsertMock } = harness();
+      const draftUpdate: SelectionUpdate = SelectionUpdateSchema.parse({
+        featuredTourId: null,
+        tourIds: [DRAFT_TOUR_ID],
+        attractTourIds: [],
+      });
+
+      await expect(
+        service.replace(admin, HOTEL_A_ID, draftUpdate),
+      ).rejects.toThrow();
+
+      expect(upsertMock).not.toHaveBeenCalled();
+      expect(recordMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('replace — journalisation d’audit (F-91)', () => {
+    const sampleUpdate: SelectionUpdate = SelectionUpdateSchema.parse({
+      featuredTourId: TOUR_1_ID,
+      tourIds: [TOUR_1_ID, TOUR_2_ID],
+      attractTourIds: [TOUR_1_ID],
+    });
+
+    it('remplacement réussi par ADMIN → un appel selection.update avec les tourIds retenus', async () => {
+      const { service, recordMock } = harness();
+
+      const result = await service.replace(admin, HOTEL_A_ID, sampleUpdate);
+
+      expect(result.hotelId).toBe(HOTEL_A_ID);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'selection.update',
+        entityType: 'Hotel',
+        entityId: HOTEL_A_ID,
+        userId: ADMIN_ID,
+        diff: { tourIds: [TOUR_1_ID, TOUR_2_ID] },
+      });
+    });
+
+    it('remplacement réussi par un gestionnaire de l’hôtel A → enregistre avec son userId', async () => {
+      const { service, recordMock } = harness();
+
+      const result = await service.replace(managerHotelA, HOTEL_A_ID, sampleUpdate);
+
+      expect(result.hotelId).toBe(HOTEL_A_ID);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'selection.update',
+        entityType: 'Hotel',
+        entityId: HOTEL_A_ID,
+        userId: MANAGER_A_ID,
+        diff: { tourIds: [TOUR_1_ID, TOUR_2_ID] },
+      });
+    });
+
+    it('remplacement réussi avec actorId explicite → enregistre avec l’actorId fourni', async () => {
+      const { service, recordMock } = harness();
+      const customActorId = '01990000-0000-7000-8000-000000000999';
+
+      const result = await service.replace(
+        managerHotelA,
+        HOTEL_A_ID,
+        sampleUpdate,
+        customActorId,
+      );
+
+      expect(result.hotelId).toBe(HOTEL_A_ID);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'selection.update',
+        entityType: 'Hotel',
+        entityId: HOTEL_A_ID,
+        userId: customActorId,
+        diff: { tourIds: [TOUR_1_ID, TOUR_2_ID] },
+      });
+    });
+
+    it('remplacement réussi avec sélection vide → enregistre diff avec tourIds: []', async () => {
+      const { service, recordMock } = harness();
+      const emptyUpdate: SelectionUpdate = SelectionUpdateSchema.parse({
+        featuredTourId: null,
+        tourIds: [],
+        attractTourIds: [],
+      });
+
+      const result = await service.replace(admin, HOTEL_A_ID, emptyUpdate);
+
+      expect(result.hotelId).toBe(HOTEL_A_ID);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'selection.update',
+        entityType: 'Hotel',
+        entityId: HOTEL_A_ID,
+        userId: ADMIN_ID,
+        diff: { tourIds: [] },
+      });
+    });
+
+    it('record qui rejette → l’opération aboutit sans lever d’erreur et consigne dans Logger', async () => {
+      const loggerSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+      const { service, recordMock } = harness();
+      recordMock.mockRejectedValue(new Error('Audit DB down'));
+
+      const result = await service.replace(admin, HOTEL_A_ID, sampleUpdate);
+
+      expect(result.hotelId).toBe(HOTEL_A_ID);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledTimes(1);
+      loggerSpy.mockRestore();
+    });
+
+    it('sans AuditRecorder injecté (défaut NOOP_AUDIT), replace aboutit normalement', async () => {
+      const { prisma } = harness();
+      const serviceWithoutAudit = new SelectionService(prisma);
+
+      const result = await serviceWithoutAudit.replace(admin, HOTEL_A_ID, sampleUpdate);
+
+      expect(result.hotelId).toBe(HOTEL_A_ID);
     });
   });
 });

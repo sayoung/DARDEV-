@@ -180,6 +180,11 @@ export class HotelsController {
     const principal = requirePrincipal(request);
     const hotelId = parseResourceId(id);
     const payload: SelectionUpdate = parseBody(SelectionUpdateSchema, body);
-    return this.selection.replace(principal, hotelId, payload);
+    return this.selection.replace(
+      principal,
+      hotelId,
+      payload,
+      principal.userId,
+    );
   }
 }
