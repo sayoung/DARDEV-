@@ -4,7 +4,9 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma, Role as PrismaRole } from '@prisma/client';
 import {
@@ -19,8 +21,12 @@ import {
   type PaginatedAdminUsersResponse,
 } from '@xplor/shared';
 
+import { NOOP_AUDIT, type AuditRecorder } from '../audit/audit-recorder.js';
+import { AuditService } from '../audit/audit.service.js';
 import { toPrismaRole, toSharedRole } from '../auth/prisma-role.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+
+export { NOOP_AUDIT, type AuditRecorder };
 
 export interface UserAdminHotelLink {
   hotelId: string;
@@ -143,9 +149,14 @@ export function buildUserAdminWhereInput(query: AdminUserListQuery): Prisma.User
 
 @Injectable()
 export class UsersAdminService {
+  private readonly logger = new Logger(UsersAdminService.name);
+
   constructor(
     @Inject(PrismaService)
     private readonly prisma: UsersAdminPrismaClient,
+    @Inject(AuditService)
+    @Optional()
+    private readonly audit: AuditRecorder = NOOP_AUDIT,
   ) {}
 
   async list(query?: unknown): Promise<PaginatedAdminUsersResponse> {
@@ -257,6 +268,24 @@ export class UsersAdminService {
       data,
       select: USER_ADMIN_SELECT,
     });
+
+    if (existing.role !== updated.role) {
+      try {
+        await this.audit.record({
+          action: 'user.role_change',
+          entityType: 'User',
+          entityId: id,
+          userId: actorId,
+          diff: {
+            from: toSharedRole(existing.role),
+            to: toSharedRole(updated.role),
+          },
+        });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        this.logger.error(`Échec d'enregistrement d'audit: ${message}`);
+      }
+    }
 
     return toAdminUser(updated);
   }
