@@ -22,6 +22,7 @@ describe('router', () => {
       expect(parsePathname('/media')).toEqual({ name: 'media' });
       expect(parsePathname('/stats')).toEqual({ name: 'stats' });
       expect(parsePathname('/account/security')).toEqual({ name: 'account-security' });
+      expect(parsePathname('/users')).toEqual({ name: 'users' });
     });
 
     it('decode id for hotel-selection', () => {
@@ -46,6 +47,7 @@ describe('router', () => {
       expect(hrefFor('/hotels')).toBe('/hotels?lang=fr');
       expect(hrefFor('/hotels/789/selection')).toBe('/hotels/789/selection?lang=fr');
       expect(hrefFor('/kiosks')).toBe('/kiosks?lang=fr');
+      expect(hrefFor('/users')).toBe('/users?lang=fr');
     });
   });
 });
