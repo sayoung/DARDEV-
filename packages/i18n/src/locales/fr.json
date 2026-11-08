@@ -63,7 +63,8 @@
       "enable": "Activer",
       "code": "Code à 6 chiffres",
       "invalidCode": "Code invalide",
-      "requiredForAdmin": "2FA obligatoire pour ADMIN"
+      "requiredForAdmin": "2FA obligatoire pour ADMIN",
+      "verify": "Vérifier"
     },
     "errors": {
       "TOKEN_INVALID": "Ce lien n'est plus valable.",
