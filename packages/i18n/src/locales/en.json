@@ -240,6 +240,7 @@
     "categories": "Categories",
     "media": "Media",
     "stats": "Statistics",
+    "users": "Users",
     "accountSecurity": "Account security"
   },
   "media": {
@@ -333,6 +334,47 @@
       "successDisabled": "Two-factor authentication has been disabled.",
       "invalidCode": "Invalid code",
       "error": "An error occurred. Please try again."
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Account and access management.",
+      "loadError": "Unable to load users.",
+      "empty": "No users found.",
+      "never": "Never",
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "active": "Active",
+        "twoFactor": "2FA",
+        "lastLogin": "Last login",
+        "hotels": "Hotels"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "twoFactor": {
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+      },
+      "filters": {
+        "role": "Role",
+        "allRoles": "All roles",
+        "status": "Status",
+        "allStatuses": "All statuses",
+        "activeOnly": "Active only",
+        "inactiveOnly": "Inactive only",
+        "search": "Search",
+        "searchPlaceholder": "Name or email…",
+        "submit": "Search"
+      },
+      "pagination": {
+        "prev": "Previous",
+        "next": "Next",
+        "info": "Page {{page}} of {{total}}",
+        "label": "Users pagination"
+      }
     }
   },
   "tour": {

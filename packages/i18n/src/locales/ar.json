@@ -240,6 +240,7 @@
     "categories": "الفئات",
     "media": "الوسائط",
     "stats": "الإحصاءات",
+    "users": "المستخدمون",
     "accountSecurity": "أمان الحساب"
   },
   "media": {
@@ -333,6 +334,47 @@
       "successDisabled": "تم تعطيل المصادقة الثنائية.",
       "invalidCode": "رمز غير صالح",
       "error": "حدث خطأ. يرجى المحاولة مرة أخرى."
+    },
+    "users": {
+      "title": "المستخدمون",
+      "subtitle": "إدارة الحسابات وصلاحيات الوصول.",
+      "loadError": "تعذر تحميل قائمة المستخدمين.",
+      "empty": "لم يتم العثور على أي مستخدم.",
+      "never": "أبداً",
+      "columns": {
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "role": "الدور",
+        "active": "نشط",
+        "twoFactor": "2FA",
+        "lastLogin": "آخر تسجيل دخول",
+        "hotels": "الفنادق"
+      },
+      "status": {
+        "active": "نشط",
+        "inactive": "غير نشط"
+      },
+      "twoFactor": {
+        "enabled": "مفعلة",
+        "disabled": "معطلة"
+      },
+      "filters": {
+        "role": "الدور",
+        "allRoles": "كل الأدوار",
+        "status": "الحالة",
+        "allStatuses": "كل الحالات",
+        "activeOnly": "النشطون فقط",
+        "inactiveOnly": "غير النشطين فقط",
+        "search": "بحث",
+        "searchPlaceholder": "الاسم أو البريد...",
+        "submit": "بحث"
+      },
+      "pagination": {
+        "prev": "السابق",
+        "next": "التالي",
+        "info": "صفحة {{page}} من {{total}}",
+        "label": "تنقل صفحات المستخدمين"
+      }
     }
   },
   "tour": {
