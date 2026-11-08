@@ -76,6 +76,17 @@ describe('AppLayout', () => {
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         ));
       }
+      if (method === 'GET' && url.includes('/admin/users')) {
+        return Promise.resolve(new Response(
+          JSON.stringify({
+            items: [],
+            total: 0,
+            page: 1,
+            pageSize: 20,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        ));
+      }
       if (method === 'POST' && url.endsWith('/auth/logout')) {
         return Promise.resolve(new Response(null, { status: 200 }));
       }
