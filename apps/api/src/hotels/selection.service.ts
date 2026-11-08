@@ -1,4 +1,10 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
   SelectionResponseSchema,
@@ -7,6 +13,8 @@ import {
   type SelectionUpdate,
 } from '@xplor/shared';
 
+import { AuditService } from '../audit/audit.service.js';
+import { NOOP_AUDIT, type AuditRecorder } from '../audit/audit-recorder.js';
 import { canAccessHotel } from '../auth/access-policy.js';
 import { referenceException } from '../catalog/catalog.errors.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -14,6 +22,8 @@ import {
   SELECTION_TOUR_INVALID,
   SELECTION_TOUR_INVALID_MESSAGE,
 } from './hotels.errors.js';
+
+export { NOOP_AUDIT, type AuditRecorder };
 
 export interface HotelSummaryRow {
   id: string;
@@ -69,8 +79,13 @@ export interface SelectionPrismaClient {
 
 @Injectable()
 export class SelectionService {
+  private readonly logger = new Logger(SelectionService.name);
+
   constructor(
     @Inject(PrismaService) private readonly prisma: SelectionPrismaClient,
+    @Inject(AuditService)
+    @Optional()
+    private readonly audit: AuditRecorder = NOOP_AUDIT,
   ) {}
 
   async get(principal: Principal, hotelId: string): Promise<SelectionResponse> {
@@ -126,6 +141,7 @@ export class SelectionService {
     principal: Principal,
     hotelId: string,
     input: SelectionUpdate,
+    actorId?: string,
   ): Promise<SelectionResponse> {
     if (!canAccessHotel(principal, hotelId)) {
       throw new NotFoundException();
@@ -194,7 +210,22 @@ export class SelectionService {
       }
     });
 
-    return this.get(principal, hotelId);
+    const response = await this.get(principal, hotelId);
+
+    try {
+      await this.audit.record({
+        action: 'selection.update',
+        entityType: 'Hotel',
+        entityId: hotelId,
+        userId: actorId ?? principal.userId,
+        diff: { tourIds: input.tourIds },
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Échec d'enregistrement d'audit: ${message}`);
+    }
+
+    return response;
   }
 }
 

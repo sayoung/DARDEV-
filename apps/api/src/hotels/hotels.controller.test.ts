@@ -171,7 +171,12 @@ const stubSelectionPrismaClient: SelectionPrismaClient = {
 
 class RecordingSelectionService extends SelectionService {
   public getCalls: { principal: Principal; hotelId: string }[] = [];
-  public replaceCalls: { principal: Principal; hotelId: string; input: SelectionUpdate }[] = [];
+  public replaceCalls: {
+    principal: Principal;
+    hotelId: string;
+    input: SelectionUpdate;
+    actorId?: string;
+  }[] = [];
 
   constructor() {
     super(stubSelectionPrismaClient);
@@ -186,8 +191,9 @@ class RecordingSelectionService extends SelectionService {
     principal: Principal,
     hotelId: string,
     input: SelectionUpdate,
+    actorId?: string,
   ): Promise<SelectionResponse> {
-    this.replaceCalls.push({ principal, hotelId, input });
+    this.replaceCalls.push({ principal, hotelId, input, actorId });
     return Promise.resolve(selectionResponse);
   }
 }
@@ -301,7 +307,12 @@ describe('HotelsController', () => {
 
       expect(selectionService.getCalls).toEqual([{ principal: adminPrincipal, hotelId: HOTEL_ID }]);
       expect(selectionService.replaceCalls).toEqual([
-        { principal: adminPrincipal, hotelId: HOTEL_ID, input: payload },
+        {
+          principal: adminPrincipal,
+          hotelId: HOTEL_ID,
+          input: payload,
+          actorId: adminPrincipal.userId,
+        },
       ]);
     });
     it('GET list : appelle le service avec le principal ADMIN et renvoie la liste', async () => {
@@ -393,7 +404,12 @@ describe('HotelsController', () => {
       await expect(controller.replaceSelection(req, HOTEL_ID, payload)).resolves.toEqual(selectionResponse);
       expect(selectionService.getCalls).toEqual([{ principal: managerPrincipal, hotelId: HOTEL_ID }]);
       expect(selectionService.replaceCalls).toEqual([
-        { principal: managerPrincipal, hotelId: HOTEL_ID, input: payload },
+        {
+          principal: managerPrincipal,
+          hotelId: HOTEL_ID,
+          input: payload,
+          actorId: managerPrincipal.userId,
+        },
       ]);
     });
     it('GET list : autorisé, appelle le service avec le principal gestionnaire', async () => {
