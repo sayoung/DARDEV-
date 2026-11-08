@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '../audit/audit.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { AssetsController } from './assets.controller.js';
 import { AssetsService } from './assets.service.js';
@@ -16,7 +17,7 @@ import { ToursController } from './tours.controller.js';
 import { ToursService } from './tours.service.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AuditModule],
   controllers: [
     AssetsController,
     CitiesController,
