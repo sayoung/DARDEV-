@@ -280,6 +280,52 @@ describe('AuthController', () => {
     ]);
   });
 
+  it('transmet l’adresse IP de la requête Fastify à AuthService.login pour l’audit (F-91)', async () => {
+    let capturedIp: string | undefined;
+    const result: LoginResult = { sessionId: 'sid-ip', me };
+    const auth = {
+      login: (_input: unknown, ip?: string) => {
+        capturedIp = ip;
+        return Promise.resolve(result);
+      },
+    };
+    const { reply } = replySpy();
+    const controller = controllerFor(auth, 'production');
+    const request: SessionRequest = {
+      method: 'POST',
+      headers: {},
+      ip: '198.51.100.42',
+    };
+
+    await controller.login(
+      { email: 'ada@xplor.test', password: 'secret' },
+      reply,
+      request,
+    );
+    expect(capturedIp).toBe('198.51.100.42');
+  });
+
+  it('transmet l’adresse IP de la requête Fastify à AuthService.login2fa pour l’audit (F-91)', async () => {
+    let capturedIp: string | undefined;
+    const auth = {
+      login2fa: (_pendingSessionId: string, _code: string, ip?: string) => {
+        capturedIp = ip;
+        return Promise.resolve({ sessionId: 'sid-complet', me });
+      },
+    };
+    const { reply } = replySpy();
+    const controller = controllerFor(auth, 'production');
+    const request: SessionRequest = {
+      method: 'POST',
+      headers: {},
+      cookies: { [SESSION_COOKIE_NAME]: 'sid-pending' },
+      ip: '198.51.100.42',
+    };
+
+    await controller.login2fa({ code: '123456' }, request, reply);
+    expect(capturedIp).toBe('198.51.100.42');
+  });
+
   it('login ADMIN avec 2FA → { twoFactorRequired: true }', async () => {
     const result: LoginResult = { sessionId: 'sid-pending', twoFactorRequired: true };
     const auth = {
