@@ -7,6 +7,7 @@ import {
 } from '@xplor/shared';
 import { ZodError } from 'zod';
 
+import { NOOP_AUDIT, type AuditRecorder } from '../audit/audit-recorder.js';
 import { AuditService, type RecordAuditParams } from '../audit/audit.service.js';
 import { ENV } from '../config/config.module.js';
 import type { Env } from '../config/env.js';
@@ -45,14 +46,7 @@ export type TwoFactorVerifier = {
   verifyLoginCode(userId: string, code: string): Promise<boolean>;
 };
 
-/** Enregistreur d'audit pour les connexions. `AuditService` en production, un faux dans les tests. */
-export type AuditRecorder = {
-  record(params: RecordAuditParams): Promise<void>;
-};
-
-export const NOOP_AUDIT: AuditRecorder = {
-  record: (): Promise<void> => Promise.resolve(),
-};
+export { NOOP_AUDIT, type AuditRecorder };
 
 export const CLOCK = Symbol('CLOCK');
 
