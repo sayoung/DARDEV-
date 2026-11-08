@@ -24,6 +24,7 @@ import {
 import { NOOP_AUDIT, type AuditRecorder } from '../audit/audit-recorder.js';
 import { AuditService } from '../audit/audit.service.js';
 import { toPrismaRole, toSharedRole } from '../auth/prisma-role.js';
+import { SESSION_STORE, type SessionStore } from '../auth/session-store.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 export { NOOP_AUDIT, type AuditRecorder };
@@ -154,6 +155,8 @@ export class UsersAdminService {
   constructor(
     @Inject(PrismaService)
     private readonly prisma: UsersAdminPrismaClient,
+    @Inject(SESSION_STORE)
+    private readonly sessions: SessionStore,
     @Inject(AuditService)
     @Optional()
     private readonly audit: AuditRecorder = NOOP_AUDIT,
@@ -285,6 +288,10 @@ export class UsersAdminService {
         const message = error instanceof Error ? error.message : 'Unknown error';
         this.logger.error(`Échec d'enregistrement d'audit: ${message}`);
       }
+    }
+
+    if (existing.active && !updated.active) {
+      await this.sessions.destroyAllForUser(id);
     }
 
     return toAdminUser(updated);
