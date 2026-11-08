@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run --project @xplor/i18n",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

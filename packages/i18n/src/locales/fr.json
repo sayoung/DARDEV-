@@ -642,6 +642,23 @@
         "save": "Enregistrer",
         "saving": "Enregistrement…",
         "back": "Retour aux utilisateurs"
+      },
+      "hotels": {
+        "title": "Hôtels rattachés",
+        "description": "Sélectionnez les hôtels auxquels cet utilisateur a accès.",
+        "loading": "Chargement des hôtels…",
+        "loadError": "Impossible de charger la liste des hôtels.",
+        "noHotels": "Aucun hôtel disponible.",
+        "saveSuccess": "Hôtels mis à jour avec succès.",
+        "saveError": "Impossible de mettre à jour les hôtels.",
+        "error": "Impossible de mettre à jour les hôtels.",
+        "errorIncompatibleRole": "Ce rôle ne permet pas le rattachement à des hôtels.",
+        "errorUnknownHotel": "Un des hôtels sélectionnés est inconnu.",
+        "save": "Enregistrer les hôtels",
+        "actions": {
+          "save": "Enregistrer les hôtels",
+          "saving": "Enregistrement…"
+        }
       }
     }
   },

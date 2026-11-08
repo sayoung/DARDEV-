@@ -156,6 +156,23 @@ describe('clés i18n', () => {
     expect(resources.fr.vr.enter).toBe('Vivre en VR');
     expect(resources.fr.vr.startFailed).toBe("La VR n'a pas pu démarrer");
   });
+
+  it('définit les clés de rattachement des hôtels sur la fiche utilisateur en français', () => {
+    const hotels = resources.fr.page.userDetail.hotels;
+    expect(hotels.title).toBe('Hôtels rattachés');
+    expect(hotels.actions.save).toBe('Enregistrer les hôtels');
+    expect(hotels.loading).toBe('Chargement des hôtels…');
+    expect(hotels.saveSuccess).toBe('Hôtels mis à jour avec succès.');
+    expect(hotels.errorIncompatibleRole).toBe(
+      'Ce rôle ne permet pas le rattachement à des hôtels.',
+    );
+    expect(hotels.errorUnknownHotel).toBe(
+      'Un des hôtels sélectionnés est inconnu.',
+    );
+    expect(hotels.saveError).toBe(
+      'Impossible de mettre à jour les hôtels.',
+    );
+  });
 });
 
 describe('isRtl / dir', () => {
