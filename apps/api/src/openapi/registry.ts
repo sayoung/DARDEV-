@@ -9,6 +9,8 @@ import {
 } from '@asteasolutions/zod-to-openapi';
 import {
   AcceptInviteRequestSchema,
+  AdminUserListQuerySchema,
+  AdminUserSchema,
   AssetFoldersQuerySchema,
   AssetFoldersResponseSchema,
   AssetListQuerySchema,
@@ -48,6 +50,7 @@ import {
   KioskPinVerifyResponseSchema,
   LoginRequestSchema,
   MeResponseSchema,
+  PaginatedAdminUsersResponseSchema,
   PaginatedAssetResponseSchema,
   PaginatedTourResponseSchema,
   ResetPasswordRequestSchema,
@@ -56,6 +59,7 @@ import {
   SceneResponseSchema,
   SceneUpdateSchema,
   SetStartSceneRequestSchema,
+  SetUserHotelsRequestSchema,
   TourCreateSchema,
   TourListQuerySchema,
   TourResponseSchema,
@@ -63,6 +67,7 @@ import {
   TourValidationResponseSchema,
   TwoFactorCodeBodySchema,
   TwoFactorSetupResponseSchema,
+  UpdateAdminUserRequestSchema,
   ValidationIssueSchema,
   TourGraphSchema,
   TourLinkMapSchema,
@@ -143,6 +148,8 @@ const badRequestError = nestError(400);
 const unauthorizedError = nestError(401);
 const forbiddenError = nestError(403);
 const notFoundError = nestError(404);
+const conflictError = nestError(409);
+const unprocessableError = nestError(422);
 const inUseError = z.object({
   error: z.object({
     code: z.literal('IN_USE'),
@@ -463,6 +470,101 @@ registry.registerPath({
     ),
   },
 });
+
+function registerUsersAdmin(): void {
+  const collection = '/api/v1/admin/users';
+  const item = '/api/v1/admin/users/{id}';
+  const hotelsItem = '/api/v1/admin/users/{id}/hotels';
+  const idParam = z.object({ id: z.uuidv7() });
+
+  registry.registerPath({
+    method: 'get',
+    path: collection,
+    summary: 'Lister les utilisateurs',
+    tags: ['Admin'],
+    security: sessionSecurity,
+    request: { query: AdminUserListQuerySchema },
+    responses: {
+      '200': jsonResponse('Page d’utilisateurs avec pagination.', PaginatedAdminUsersResponseSchema),
+      '400': jsonResponse('Paramètres de liste refusés.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Rôle autre que ADMIN.', forbiddenError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'get',
+    path: item,
+    summary: 'Lire un utilisateur',
+    tags: ['Admin'],
+    security: sessionSecurity,
+    request: { params: idParam },
+    responses: {
+      '200': jsonResponse('Utilisateur trouvé.', AdminUserSchema),
+      '400': jsonResponse('Identifiant qui n’est pas un UUID v7.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Rôle autre que ADMIN.', forbiddenError),
+      '404': jsonResponse('Utilisateur introuvable.', notFoundError),
+    },
+  });
+
+  registry.registerPath({
+    method: 'patch',
+    path: item,
+    summary: 'Mettre à jour un utilisateur',
+    tags: ['Admin'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(
+        UpdateAdminUserRequestSchema,
+        'Champs modifiables de l’utilisateur (nom, rôle, statut actif, langue de l’interface).',
+      ),
+    },
+    responses: {
+      '200': jsonResponse('Utilisateur mis à jour.', AdminUserSchema),
+      '400': jsonResponse('Identifiant ou corps de mise à jour refusé.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse(
+        'Jeton CSRF refusé, rôle autre que ADMIN, ou tentative d’auto-désactivation / modification de son propre rôle.',
+        forbiddenError,
+      ),
+      '404': jsonResponse('Utilisateur introuvable.', notFoundError),
+      '409': jsonResponse(
+        'Impossible de désactiver ou rétrograder le dernier administrateur actif.',
+        conflictError,
+      ),
+    },
+  });
+
+  registry.registerPath({
+    method: 'put',
+    path: hotelsItem,
+    summary: 'Affecter les hôtels d’un utilisateur',
+    tags: ['Admin'],
+    security: sessionAndCsrfSecurity,
+    request: {
+      params: idParam,
+      body: jsonBody(
+        SetUserHotelsRequestSchema,
+        'Identifiants des hôtels à associer à l’utilisateur.',
+      ),
+    },
+    responses: {
+      '200': jsonResponse('Hôtels associés à l’utilisateur.', AdminUserSchema),
+      '400': jsonResponse('Identifiant, corps invalide ou hôtel introuvable.', badRequestError),
+      '401': jsonResponse('Session absente.', unauthorizedError),
+      '403': jsonResponse('Jeton CSRF refusé, ou rôle autre que ADMIN.', forbiddenError),
+      '404': jsonResponse('Utilisateur introuvable.', notFoundError),
+      '422': jsonResponse(
+        'L’affectation d’hôtels est réservée aux gestionnaires et partenaires.',
+        unprocessableError,
+      ),
+    },
+  });
+}
+
+registerUsersAdmin();
 
 registerCatalogCrud({
   collection: '/api/v1/admin/cities',
