@@ -59,7 +59,14 @@ const GUARDS_METADATA = '__guards__';
 const HTTP_CODE_METADATA = '__httpCode__';
 
 function handler(
-  name: 'login' | 'logout' | 'me' | 'forgotPassword' | 'resetPassword' | 'acceptInvite',
+  name:
+    | 'login'
+    | 'login2fa'
+    | 'logout'
+    | 'me'
+    | 'forgotPassword'
+    | 'resetPassword'
+    | 'acceptInvite',
 ): object {
   const value: unknown = Object.getOwnPropertyDescriptor(AuthController.prototype, name)?.value;
   if (typeof value !== 'function') {
@@ -80,7 +87,7 @@ describe('AuthController', () => {
     expect(AuthModule).toBeDefined();
   });
 
-  it('pose xplor_sid et renvoie MeResponse après un login', async () => {
+  it('login normal inchangé : pose xplor_sid et renvoie MeResponse après un login', async () => {
     const result: LoginResult = { sessionId: 'sid-neuf', me };
     const auth = {
       login: () => Promise.resolve(result),
@@ -101,7 +108,7 @@ describe('AuthController', () => {
     ]);
   });
 
-  it('pose xplor_sid et renvoie twoFactorRequired quand 2FA est requise', async () => {
+  it('login ADMIN avec 2FA → { twoFactorRequired: true }', async () => {
     const result: LoginResult = { sessionId: 'sid-pending', twoFactorRequired: true };
     const auth = {
       login: () => Promise.resolve(result),
@@ -120,6 +127,87 @@ describe('AuthController', () => {
         options: { httpOnly: true, sameSite: 'lax', secure: true, path: '/' },
       },
     ]);
+  });
+
+  it('login/2fa valide : valide le code, pose le cookie de session complète et renvoie MeResponse', async () => {
+    const auth: Partial<AuthService> = {
+      login2fa: (pendingSessionId: string, code: string) => {
+        expect(pendingSessionId).toBe('sid-pending');
+        expect(code).toBe('123456');
+        return Promise.resolve({ sessionId: 'sid-complet', me });
+      },
+    };
+    const { reply, cookies } = replySpy();
+    const controller = controllerFor(auth, 'production');
+    const request: SessionRequest = {
+      method: 'POST',
+      headers: {},
+      cookies: { [SESSION_COOKIE_NAME]: 'sid-pending' },
+    };
+
+    const res = await controller.login2fa({ code: '123456' }, request, reply);
+    expect(res).toEqual(me);
+    expect(cookies).toEqual([
+      {
+        op: 'set',
+        name: SESSION_COOKIE_NAME,
+        value: 'sid-complet',
+        options: { httpOnly: true, sameSite: 'lax', secure: true, path: '/' },
+      },
+    ]);
+  });
+
+  it('login/2fa : code erroné → 401', async () => {
+    const auth: Partial<AuthService> = {
+      login2fa: () => Promise.reject(new AuthRejectedError(401, INVALID_CREDENTIALS)),
+    };
+    const { reply } = replySpy();
+    const controller = controllerFor(auth);
+    const request: SessionRequest = {
+      method: 'POST',
+      headers: {},
+      cookies: { [SESSION_COOKIE_NAME]: 'sid-pending' },
+    };
+
+    await expect(
+      controller.login2fa({ code: '000000' }, request, reply),
+    ).rejects.toMatchObject({
+      status: 401,
+      response: { code: INVALID_CREDENTIALS },
+    });
+  });
+
+  it('login/2fa : sans cookie → 401', async () => {
+    const auth: Partial<AuthService> = {
+      login2fa: () => Promise.reject(new Error('ne doit pas être appelé')),
+    };
+    const { reply } = replySpy();
+    const controller = controllerFor(auth);
+    const request: SessionRequest = {
+      method: 'POST',
+      headers: {},
+    };
+
+    await expect(
+      controller.login2fa({ code: '123456' }, request, reply),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('login/2fa : refuse un corps invalide avec 400', async () => {
+    const auth: Partial<AuthService> = {
+      login2fa: () => Promise.reject(new Error('ne doit pas être appelé')),
+    };
+    const { reply } = replySpy();
+    const controller = controllerFor(auth);
+    const request: SessionRequest = {
+      method: 'POST',
+      headers: {},
+      cookies: { [SESSION_COOKIE_NAME]: 'sid-pending' },
+    };
+
+    await expect(
+      controller.login2fa({ code: '12' }, request, reply),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('traduit INVALID_CREDENTIALS en 401 et ACCOUNT_LOCKED en 423', async () => {
@@ -207,6 +295,26 @@ describe('AuthController', () => {
     await expect(refused.me(request)).rejects.toMatchObject({ status: 401 });
   });
 
+  it('GET /auth/me avec la session pending → 401', async () => {
+    const auth: Partial<AuthService> = {
+      me: () => Promise.resolve(me),
+    };
+    const controller = controllerFor(auth);
+    const request: SessionRequest = {
+      method: 'GET',
+      headers: {},
+      principal: { userId: 'user-1', role: Role.ADMIN, hotelIds: [] },
+      session: {
+        userId: 'user-1',
+        csrfToken: 'csrf-token',
+        createdAt: '2026-09-29T00:00:00.000Z',
+        pending2fa: true,
+      },
+    };
+
+    await expect(controller.me(request)).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
   it('laisse passer une erreur qui n’est pas un refus d’authentification', async () => {
     const { reply } = replySpy();
     const controller = controllerFor({
@@ -218,14 +326,19 @@ describe('AuthController', () => {
     ).rejects.toThrow('panne');
   });
 
-  it('limite POST login et protège logout et me', () => {
+  it('limite POST login et login2fa, et protège logout et me', () => {
     const login = handler('login');
+    const login2fa = handler('login2fa');
     const logout = handler('logout');
     const meHandler = handler('me');
 
     expect(Reflect.getMetadata(GUARDS_METADATA, login)).toEqual([ThrottlerGuard]);
     expect(Reflect.getMetadata('THROTTLER:LIMITdefault', login)).toBe(5);
     expect(Reflect.getMetadata('THROTTLER:TTLdefault', login)).toBe(60_000);
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, login2fa)).toBe(200);
+    expect(Reflect.getMetadata(GUARDS_METADATA, login2fa)).toEqual([ThrottlerGuard]);
+    expect(Reflect.getMetadata('THROTTLER:LIMITdefault', login2fa)).toBe(5);
+    expect(Reflect.getMetadata('THROTTLER:TTLdefault', login2fa)).toBe(60_000);
     expect(Reflect.getMetadata(GUARDS_METADATA, logout)).toEqual([SessionGuard, CsrfGuard]);
     expect(Reflect.getMetadata(HTTP_CODE_METADATA, logout)).toBe(204);
     expect(Reflect.getMetadata(GUARDS_METADATA, meHandler)).toEqual([SessionGuard]);
