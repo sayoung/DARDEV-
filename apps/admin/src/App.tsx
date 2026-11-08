@@ -21,6 +21,7 @@ import { StatsPage } from './pages/StatsPage.js';
 import { AccountSecurityPage } from './pages/AccountSecurityPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 import { UserDetailPage } from './pages/UserDetailPage.js';
+import { AuditPage } from './pages/AuditPage.js';
 import { useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
@@ -84,6 +85,7 @@ function AdminShell() {
       {isAuthenticated && route.name === 'account-security' ? <AccountSecurityPage /> : null}
       {isAuthenticated && route.name === 'users' ? <UsersPage /> : null}
       {isAuthenticated && route.name === 'user-detail' ? <UserDetailPage userId={route.id} /> : null}
+      {isAuthenticated && route.name === 'audit' ? <AuditPage /> : null}
     </AppLayout>
   );
 }

@@ -24,6 +24,7 @@ describe('router', () => {
       expect(parsePathname('/account/security')).toEqual({ name: 'account-security' });
       expect(parsePathname('/users')).toEqual({ name: 'users' });
       expect(parsePathname('/users/usr_456')).toEqual({ name: 'user-detail', id: 'usr_456' });
+      expect(parsePathname('/audit')).toEqual({ name: 'audit' });
     });
 
     it('decode id for hotel-selection', () => {
@@ -54,6 +55,7 @@ describe('router', () => {
       expect(hrefFor('/hotels/789/selection')).toBe('/hotels/789/selection?lang=fr');
       expect(hrefFor('/kiosks')).toBe('/kiosks?lang=fr');
       expect(hrefFor('/users')).toBe('/users?lang=fr');
+      expect(hrefFor('/audit')).toBe('/audit?lang=fr');
     });
   });
 });

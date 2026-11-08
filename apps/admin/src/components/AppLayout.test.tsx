@@ -101,7 +101,7 @@ describe('AppLayout', () => {
 
     const nav = screen.getByRole('navigation', { name: resources.fr.nav.label });
     const links = nav.querySelectorAll('a');
-    expect(links).toHaveLength(10);
+    expect(links).toHaveLength(11);
     expect(links[0]?.textContent).toBe(resources.fr.nav.home);
     expect(links[1]?.textContent).toBe(resources.fr.nav.tours);
     expect(links[2]?.textContent).toBe(resources.fr.nav.cities);
@@ -109,7 +109,8 @@ describe('AppLayout', () => {
     expect(links[4]?.textContent).toBe(resources.fr.nav.categories);
     expect(links[5]?.textContent).toBe(resources.fr.nav.media);
     expect(links[8]?.textContent).toBe(resources.fr.nav.users);
-    expect(links[9]?.textContent).toBe(resources.fr.nav.accountSecurity);
+    expect(links[9]?.textContent).toBe(resources.fr.nav.audit);
+    expect(links[10]?.textContent).toBe(resources.fr.nav.accountSecurity);
     const kiosksLink = screen.getByRole('link', { name: resources.fr.nav.kiosks });
     expect(kiosksLink.getAttribute('href')).toBe('/kiosks');
     expect(kiosksLink.getAttribute('aria-current')).toBeNull();
@@ -117,6 +118,9 @@ describe('AppLayout', () => {
     const usersLink = screen.getByRole('link', { name: resources.fr.nav.users });
     expect(usersLink.getAttribute('href')).toBe('/users');
     expect(usersLink.getAttribute('aria-current')).toBeNull();
+    const auditLink = screen.getByRole('link', { name: resources.fr.nav.audit });
+    expect(auditLink.getAttribute('href')).toBe('/audit');
+    expect(auditLink.getAttribute('aria-current')).toBeNull();
     const securityLink = screen.getByRole('link', { name: resources.fr.nav.accountSecurity });
     expect(securityLink.getAttribute('href')).toBe('/account/security');
     expect(securityLink.getAttribute('aria-current')).toBeNull();
@@ -126,6 +130,9 @@ describe('AppLayout', () => {
 
     fireEvent.click(usersLink);
     expect((await screen.findByRole('link', { name: resources.fr.nav.users })).getAttribute('aria-current')).toBe('page');
+
+    fireEvent.click(auditLink);
+    expect((await screen.findByRole('link', { name: resources.fr.nav.audit })).getAttribute('aria-current')).toBe('page');
 
     window.history.pushState(null, '', '/users/usr_456');
     window.dispatchEvent(new PopStateEvent('popstate'));
@@ -143,7 +150,7 @@ describe('AppLayout', () => {
     expect(methodOf(logoutCall[0], logoutCall[1])).toBe('POST');
   });
 
-  it('masque les liens réservés (stats, users et accountSecurity) pour un EDITOR', async () => {
+  it('masque les liens réservés (stats, users, audit et accountSecurity) pour un EDITOR', async () => {
     vi.mocked(catalog.listTours).mockResolvedValue({
       items: [],
       total: 0,
@@ -180,10 +187,11 @@ describe('AppLayout', () => {
     expect(links).toHaveLength(7);
     expect(screen.queryByRole('link', { name: resources.fr.nav.stats })).toBeNull();
     expect(screen.queryByRole('link', { name: resources.fr.nav.users })).toBeNull();
+    expect(screen.queryByRole('link', { name: resources.fr.nav.audit })).toBeNull();
     expect(screen.queryByRole('link', { name: resources.fr.nav.accountSecurity })).toBeNull();
   });
 
-  it('masque les liens réservés (users et accountSecurity) pour un HOTEL_MANAGER', async () => {
+  it('masque les liens réservés (users, audit et accountSecurity) pour un HOTEL_MANAGER', async () => {
     vi.mocked(catalog.listTours).mockResolvedValue({
       items: [],
       total: 0,
@@ -220,6 +228,48 @@ describe('AppLayout', () => {
     expect(links).toHaveLength(8);
     expect(screen.getByRole('link', { name: resources.fr.nav.stats })).toBeDefined();
     expect(screen.queryByRole('link', { name: resources.fr.nav.users })).toBeNull();
+    expect(screen.queryByRole('link', { name: resources.fr.nav.audit })).toBeNull();
+    expect(screen.queryByRole('link', { name: resources.fr.nav.accountSecurity })).toBeNull();
+  });
+
+  it('masque les liens réservés (users, audit et accountSecurity) pour un PARTNER', async () => {
+    vi.mocked(catalog.listTours).mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 1,
+    });
+
+    const fetchMock = vi.fn((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (method === 'GET' && url.endsWith('/auth/me')) {
+        return Promise.resolve(new Response(
+          JSON.stringify({
+            id: 'u4',
+            email: 'partner@xplor.test',
+            name: 'Partner User',
+            role: Role.PARTNER,
+            uiLang: 'fr',
+            csrfToken: 'csrf-tok',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        ));
+      }
+      return Promise.resolve(new Response(null, { status: 401 }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    expect(await screen.findAllByText('Partner User')).toHaveLength(1);
+    const nav = screen.getByRole('navigation', { name: resources.fr.nav.label });
+    const links = nav.querySelectorAll('a');
+    expect(links).toHaveLength(8);
+    expect(screen.getByRole('link', { name: resources.fr.nav.stats })).toBeDefined();
+    expect(screen.queryByRole('link', { name: resources.fr.nav.users })).toBeNull();
+    expect(screen.queryByRole('link', { name: resources.fr.nav.audit })).toBeNull();
     expect(screen.queryByRole('link', { name: resources.fr.nav.accountSecurity })).toBeNull();
   });
 });
