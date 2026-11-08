@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   HotspotType as PrismaHotspotType,
   Prisma,
@@ -15,6 +15,8 @@ import {
   type ValidationIssue,
 } from '@xplor/shared';
 
+import { NOOP_AUDIT, type AuditRecorder } from '../audit/audit-recorder.js';
+import { AuditService } from '../audit/audit.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   TOUR_NOT_FOUND,
@@ -103,9 +105,14 @@ type PublicationClient = PrismaService | Prisma.TransactionClient;
  */
 @Injectable()
 export class TourPublicationService {
+  private readonly logger = new Logger(TourPublicationService.name);
+
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ToursService) private readonly tours: ToursService,
+    @Inject(AuditService)
+    @Optional()
+    private readonly audit: AuditRecorder = NOOP_AUDIT,
   ) {}
 
   async validate(id: string): Promise<TourValidationResponse> {
@@ -114,7 +121,7 @@ export class TourPublicationService {
   }
 
   /** 422 sans écriture si la visite n'est pas publiable. Sinon 200 `TourResponse`. */
-  async publish(id: string): Promise<TourResponse> {
+  async publish(id: string, actorId?: string): Promise<TourResponse> {
     await this.prisma.$transaction(async (tx) => {
       const issues = await this.issuesFor(tx, id);
       if (issues.length > 0) {
@@ -129,11 +136,12 @@ export class TourPublicationService {
         },
       });
     });
+    await this.recordAudit('tour.publish', id, actorId);
     return this.tours.get(id);
   }
 
   /** Repasse en brouillon. `publishedAt` n'est pas modifié. */
-  async unpublish(id: string): Promise<TourResponse> {
+  async unpublish(id: string, actorId?: string): Promise<TourResponse> {
     await this.prisma.$transaction(async (tx) => {
       const row = await tx.tour.findFirst({
         where: { id, deletedAt: null },
@@ -150,7 +158,26 @@ export class TourPublicationService {
         },
       });
     });
+    await this.recordAudit('tour.unpublish', id, actorId);
     return this.tours.get(id);
+  }
+
+  private async recordAudit(
+    action: 'tour.publish' | 'tour.unpublish',
+    id: string,
+    actorId?: string,
+  ): Promise<void> {
+    try {
+      await this.audit.record({
+        action,
+        entityType: 'Tour',
+        entityId: id,
+        userId: actorId,
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Échec d'enregistrement d'audit: ${message}`);
+    }
   }
 
   async regenerateShareToken(id: string): Promise<TourResponse> {

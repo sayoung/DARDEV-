@@ -11,7 +11,9 @@ import {
   type TourResponse,
   type ValidationIssue,
 } from '@xplor/shared';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { AuditRecorder } from '../audit/audit-recorder.js';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -87,7 +89,7 @@ const CATEGORY = '01990000-0000-7000-8000-000000000062';
 const COVER = '01990000-0000-7000-8000-000000000063';
 const AUTHOR = '01990000-0000-7000-8000-000000000064';
 
-function harness(): {
+function harness(audit?: AuditRecorder): {
   service: TourPublicationService;
   addTour: (tour: StoredTour) => void;
   addScene: (scene: StoredScene) => void;
@@ -206,6 +208,7 @@ function harness(): {
     service: new TourPublicationService(
       prisma as unknown as PrismaService,
       toursService as unknown as ToursService,
+      audit,
     ),
     writes,
     reads,
@@ -660,6 +663,201 @@ describe('TourPublicationService', () => {
     addTour(storedTour(VISITE, null, { deletedAt: new Date() }));
     await expectNotFound(() => service.regenerateShareToken(VISITE));
     expect(writes).toEqual([]);
+  });
+
+  describe('Journalisation d\'audit (F-91)', () => {
+    it('enregistre tour.publish avec id et actorId après une publication réussie', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour, addScene, addHotspot } = harness(fakeAudit);
+      addManualTour({ addTour, addScene, addHotspot }, true);
+
+      await service.publish(VISITE, 'user-actor-123');
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'tour.publish',
+        entityType: 'Tour',
+        entityId: VISITE,
+        userId: 'user-actor-123',
+      });
+    });
+
+    it('enregistre tour.publish avec userId undefined si actorId n\'est pas fourni', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour, addScene, addHotspot } = harness(fakeAudit);
+      addManualTour({ addTour, addScene, addHotspot }, true);
+
+      await service.publish(VISITE);
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'tour.publish',
+        entityType: 'Tour',
+        entityId: VISITE,
+        userId: undefined,
+      });
+    });
+
+    it('n\'enregistre pas d\'audit si la publication échoue avec 422 (non publiable)', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour, addScene, addHotspot } = harness(fakeAudit);
+      addManualTour({ addTour, addScene, addHotspot }, false);
+
+      await expectUnprocessable(
+        () => service.publish(VISITE, 'user-actor-123'),
+        [issue(ValidationIssueCode.SCENE_UNREACHABLE, UNREACHABLE, REMPARTS)],
+      );
+
+      expect(recordMock).not.toHaveBeenCalled();
+    });
+
+    it('n\'enregistre pas d\'audit si la publication échoue avec 404', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour } = harness(fakeAudit);
+      addTour(storedTour(VISITE, PORTE, { deletedAt: new Date() }));
+
+      await expectNotFound(() => service.publish(VISITE, 'user-actor-123'));
+      await expectNotFound(() => service.publish(UNKNOWN, 'user-actor-123'));
+
+      expect(recordMock).not.toHaveBeenCalled();
+    });
+
+    it('publie avec succès même si audit.record rejette', async () => {
+      const recordMock = vi.fn().mockRejectedValue(new Error('Audit DB unreachable'));
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour, addScene, addHotspot } = harness(fakeAudit);
+      addManualTour({ addTour, addScene, addHotspot }, true);
+
+      const published = await service.publish(VISITE, 'user-actor-123');
+
+      expect(published.status).toBe(TourStatus.PUBLISHED);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('publie avec succès même si audit.record lève de façon synchrone', async () => {
+      const recordMock = vi.fn().mockImplementation(() => {
+        throw new Error('Sync audit crash');
+      });
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour, addScene, addHotspot } = harness(fakeAudit);
+      addManualTour({ addTour, addScene, addHotspot }, true);
+
+      const published = await service.publish(VISITE, 'user-actor-123');
+
+      expect(published.status).toBe(TourStatus.PUBLISHED);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('enregistre tour.unpublish avec id et actorId après une dépublication réussie', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour } = harness(fakeAudit);
+      addTour(
+        storedTour(VISITE, PORTE, {
+          status: PrismaTourStatus.PUBLISHED,
+          publishedAt: new Date(),
+          contentVersion: 4,
+        }),
+      );
+
+      await service.unpublish(VISITE, 'user-actor-789');
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'tour.unpublish',
+        entityType: 'Tour',
+        entityId: VISITE,
+        userId: 'user-actor-789',
+      });
+    });
+
+    it('enregistre tour.unpublish avec userId undefined si actorId n\'est pas fourni', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour } = harness(fakeAudit);
+      addTour(
+        storedTour(VISITE, PORTE, {
+          status: PrismaTourStatus.PUBLISHED,
+          publishedAt: new Date(),
+          contentVersion: 4,
+        }),
+      );
+
+      await service.unpublish(VISITE);
+
+      expect(recordMock).toHaveBeenCalledTimes(1);
+      expect(recordMock).toHaveBeenCalledWith({
+        action: 'tour.unpublish',
+        entityType: 'Tour',
+        entityId: VISITE,
+        userId: undefined,
+      });
+    });
+
+    it('n\'enregistre pas d\'audit si la dépublication échoue avec 404', async () => {
+      const recordMock = vi.fn().mockResolvedValue(undefined);
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour } = harness(fakeAudit);
+      addTour(storedTour(VISITE, null, { deletedAt: new Date() }));
+
+      await expectNotFound(() => service.unpublish(UNKNOWN, 'user-actor-789'));
+      await expectNotFound(() => service.unpublish(VISITE, 'user-actor-789'));
+
+      expect(recordMock).not.toHaveBeenCalled();
+    });
+
+    it('dépublie avec succès même si audit.record rejette', async () => {
+      const recordMock = vi.fn().mockRejectedValue(new Error('Audit DB unreachable'));
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour } = harness(fakeAudit);
+      addTour(
+        storedTour(VISITE, PORTE, {
+          status: PrismaTourStatus.PUBLISHED,
+          publishedAt: new Date(),
+          contentVersion: 4,
+        }),
+      );
+
+      const draft = await service.unpublish(VISITE, 'user-actor-789');
+
+      expect(draft.status).toBe(TourStatus.DRAFT);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('dépublie avec succès même si audit.record lève de façon synchrone', async () => {
+      const recordMock = vi.fn().mockImplementation(() => {
+        throw new Error('Sync audit crash');
+      });
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, addTour } = harness(fakeAudit);
+      addTour(
+        storedTour(VISITE, PORTE, {
+          status: PrismaTourStatus.PUBLISHED,
+          publishedAt: new Date(),
+          contentVersion: 4,
+        }),
+      );
+
+      const draft = await service.unpublish(VISITE, 'user-actor-789');
+
+      expect(draft.status).toBe(TourStatus.DRAFT);
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('utilise NOOP_AUDIT par défaut si aucun enregistreur n\'est fourni', async () => {
+      const { service, addTour, addScene, addHotspot } = harness();
+      addManualTour({ addTour, addScene, addHotspot }, true);
+
+      const published = await service.publish(VISITE, 'user-actor-123');
+      expect(published.status).toBe(TourStatus.PUBLISHED);
+
+      const draft = await service.unpublish(VISITE, 'user-actor-123');
+      expect(draft.status).toBe(TourStatus.DRAFT);
+    });
   });
 });
 
