@@ -3,6 +3,7 @@ import { type Redis } from 'ioredis';
 import {
   createSessionId,
   parseSession,
+  PENDING_2FA_TTL_SECONDS,
   SESSION_IDLE_SECONDS,
   sessionKey,
   type SessionRecord,
@@ -29,7 +30,8 @@ export class RedisSessionStore implements SessionStore {
 
   async create(data: SessionRecord): Promise<string> {
     const id = createSessionId();
-    await this.redis.set(sessionKey(id), JSON.stringify(data), 'EX', SESSION_IDLE_SECONDS);
+    const ttlSeconds = data.pending2fa === true ? PENDING_2FA_TTL_SECONDS : SESSION_IDLE_SECONDS;
+    await this.redis.set(sessionKey(id), JSON.stringify(data), 'EX', ttlSeconds);
     await this.redis.sadd(userSessionsKey(data.userId), id);
     return id;
   }
@@ -43,6 +45,10 @@ export class RedisSessionStore implements SessionStore {
   }
 
   async touch(id: string): Promise<void> {
+    const session = await this.get(id);
+    if (!session || session.pending2fa === true) {
+      return;
+    }
     await this.redis.expire(sessionKey(id), SESSION_IDLE_SECONDS);
   }
 

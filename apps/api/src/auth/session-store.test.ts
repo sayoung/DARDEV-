@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { InMemorySessionStore } from './in-memory-session.store.js';
 import { RedisSessionStore } from './redis-session.store.js';
 import {
+  parseSession,
+  PENDING_2FA_TTL_MS,
+  PENDING_2FA_TTL_SECONDS,
   SESSION_IDLE_MS,
   SESSION_IDLE_SECONDS,
   sessionKey,
@@ -56,6 +59,27 @@ describe('InMemorySessionStore', () => {
     await store.destroyAllForUser('user-1');
     await expect(store.get(second)).resolves.toBeNull();
     await expect(store.get(otherUser)).resolves.toEqual({ ...record, userId: 'user-2' });
+  });
+
+  it('crée une session pending2fa avec un TTL de 5 min et touch ne repousse pas l’échéance', async () => {
+    let now = 0;
+    const store = new InMemorySessionStore(() => now);
+    const pendingRecord: SessionRecord = {
+      ...record,
+      pending2fa: true,
+    };
+    const id = await store.create(pendingRecord);
+
+    await expect(store.get(id)).resolves.toEqual(pendingRecord);
+
+    now = 60_000;
+    await store.touch(id);
+
+    now = PENDING_2FA_TTL_MS - 1;
+    await expect(store.get(id)).resolves.toEqual(pendingRecord);
+
+    now = PENDING_2FA_TTL_MS;
+    await expect(store.get(id)).resolves.toBeNull();
   });
 });
 
@@ -171,5 +195,40 @@ describe('RedisSessionStore', () => {
     });
 
     await expect(store.get('not-json')).resolves.toBeNull();
+  });
+
+  it('crée une session pending2fa avec un TTL de 300 s (5 min) et touch ne modifie pas l’expiration', async () => {
+    const redis = new MemoryRedis();
+    const store = new RedisSessionStore(redis);
+    const pendingRecord: SessionRecord = {
+      ...record,
+      pending2fa: true,
+    };
+    const id = await store.create(pendingRecord);
+
+    expect(Buffer.from(id, 'base64url')).toHaveLength(32);
+    const stored = redis.values.get(sessionKey(id));
+    expect(stored?.expiresAt).toBe(PENDING_2FA_TTL_SECONDS * 1000);
+    expect(stored?.value).toBe(JSON.stringify(pendingRecord));
+    expect(redis.sets.get(userSessionsKey('user-1'))?.has(id)).toBe(true);
+    await expect(store.get(id)).resolves.toEqual(pendingRecord);
+
+    redis.now = 5_000;
+    await store.touch(id);
+    expect(redis.values.get(sessionKey(id))?.expiresAt).toBe(PENDING_2FA_TTL_SECONDS * 1000);
+    await expect(store.get(id)).resolves.toEqual(pendingRecord);
+  });
+});
+
+describe('parseSession', () => {
+  it('accepte une session avec pending2fa: true et refuse un format invalide', () => {
+    const validPending = JSON.stringify({ ...record, pending2fa: true });
+    expect(parseSession(validPending)).toEqual({ ...record, pending2fa: true });
+
+    const invalidPending = JSON.stringify({ ...record, pending2fa: false });
+    expect(parseSession(invalidPending)).toBeNull();
+
+    const invalidTypePending = JSON.stringify({ ...record, pending2fa: 'true' });
+    expect(parseSession(invalidTypePending)).toBeNull();
   });
 });
