@@ -127,6 +127,10 @@ describe('AppLayout', () => {
     fireEvent.click(usersLink);
     expect((await screen.findByRole('link', { name: resources.fr.nav.users })).getAttribute('aria-current')).toBe('page');
 
+    window.history.pushState(null, '', '/users/usr_456');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect((await screen.findByRole('link', { name: resources.fr.nav.users })).getAttribute('aria-current')).toBe('page');
+
     const logoutButton = screen.getByRole('button', { name: resources.fr.auth.logout });
     fireEvent.click(logoutButton);
 
