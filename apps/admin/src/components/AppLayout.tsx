@@ -65,7 +65,7 @@ const isKiosksActive = route.name === 'kiosks';
   const isCategoriesActive = route.name === 'categories';
   const isMediaActive = route.name === 'media';
   const isAccountSecurityActive = route.name === 'account-security';
-  const isUsersActive = route.name === 'users';
+  const isUsersActive = route.name === 'users' || route.name === 'user-detail';
 
   if (auth.state.status !== 'authenticated') {
     return (

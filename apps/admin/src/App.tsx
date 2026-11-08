@@ -20,6 +20,7 @@ import { KiosksPage } from './pages/KiosksPage.js';
 import { StatsPage } from './pages/StatsPage.js';
 import { AccountSecurityPage } from './pages/AccountSecurityPage.js';
 import { UsersPage } from './pages/UsersPage.js';
+import { UserDetailPage } from './pages/UserDetailPage.js';
 import { useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
@@ -82,6 +83,7 @@ function AdminShell() {
       {isAuthenticated && (route.name === 'hotspot-new' || route.name === 'hotspot-detail') ? <HotspotDetailPage /> : null}
       {isAuthenticated && route.name === 'account-security' ? <AccountSecurityPage /> : null}
       {isAuthenticated && route.name === 'users' ? <UsersPage /> : null}
+      {isAuthenticated && route.name === 'user-detail' ? <UserDetailPage userId={route.id} /> : null}
     </AppLayout>
   );
 }
