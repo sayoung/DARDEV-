@@ -357,6 +357,7 @@
     "hotels": "Hôtels",
     "kiosks": "Kiosques",
     "stats": "Statistiques",
+    "users": "Utilisateurs",
     "accountSecurity": "Sécurité du compte"
   },
   "media": {
@@ -572,6 +573,47 @@
       "successDisabled": "L'authentification à deux facteurs a été désactivée.",
       "invalidCode": "Code invalide",
       "error": "Une erreur est survenue. Veuillez réessayer."
+    },
+    "users": {
+      "title": "Utilisateurs",
+      "subtitle": "Gestion des comptes et des accès.",
+      "loadError": "Impossible de charger les utilisateurs.",
+      "empty": "Aucun utilisateur trouvé.",
+      "never": "Jamais",
+      "columns": {
+        "name": "Nom",
+        "email": "E-mail",
+        "role": "Rôle",
+        "active": "Actif",
+        "twoFactor": "2FA",
+        "lastLogin": "Dernière connexion",
+        "hotels": "Hôtels"
+      },
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif"
+      },
+      "twoFactor": {
+        "enabled": "Activée",
+        "disabled": "Désactivée"
+      },
+      "filters": {
+        "role": "Rôle",
+        "allRoles": "Tous les rôles",
+        "status": "Statut",
+        "allStatuses": "Tous les statuts",
+        "activeOnly": "Actifs uniquement",
+        "inactiveOnly": "Inactifs uniquement",
+        "search": "Rechercher",
+        "searchPlaceholder": "Nom ou e-mail…",
+        "submit": "Rechercher"
+      },
+      "pagination": {
+        "prev": "Précédent",
+        "next": "Suivant",
+        "info": "Page {{page}} sur {{total}}",
+        "label": "Pagination des utilisateurs"
+      }
     }
   },
   "tour": {
