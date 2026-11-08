@@ -99,6 +99,9 @@ class MemoryUsers implements UserRepository {
       if (user.id === id) {
         user.failedLoginCount = state.failedLoginCount;
         user.lockedUntil = state.lockedUntil;
+        if (state.lastLoginAt !== undefined) {
+          user.lastLoginAt = state.lastLoginAt;
+        }
       }
     }
     return Promise.resolve();
@@ -452,13 +455,15 @@ describe('AuthService.login', () => {
     expect(users.updates).toHaveLength(10);
   });
 
-  it('exige un second facteur pour un administrateur avec TOTP activé', async () => {
+  it('login ADMIN avec totpEnabled : retourne twoFactorRequired, session pending2fa, destroyAllForUser et registerSuccess non appelés (lastLoginAt non modifié)', async () => {
+    const initialLastLogin = new Date('2026-09-01T10:00:00.000Z');
     const admin = account({
       id: 'admin-1',
       email: 'admin@xplor.test',
       role: Role.ADMIN,
       totpEnabled: true,
       failedLoginCount: 2,
+      lastLoginAt: initialLastLogin,
     });
     const { service, sessions, users } = setup(admin, true);
     const existing = await sessions.create({
@@ -466,22 +471,31 @@ describe('AuthService.login', () => {
       csrfToken: 'session-existante',
       createdAt: '2026-09-29T08:00:00.000Z',
     });
+    const destroyAllSpy = vi.spyOn(sessions, 'destroyAllForUser');
 
     const result = await service.login({ email: 'admin@xplor.test', password: PASSWORD });
 
     expect('twoFactorRequired' in result && result.twoFactorRequired).toBe(true);
-    expect(result.sessionId).toBeDefined();
+    expect('me' in result).toBe(false);
+    expect(typeof result.sessionId).toBe('string');
+
     const pendingSession = await sessions.get(result.sessionId);
     expect(pendingSession?.userId).toBe(admin.id);
     expect(typeof pendingSession?.csrfToken).toBe('string');
     expect(pendingSession?.createdAt).toBe(NOW.toISOString());
     expect(pendingSession?.pending2fa).toBe(true);
+
+    // destroyAllForUser non appelé : la session préexistante est toujours active
+    expect(destroyAllSpy).not.toHaveBeenCalled();
+    expect(await sessions.get(existing)).not.toBeNull();
+
+    // registerSuccess non appelé : ni mise à jour d'état de connexion, ni modification de lastLoginAt
     expect(users.updates).toEqual([]);
     expect(admin.failedLoginCount).toBe(2);
-    expect(await sessions.get(existing)).not.toBeNull();
+    expect(admin.lastLoginAt).toEqual(initialLastLogin);
   });
 
-  it('n’exige pas de 2FA pour un administrateur sans TOTP', async () => {
+  it('login sans 2FA inchangé pour un administrateur sans TOTP (session complète, me retourné)', async () => {
     const admin = account({
       id: 'admin-1',
       email: 'admin@xplor.test',
@@ -496,14 +510,51 @@ describe('AuthService.login', () => {
       throw new Error('me attendu dans result');
     }
     expect(result.me.role).toBe(Role.ADMIN);
+    expect(result.me.email).toBe(admin.email);
+    expect(result.me.id).toBe(admin.id);
+    expect(typeof result.sessionId).toBe('string');
+    expect(typeof result.me.csrfToken).toBe('string');
     expect(users.updates).toEqual([
       {
         id: admin.id,
         state: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: NOW },
       },
     ]);
+    expect(admin.lastLoginAt).toEqual(NOW);
     const stored = await sessions.get(result.sessionId);
     expect(stored?.pending2fa).toBeUndefined();
+    expect(stored?.userId).toBe(admin.id);
+  });
+
+  it('login sans 2FA inchangé pour un gestionnaire (HOTEL_MANAGER) même avec totpEnabled (session complète, me retourné)', async () => {
+    const manager = account({
+      id: 'manager-1',
+      email: 'manager@xplor.test',
+      role: Role.HOTEL_MANAGER,
+      totpEnabled: true,
+    });
+    const { service, sessions, users } = setup(manager, true);
+
+    const result = await service.login({ email: 'manager@xplor.test', password: PASSWORD });
+
+    if (!('me' in result)) {
+      throw new Error('me attendu dans result');
+    }
+    expect(result.me.role).toBe(Role.HOTEL_MANAGER);
+    expect(result.me.email).toBe(manager.email);
+    expect(result.me.id).toBe(manager.id);
+    expect(typeof result.sessionId).toBe('string');
+    expect(typeof result.me.csrfToken).toBe('string');
+    expect(users.updates).toEqual([
+      {
+        id: manager.id,
+        state: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: NOW },
+      },
+    ]);
+    expect(manager.lastLoginAt).toEqual(NOW);
+    const stored = await sessions.get(result.sessionId);
+    expect(stored?.pending2fa).toBeUndefined();
+    expect(stored?.userId).toBe(manager.id);
   });
 
   it('n’exige pas de 2FA pour un non-administrateur même si totpEnabled est true', async () => {
@@ -527,13 +578,14 @@ describe('AuthService.login', () => {
 });
 
 describe('AuthService.login2fa', () => {
-  it('valide le code TOTP, détruit la session pending et ouvre une session complète', async () => {
+  it('login2fa avec code valide : promeut la session (pending détruite, destroyAllForUser appelé, nouvelle session sans pending2fa, compteur remis à zéro, lastLoginAt renseigné)', async () => {
     const admin = account({
       id: 'admin-1',
       email: 'admin@xplor.test',
       role: Role.ADMIN,
       totpEnabled: true,
       failedLoginCount: 3,
+      lastLoginAt: null,
     });
     const verifyMock = vi.fn().mockImplementation((_userId: string, code: string) => {
       return Promise.resolve(code === '123456');
@@ -555,12 +607,29 @@ describe('AuthService.login2fa', () => {
       throw new Error('2FA attendu');
     }
     const pendingSessionId = loginRes.sessionId;
+    const destroyAllSpy = vi.spyOn(sessions, 'destroyAllForUser');
 
     const result = await service.login2fa(pendingSessionId, '123456');
 
     expect(verifyMock).toHaveBeenCalledWith(admin.id, '123456');
+    // pending détruite
+    expect(await sessions.get(pendingSessionId)).toBeNull();
+    // destroyAllForUser appelé et ancienne session détruite
+    expect(destroyAllSpy).toHaveBeenCalledWith(admin.id);
+    expect(await sessions.get(previous)).toBeNull();
+
+    // nouvelle session créée sans pending2fa
     expect(result.sessionId).not.toBe(pendingSessionId);
     expect(result.sessionId).not.toBe(previous);
+    const finalSession = await sessions.get(result.sessionId);
+    expect(finalSession).toEqual({
+      userId: admin.id,
+      csrfToken: result.me.csrfToken,
+      createdAt: NOW.toISOString(),
+    });
+    expect(finalSession?.pending2fa).toBeUndefined();
+
+    // me retourné
     expect(result.me).toEqual({
       id: admin.id,
       email: admin.email,
@@ -569,35 +638,44 @@ describe('AuthService.login2fa', () => {
       uiLang: 'fr',
       csrfToken: result.me.csrfToken,
     });
+
+    // compteur remis à zéro et lastLoginAt renseigné
+    expect(admin.failedLoginCount).toBe(0);
+    expect(admin.lockedUntil).toBeNull();
+    expect(admin.lastLoginAt).toEqual(NOW);
     expect(users.updates).toEqual([
       {
         id: admin.id,
         state: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: NOW },
       },
     ]);
-    expect(await sessions.get(pendingSessionId)).toBeNull();
-    expect(await sessions.get(previous)).toBeNull();
-    const finalSession = await sessions.get(result.sessionId);
-    expect(finalSession).toEqual({
-      userId: admin.id,
-      csrfToken: result.me.csrfToken,
-      createdAt: NOW.toISOString(),
-    });
-    expect(finalSession?.pending2fa).toBeUndefined();
   });
 
-  it('refuse si la session en attente est absente', async () => {
-    const { service } = setup(account({ role: Role.ADMIN, totpEnabled: true }), true);
+  it('session inconnue refusée avec invalidCredentials', async () => {
+    const verifyMock = vi.fn();
+    const { service } = setup(
+      account({ role: Role.ADMIN, totpEnabled: true }),
+      true,
+      new FakeMailer(),
+      { verifyLoginCode: verifyMock },
+    );
 
     await expect(service.login2fa('session-inconnue', '123456')).rejects.toMatchObject({
       statusCode: 401,
       code: INVALID_CREDENTIALS,
     });
+    expect(verifyMock).not.toHaveBeenCalled();
   });
 
-  it('refuse si la session n’est pas en attente de 2FA (pending2fa !== true)', async () => {
+  it('session non pending2fa refusée avec invalidCredentials', async () => {
     const admin = account({ role: Role.ADMIN, totpEnabled: true });
-    const { service, sessions } = setup(admin, true);
+    const verifyMock = vi.fn();
+    const { service, sessions } = setup(
+      admin,
+      true,
+      new FakeMailer(),
+      { verifyLoginCode: verifyMock },
+    );
     const normalSessionId = await sessions.create({
       userId: admin.id,
       csrfToken: 'csrf',
@@ -608,6 +686,7 @@ describe('AuthService.login2fa', () => {
       statusCode: 401,
       code: INVALID_CREDENTIALS,
     });
+    expect(verifyMock).not.toHaveBeenCalled();
   });
 
   it('refuse si l’utilisateur est introuvable ou inactif', async () => {
@@ -643,7 +722,7 @@ describe('AuthService.login2fa', () => {
     });
   });
 
-  it('refuse avec ACCOUNT_LOCKED si le compte est verrouillé', async () => {
+  it('compte verrouillé → accountLocked sans appel à verifyLoginCode', async () => {
     const lockedAdmin = account({
       id: 'admin-locked',
       role: Role.ADMIN,
@@ -672,7 +751,7 @@ describe('AuthService.login2fa', () => {
     expect(verifyMock).not.toHaveBeenCalled();
   });
 
-  it('incrémente les échecs et refuse avec INVALID_CREDENTIALS si le code est faux', async () => {
+  it('login2fa avec code erroné : failedLoginCount incrémenté et invalidCredentials', async () => {
     const admin = account({
       id: 'admin-1',
       role: Role.ADMIN,
@@ -701,11 +780,16 @@ describe('AuthService.login2fa', () => {
     expect(verifyMock).toHaveBeenCalledWith(admin.id, '000000');
     expect(admin.failedLoginCount).toBe(1);
     expect(admin.lockedUntil).toBeNull();
-    expect(users.updates).toHaveLength(1);
+    expect(users.updates).toEqual([
+      {
+        id: admin.id,
+        state: { failedLoginCount: 1, lockedUntil: null },
+      },
+    ]);
     expect(await sessions.get(pendingSessionId)).not.toBeNull();
   });
 
-  it('verrouille le compte au 10e échec de code TOTP puis répond ACCOUNT_LOCKED', async () => {
+  it('login2fa avec code erroné : verrouille au 10e échec consécutif (selon lockout.ts) avec invalidCredentials', async () => {
     const admin = account({
       id: 'admin-1',
       role: Role.ADMIN,
@@ -735,6 +819,7 @@ describe('AuthService.login2fa', () => {
       expect(admin.lockedUntil).toBeNull();
     }
 
+    // 10e échec : rejeté avec invalidCredentials et verrouille pour 15 min selon lockout.ts
     await expect(service.login2fa(pendingSessionId, '000000')).rejects.toMatchObject({
       statusCode: 401,
       code: INVALID_CREDENTIALS,
@@ -742,8 +827,16 @@ describe('AuthService.login2fa', () => {
     expect(admin.failedLoginCount).toBe(10);
     expect(admin.lockedUntil).toEqual(new Date(NOW.getTime() + FIFTEEN_MIN_MS));
     expect(users.updates).toHaveLength(10);
+    expect(users.updates[9]).toEqual({
+      id: admin.id,
+      state: {
+        failedLoginCount: 10,
+        lockedUntil: new Date(NOW.getTime() + FIFTEEN_MIN_MS),
+      },
+    });
     expect(verifyMock).toHaveBeenCalledTimes(10);
 
+    // Tentative suivante : compte désormais verrouillé (ACCOUNT_LOCKED)
     await expect(service.login2fa(pendingSessionId, '000000')).rejects.toMatchObject({
       statusCode: 423,
       code: ACCOUNT_LOCKED,
