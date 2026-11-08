@@ -17,6 +17,7 @@ import { loadEnv } from './config/env.js';
 import { EventsPartitionService } from './events/events-partition.service.js';
 import { HealthController } from './health/health.controller.js';
 import { HotelsController } from './hotels/hotels.controller.js';
+import { UsersAdminService } from './users/users-admin.service.js';
 import { UsersController } from './users/users.controller.js';
 
 /**
@@ -43,6 +44,7 @@ describe('AppModule', () => {
     }).compile();
     expect(moduleRef.get(AuthController)).toBeInstanceOf(AuthController);
     expect(moduleRef.get(UsersController)).toBeInstanceOf(UsersController);
+    expect(moduleRef.get(UsersAdminService)).toBeInstanceOf(UsersAdminService);
     expect(moduleRef.get(HotelsController)).toBeInstanceOf(HotelsController);
     expect(moduleRef.get(CitiesController)).toBeInstanceOf(CitiesController);
     expect(moduleRef.get(CategoriesController)).toBeInstanceOf(CategoriesController);

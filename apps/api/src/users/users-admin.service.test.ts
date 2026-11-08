@@ -9,6 +9,8 @@ import { Role } from '@xplor/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type AuditRecorder } from '../audit/audit-recorder.js';
+import { InMemorySessionStore } from '../auth/in-memory-session.store.js';
+import { type SessionRecord, type SessionStore } from '../auth/session-store.js';
 
 import {
   USER_ADMIN_SELECT,
@@ -45,6 +47,39 @@ function isPrismaRole(value: unknown): value is PrismaRole {
     value === PrismaRole.HOTEL_MANAGER ||
     value === PrismaRole.PARTNER
   );
+}
+
+class FakeSessionStore implements SessionStore {
+  public createCalls: SessionRecord[] = [];
+  public getCalls: string[] = [];
+  public touchCalls: string[] = [];
+  public destroyCalls: string[] = [];
+  public destroyAllForUserCalls: string[] = [];
+
+  create(data: SessionRecord): Promise<string> {
+    this.createCalls.push(data);
+    return Promise.resolve('sess_test');
+  }
+
+  get(id: string): Promise<SessionRecord | null> {
+    this.getCalls.push(id);
+    return Promise.resolve(null);
+  }
+
+  touch(id: string): Promise<void> {
+    this.touchCalls.push(id);
+    return Promise.resolve();
+  }
+
+  destroy(id: string): Promise<void> {
+    this.destroyCalls.push(id);
+    return Promise.resolve();
+  }
+
+  destroyAllForUser(userId: string): Promise<void> {
+    this.destroyAllForUserCalls.push(userId);
+    return Promise.resolve();
+  }
 }
 
 class FakeUsersAdminPrismaClient implements UsersAdminPrismaClient {
@@ -306,11 +341,13 @@ const sampleRecords: FakeUserRecord[] = [
 
 describe('UsersAdminService', () => {
   let fakePrisma: FakeUsersAdminPrismaClient;
+  let fakeSessions: FakeSessionStore;
   let service: UsersAdminService;
 
   beforeEach(() => {
     fakePrisma = new FakeUsersAdminPrismaClient(sampleRecords);
-    service = new UsersAdminService(fakePrisma);
+    fakeSessions = new FakeSessionStore();
+    service = new UsersAdminService(fakePrisma, fakeSessions);
   });
 
   describe('list', () => {
@@ -730,7 +767,7 @@ describe('UsersAdminService', () => {
       it('enregistre user.role_change avec les bons champs lorsque le rôle change', async () => {
         const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
         const fakeAudit: AuditRecorder = { record: recordMock };
-        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeSessions, fakeAudit);
 
         // USER_ID_2 est initialement HOTEL_MANAGER, USER_ID_1 est l'administrateur appelant
         const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
@@ -765,7 +802,7 @@ describe('UsersAdminService', () => {
       it('n’inclut que les rôles dans diff même si d’autres champs sont modifiés simultanément', async () => {
         const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
         const fakeAudit: AuditRecorder = { record: recordMock };
-        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeSessions, fakeAudit);
 
         // USER_ID_4 est initialement EDITOR
         const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_4, {
@@ -808,7 +845,7 @@ describe('UsersAdminService', () => {
       it('n’appelle pas l’audit si le rôle est inchangé lors de la mise à jour d’autres champs', async () => {
         const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
         const fakeAudit: AuditRecorder = { record: recordMock };
-        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeSessions, fakeAudit);
 
         await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
           name: 'Karim Sans Changement De Rôle',
@@ -821,7 +858,7 @@ describe('UsersAdminService', () => {
       it('n’appelle pas l’audit si le rôle fourni est identique au rôle actuel', async () => {
         const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
         const fakeAudit: AuditRecorder = { record: recordMock };
-        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeSessions, fakeAudit);
 
         // USER_ID_2 est déjà HOTEL_MANAGER
         await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
@@ -837,7 +874,7 @@ describe('UsersAdminService', () => {
           .fn<AuditRecorder['record']>()
           .mockRejectedValue(new Error('Audit DB unreachable'));
         const fakeAudit: AuditRecorder = { record: recordMock };
-        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeSessions, fakeAudit);
 
         const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
           role: Role.ADMIN,
@@ -856,7 +893,7 @@ describe('UsersAdminService', () => {
           throw new Error('Sync audit failure');
         });
         const fakeAudit: AuditRecorder = { record: recordMock };
-        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeSessions, fakeAudit);
 
         const updated = await serviceWithAudit.update(USER_ID_1, USER_ID_2, {
           role: Role.ADMIN,
@@ -870,7 +907,7 @@ describe('UsersAdminService', () => {
       it('n’appelle pas l’audit si la validation ou l’autorisation échoue', async () => {
         const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
         const fakeAudit: AuditRecorder = { record: recordMock };
-        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeAudit);
+        const serviceWithAudit = new UsersAdminService(fakePrisma, fakeSessions, fakeAudit);
 
         // Tentative d'auto-modification de rôle -> 403 ForbiddenException
         await expect(
@@ -888,6 +925,190 @@ describe('UsersAdminService', () => {
         ).rejects.toThrow(BadRequestException);
 
         expect(recordMock).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('invalidation des sessions à la désactivation (API-28, F-90)', () => {
+      it('appelle destroyAllForUser(id) lorsque active passe de true à false', async () => {
+        // USER_ID_2 est initialement actif (active: true)
+        const updated = await service.update(USER_ID_1, USER_ID_2, {
+          active: false,
+        });
+
+        expect(updated.id).toBe(USER_ID_2);
+        expect(updated.active).toBe(false);
+
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(1);
+        expect(fakeSessions.destroyAllForUserCalls).toEqual([USER_ID_2]);
+      });
+
+      it('appelle destroyAllForUser après la mise à jour effective dans Prisma', async () => {
+        let activeStatusInDatabaseDuringSessionDestruction: boolean | undefined;
+
+        const spyStore: SessionStore = {
+          create: (data: SessionRecord): Promise<string> => fakeSessions.create(data),
+          get: (id: string): Promise<SessionRecord | null> => fakeSessions.get(id),
+          touch: (id: string): Promise<void> => fakeSessions.touch(id),
+          destroy: (id: string): Promise<void> => fakeSessions.destroy(id),
+          destroyAllForUser: (userId: string): Promise<void> => {
+            const row = fakePrisma.records.find((r) => r.id === userId);
+            if (row !== undefined) {
+              activeStatusInDatabaseDuringSessionDestruction = row.active;
+            }
+            return fakeSessions.destroyAllForUser(userId);
+          },
+        };
+
+        const serviceWithSpy = new UsersAdminService(fakePrisma, spyStore);
+        await serviceWithSpy.update(USER_ID_1, USER_ID_2, { active: false });
+
+        expect(activeStatusInDatabaseDuringSessionDestruction).toBe(false);
+      });
+
+      it('détruit effectivement les sessions actives de l’utilisateur dans InMemorySessionStore', async () => {
+        const inMemoryStore = new InMemorySessionStore();
+        const sessionUser2A = await inMemoryStore.create({
+          userId: USER_ID_2,
+          csrfToken: 'csrf-2a',
+          createdAt: new Date().toISOString(),
+        });
+        const sessionUser2B = await inMemoryStore.create({
+          userId: USER_ID_2,
+          csrfToken: 'csrf-2b',
+          createdAt: new Date().toISOString(),
+        });
+        const sessionUser4 = await inMemoryStore.create({
+          userId: USER_ID_4,
+          csrfToken: 'csrf-4',
+          createdAt: new Date().toISOString(),
+        });
+
+        const serviceWithRealStore = new UsersAdminService(fakePrisma, inMemoryStore);
+
+        await serviceWithRealStore.update(USER_ID_1, USER_ID_2, { active: false });
+
+        // Les deux sessions de l'utilisateur désactivé sont détruites
+        expect(await inMemoryStore.get(sessionUser2A)).toBeNull();
+        expect(await inMemoryStore.get(sessionUser2B)).toBeNull();
+
+        // La session de l'autre utilisateur reste intacte
+        const remainingSession = await inMemoryStore.get(sessionUser4);
+        expect(remainingSession).not.toBeNull();
+        if (remainingSession !== null) {
+          expect(remainingSession.userId).toBe(USER_ID_4);
+        }
+      });
+
+      it('n’appelle pas destroyAllForUser si active est inchangé (utilisateur déjà actif mis à jour sans le champ active)', async () => {
+        // USER_ID_2 est initialement actif
+        const updated = await service.update(USER_ID_1, USER_ID_2, {
+          name: 'Karim Sans Changement De Statut',
+        });
+
+        expect(updated.active).toBe(true);
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('n’appelle pas destroyAllForUser si active est explicite à true pour un utilisateur déjà actif', async () => {
+        // USER_ID_2 est déjà actif
+        const updated = await service.update(USER_ID_1, USER_ID_2, {
+          active: true,
+          name: 'Karim Toujours Actif',
+        });
+
+        expect(updated.active).toBe(true);
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('n’appelle pas destroyAllForUser si active est inchangé (utilisateur déjà inactif mis à jour sans le champ active)', async () => {
+        // USER_ID_3 est initialement inactif (active: false)
+        const updated = await service.update(USER_ID_1, USER_ID_3, {
+          name: 'Zineb Modifiée Restant Inactive',
+        });
+
+        expect(updated.active).toBe(false);
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('n’appelle pas destroyAllForUser si active est explicite à false pour un utilisateur déjà inactif', async () => {
+        // USER_ID_3 est déjà inactif (active: false)
+        const updated = await service.update(USER_ID_1, USER_ID_3, {
+          active: false,
+          name: 'Zineb Confirmée Inactive',
+        });
+
+        expect(updated.active).toBe(false);
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('n’appelle pas destroyAllForUser lors de la réactivation d’un compte (active passe de false à true)', async () => {
+        // USER_ID_3 est initialement inactif (active: false)
+        const updated = await service.update(USER_ID_1, USER_ID_3, {
+          active: true,
+        });
+
+        expect(updated.active).toBe(true);
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('n’appelle pas destroyAllForUser si la tentative de désactivation est interdite (auto-désactivation)', async () => {
+        // USER_ID_1 est administrateur et tente de se désactiver lui-même
+        await expect(
+          service.update(USER_ID_1, USER_ID_1, { active: false }),
+        ).rejects.toThrow(ForbiddenException);
+
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('n’appelle pas destroyAllForUser si la tentative de désactivation est refusée (dernier administrateur actif)', async () => {
+        // USER_ID_1 est le seul admin actif, USER_ID_2 tente de le désactiver
+        await expect(
+          service.update(USER_ID_2, USER_ID_1, { active: false }),
+        ).rejects.toThrow(ConflictException);
+
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('n’appelle pas destroyAllForUser si la validation échoue', async () => {
+        await expect(
+          service.update(USER_ID_1, USER_ID_2, { active: 'pas_un_booleen' }),
+        ).rejects.toThrow(BadRequestException);
+
+        expect(fakeSessions.destroyAllForUserCalls).toHaveLength(0);
+      });
+
+      it('déclenche à la fois l’audit de rôle et la destruction des sessions si le rôle et le statut actif changent ensemble', async () => {
+        const recordMock = vi.fn<AuditRecorder['record']>().mockResolvedValue(undefined);
+        const fakeAudit: AuditRecorder = { record: recordMock };
+        const serviceWithAuditAndSessions = new UsersAdminService(
+          fakePrisma,
+          fakeSessions,
+          fakeAudit,
+        );
+
+        // USER_ID_4 est EDITOR et active: true
+        const updated = await serviceWithAuditAndSessions.update(USER_ID_1, USER_ID_4, {
+          role: Role.HOTEL_MANAGER,
+          active: false,
+        });
+
+        expect(updated.id).toBe(USER_ID_4);
+        expect(updated.role).toBe(Role.HOTEL_MANAGER);
+        expect(updated.active).toBe(false);
+
+        expect(recordMock).toHaveBeenCalledTimes(1);
+        expect(recordMock).toHaveBeenCalledWith({
+          action: 'user.role_change',
+          entityType: 'User',
+          entityId: USER_ID_4,
+          userId: USER_ID_1,
+          diff: {
+            from: Role.EDITOR,
+            to: Role.HOTEL_MANAGER,
+          },
+        });
+
+        expect(fakeSessions.destroyAllForUserCalls).toEqual([USER_ID_4]);
       });
     });
   });
