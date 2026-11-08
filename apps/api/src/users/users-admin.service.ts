@@ -7,6 +7,7 @@ import {
   Logger,
   NotFoundException,
   Optional,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { Prisma, Role as PrismaRole } from '@prisma/client';
 import {
@@ -68,6 +69,22 @@ export interface UserAdminUpdateArgs {
   select?: Prisma.UserSelect;
 }
 
+export interface HotelAdminSummaryRow {
+  id: string;
+}
+
+export interface HotelAdminFindManyArgs {
+  where?: Prisma.HotelWhereInput;
+  select?: Prisma.HotelSelect;
+}
+
+export interface UsersAdminTransactionClient {
+  userHotel: {
+    deleteMany(args?: { where?: Prisma.UserHotelWhereInput }): Promise<Prisma.BatchPayload>;
+    createMany(args: { data: Prisma.UserHotelCreateManyInput[] }): Promise<Prisma.BatchPayload>;
+  };
+}
+
 export interface UsersAdminPrismaClient {
   user: {
     findMany(args?: UserAdminFindManyArgs): Promise<UserAdminRow[]>;
@@ -75,6 +92,10 @@ export interface UsersAdminPrismaClient {
     findUnique(args: UserAdminFindUniqueArgs): Promise<UserAdminRow | null>;
     update(args: UserAdminUpdateArgs): Promise<UserAdminRow>;
   };
+  hotel: {
+    findMany(args: HotelAdminFindManyArgs): Promise<HotelAdminSummaryRow[]>;
+  };
+  $transaction<T>(fn: (tx: UsersAdminTransactionClient) => Promise<T>): Promise<T>;
 }
 
 /**
@@ -292,6 +313,67 @@ export class UsersAdminService {
 
     if (existing.active && !updated.active) {
       await this.sessions.destroyAllForUser(id);
+    }
+
+    return toAdminUser(updated);
+  }
+
+  async setHotels(id: string, hotelIds: string[]): Promise<AdminUser> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: USER_ADMIN_SELECT,
+    });
+
+    if (user === null) {
+      throw new NotFoundException(`Utilisateur introuvable : ${id}`);
+    }
+
+    if (
+      user.role !== PrismaRole.HOTEL_MANAGER &&
+      user.role !== PrismaRole.PARTNER
+    ) {
+      throw new UnprocessableEntityException(
+        'L’affectation d’hôtels est réservée aux gestionnaires et partenaires',
+      );
+    }
+
+    const uniqueHotelIds = Array.from(new Set(hotelIds));
+
+    if (uniqueHotelIds.length > 0) {
+      const existingHotels = await this.prisma.hotel.findMany({
+        where: {
+          id: { in: uniqueHotelIds },
+        },
+        select: { id: true },
+      });
+
+      if (existingHotels.length !== uniqueHotelIds.length) {
+        throw new BadRequestException('Un ou plusieurs hôtels sont introuvables');
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userHotel.deleteMany({
+        where: { userId: id },
+      });
+
+      if (uniqueHotelIds.length > 0) {
+        await tx.userHotel.createMany({
+          data: uniqueHotelIds.map((hotelId) => ({
+            userId: id,
+            hotelId,
+          })),
+        });
+      }
+    });
+
+    const updated = await this.prisma.user.findUnique({
+      where: { id },
+      select: USER_ADMIN_SELECT,
+    });
+
+    if (updated === null) {
+      throw new NotFoundException(`Utilisateur introuvable : ${id}`);
     }
 
     return toAdminUser(updated);
