@@ -1,12 +1,15 @@
 import {
   AcceptInviteRequestSchema,
   ForgotPasswordRequestSchema,
+  Login2faRequestSchema,
   LoginRequestSchema,
+  LoginResponseSchema,
   MeResponseSchema,
   ResetPasswordRequestSchema,
   type AcceptInviteRequest,
   type ForgotPasswordRequest,
   type LoginRequest,
+  type LoginResponse,
   type MeResponse,
   type ResetPasswordRequest,
   type ZodType,
@@ -78,7 +81,8 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   });
 
   if (response.status === 401 && !isRedirecting) {
-    const isLogin = method === 'POST' && path.endsWith('/auth/login');
+    const isLogin =
+      method === 'POST' && (path.endsWith('/auth/login') || path.endsWith('/auth/login/2fa'));
     const isMe = method === 'GET' && path.endsWith('/auth/me');
     if (!isLogin && !isMe) {
       isRedirecting = true;
@@ -94,9 +98,32 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   return response;
 }
 
-export async function login(input: LoginRequest): Promise<MeResponse> {
+function applyMeProfile(profile: MeResponse): MeResponse {
+  csrfToken = profile.csrfToken;
+  isRedirecting = false;
+  return profile;
+}
+
+export async function login(input: LoginRequest): Promise<LoginResponse> {
   const body = LoginRequestSchema.parse(input);
   const response = await apiFetch('/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+  const payload = LoginResponseSchema.parse(await readJson(response));
+  if ('twoFactorRequired' in payload) {
+    return payload;
+  }
+  return applyMeProfile(payload);
+}
+
+export async function login2fa(code: string): Promise<MeResponse> {
+  const body = Login2faRequestSchema.parse({ code });
+  const response = await apiFetch('/api/v1/auth/login/2fa', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -144,9 +171,7 @@ async function readMe(response: Response): Promise<MeResponse> {
     throw await toApiError(response);
   }
   const profile = MeResponseSchema.parse(await readJson(response));
-  csrfToken = profile.csrfToken;
-  isRedirecting = false;
-  return profile;
+  return applyMeProfile(profile);
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
