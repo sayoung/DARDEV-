@@ -437,6 +437,9 @@ describe('invitation par l’ADMIN', () => {
     expect(ctx.passwords.hashedDuringTransaction).toBe(true);
 
     const loggedIn = await ctx.auth.login({ email: 'nouveau@xplor.test', password: NEW_PASSWORD });
+    if (!('me' in loggedIn)) {
+      throw new Error('me attendu dans loggedIn');
+    }
     expect(loggedIn.me).toMatchObject({
       email: 'nouveau@xplor.test',
       name: 'Nouveau',

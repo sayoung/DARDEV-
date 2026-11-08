@@ -101,6 +101,27 @@ describe('AuthController', () => {
     ]);
   });
 
+  it('pose xplor_sid et renvoie twoFactorRequired quand 2FA est requise', async () => {
+    const result: LoginResult = { sessionId: 'sid-pending', twoFactorRequired: true };
+    const auth = {
+      login: () => Promise.resolve(result),
+    };
+    const { reply, cookies } = replySpy();
+    const controller = controllerFor(auth, 'production');
+
+    await expect(
+      controller.login({ email: 'admin@xplor.test', password: 'secret' }, reply),
+    ).resolves.toEqual({ twoFactorRequired: true });
+    expect(cookies).toEqual([
+      {
+        op: 'set',
+        name: SESSION_COOKIE_NAME,
+        value: 'sid-pending',
+        options: { httpOnly: true, sameSite: 'lax', secure: true, path: '/' },
+      },
+    ]);
+  });
+
   it('traduit INVALID_CREDENTIALS en 401 et ACCOUNT_LOCKED en 423', async () => {
     const { reply } = replySpy();
     const invalid = controllerFor({
