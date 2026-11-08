@@ -14,6 +14,9 @@ const ROUTES = [
   { path: '/api/v1/auth/password/forgot', method: 'post' },
   { path: '/api/v1/auth/password/reset', method: 'post' },
   { path: '/api/v1/auth/invite/accept', method: 'post' },
+  { path: '/api/v1/auth/2fa/setup', method: 'post' },
+  { path: '/api/v1/auth/2fa/confirm', method: 'post' },
+  { path: '/api/v1/auth/2fa/disable', method: 'post' },
   { path: '/api/v1/admin/users/invitations', method: 'post' },
   { path: '/api/v1/admin/cities', method: 'get' },
   { path: '/api/v1/admin/cities', method: 'post' },
@@ -169,6 +172,15 @@ describe('document OpenAPI', () => {
     expect(invitations?.['409']).toBeDefined();
 
     expect(doc.paths?.['/api/v1/auth/logout']?.post?.security).toEqual([
+      { sessionCookie: [], csrfToken: [] },
+    ]);
+    expect(doc.paths?.['/api/v1/auth/2fa/setup']?.post?.security).toEqual([
+      { sessionCookie: [], csrfToken: [] },
+    ]);
+    expect(doc.paths?.['/api/v1/auth/2fa/confirm']?.post?.security).toEqual([
+      { sessionCookie: [], csrfToken: [] },
+    ]);
+    expect(doc.paths?.['/api/v1/auth/2fa/disable']?.post?.security).toEqual([
       { sessionCookie: [], csrfToken: [] },
     ]);
     expect(doc.paths?.['/api/v1/auth/me']?.get?.security).toEqual([{ sessionCookie: [] }]);

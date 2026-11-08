@@ -1,6 +1,11 @@
 import 'reflect-metadata';
 
-import { BadRequestException, HttpException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Role, type MeResponse } from '@xplor/shared';
 import type { FastifyReply } from 'fastify';
@@ -22,6 +27,21 @@ import { CsrfGuard } from './csrf.guard.js';
 import { SESSION_COOKIE_NAME, type SessionCookieOptions } from './session-cookie.js';
 import type { SessionRequest } from './session-request.js';
 import { SessionGuard } from './session.guard.js';
+import {
+  TWO_FACTOR_INVALID_CODE,
+  TWO_FACTOR_NOT_ENABLED,
+  TWO_FACTOR_NOT_INITIALIZED,
+  TWO_FACTOR_ROLE_NOT_ALLOWED,
+  TWO_FACTOR_USER_NOT_FOUND,
+  TwoFactorInvalidCodeError,
+  TwoFactorNotEnabledError,
+  TwoFactorNotInitializedError,
+  TwoFactorRoleNotAllowedError,
+  TwoFactorService,
+  TwoFactorUserNotFoundError,
+  type TwoFactorSetupResult,
+} from './two-factor.service.js';
+import type { AuthUser, UserRepository } from './user.repository.js';
 
 const me: MeResponse = {
   id: 'user-1',
@@ -66,7 +86,10 @@ function handler(
     | 'me'
     | 'forgotPassword'
     | 'resetPassword'
-    | 'acceptInvite',
+    | 'acceptInvite'
+    | 'setup2fa'
+    | 'confirm2fa'
+    | 'disable2fa',
 ): object {
   const value: unknown = Object.getOwnPropertyDescriptor(AuthController.prototype, name)?.value;
   if (typeof value !== 'function') {
@@ -75,11 +98,160 @@ function handler(
   return value;
 }
 
+class FakeTwoFactorService extends TwoFactorService {
+  constructor(
+    private readonly hooks: {
+      beginSetup?: (userId: string, email: string) => Promise<TwoFactorSetupResult>;
+      confirmSetup?: (userId: string, code: string) => Promise<void>;
+      disable?: (userId: string, code: string) => Promise<void>;
+      verifyLoginCode?: (userId: string, code: string) => Promise<boolean>;
+    } = {},
+  ) {
+    super(
+      {
+        findById: () => Promise.resolve(null),
+        updateTotp: () => Promise.resolve(),
+      },
+      '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+    );
+  }
+
+  override async beginSetup(userId: string, email: string): Promise<TwoFactorSetupResult> {
+    if (this.hooks.beginSetup !== undefined) {
+      return this.hooks.beginSetup(userId, email);
+    }
+    return {
+      secret: 'fake-totp-secret',
+      otpauthUri: 'otpauth://totp/Xplor:fake?secret=fake-totp-secret',
+    };
+  }
+
+  override async confirmSetup(userId: string, code: string): Promise<void> {
+    if (this.hooks.confirmSetup !== undefined) {
+      await this.hooks.confirmSetup(userId, code);
+    }
+  }
+
+  override async disable(userId: string, code: string): Promise<void> {
+    if (this.hooks.disable !== undefined) {
+      await this.hooks.disable(userId, code);
+    }
+  }
+
+  override async verifyLoginCode(userId: string, code: string): Promise<boolean> {
+    if (this.hooks.verifyLoginCode !== undefined) {
+      return this.hooks.verifyLoginCode(userId, code);
+    }
+    return true;
+  }
+}
+
+class FakeUserRepository implements UserRepository {
+  constructor(private readonly user: AuthUser | null = null) {}
+
+  findByEmail(): Promise<AuthUser | null> {
+    return Promise.resolve(this.user);
+  }
+
+  findById(): Promise<AuthUser | null> {
+    return Promise.resolve(this.user);
+  }
+
+  updateLoginState(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  updatePassword(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  createInvited(): Promise<AuthUser> {
+    if (this.user !== null) {
+      return Promise.resolve(this.user);
+    }
+    return Promise.reject(new Error('User not configured'));
+  }
+
+  updateInvited(): Promise<AuthUser> {
+    if (this.user !== null) {
+      return Promise.resolve(this.user);
+    }
+    return Promise.reject(new Error('User not configured'));
+  }
+
+  activate(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+const adminUser: AuthUser = {
+  id: 'admin-1',
+  email: 'admin@xplor.ma',
+  name: 'Admin',
+  passwordHash: 'hash',
+  role: Role.ADMIN,
+  uiLang: 'fr',
+  active: true,
+  totpEnabled: false,
+  lastLoginAt: null,
+  failedLoginCount: 0,
+  lockedUntil: null,
+};
+
+const adminSessionRequest: SessionRequest = {
+  method: 'POST',
+  headers: { 'x-csrf-token': 'csrf-token' },
+  principal: { userId: 'admin-1', role: Role.ADMIN, hotelIds: [] },
+  session: { userId: 'admin-1', csrfToken: 'csrf-token', createdAt: '2026-09-29T00:00:00.000Z' },
+  sessionId: 'sid-admin',
+};
+
+const editorSessionRequest: SessionRequest = {
+  method: 'POST',
+  headers: { 'x-csrf-token': 'csrf-token' },
+  principal: { userId: 'editor-1', role: Role.EDITOR, hotelIds: [] },
+  session: { userId: 'editor-1', csrfToken: 'csrf-token', createdAt: '2026-09-29T00:00:00.000Z' },
+  sessionId: 'sid-editor',
+};
+
+const managerSessionRequest: SessionRequest = {
+  method: 'POST',
+  headers: { 'x-csrf-token': 'csrf-token' },
+  principal: { userId: 'mgr-1', role: Role.HOTEL_MANAGER, hotelIds: ['hotel-1'] },
+  session: { userId: 'mgr-1', csrfToken: 'csrf-token', createdAt: '2026-09-29T00:00:00.000Z' },
+  sessionId: 'sid-mgr',
+};
+
+const unauthenticatedRequest: SessionRequest = {
+  method: 'POST',
+  headers: {},
+};
+
+const pending2faSessionRequest: SessionRequest = {
+  method: 'POST',
+  headers: { 'x-csrf-token': 'csrf-token' },
+  principal: { userId: 'admin-1', role: Role.ADMIN, hotelIds: [] },
+  session: {
+    userId: 'admin-1',
+    csrfToken: 'csrf-token',
+    createdAt: '2026-09-29T00:00:00.000Z',
+    pending2fa: true,
+  },
+  sessionId: 'sid-pending',
+};
+
 function controllerFor(
   auth: Partial<AuthService>,
   nodeEnv: 'development' | 'test' | 'production' = 'test',
 ): AuthController {
   return new AuthController(auth as AuthService, { NODE_ENV: nodeEnv });
+}
+
+function twoFactorController(
+  twoFactor: TwoFactorService = new FakeTwoFactorService(),
+  users?: UserRepository,
+): AuthController {
+  return new AuthController(undefined, { NODE_ENV: 'test' }, twoFactor, users);
 }
 
 describe('AuthController', () => {
@@ -457,6 +629,324 @@ describe('AuthController', () => {
     ).rejects.toMatchObject({
       status: 400,
       response: { code: PASSWORD_INVALID },
+    });
+  });
+
+  describe('2FA (M8 F-90)', () => {
+    it('protège setup, confirm et disable par SessionGuard et CsrfGuard avec les bons statuts HTTP', () => {
+      const setup = handler('setup2fa');
+      const confirm = handler('confirm2fa');
+      const disable = handler('disable2fa');
+
+      expect(Reflect.getMetadata(GUARDS_METADATA, setup)).toEqual([SessionGuard, CsrfGuard]);
+      expect(Reflect.getMetadata(HTTP_CODE_METADATA, setup)).toBe(200);
+
+      expect(Reflect.getMetadata(GUARDS_METADATA, confirm)).toEqual([SessionGuard, CsrfGuard]);
+      expect(Reflect.getMetadata(HTTP_CODE_METADATA, confirm)).toBe(204);
+
+      expect(Reflect.getMetadata(GUARDS_METADATA, disable)).toEqual([SessionGuard, CsrfGuard]);
+      expect(Reflect.getMetadata(HTTP_CODE_METADATA, disable)).toBe(204);
+    });
+
+    describe('401 sans session ou avec session incomplète (pending 2FA)', () => {
+      it('setup2fa : 401 sans session', async () => {
+        const controller = twoFactorController();
+        await expect(controller.setup2fa(unauthenticatedRequest)).rejects.toBeInstanceOf(
+          UnauthorizedException,
+        );
+      });
+
+      it('setup2fa : 401 si session pending2fa', async () => {
+        const controller = twoFactorController();
+        await expect(controller.setup2fa(pending2faSessionRequest)).rejects.toBeInstanceOf(
+          UnauthorizedException,
+        );
+      });
+
+      it('confirm2fa : 401 sans session', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.confirm2fa({ code: '123456' }, unauthenticatedRequest),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+      });
+
+      it('confirm2fa : 401 si session pending2fa', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.confirm2fa({ code: '123456' }, pending2faSessionRequest),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+      });
+
+      it('disable2fa : 401 sans session', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.disable2fa({ code: '123456' }, unauthenticatedRequest),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+      });
+
+      it('disable2fa : 401 si session pending2fa', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.disable2fa({ code: '123456' }, pending2faSessionRequest),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+      });
+    });
+
+    describe('403 pour un non-ADMIN (EDITOR, etc.)', () => {
+      it('setup2fa : 403 pour un EDITOR', async () => {
+        const controller = twoFactorController();
+        await expect(controller.setup2fa(editorSessionRequest)).rejects.toBeInstanceOf(
+          ForbiddenException,
+        );
+      });
+
+      it('setup2fa : 403 pour un HOTEL_MANAGER', async () => {
+        const controller = twoFactorController();
+        await expect(controller.setup2fa(managerSessionRequest)).rejects.toBeInstanceOf(
+          ForbiddenException,
+        );
+      });
+
+      it('confirm2fa : 403 pour un EDITOR', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.confirm2fa({ code: '123456' }, editorSessionRequest),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+      });
+
+      it('confirm2fa : 403 pour un HOTEL_MANAGER', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.confirm2fa({ code: '123456' }, managerSessionRequest),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+      });
+
+      it('disable2fa : 403 pour un EDITOR', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.disable2fa({ code: '123456' }, editorSessionRequest),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+      });
+
+      it('disable2fa : 403 pour un HOTEL_MANAGER', async () => {
+        const controller = twoFactorController();
+        await expect(
+          controller.disable2fa({ code: '123456' }, managerSessionRequest),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+      });
+    });
+
+    describe('400 pour un code mal formé', () => {
+      it('confirm2fa : refuse un code trop court, trop long, non numérique ou vide avec 400', async () => {
+        const controller = twoFactorController();
+
+        await expect(
+          controller.confirm2fa({ code: '12' }, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.confirm2fa({ code: '1234567' }, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.confirm2fa({ code: 'abcdef' }, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.confirm2fa({ code: '12a456' }, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.confirm2fa({}, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.confirm2fa(null, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+      });
+
+      it('disable2fa : refuse un code trop court, trop long, non numérique ou vide avec 400', async () => {
+        const controller = twoFactorController();
+
+        await expect(
+          controller.disable2fa({ code: '12' }, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.disable2fa({ code: '1234567' }, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.disable2fa({ code: 'abcdef' }, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.disable2fa({}, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          controller.disable2fa(null, adminSessionRequest),
+        ).rejects.toBeInstanceOf(BadRequestException);
+      });
+    });
+
+    describe('succès avec faux service', () => {
+      it('setup2fa : appelle beginSetup avec userId et email, retourne secret et otpauthUri', async () => {
+        let capturedUserId = '';
+        let capturedEmail = '';
+        const fakeTwoFactor = new FakeTwoFactorService({
+          beginSetup: (userId: string, email: string) => {
+            capturedUserId = userId;
+            capturedEmail = email;
+            return Promise.resolve({
+              secret: 'KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLS',
+              otpauthUri:
+                'otpauth://totp/Xplor:admin%40xplor.ma?secret=KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLS&issuer=Xplor',
+            });
+          },
+        });
+        const fakeUsers = new FakeUserRepository(adminUser);
+        const controller = twoFactorController(fakeTwoFactor, fakeUsers);
+
+        const response = await controller.setup2fa(adminSessionRequest);
+
+        expect(capturedUserId).toBe('admin-1');
+        expect(capturedEmail).toBe('admin@xplor.ma');
+        expect(response).toEqual({
+          secret: 'KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLS',
+          otpauthUri:
+            'otpauth://totp/Xplor:admin%40xplor.ma?secret=KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLS&issuer=Xplor',
+        });
+      });
+
+      it('setup2fa : fonctionne avec email par défaut si UserRepository n’est pas injecté', async () => {
+        let capturedEmail = '';
+        const fakeTwoFactor = new FakeTwoFactorService({
+          beginSetup: (_userId: string, email: string) => {
+            capturedEmail = email;
+            return Promise.resolve({
+              secret: 'TESTSECRET',
+              otpauthUri: 'otpauth://totp/Xplor:test?secret=TESTSECRET',
+            });
+          },
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        const response = await controller.setup2fa(adminSessionRequest);
+        expect(capturedEmail).toBe('admin@xplor.ma');
+        expect(response.secret).toBe('TESTSECRET');
+      });
+
+      it('confirm2fa : appelle confirmSetup avec userId et code, résout 204 void', async () => {
+        let capturedUserId = '';
+        let capturedCode = '';
+        const fakeTwoFactor = new FakeTwoFactorService({
+          confirmSetup: (userId: string, code: string) => {
+            capturedUserId = userId;
+            capturedCode = code;
+            return Promise.resolve();
+          },
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(
+          controller.confirm2fa({ code: '654321' }, adminSessionRequest),
+        ).resolves.toBeUndefined();
+        expect(capturedUserId).toBe('admin-1');
+        expect(capturedCode).toBe('654321');
+      });
+
+      it('disable2fa : appelle disable avec userId et code, résout 204 void', async () => {
+        let capturedUserId = '';
+        let capturedCode = '';
+        const fakeTwoFactor = new FakeTwoFactorService({
+          disable: (userId: string, code: string) => {
+            capturedUserId = userId;
+            capturedCode = code;
+            return Promise.resolve();
+          },
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(
+          controller.disable2fa({ code: '654321' }, adminSessionRequest),
+        ).resolves.toBeUndefined();
+        expect(capturedUserId).toBe('admin-1');
+        expect(capturedCode).toBe('654321');
+      });
+    });
+
+    describe('propagation des erreurs métier TwoFactorService via rethrowAsHttp', () => {
+      it('confirm2fa : traduit TwoFactorInvalidCodeError en 400', async () => {
+        const fakeTwoFactor = new FakeTwoFactorService({
+          confirmSetup: () => Promise.reject(new TwoFactorInvalidCodeError()),
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(
+          controller.confirm2fa({ code: '000000' }, adminSessionRequest),
+        ).rejects.toMatchObject({
+          status: 400,
+          response: { code: TWO_FACTOR_INVALID_CODE },
+        });
+      });
+
+      it('confirm2fa : traduit TwoFactorNotInitializedError en 400', async () => {
+        const fakeTwoFactor = new FakeTwoFactorService({
+          confirmSetup: () => Promise.reject(new TwoFactorNotInitializedError()),
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(
+          controller.confirm2fa({ code: '123456' }, adminSessionRequest),
+        ).rejects.toMatchObject({
+          status: 400,
+          response: { code: TWO_FACTOR_NOT_INITIALIZED },
+        });
+      });
+
+      it('disable2fa : traduit TwoFactorInvalidCodeError en 400', async () => {
+        const fakeTwoFactor = new FakeTwoFactorService({
+          disable: () => Promise.reject(new TwoFactorInvalidCodeError()),
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(
+          controller.disable2fa({ code: '000000' }, adminSessionRequest),
+        ).rejects.toMatchObject({
+          status: 400,
+          response: { code: TWO_FACTOR_INVALID_CODE },
+        });
+      });
+
+      it('disable2fa : traduit TwoFactorNotEnabledError en 400', async () => {
+        const fakeTwoFactor = new FakeTwoFactorService({
+          disable: () => Promise.reject(new TwoFactorNotEnabledError()),
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(
+          controller.disable2fa({ code: '123456' }, adminSessionRequest),
+        ).rejects.toMatchObject({
+          status: 400,
+          response: { code: TWO_FACTOR_NOT_ENABLED },
+        });
+      });
+
+      it('setup2fa : traduit TwoFactorRoleNotAllowedError en 403', async () => {
+        const fakeTwoFactor = new FakeTwoFactorService({
+          beginSetup: () => Promise.reject(new TwoFactorRoleNotAllowedError()),
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(controller.setup2fa(adminSessionRequest)).rejects.toMatchObject({
+          status: 403,
+          response: { code: TWO_FACTOR_ROLE_NOT_ALLOWED },
+        });
+      });
+
+      it('setup2fa : traduit TwoFactorUserNotFoundError en 404', async () => {
+        const fakeTwoFactor = new FakeTwoFactorService({
+          beginSetup: () => Promise.reject(new TwoFactorUserNotFoundError()),
+        });
+        const controller = twoFactorController(fakeTwoFactor);
+
+        await expect(controller.setup2fa(adminSessionRequest)).rejects.toMatchObject({
+          status: 404,
+          response: { code: TWO_FACTOR_USER_NOT_FOUND },
+        });
+      });
     });
   });
 });

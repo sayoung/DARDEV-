@@ -2,11 +2,13 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpException,
   HttpStatus,
   Inject,
+  Optional,
   Post,
   Req,
   Res,
@@ -20,8 +22,12 @@ import {
   Login2faRequestSchema,
   LoginRequestSchema,
   ResetPasswordRequestSchema,
+  Role,
+  TwoFactorCodeBodySchema,
+  TwoFactorSetupResponseSchema,
   type LoginResponse,
   type MeResponse,
+  type TwoFactorSetupResponse,
 } from '@xplor/shared';
 import type { FastifyReply } from 'fastify';
 import type { ZodError } from 'zod';
@@ -34,6 +40,15 @@ import { CsrfGuard } from './csrf.guard.js';
 import { SESSION_COOKIE_NAME, readSessionId, sessionCookieOptions } from './session-cookie.js';
 import type { SessionRequest } from './session-request.js';
 import { SessionGuard } from './session.guard.js';
+import {
+  TwoFactorInvalidCodeError,
+  TwoFactorNotEnabledError,
+  TwoFactorNotInitializedError,
+  TwoFactorRoleNotAllowedError,
+  TwoFactorService,
+  TwoFactorUserNotFoundError,
+} from './two-factor.service.js';
+import { USER_REPOSITORY, type UserRepository } from './user.repository.js';
 
 /** 5 requêtes par minute et par IP (NF-01). Le guard n'est pas global. */
 const FIVE_PER_MINUTE = { default: { limit: 5, ttl: 60_000 } };
@@ -41,8 +56,16 @@ const FIVE_PER_MINUTE = { default: { limit: 5, ttl: 60_000 } };
 @Controller('auth')
 export class AuthController {
   constructor(
-    @Inject(AuthService) private readonly auth: AuthService,
-    @Inject(ENV) private readonly env: Pick<Env, 'NODE_ENV'>,
+    @Optional()
+    @Inject(AuthService)
+    private readonly auth?: AuthService,
+    @Inject(ENV) private readonly env: Pick<Env, 'NODE_ENV'> = { NODE_ENV: 'test' },
+    @Optional()
+    @Inject(TwoFactorService)
+    private readonly twoFactor?: TwoFactorService,
+    @Optional()
+    @Inject(USER_REPOSITORY)
+    private readonly users?: UserRepository,
   ) {}
 
   @Post('login')
@@ -53,6 +76,9 @@ export class AuthController {
     @Body() body: unknown,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<LoginResponse> {
+    if (this.auth === undefined) {
+      throw new Error('AuthService not available');
+    }
     const parsed = LoginRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException();
@@ -78,6 +104,9 @@ export class AuthController {
     @Req() request: SessionRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<MeResponse> {
+    if (this.auth === undefined) {
+      throw new Error('AuthService not available');
+    }
     const parsed = Login2faRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException();
@@ -102,6 +131,9 @@ export class AuthController {
     @Req() request: SessionRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<void> {
+    if (this.auth === undefined) {
+      throw new Error('AuthService not available');
+    }
     const sessionId = request.sessionId;
     if (sessionId === undefined) {
       throw new UnauthorizedException();
@@ -113,6 +145,9 @@ export class AuthController {
   @Get('me')
   @UseGuards(SessionGuard)
   async me(@Req() request: SessionRequest): Promise<MeResponse> {
+    if (this.auth === undefined) {
+      throw new Error('AuthService not available');
+    }
     const userId = request.principal?.userId;
     const csrfToken = request.session?.csrfToken;
     if (userId === undefined || csrfToken === undefined || request.session?.pending2fa === true) {
@@ -130,6 +165,9 @@ export class AuthController {
   @Throttle(FIVE_PER_MINUTE)
   @UseGuards(ThrottlerGuard)
   async forgotPassword(@Body() body: unknown): Promise<void> {
+    if (this.auth === undefined) {
+      throw new Error('AuthService not available');
+    }
     const parsed = ForgotPasswordRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException();
@@ -144,6 +182,9 @@ export class AuthController {
   @Post('password/reset')
   @HttpCode(HttpStatus.NO_CONTENT)
   async resetPassword(@Body() body: unknown): Promise<void> {
+    if (this.auth === undefined) {
+      throw new Error('AuthService not available');
+    }
     const parsed = ResetPasswordRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw passwordSchemaError(parsed.error);
@@ -160,12 +201,95 @@ export class AuthController {
   @Throttle(FIVE_PER_MINUTE)
   @UseGuards(ThrottlerGuard)
   async acceptInvite(@Body() body: unknown): Promise<void> {
+    if (this.auth === undefined) {
+      throw new Error('AuthService not available');
+    }
     const parsed = AcceptInviteRequestSchema.safeParse(body);
     if (!parsed.success) {
       throw passwordSchemaError(parsed.error);
     }
     try {
       await this.auth.acceptInvite(parsed.data.token, parsed.data.password);
+    } catch (error: unknown) {
+      rethrowAsHttp(error);
+    }
+  }
+
+  @Post('2fa/setup')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SessionGuard, CsrfGuard)
+  async setup2fa(@Req() request: SessionRequest): Promise<TwoFactorSetupResponse> {
+    const principal = request.principal;
+    if (principal === undefined || request.session?.pending2fa === true) {
+      throw new UnauthorizedException();
+    }
+    if (principal.role !== Role.ADMIN) {
+      throw new ForbiddenException();
+    }
+    if (this.twoFactor === undefined) {
+      throw new Error('TwoFactorService not available');
+    }
+    const user = await this.users?.findById(principal.userId);
+    const email = user?.email ?? 'admin@xplor.ma';
+    try {
+      const result = await this.twoFactor.beginSetup(principal.userId, email);
+      return TwoFactorSetupResponseSchema.parse(result);
+    } catch (error: unknown) {
+      rethrowAsHttp(error);
+    }
+  }
+
+  @Post('2fa/confirm')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(SessionGuard, CsrfGuard)
+  async confirm2fa(
+    @Body() body: unknown,
+    @Req() request: SessionRequest,
+  ): Promise<void> {
+    const principal = request.principal;
+    if (principal === undefined || request.session?.pending2fa === true) {
+      throw new UnauthorizedException();
+    }
+    if (principal.role !== Role.ADMIN) {
+      throw new ForbiddenException();
+    }
+    if (this.twoFactor === undefined) {
+      throw new Error('TwoFactorService not available');
+    }
+    const parsed = TwoFactorCodeBodySchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException();
+    }
+    try {
+      await this.twoFactor.confirmSetup(principal.userId, parsed.data.code);
+    } catch (error: unknown) {
+      rethrowAsHttp(error);
+    }
+  }
+
+  @Post('2fa/disable')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(SessionGuard, CsrfGuard)
+  async disable2fa(
+    @Body() body: unknown,
+    @Req() request: SessionRequest,
+  ): Promise<void> {
+    const principal = request.principal;
+    if (principal === undefined || request.session?.pending2fa === true) {
+      throw new UnauthorizedException();
+    }
+    if (principal.role !== Role.ADMIN) {
+      throw new ForbiddenException();
+    }
+    if (this.twoFactor === undefined) {
+      throw new Error('TwoFactorService not available');
+    }
+    const parsed = TwoFactorCodeBodySchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException();
+    }
+    try {
+      await this.twoFactor.disable(principal.userId, parsed.data.code);
     } catch (error: unknown) {
       rethrowAsHttp(error);
     }
@@ -178,6 +302,18 @@ export class AuthController {
 
 function rethrowAsHttp(error: unknown): never {
   if (error instanceof AuthRejectedError || error instanceof AuthRequestError) {
+    throw new HttpException(
+      { statusCode: error.statusCode, code: error.code, message: error.code },
+      error.statusCode,
+    );
+  }
+  if (
+    error instanceof TwoFactorRoleNotAllowedError ||
+    error instanceof TwoFactorUserNotFoundError ||
+    error instanceof TwoFactorInvalidCodeError ||
+    error instanceof TwoFactorNotInitializedError ||
+    error instanceof TwoFactorNotEnabledError
+  ) {
     throw new HttpException(
       { statusCode: error.statusCode, code: error.code, message: error.code },
       error.statusCode,
