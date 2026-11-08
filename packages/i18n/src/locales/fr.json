@@ -358,6 +358,7 @@
     "kiosks": "Kiosques",
     "stats": "Statistiques",
     "users": "Utilisateurs",
+    "audit": "Journal d'audit",
     "accountSecurity": "Sécurité du compte"
   },
   "media": {
@@ -660,6 +661,10 @@
           "saving": "Enregistrement…"
         }
       }
+    },
+    "audit": {
+      "title": "Journal d'audit",
+      "subtitle": "Historique des actions sensibles sur la plateforme."
     }
   },
   "tour": {

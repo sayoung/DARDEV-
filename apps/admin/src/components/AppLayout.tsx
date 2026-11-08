@@ -66,6 +66,7 @@ const isKiosksActive = route.name === 'kiosks';
   const isMediaActive = route.name === 'media';
   const isAccountSecurityActive = route.name === 'account-security';
   const isUsersActive = route.name === 'users' || route.name === 'user-detail';
+  const isAuditActive = route.name === 'audit';
 
   if (auth.state.status !== 'authenticated') {
     return (
@@ -191,6 +192,16 @@ const isKiosksActive = route.name === 'kiosks';
                 className={`block px-4 py-2 rounded-md transition-colors ${isUsersActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.users')}
+              </a>
+            </li> : null}
+            {auth.state.profile.role === Role.ADMIN ? <li>
+              <a
+                href={hrefFor('/audit')}
+                aria-current={isAuditActive ? 'page' : undefined}
+                onClick={(e) => { handleNavClick(e, '/audit'); }}
+                className={`block px-4 py-2 rounded-md transition-colors ${isAuditActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+              >
+                {t('nav.audit')}
               </a>
             </li> : null}
             {auth.state.profile.role === Role.ADMIN ? <li>

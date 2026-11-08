@@ -21,6 +21,7 @@ export type AppRoute =
   | { name: 'account-security' }
   | { name: 'users' }
   | { name: 'user-detail'; id: string }
+  | { name: 'audit' }
   | { name: 'forgot' }
   | { name: 'reset'; token: string }
   | { name: 'invite'; token: string };
@@ -47,6 +48,7 @@ export function parsePathname(pathname: string): AppRoute {
   if (pathname === '/stats') return { name: 'stats' };
   if (pathname === '/account/security') return { name: 'account-security' };
   if (pathname === '/users') return { name: 'users' };
+  if (pathname === '/audit') return { name: 'audit' };
   if (pathname === '/') return { name: 'home' };
 
   const hotelSelectionId = HOTEL_SELECTION_PATH.exec(pathname)?.[1];
