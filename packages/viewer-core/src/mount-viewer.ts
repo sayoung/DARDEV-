@@ -29,6 +29,13 @@ export function mountViewer(
     showErrorTile: true,
   };
 
+  const startSceneId =
+    opts?.sceneId && graph.scenes.some((s) => s.id === opts.sceneId)
+      ? opts.sceneId
+      : graph.startSceneId;
+  const startScene = graph.scenes.find((s) => s.id === startSceneId);
+  const initialOrientation = startScene ? computeSceneOrientation(startScene, null) : null;
+
   const viewer = new Viewer({
     container,
     adapter: [EquirectangularTilesAdapter, adapterConfig],
@@ -38,6 +45,15 @@ export function mountViewer(
       [GalleryPlugin, {}],
       [GyroscopePlugin, {}],
     ],
+    ...(initialOrientation
+      ? {
+          defaultYaw: initialOrientation.yaw,
+          defaultPitch: initialOrientation.pitch,
+          ...(typeof initialOrientation.zoom === 'number'
+            ? { defaultZoomLvl: initialOrientation.zoom }
+            : {}),
+        }
+      : {}),
   });
 
   const tourPlugin = viewer.getPlugin<VirtualTourPlugin>(VirtualTourPlugin);
@@ -50,7 +66,7 @@ export function mountViewer(
     }
   });
 
-  tourPlugin.addEventListener('node-changed', ({ node, data }) => {
+  tourPlugin.addEventListener('node-changed', ({ node }) => {
     const scene = graph.scenes.find((s) => s.id === node.id);
     if (scene) {
       const markers = toMarkers(scene);
@@ -62,14 +78,8 @@ export function mountViewer(
         html: `<div class="marker-icon"><span class="icon-${m.icon}"></span></div>`,
       }));
       markersPlugin.setMarkers(markerConfigs);
-
-      const orientation = computeSceneOrientation(scene, data.fromLink);
-      viewer.rotate({ yaw: orientation.yaw, pitch: orientation.pitch });
-      if (orientation.zoom != null) {
-        viewer.zoom(orientation.zoom);
-      }
     }
-    
+
     if (opts?.onSceneChange) {
       opts.onSceneChange(node.id);
     }
