@@ -84,3 +84,19 @@ export const AuditLogQuerySchema = z
   });
 
 export type AuditLogQuery = z.infer<typeof AuditLogQuerySchema>;
+
+/**
+ * Réponse paginée de consultation du journal d'audit (F-91, API-30).
+ * - items : liste ordonnée des entrées d'audit au format AuditLogEntry
+ * - total : nombre total d'entrées correspondant aux filtres
+ * - page : numéro de page courante (≥ 1)
+ * - pageSize : taille de page (1…100)
+ */
+export const PaginatedAuditLogResponseSchema = z.object({
+  items: z.array(AuditLogEntrySchema),
+  total: z.number().int().min(0),
+  page: z.number().int().min(1),
+  pageSize: z.number().int().min(1).max(100),
+});
+
+export type PaginatedAuditLogResponse = z.infer<typeof PaginatedAuditLogResponseSchema>;

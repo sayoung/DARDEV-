@@ -5,9 +5,11 @@ import {
   AuditActionSchema,
   AuditLogEntrySchema,
   AuditLogQuerySchema,
+  PaginatedAuditLogResponseSchema,
   type AuditAction,
   type AuditLogEntry,
   type AuditLogQuery,
+  type PaginatedAuditLogResponse,
 } from './audit.js';
 
 const validEntryId = '01990000-0000-7000-8000-000000000001';
@@ -286,5 +288,75 @@ describe('AuditLogQuerySchema', () => {
   it('refuse des dates invalides dans from ou to', () => {
     expect(AuditLogQuerySchema.safeParse({ from: 'date-invalide' }).success).toBe(false);
     expect(AuditLogQuerySchema.safeParse({ to: '2026/10/01' }).success).toBe(false);
+  });
+});
+
+describe('PaginatedAuditLogResponseSchema', () => {
+  it('valide une réponse paginée complète avec une liste d entrées', () => {
+    const entry = makeValidEntry();
+    const payload: PaginatedAuditLogResponse = {
+      items: [entry],
+      total: 1,
+      page: 1,
+      pageSize: 50,
+    };
+    const result = PaginatedAuditLogResponseSchema.safeParse(payload);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.items).toHaveLength(1);
+      expect(result.data.total).toBe(1);
+      expect(result.data.page).toBe(1);
+      expect(result.data.pageSize).toBe(50);
+    }
+  });
+
+  it('valide une réponse avec liste vide et total à 0', () => {
+    const result = PaginatedAuditLogResponseSchema.safeParse({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 50,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('refuse un total négatif', () => {
+    const result = PaginatedAuditLogResponseSchema.safeParse({
+      items: [],
+      total: -1,
+      page: 1,
+      pageSize: 50,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('refuse une page inférieure à 1', () => {
+    const result = PaginatedAuditLogResponseSchema.safeParse({
+      items: [],
+      total: 0,
+      page: 0,
+      pageSize: 50,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('refuse un pageSize supérieur à 100', () => {
+    const result = PaginatedAuditLogResponseSchema.safeParse({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 101,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('refuse un élément de items qui ne respecte pas AuditLogEntrySchema', () => {
+    const result = PaginatedAuditLogResponseSchema.safeParse({
+      items: [{ id: 'invalid-id' }],
+      total: 1,
+      page: 1,
+      pageSize: 50,
+    });
+    expect(result.success).toBe(false);
   });
 });

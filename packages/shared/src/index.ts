@@ -257,9 +257,11 @@ export {
   AuditActionSchema,
   AuditLogEntrySchema,
   AuditLogQuerySchema,
+  PaginatedAuditLogResponseSchema,
   type AuditAction,
   type AuditLogEntry,
   type AuditLogQuery,
+  type PaginatedAuditLogResponse,
 } from './audit.js';
 export {
   LoginTwoFactorBody,
