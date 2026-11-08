@@ -46,7 +46,8 @@ function AdminShell() {
   const isPublicRoute =
     route.name === 'forgot' || route.name === 'reset' || route.name === 'invite';
   const isAuthenticatedRoute = !isPublicRoute;
-  const isAnonymous = auth.state.status === 'anonymous';
+  const isAnonymous =
+    auth.state.status === 'anonymous' || auth.state.status === 'two-factor';
   const isAuthenticated = auth.state.status === 'authenticated';
 
   return (

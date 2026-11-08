@@ -99,12 +99,14 @@ describe('clés i18n', () => {
     expect(resources.fr.auth.twoFactor.code).toBe('Code à 6 chiffres');
     expect(resources.fr.auth.twoFactor.invalidCode).toBe('Code invalide');
     expect(resources.fr.auth.twoFactor.requiredForAdmin).toBe('2FA obligatoire pour ADMIN');
+    expect(resources.fr.auth.twoFactor.verify).toBe('Vérifier');
     expect(Object.keys(resources.fr.auth.twoFactor).sort()).toEqual([
       'code',
       'enable',
       'invalidCode',
       'requiredForAdmin',
       'title',
+      'verify',
     ]);
   });
 

@@ -82,6 +82,7 @@ const mockAuth = (role = Role.ADMIN) => {
       },
     },
     login: vi.fn(),
+    verifyTwoFactor: vi.fn(),
     logout: vi.fn(),
   });
 };
