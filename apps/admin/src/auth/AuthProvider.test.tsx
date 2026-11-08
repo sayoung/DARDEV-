@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { Role, type MeResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -65,8 +65,9 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     );
 
-    const statusEl = await screen.findByTestId('status');
-    expect(statusEl.textContent).toBe('anonymous');
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('anonymous');
+    });
 
     await act(async () => {
       if (currentAuth !== null) {
@@ -92,8 +93,9 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     );
 
-    const statusEl = await screen.findByTestId('status');
-    expect(statusEl.textContent).toBe('anonymous');
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('anonymous');
+    });
 
     await act(async () => {
       if (currentAuth !== null) {
@@ -133,8 +135,9 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     );
 
-    const statusEl = await screen.findByTestId('status');
-    expect(statusEl.textContent).toBe('anonymous');
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('anonymous');
+    });
 
     await act(async () => {
       if (currentAuth !== null) {
@@ -173,8 +176,9 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     );
 
-    const statusEl = await screen.findByTestId('status');
-    expect(statusEl.textContent).toBe('anonymous');
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('anonymous');
+    });
 
     await act(async () => {
       if (currentAuth !== null) {
@@ -197,8 +201,9 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     );
 
-    const statusEl = await screen.findByTestId('status');
-    expect(statusEl.textContent).toBe('authenticated');
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('authenticated');
+    });
 
     act(() => {
       window.dispatchEvent(new Event('session-expired'));
@@ -218,8 +223,9 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     );
 
-    const statusEl = await screen.findByTestId('status');
-    expect(statusEl.textContent).toBe('authenticated');
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('authenticated');
+    });
 
     await act(async () => {
       if (currentAuth !== null) {

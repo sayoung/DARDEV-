@@ -50,6 +50,14 @@
       "successReset": "Your password has been updated. You can sign in.",
       "successInvite": "Your password is set. You can sign in."
     },
+    "twoFactor": {
+      "title": "Two-factor authentication",
+      "enable": "Enable",
+      "code": "6-digit code",
+      "invalidCode": "Invalid code",
+      "requiredForAdmin": "2FA required for ADMIN",
+      "verify": "Verify"
+    },
     "errors": {
       "TOKEN_INVALID": "This link is no longer valid.",
       "PASSWORD_TOO_COMMON": "This password is too common.",
