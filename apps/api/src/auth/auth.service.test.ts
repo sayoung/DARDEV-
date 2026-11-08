@@ -1329,6 +1329,9 @@ describe('AuthService.acceptInvite', () => {
       const firstCall = recorded[0];
       expect(firstCall).toBeDefined();
       if (firstCall !== undefined) {
+        expect(firstCall.diff).not.toBeNull();
+        expect(firstCall.diff).not.toHaveProperty('password');
+        expect(firstCall.diff).not.toHaveProperty('email');
         const serialized = JSON.stringify(firstCall.diff ?? {});
         expect(serialized).not.toContain('bad-password');
         expect(serialized).not.toContain('inconnu@xplor.test');
@@ -1371,6 +1374,9 @@ describe('AuthService.acceptInvite', () => {
       const firstCall = recorded[0];
       expect(firstCall).toBeDefined();
       if (firstCall !== undefined) {
+        expect(firstCall.diff).not.toBeNull();
+        expect(firstCall.diff).not.toHaveProperty('password');
+        expect(firstCall.diff).not.toHaveProperty('email');
         const serialized = JSON.stringify(firstCall.diff ?? {});
         expect(serialized).not.toContain('faux-mot-de-passe');
         expect(serialized).not.toContain(credentials.email);
@@ -1470,6 +1476,92 @@ describe('AuthService.acceptInvite', () => {
 
       const result = await service.login(credentials, '192.168.1.50');
       expect(result).toHaveProperty('sessionId');
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('lève toujours INVALID_CREDENTIALS si audit.record rejette une erreur lors d’un mot de passe erroné', async () => {
+      const user = account();
+      const recordMock = vi.fn().mockRejectedValue(new Error('Erreur base audit'));
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        false,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login({ email: credentials.email, password: 'faux-mot-de-passe' }, '10.0.0.5'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('lève toujours INVALID_CREDENTIALS si audit.record lève une exception synchrone lors d’un mot de passe erroné', async () => {
+      const user = account();
+      const recordMock = vi.fn().mockImplementation(() => {
+        throw new Error('Crash synchrone audit');
+      });
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        user,
+        false,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login({ email: credentials.email, password: 'faux-mot-de-passe' }, '10.0.0.5'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('lève toujours INVALID_CREDENTIALS si audit.record rejette une erreur pour un utilisateur inconnu', async () => {
+      const recordMock = vi.fn().mockRejectedValue(new Error('Erreur base audit'));
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        null,
+        false,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login({ email: 'inconnu@xplor.test', password: 'bad-password' }, '10.0.0.6'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('lève toujours INVALID_CREDENTIALS si audit.record lève une exception synchrone pour un utilisateur inconnu', async () => {
+      const recordMock = vi.fn().mockImplementation(() => {
+        throw new Error('Crash synchrone audit');
+      });
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service } = setup(
+        null,
+        false,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      await expect(
+        service.login({ email: 'inconnu@xplor.test', password: 'bad-password' }, '10.0.0.6'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
       expect(recordMock).toHaveBeenCalledTimes(1);
     });
 
@@ -1692,6 +1784,39 @@ describe('AuthService.acceptInvite', () => {
 
       const result = await service.login2fa(pendingSessionId, '123456', '192.168.1.65');
       expect(result).toHaveProperty('sessionId');
+      expect(recordMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('login2fa : lève toujours INVALID_CREDENTIALS si audit.record rejette une erreur lors d’un code erroné', async () => {
+      const admin = account({
+        id: 'admin-2fa',
+        email: 'admin2fa@xplor.test',
+        role: Role.ADMIN,
+        totpEnabled: true,
+      });
+      const recordMock = vi.fn().mockRejectedValue(new Error('Erreur base audit'));
+      const fakeAudit: AuditRecorder = { record: recordMock };
+      const { service, sessions } = setup(
+        admin,
+        true,
+        new FakeMailer(),
+        { verifyLoginCode: vi.fn().mockResolvedValue(false) },
+        fakeAudit,
+      );
+
+      const pendingSessionId = await sessions.create({
+        userId: admin.id,
+        csrfToken: 'csrf-pending',
+        createdAt: '2026-09-29T08:00:00.000Z',
+        pending2fa: true,
+      });
+
+      await expect(
+        service.login2fa(pendingSessionId, '000000', '192.168.1.66'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        code: INVALID_CREDENTIALS,
+      });
       expect(recordMock).toHaveBeenCalledTimes(1);
     });
   });
