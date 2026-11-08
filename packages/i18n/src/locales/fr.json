@@ -614,6 +614,35 @@
         "info": "Page {{page}} sur {{total}}",
         "label": "Pagination des utilisateurs"
       }
+    },
+    "userDetail": {
+      "title": "Fiche utilisateur",
+      "subtitle": "Modification des informations et des accès.",
+      "loadError": "Impossible de charger l'utilisateur.",
+      "saveSuccess": "Utilisateur mis à jour avec succès.",
+      "saveError": "Impossible de mettre à jour l'utilisateur.",
+      "errorSelfModification": "Vous ne pouvez pas modifier votre propre rôle ni vous désactiver.",
+      "errorLastAdmin": "Impossible de modifier ou désactiver le dernier administrateur actif.",
+      "fields": {
+        "name": "Nom",
+        "email": "E-mail",
+        "role": "Rôle",
+        "active": "Actif",
+        "activeDescription": "Permet à l'utilisateur de se connecter à la plateforme.",
+        "uiLang": "Langue d'interface",
+        "twoFactor": "2FA",
+        "lastLogin": "Dernière connexion"
+      },
+      "languages": {
+        "fr": "Français",
+        "ar": "العربية (Arabe)",
+        "en": "English (Anglais)"
+      },
+      "actions": {
+        "save": "Enregistrer",
+        "saving": "Enregistrement…",
+        "back": "Retour aux utilisateurs"
+      }
     }
   },
   "tour": {

@@ -375,6 +375,35 @@
         "info": "Page {{page}} of {{total}}",
         "label": "Users pagination"
       }
+    },
+    "userDetail": {
+      "title": "User details",
+      "subtitle": "Edit user information and access permissions.",
+      "loadError": "Unable to load user.",
+      "saveSuccess": "User updated successfully.",
+      "saveError": "Unable to update user.",
+      "errorSelfModification": "You cannot change your own role or deactivate yourself.",
+      "errorLastAdmin": "Cannot modify or deactivate the last active administrator.",
+      "fields": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "active": "Active",
+        "activeDescription": "Allows user to log into the platform.",
+        "uiLang": "Interface language",
+        "twoFactor": "2FA",
+        "lastLogin": "Last login"
+      },
+      "languages": {
+        "fr": "French",
+        "ar": "Arabic",
+        "en": "English"
+      },
+      "actions": {
+        "save": "Save",
+        "saving": "Saving…",
+        "back": "Back to users"
+      }
     }
   },
   "tour": {

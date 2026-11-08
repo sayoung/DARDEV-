@@ -124,6 +124,21 @@ describe('UsersPage', () => {
     });
   });
 
+  it('affiche un lien vers la fiche de chaque utilisateur dans chaque ligne et navigue au clic', async () => {
+    const pushStateSpy = vi.spyOn(window.history, 'pushState');
+    render(<UsersPage />);
+
+    const linkAlice = await screen.findByRole('link', { name: 'Alice Martin' });
+    expect(linkAlice.getAttribute('href')).toBe(`/users/${mockUser1.id}`);
+
+    const linkKarim = screen.getByRole('link', { name: 'Karim Idrissi' });
+    expect(linkKarim.getAttribute('href')).toBe(`/users/${mockUser2.id}`);
+
+    fireEvent.click(linkAlice);
+    expect(pushStateSpy).toHaveBeenCalledWith(null, '', `/users/${mockUser1.id}`);
+    pushStateSpy.mockRestore();
+  });
+
   it('filtre par rôle et relance listUsers avec role', async () => {
     render(<UsersPage />);
 

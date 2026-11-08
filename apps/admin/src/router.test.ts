@@ -23,6 +23,7 @@ describe('router', () => {
       expect(parsePathname('/stats')).toEqual({ name: 'stats' });
       expect(parsePathname('/account/security')).toEqual({ name: 'account-security' });
       expect(parsePathname('/users')).toEqual({ name: 'users' });
+      expect(parsePathname('/users/usr_456')).toEqual({ name: 'user-detail', id: 'usr_456' });
     });
 
     it('decode id for hotel-selection', () => {
@@ -33,8 +34,13 @@ describe('router', () => {
       expect(parsePathname('/tours/mon%20id')).toEqual({ name: 'tour-detail', id: 'mon id' });
     });
 
+    it('decode id for user-detail', () => {
+      expect(parsePathname('/users/mon%20id')).toEqual({ name: 'user-detail', id: 'mon id' });
+    });
+
     it('fallback to home for empty id or unknown path', () => {
       expect(parsePathname('/tours/')).toEqual({ name: 'home' });
+      expect(parsePathname('/users/')).toEqual({ name: 'home' });
       expect(parsePathname('/unknown-path')).toEqual({ name: 'home' });
       expect(parsePathname('')).toEqual({ name: 'home' });
     });

@@ -20,6 +20,7 @@ export type AppRoute =
   | { name: 'stats' }
   | { name: 'account-security' }
   | { name: 'users' }
+  | { name: 'user-detail'; id: string }
   | { name: 'forgot' }
   | { name: 'reset'; token: string }
   | { name: 'invite'; token: string };
@@ -32,6 +33,7 @@ const HOTSPOTS_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)\/hotspots$/;
 const SCENE_DETAIL_PATH = /^\/tours\/([^/]+)\/scenes\/([^/]+)$/;
 const TOUR_DETAIL_PATH = /^\/tours\/([^/]+)$/;
 const HOTEL_SELECTION_PATH = /^\/hotels\/([^/]+)\/selection$/;
+const USER_DETAIL_PATH = /^\/users\/([^/]+)$/;
 
 export function parsePathname(pathname: string): AppRoute {
   if (pathname === '/forgot') return { name: 'forgot' };
@@ -50,6 +52,11 @@ export function parsePathname(pathname: string): AppRoute {
   const hotelSelectionId = HOTEL_SELECTION_PATH.exec(pathname)?.[1];
   if (hotelSelectionId !== undefined && hotelSelectionId !== '') {
     return { name: 'hotel-selection', id: decodeSegment(hotelSelectionId) };
+  }
+
+  const userId = USER_DETAIL_PATH.exec(pathname)?.[1];
+  if (userId !== undefined && userId !== '') {
+    return { name: 'user-detail', id: decodeSegment(userId) };
   }
 
   const resetToken = RESET_PATH.exec(pathname)?.[1];
