@@ -94,15 +94,15 @@ export class ToursController {
   @Post(':id/publish')
   @HttpCode(HttpStatus.OK)
   publish(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
-    requireContentManager(request);
-    return this.publication.publish(parseResourceId(id));
+    const principal = requireContentManager(request);
+    return this.publication.publish(parseResourceId(id), principal.userId);
   }
 
   @Post(':id/unpublish')
   @HttpCode(HttpStatus.OK)
   unpublish(@Req() request: SessionRequest, @Param('id') id: string): Promise<TourResponse> {
-    requireContentManager(request);
-    return this.publication.unpublish(parseResourceId(id));
+    const principal = requireContentManager(request);
+    return this.publication.unpublish(parseResourceId(id), principal.userId);
   }
 
   @Post(':id/share-token')
