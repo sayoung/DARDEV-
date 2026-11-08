@@ -18,6 +18,10 @@ const ROUTES = [
   { path: '/api/v1/auth/2fa/confirm', method: 'post' },
   { path: '/api/v1/auth/2fa/disable', method: 'post' },
   { path: '/api/v1/admin/users/invitations', method: 'post' },
+  { path: '/api/v1/admin/users', method: 'get' },
+  { path: '/api/v1/admin/users/{id}', method: 'get' },
+  { path: '/api/v1/admin/users/{id}', method: 'patch' },
+  { path: '/api/v1/admin/users/{id}/hotels', method: 'put' },
   { path: '/api/v1/admin/cities', method: 'get' },
   { path: '/api/v1/admin/cities', method: 'post' },
   { path: '/api/v1/admin/cities/{id}', method: 'get' },
@@ -314,6 +318,43 @@ describe('document OpenAPI', () => {
     expect(verifyPin?.responses?.['401']).toBeDefined();
     expect(verifyPin?.responses?.['403']).toBeDefined();
     expect(verifyPin?.responses?.['429']).toBeDefined();
+  });
+
+  it('documente la gestion des utilisateurs (API-28)', () => {
+    const doc = buildOpenApiDocument();
+
+    const listUsers = doc.paths?.['/api/v1/admin/users']?.get;
+    expect(listUsers?.responses?.['200']).toBeDefined();
+    expect(listUsers?.responses?.['400']).toBeDefined();
+    expect(listUsers?.responses?.['401']).toBeDefined();
+    expect(listUsers?.responses?.['403']).toBeDefined();
+    expect(listUsers?.security).toEqual([{ sessionCookie: [] }]);
+
+    const getUser = doc.paths?.['/api/v1/admin/users/{id}']?.get;
+    expect(getUser?.responses?.['200']).toBeDefined();
+    expect(getUser?.responses?.['400']).toBeDefined();
+    expect(getUser?.responses?.['401']).toBeDefined();
+    expect(getUser?.responses?.['403']).toBeDefined();
+    expect(getUser?.responses?.['404']).toBeDefined();
+    expect(getUser?.security).toEqual([{ sessionCookie: [] }]);
+
+    const patchUser = doc.paths?.['/api/v1/admin/users/{id}']?.patch;
+    expect(patchUser?.responses?.['200']).toBeDefined();
+    expect(patchUser?.responses?.['400']).toBeDefined();
+    expect(patchUser?.responses?.['401']).toBeDefined();
+    expect(patchUser?.responses?.['403']).toBeDefined();
+    expect(patchUser?.responses?.['404']).toBeDefined();
+    expect(patchUser?.responses?.['409']).toBeDefined();
+    expect(patchUser?.security).toEqual([{ sessionCookie: [], csrfToken: [] }]);
+
+    const putHotels = doc.paths?.['/api/v1/admin/users/{id}/hotels']?.put;
+    expect(putHotels?.responses?.['200']).toBeDefined();
+    expect(putHotels?.responses?.['400']).toBeDefined();
+    expect(putHotels?.responses?.['401']).toBeDefined();
+    expect(putHotels?.responses?.['403']).toBeDefined();
+    expect(putHotels?.responses?.['404']).toBeDefined();
+    expect(putHotels?.responses?.['422']).toBeDefined();
+    expect(putHotels?.security).toEqual([{ sessionCookie: [], csrfToken: [] }]);
   });
 
   it('est identique à docs/openapi.json', () => {
