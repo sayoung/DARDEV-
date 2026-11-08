@@ -239,7 +239,8 @@
     "cities": "المدن",
     "categories": "الفئات",
     "media": "الوسائط",
-    "stats": "الإحصاءات"
+    "stats": "الإحصاءات",
+    "accountSecurity": "أمان الحساب"
   },
   "media": {
     "title": "مكتبة الوسائط",
@@ -307,6 +308,31 @@
     },
     "tourDetail": {
       "title": "تفاصيل الزيارة"
+    },
+    "accountSecurity": {
+      "title": "أمان الحساب",
+      "subtitle": "إدارة المصادقة الثنائية لحسابك.",
+      "twoFactorTitle": "المصادقة الثنائية",
+      "twoFactorDescription": "عزز أمان حسابك عن طريق طلب رمز مؤقت عند كل تسجيل دخول.",
+      "status": "الحالة",
+      "statusEnabled": "مفعلة",
+      "statusDisabled": "معطلة",
+      "enableButton": "تفعيل",
+      "disableButton": "تعطيل",
+      "setupTitle": "إعداد المصادقة الثنائية",
+      "setupInstructions": "امسح رمز الاستجابة السريعة هذا ضوئيًا باستخدام تطبيق المصادقة الخاص بك أو أدخل المفتاح السري أدناه.",
+      "qrAlt": "رمز الاستجابة السريعة للمصادقة الثنائية",
+      "secretLabel": "المفتاح السري",
+      "codeLabel": "رمز مكون من 6 أرقام",
+      "confirmButton": "تأكيد التفعيل",
+      "confirming": "جارٍ التأكيد…",
+      "activating": "جارٍ التحميل…",
+      "disabling": "جارٍ التعطيل…",
+      "cancel": "إلغاء",
+      "successEnabled": "تم تفعيل المصادقة الثنائية بنجاح.",
+      "successDisabled": "تم تعطيل المصادقة الثنائية.",
+      "invalidCode": "رمز غير صالح",
+      "error": "حدث خطأ. يرجى المحاولة مرة أخرى."
     }
   },
   "tour": {

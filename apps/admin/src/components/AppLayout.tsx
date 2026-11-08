@@ -64,6 +64,7 @@ const isKiosksActive = route.name === 'kiosks';
   const isStatsActive = route.name === 'stats';
   const isCategoriesActive = route.name === 'categories';
   const isMediaActive = route.name === 'media';
+  const isAccountSecurityActive = route.name === 'account-security';
 
   if (auth.state.status !== 'authenticated') {
     return (
@@ -179,6 +180,16 @@ const isKiosksActive = route.name === 'kiosks';
                 className={`block px-4 py-2 rounded-md transition-colors ${isStatsActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.stats')}
+              </a>
+            </li> : null}
+            {auth.state.profile.role === Role.ADMIN ? <li>
+              <a
+                href={hrefFor('/account/security')}
+                aria-current={isAccountSecurityActive ? 'page' : undefined}
+                onClick={(e) => { handleNavClick(e, '/account/security'); }}
+                className={`block px-4 py-2 rounded-md transition-colors ${isAccountSecurityActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+              >
+                {t('nav.accountSecurity')}
               </a>
             </li> : null}
           </ul>

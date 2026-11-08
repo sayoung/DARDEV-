@@ -18,6 +18,7 @@ import { HotelsPage } from './pages/HotelsPage.js';
 import { SelectionPage } from './pages/SelectionPage.js';
 import { KiosksPage } from './pages/KiosksPage.js';
 import { StatsPage } from './pages/StatsPage.js';
+import { AccountSecurityPage } from './pages/AccountSecurityPage.js';
 import { useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
@@ -78,6 +79,7 @@ function AdminShell() {
       {isAuthenticated && route.name === 'media' ? <MediaPage /> : null}
       {isAuthenticated && route.name === 'hotspots' ? <HotspotsPage /> : null}
       {isAuthenticated && (route.name === 'hotspot-new' || route.name === 'hotspot-detail') ? <HotspotDetailPage /> : null}
+      {isAuthenticated && route.name === 'account-security' ? <AccountSecurityPage /> : null}
     </AppLayout>
   );
 }

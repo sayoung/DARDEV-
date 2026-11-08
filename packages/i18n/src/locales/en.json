@@ -239,7 +239,8 @@
     "cities": "Cities",
     "categories": "Categories",
     "media": "Media",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "accountSecurity": "Account security"
   },
   "media": {
     "title": "Media Library",
@@ -307,6 +308,31 @@
     },
     "tourDetail": {
       "title": "Tour details"
+    },
+    "accountSecurity": {
+      "title": "Account security",
+      "subtitle": "Manage two-factor authentication for your account.",
+      "twoFactorTitle": "Two-factor authentication",
+      "twoFactorDescription": "Strengthen your account security by requiring a temporary code on every login.",
+      "status": "Status",
+      "statusEnabled": "Enabled",
+      "statusDisabled": "Disabled",
+      "enableButton": "Enable",
+      "disableButton": "Disable",
+      "setupTitle": "Set up two-factor authentication",
+      "setupInstructions": "Scan this QR code with your authenticator app or enter the secret key below.",
+      "qrAlt": "QR code for two-factor authentication",
+      "secretLabel": "Secret key",
+      "codeLabel": "6-digit code",
+      "confirmButton": "Confirm activation",
+      "confirming": "Confirming…",
+      "activating": "Loading…",
+      "disabling": "Disabling…",
+      "cancel": "Cancel",
+      "successEnabled": "Two-factor authentication has been successfully enabled.",
+      "successDisabled": "Two-factor authentication has been disabled.",
+      "invalidCode": "Invalid code",
+      "error": "An error occurred. Please try again."
     }
   },
   "tour": {

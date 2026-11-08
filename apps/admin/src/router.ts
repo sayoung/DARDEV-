@@ -18,6 +18,7 @@ export type AppRoute =
   | { name: 'hotspot-detail'; tourId: string; sceneId: string; id: string }
   | { name: 'media' }
   | { name: 'stats' }
+  | { name: 'account-security' }
   | { name: 'forgot' }
   | { name: 'reset'; token: string }
   | { name: 'invite'; token: string };
@@ -41,6 +42,7 @@ export function parsePathname(pathname: string): AppRoute {
   if (pathname === '/tours/new') return { name: 'tour-new' };
   if (pathname === '/media') return { name: 'media' };
   if (pathname === '/stats') return { name: 'stats' };
+  if (pathname === '/account/security') return { name: 'account-security' };
   if (pathname === '/') return { name: 'home' };
 
   const hotelSelectionId = HOTEL_SELECTION_PATH.exec(pathname)?.[1];
