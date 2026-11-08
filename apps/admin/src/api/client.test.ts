@@ -21,6 +21,9 @@ import {
   resetPassword,
   requestJson,
   ApiError,
+  beginTwoFactorSetup,
+  confirmTwoFactor,
+  disableTwoFactor,
 } from './client.js';
 
 const profile = {
@@ -563,4 +566,13 @@ describe('catalog API', () => {
     await expect(getTourLinkMap('tour-1')).rejects.toThrow();
   });
 });
+
+describe('two-factor re-exports on client', () => {
+  it('exporte les fonctions 2FA', () => {
+    expect(typeof beginTwoFactorSetup).toBe('function');
+    expect(typeof confirmTwoFactor).toBe('function');
+    expect(typeof disableTwoFactor).toBe('function');
+  });
+});
+
 

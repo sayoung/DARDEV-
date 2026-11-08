@@ -340,3 +340,10 @@ export async function cleanupAssetsConfirm(): Promise<AssetCleanupResult> {
     body: JSON.stringify({ dryRun: false }),
   });
 }
+
+export {
+  beginTwoFactorSetup,
+  confirmTwoFactor,
+  disableTwoFactor,
+} from './two-factor.js';
+
