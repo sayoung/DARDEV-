@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
 import { Role, type Lang } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -145,7 +145,9 @@ describe('obligation 2FA pour les administrateurs (M8 F-90)', () => {
       resources.fr.auth.twoFactorAdminAlert,
     );
     expect(alertBanner).toBeTruthy();
-    expect(window.location.pathname).toBe('/account/security');
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/account/security');
+    });
     expect(
       await screen.findByRole('heading', {
         name: resources.fr.page.accountSecurity.title,
