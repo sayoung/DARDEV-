@@ -80,6 +80,20 @@ test('la page de connexion ne présente aucune violation d’accessibilité (axe
   await expectNoA11yViolations(page);
 });
 
+test('le tableau de bord après connexion ne présente aucune violation d’accessibilité (axe)', async ({
+  page,
+}) => {
+  const api = await installApi(page, 'ok');
+  api.profile.role = Role.EDITOR;
+  await page.goto('/');
+  await submitLogin(page);
+
+  await expect(page.getByRole('banner').getByText(api.profile.name, { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: fr.page.home.title, exact: true })).toBeVisible();
+
+  await expectNoA11yViolations(page);
+});
+
 test('un 401 INVALID_CREDENTIALS affiche auth.login.error', async ({ page }) => {
   await installApi(page, 'invalid-credentials');
   await page.goto('/');

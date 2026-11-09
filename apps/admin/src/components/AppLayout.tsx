@@ -110,7 +110,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/')}
                 aria-current={isHomeActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isHomeActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isHomeActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.home')}
               </a>
@@ -120,7 +120,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/tours')}
                 aria-current={isToursActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/tours'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isToursActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isToursActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.tours')}
               </a>
@@ -130,7 +130,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/cities')}
                 aria-current={isCitiesActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/cities'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isCitiesActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isCitiesActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.cities')}
               </a>
@@ -140,7 +140,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/hotels')}
                 aria-current={isHotelsActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/hotels'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isHotelsActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isHotelsActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.hotels')}
               </a>
@@ -150,7 +150,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/categories')}
                 aria-current={isCategoriesActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/categories'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isCategoriesActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isCategoriesActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.categories')}
               </a>
@@ -160,7 +160,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/media')}
                 aria-current={isMediaActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/media'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isMediaActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isMediaActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.media')}
               </a>
@@ -170,7 +170,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/kiosks')}
                 aria-current={isKiosksActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/kiosks'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isKiosksActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isKiosksActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.kiosks')}
               </a>
@@ -180,7 +180,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/stats')}
                 aria-current={isStatsActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/stats'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isStatsActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isStatsActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.stats')}
               </a>
@@ -190,7 +190,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/users')}
                 aria-current={isUsersActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/users'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isUsersActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isUsersActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.users')}
               </a>
@@ -200,7 +200,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/audit')}
                 aria-current={isAuditActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/audit'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isAuditActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isAuditActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.audit')}
               </a>
@@ -210,7 +210,7 @@ const isKiosksActive = route.name === 'kiosks';
                 href={hrefFor('/account/security')}
                 aria-current={isAccountSecurityActive ? 'page' : undefined}
                 onClick={(e) => { handleNavClick(e, '/account/security'); }}
-                className={`block px-4 py-2 rounded-md transition-colors ${isAccountSecurityActive ? 'bg-white/20 font-bold' : 'hover:bg-white/10'}`}
+                className={`block px-4 py-2 rounded-md transition-colors ${isAccountSecurityActive ? 'bg-white text-primary font-bold' : 'hover:bg-white/10'}`}
               >
                 {t('nav.accountSecurity')}
               </a>
