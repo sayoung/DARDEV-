@@ -114,6 +114,8 @@
       "error": "تعذر تحميل الوسائط.",
       "emptyOption": "اختر وسيط...",
       "thumbnailOf": "Miniature de {{id}}",
+      "fallbackFilename": "وسيط من {{date}}",
+      "searchPlaceholder": "البحث بالاسم...",
       "kind": {
         "IMAGE": "Image",
         "PANORAMA": "Panorama",
@@ -125,6 +127,11 @@
         "READY": "جاهز",
         "ERROR": "خطأ"
       },
+      "searchLabel": "البحث عن وسيط",
+      "kindFilterLabel": "تصفية حسب النوع",
+      "loadMore": "تحميل المزيد",
+      "allKinds": "جميع الأنواع",
+      "pickerTitle": "تحديد وسيط",
       "libraryTab": "مكتبة الوسائط",
       "uploadTab": "رفع من جهاز الكمبيوتر",
       "upload": "رفع",
@@ -150,7 +157,9 @@
       "invalidForm": "يرجى تصحيح الأخطاء في النموذج.",
       "inUse": "هذا العنصر قيد الاستخدام ولا يمكن حذفه.",
       "panoramaAssetNotFound": "تعذر العثور على البانوراما المحددة.",
-      "sceneSetMismatch": "قائمة المشاهد غير صالحة أو غير مكتملة."
+      "sceneSetMismatch": "قائمة المشاهد غير صالحة أو غير مكتملة.",
+      "sceneNotFound": "تعذر العثور على المشهد المطلوب.",
+      "panoramaNotReady": "البانوراما غير جاهزة."
     },
     "actions": "إجراءات",
     "edit": "تعديل",
@@ -226,9 +235,28 @@
       }
     },
     "hotspots": {
+      "title": "النقاط الفعالة",
+      "list": "النقاط الفعالة للمشهد",
+      "backToList": "العودة إلى القائمة",
+      "backToScene": "العودة إلى المشهد",
+      "add": "إضافة نقطة فعالة",
       "edit": "تعديل النقطة الفعالة",
+      "empty": "لا توجد نقاط فعالة لهذا المشهد.",
+      "deleteConfirm": "هل أنت متأكد أنك تريد حذف هذه النقطة الفعالة؟",
       "editor": {
+        "newTitle": "نقطة فعالة جديدة",
+        "hint": "انقر على البانوراما لوضع نقطة فعالة.",
         "edit": "تعديل",
+        "delete": "حذف",
+        "confirmDelete": "حذف هذه النقطة الفعالة؟",
+        "undo": "تراجع",
+        "redo": "إعادة",
+        "setInitialView": "تعيين العرض الحالي كعرض أولي",
+        "initialViewSaved": "تم حفظ العرض الأولي",
+        "setArrival": "تعيين اتجاه الوصول",
+        "arrivalSaved": "تم حفظ اتجاه الوصول",
+        "relocate": "Déplacer ici",
+        "relocateHint": "Cliquez sur la photo ou appuyez sur Échap pour annuler.",
         "status": {
           "pending": "تغييرات معلقة…",
           "saving": "جاري الحفظ…",
@@ -236,8 +264,38 @@
           "error": "فشل الحفظ"
         },
         "retry": "إعادة المحاولة",
-        "relocate": "Déplacer ici",
-        "relocateHint": "Cliquez sur la photo ou appuyez sur Échap pour annuler."
+        "useThisDirection": "استخدام هذا الاتجاه"
+      },
+      "columns": {
+        "type": "النوع",
+        "label": "التسمية",
+        "target": "الهدف",
+        "icon": "الأيقونة"
+      },
+      "type": {
+        "SCENE_LINK": "رابط إلى مشهد",
+        "TOUR_LINK": "رابط إلى زيارة",
+        "INFO": "معلومات",
+        "MEDIA": "وسائط",
+        "URL": "رابط خارجي"
+      },
+      "icon": {
+        "ARROW": "سهم",
+        "INFO": "معلومات",
+        "PHOTO": "صورة",
+        "PLAY": "تشغيل",
+        "PORTAL": "بوابة"
+      },
+      "fields": {
+        "type": "النوع",
+        "icon": "الأيقونة",
+        "label": "التسمية",
+        "targetSceneId": "المشهد الهدف",
+        "targetTourId": "الزيارة الهدف",
+        "targetTourSceneId": "مشهد البداية (اختياري)",
+        "body": "النص",
+        "mediaAssetIds": "الوسائط",
+        "url": "عنوان URL خارجي"
       }
     }
   },
