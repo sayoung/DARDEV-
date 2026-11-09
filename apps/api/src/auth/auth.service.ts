@@ -366,6 +366,7 @@ function toMe(user: AuthUser, csrfToken: string): MeResponse {
     role: user.role,
     uiLang: user.uiLang,
     csrfToken,
+    totpEnabled: user.totpEnabled,
   });
 }
 

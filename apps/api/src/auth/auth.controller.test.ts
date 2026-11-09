@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { Role, type MeResponse } from '@xplor/shared';
+import { MeResponseSchema, Role, type MeResponse } from '@xplor/shared';
 import type { FastifyReply } from 'fastify';
 import { describe, expect, it } from 'vitest';
 
@@ -51,6 +51,16 @@ const me: MeResponse = {
   uiLang: 'fr',
   csrfToken: 'csrf-token',
   totpEnabled: false,
+};
+
+const admin2faMe: MeResponse = {
+  id: 'admin-1',
+  email: 'admin@xplor.test',
+  name: 'Admin',
+  role: Role.ADMIN,
+  uiLang: 'fr',
+  csrfToken: 'csrf-token-admin',
+  totpEnabled: true,
 };
 
 type CookieCall = {
@@ -268,9 +278,11 @@ describe('AuthController', () => {
     const { reply, cookies } = replySpy();
     const controller = controllerFor(auth, 'production');
 
-    await expect(
-      controller.login({ email: 'ada@xplor.test', password: 'secret' }, reply),
-    ).resolves.toEqual(me);
+    const res = await controller.login({ email: 'ada@xplor.test', password: 'secret' }, reply);
+    expect(res).toEqual(me);
+    const profile = MeResponseSchema.parse(res);
+    expect(profile.totpEnabled).toBe(false);
+    expect('totpSecret' in res).toBe(false);
     expect(cookies).toEqual([
       {
         op: 'set',
@@ -279,6 +291,21 @@ describe('AuthController', () => {
         options: { httpOnly: true, sameSite: 'lax', secure: true, path: '/' },
       },
     ]);
+  });
+
+  it('login avec utilisateur ayant totpEnabled: true renvoie totpEnabled: true sans totpSecret', async () => {
+    const result: LoginResult = { sessionId: 'sid-2fa', me: admin2faMe };
+    const auth = {
+      login: () => Promise.resolve(result),
+    };
+    const { reply } = replySpy();
+    const controller = controllerFor(auth, 'production');
+
+    const res = await controller.login({ email: 'admin@xplor.test', password: 'secret' }, reply);
+    expect(res).toEqual(admin2faMe);
+    const profile = MeResponseSchema.parse(res);
+    expect(profile.totpEnabled).toBe(true);
+    expect('totpSecret' in res).toBe(false);
   });
 
   it('transmet l’adresse IP de la requête Fastify à AuthService.login pour l’audit (F-91)', async () => {
@@ -348,12 +375,12 @@ describe('AuthController', () => {
     ]);
   });
 
-  it('login/2fa valide : valide le code, pose le cookie de session complète et renvoie MeResponse', async () => {
+  it('login/2fa valide : valide le code, pose le cookie de session complète et renvoie MeResponse avec totpEnabled: true sans totpSecret', async () => {
     const auth: Partial<AuthService> = {
       login2fa: (pendingSessionId: string, code: string) => {
         expect(pendingSessionId).toBe('sid-pending');
         expect(code).toBe('123456');
-        return Promise.resolve({ sessionId: 'sid-complet', me });
+        return Promise.resolve({ sessionId: 'sid-complet', me: admin2faMe });
       },
     };
     const { reply, cookies } = replySpy();
@@ -365,7 +392,9 @@ describe('AuthController', () => {
     };
 
     const res = await controller.login2fa({ code: '123456' }, request, reply);
-    expect(res).toEqual(me);
+    expect(res).toEqual(admin2faMe);
+    expect(res.totpEnabled).toBe(true);
+    expect('totpSecret' in res).toBe(false);
     expect(cookies).toEqual([
       {
         op: 'set',
@@ -510,8 +539,32 @@ describe('AuthController', () => {
       session: { userId: 'user-1', csrfToken: 'csrf-token', createdAt: '2026-09-29T00:00:00.000Z' },
     };
 
-    await expect(ok.me(request)).resolves.toEqual(me);
+    const res = await ok.me(request);
+    expect(res).toEqual(me);
+    expect(res.totpEnabled).toBe(false);
+    expect('totpSecret' in res).toBe(false);
     await expect(refused.me(request)).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('GET /auth/me renvoie totpEnabled: true pour un ADMIN avec 2FA activée sans totpSecret', async () => {
+    const ok = controllerFor({
+      me: () => Promise.resolve(admin2faMe),
+    });
+    const request: SessionRequest = {
+      method: 'GET',
+      headers: {},
+      principal: { userId: 'admin-1', role: Role.ADMIN, hotelIds: [] },
+      session: {
+        userId: 'admin-1',
+        csrfToken: 'csrf-token-admin',
+        createdAt: '2026-09-29T00:00:00.000Z',
+      },
+    };
+
+    const res = await ok.me(request);
+    expect(res).toEqual(admin2faMe);
+    expect(res.totpEnabled).toBe(true);
+    expect('totpSecret' in res).toBe(false);
   });
 
   it('GET /auth/me avec la session pending → 401', async () => {

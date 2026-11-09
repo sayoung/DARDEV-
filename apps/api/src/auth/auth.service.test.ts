@@ -359,6 +359,8 @@ describe('AuthService.login', () => {
       csrfToken: result.me.csrfToken,
       totpEnabled: false,
     });
+    expect(result.me.totpEnabled).toBe(false);
+    expect('totpSecret' in result.me).toBe(false);
     expect(await sessions.get(previous)).toBeNull();
     expect(await sessions.get(result.sessionId)).toEqual({
       userId: user.id,
@@ -524,6 +526,8 @@ describe('AuthService.login', () => {
     expect(result.me.role).toBe(Role.ADMIN);
     expect(result.me.email).toBe(admin.email);
     expect(result.me.id).toBe(admin.id);
+    expect(result.me.totpEnabled).toBe(false);
+    expect('totpSecret' in result.me).toBe(false);
     expect(typeof result.sessionId).toBe('string');
     expect(typeof result.me.csrfToken).toBe('string');
     expect(users.updates).toEqual([
@@ -555,6 +559,8 @@ describe('AuthService.login', () => {
     expect(result.me.role).toBe(Role.HOTEL_MANAGER);
     expect(result.me.email).toBe(manager.email);
     expect(result.me.id).toBe(manager.id);
+    expect(result.me.totpEnabled).toBe(true);
+    expect('totpSecret' in result.me).toBe(false);
     expect(typeof result.sessionId).toBe('string');
     expect(typeof result.me.csrfToken).toBe('string');
     expect(users.updates).toEqual([
@@ -584,6 +590,8 @@ describe('AuthService.login', () => {
       throw new Error('me attendu dans result');
     }
     expect(result.me.role).toBe(Role.EDITOR);
+    expect(result.me.totpEnabled).toBe(true);
+    expect('totpSecret' in result.me).toBe(false);
     const stored = await sessions.get(result.sessionId);
     expect(stored?.pending2fa).toBeUndefined();
   });
@@ -649,8 +657,10 @@ describe('AuthService.login2fa', () => {
       role: Role.ADMIN,
       uiLang: 'fr',
       csrfToken: result.me.csrfToken,
-      totpEnabled: false,
+      totpEnabled: true,
     });
+    expect(result.me.totpEnabled).toBe(true);
+    expect('totpSecret' in result.me).toBe(false);
 
     // compteur remis à zéro et lastLoginAt renseigné
     expect(admin.failedLoginCount).toBe(0);
@@ -864,7 +874,8 @@ describe('AuthService.me', () => {
     const user = account({ uiLang: 'ar', role: Role.ADMIN });
     const { service } = setup(user, true);
 
-    await expect(service.me(user.id, 'csrf-courant')).resolves.toEqual({
+    const me = await service.me(user.id, 'csrf-courant');
+    expect(me).toEqual({
       id: user.id,
       email: user.email,
       name: user.name,
@@ -872,6 +883,31 @@ describe('AuthService.me', () => {
       uiLang: 'ar',
       csrfToken: 'csrf-courant',
       totpEnabled: false,
+    });
+    expect(me.totpEnabled).toBe(false);
+    expect('totpSecret' in me).toBe(false);
+  });
+
+  it('renvoie totpEnabled: true pour un ADMIN avec 2FA activée sans exposer totpSecret', async () => {
+    const admin = account({
+      id: 'admin-2fa',
+      email: 'admin2fa@xplor.test',
+      role: Role.ADMIN,
+      totpEnabled: true,
+    });
+    const { service } = setup(admin, true);
+
+    const me = await service.me(admin.id, 'csrf-courant');
+    expect(me.totpEnabled).toBe(true);
+    expect('totpSecret' in me).toBe(false);
+    expect(me).toEqual({
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: Role.ADMIN,
+      uiLang: 'fr',
+      csrfToken: 'csrf-courant',
+      totpEnabled: true,
     });
   });
 

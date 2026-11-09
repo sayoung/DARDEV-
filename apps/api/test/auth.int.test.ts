@@ -21,9 +21,12 @@ import { Redis } from 'ioredis';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ACCOUNT_LOCKED, INVALID_CREDENTIALS, TOKEN_INVALID } from '../src/auth/auth.errors.js';
+import { DEFAULT_TEST_TOTP_ENCRYPTION_KEY } from '../src/auth/auth.module.js';
 import { toPrismaRole } from '../src/auth/prisma-role.js';
 import { PasswordService } from '../src/auth/password.service.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from '../src/auth/session-cookie.js';
+import { encryptTotpSecret } from '../src/auth/totp-secret-cipher.js';
+import { totpCode } from '../src/auth/totp.js';
 import { AppModule } from '../src/app.module.js';
 import { loadEnv, type Env } from '../src/config/env.js';
 import { FakeMailer } from '../src/mail/fake-mailer.js';
@@ -101,6 +104,12 @@ describe('auth HTTP', () => {
   it('connecte l’ADMIN seedé, exige le CSRF au logout, puis refuse la session', async () => {
     const loggedIn = await postLogin(ADMIN_EMAIL, seedPassword);
     expect(loggedIn.statusCode).toBe(200);
+    const loginMe = readMe(loggedIn.body);
+    expect(loginMe.totpEnabled).toBe(false);
+    const loginJson: unknown = JSON.parse(loggedIn.body);
+    if (typeof loginJson === 'object' && loginJson !== null) {
+      expect('totpSecret' in loginJson).toBe(false);
+    }
     const sessionId = requireSessionCookie(loggedIn);
 
     const profile = await getMe(sessionId);
@@ -108,6 +117,11 @@ describe('auth HTTP', () => {
     const me = readMe(profile.body);
     expect(me.csrfToken.length).toBeGreaterThan(0);
     expect(me.email).toBe(ADMIN_EMAIL);
+    expect(me.totpEnabled).toBe(false);
+    const profileJson: unknown = JSON.parse(profile.body);
+    if (typeof profileJson === 'object' && profileJson !== null) {
+      expect('totpSecret' in profileJson).toBe(false);
+    }
 
     const denied = await application().inject({
       method: 'POST',
@@ -128,6 +142,48 @@ describe('auth HTTP', () => {
 
     const after = await getMe(sessionId);
     expect(after.statusCode).toBe(401);
+  });
+
+  it('après login2fa et GET /auth/me, totpEnabled vaut true pour un ADMIN avec 2FA activée et totpSecret est absent', async () => {
+    const rawSecret = 'JBSWY3DPEHPK3PXP';
+    const encryptedSecret = encryptTotpSecret(rawSecret, DEFAULT_TEST_TOTP_ENCRYPTION_KEY);
+
+    await prisma.user.update({
+      where: { email: ADMIN_EMAIL },
+      data: {
+        totpEnabled: true,
+        totpSecret: encryptedSecret,
+      },
+    });
+
+    const loginRes = await postLogin(ADMIN_EMAIL, seedPassword);
+    expect(loginRes.statusCode).toBe(200);
+    const loginJson: unknown = JSON.parse(loginRes.body);
+    if (typeof loginJson === 'object' && loginJson !== null) {
+      expect('totpSecret' in loginJson).toBe(false);
+    }
+    const pendingSessionId = requireSessionCookie(loginRes);
+
+    const validCode = totpCode(rawSecret, Date.now());
+    const login2faRes = await postLogin2fa(pendingSessionId, validCode);
+    expect(login2faRes.statusCode).toBe(200);
+
+    const me2fa = readMe(login2faRes.body);
+    expect(me2fa.totpEnabled).toBe(true);
+    const login2faJson: unknown = JSON.parse(login2faRes.body);
+    if (typeof login2faJson === 'object' && login2faJson !== null) {
+      expect('totpSecret' in login2faJson).toBe(false);
+    }
+    const fullSessionId = requireSessionCookie(login2faRes);
+
+    const meRes = await getMe(fullSessionId);
+    expect(meRes.statusCode).toBe(200);
+    const me = readMe(meRes.body);
+    expect(me.totpEnabled).toBe(true);
+    const meJson: unknown = JSON.parse(meRes.body);
+    if (typeof meJson === 'object' && meJson !== null) {
+      expect('totpSecret' in meJson).toBe(false);
+    }
   });
 
   it('incrémente failedLoginCount quand le mot de passe est faux', async () => {
@@ -422,6 +478,18 @@ function postLogin(email: string, password: string): Promise<Injected> {
     url: '/api/v1/auth/login',
     headers: { 'content-type': 'application/json' },
     payload: JSON.stringify({ email, password }),
+  });
+}
+
+function postLogin2fa(sessionId: string, code: string): Promise<Injected> {
+  return application().inject({
+    method: 'POST',
+    url: '/api/v1/auth/login/2fa',
+    headers: {
+      'content-type': 'application/json',
+      cookie: sessionCookie(sessionId),
+    },
+    payload: JSON.stringify({ code }),
   });
 }
 
