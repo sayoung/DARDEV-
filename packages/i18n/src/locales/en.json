@@ -460,6 +460,33 @@
     "tourDetail": {
       "title": "Tour details"
     },
+    "hotelSelection": {
+      "title": "Tour selection",
+      "selectedTours": "Selected tours",
+      "catalog": "Tour catalog",
+      "add": "Add",
+      "added": "Added",
+      "search": "Search for a tour",
+      "searchAction": "Search",
+      "city": "City",
+      "allCities": "All cities",
+      "category": "Category",
+      "allCategories": "All categories",
+      "catalogError": "Unable to load the tour catalog.",
+      "noCatalogResults": "No published tours found.",
+      "remove": "Remove",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "featured": "Featured",
+      "attract": "Attract mode",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Selection saved.",
+      "error": "Unable to save the selection.",
+      "loadError": "Unable to load the selection.",
+      "empty": "No tours selected.",
+      "version": "Version {{version}}"
+    },
     "accountSecurity": {
       "title": "Account security",
       "subtitle": "Manage two-factor authentication for your account.",

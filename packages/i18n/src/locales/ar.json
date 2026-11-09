@@ -460,6 +460,33 @@
     "tourDetail": {
       "title": "تفاصيل الزيارة"
     },
+    "hotelSelection": {
+      "title": "تحديد الزيارات",
+      "selectedTours": "الزيارات المحددة",
+      "catalog": "كتالوج الزيارات",
+      "add": "إضافة",
+      "added": "مضافة",
+      "search": "البحث عن زيارة",
+      "searchAction": "بحث",
+      "city": "المدينة",
+      "allCities": "جميع المدن",
+      "category": "الفئة",
+      "allCategories": "جميع الفئات",
+      "catalogError": "تعذر تحميل كتالوج الزيارات.",
+      "noCatalogResults": "لم يتم العثور على أي زيارة منشورة.",
+      "remove": "إزالة",
+      "moveUp": "تحريك لأعلى",
+      "moveDown": "تحريك لأسفل",
+      "featured": "إبراز",
+      "attract": "وضع الاستعداد",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ...",
+      "saved": "تم حفظ التحديد.",
+      "error": "تعذر حفظ التحديد.",
+      "loadError": "تعذر تحميل التحديد.",
+      "empty": "لم يتم تحديد أي زيارة.",
+      "version": "الإصدار {{version}}"
+    },
     "accountSecurity": {
       "title": "أمان الحساب",
       "subtitle": "إدارة المصادقة الثنائية لحسابك.",
