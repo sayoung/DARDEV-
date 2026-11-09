@@ -32,6 +32,8 @@ export interface ViewerLabels {
   gyroscope?: string;
   openMap?: string;
   vr?: string;
+  places?: string;
+  placesTitle?: string;
 }
 
 export interface ViewerDeps {
@@ -177,6 +179,8 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
       next,
       canGoBack: navigator.canGoBack(),
       hasPracticalInfo: state.graph.practicalInfo !== null || state.graph.location !== null,
+      scenes: state.graph.scenes,
+      currentSceneId: state.sceneId,
     });
   };
 
@@ -211,6 +215,22 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
       setTransitioning(true);
       try {
         await currentMount.goToScene(next);
+      } finally {
+        setTransitioning(false);
+      }
+    }
+  };
+
+  const handleGoToScene = async (targetSceneId: string) => {
+    if (isTransitioning) return;
+    const state = navigator.current();
+    if (!state) return;
+
+    const targetExists = state.graph.scenes.some((s) => s.id === targetSceneId);
+    if (targetExists && currentMount) {
+      setTransitioning(true);
+      try {
+        await currentMount.goToScene(targetSceneId);
       } finally {
         setTransitioning(false);
       }
@@ -284,7 +304,10 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
     onPracticalInfo: handlePracticalInfo,
     onGyroscope: () => {
       if (currentMount) currentMount.toggleGyroscope();
-    }
+    },
+    goToScene: (id) => {
+      handleGoToScene(id).catch(() => {});
+    },
   });
 
   return {
