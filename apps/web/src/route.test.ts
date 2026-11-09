@@ -59,6 +59,15 @@ describe('parseViewerRoute', () => {
     expect(parseViewerRoute('/v/preview/')).toBeNull();
   });
 
+  it('reconnaît la page légale avec et sans barre oblique finale', () => {
+    expect(parseViewerRoute('/v/legal')).toEqual({ kind: 'legal' });
+    expect(parseViewerRoute('/v/legal/')).toEqual({ kind: 'legal' });
+  });
+
+  it('conserve /v/legalx comme jeton de partage', () => {
+    expect(parseViewerRoute('/v/legalx')).toEqual({ kind: 'share', token: 'legalx' });
+  });
+
   it('délègue à parseShareToken (comportement inchangé)', () => {
     expect(parseViewerRoute('/v/abcdef123')).toEqual({ kind: 'share', token: 'abcdef123' });
     expect(parseViewerRoute('/v/a/')).toEqual({ kind: 'share', token: 'a' });

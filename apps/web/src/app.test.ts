@@ -224,6 +224,24 @@ describe('startViewer', () => {
     expect(mockMount).not.toHaveBeenCalled();
   });
 
+  it('legal: affiche le rendu provisoire et ne tente pas de charger une visite', async () => {
+    await startViewer(
+      doc,
+      { pathname: '/v/legal', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    expect(mockLoad).not.toHaveBeenCalled();
+    expect(mockLoadPreview).not.toHaveBeenCalled();
+    expect(mockMount).not.toHaveBeenCalled();
+    const status = doc.getElementById('status');
+    expect(status?.hidden).toBe(true);
+    const legal = doc.getElementById('legal');
+    expect(legal).not.toBeNull();
+    expect(legal?.textContent).toBe(resources.fr.legal.title);
+    expect(doc.title).toBe(resources.fr.legal.title);
+  });
+
   it('transmet mountVr et le libellé i18n au contrôleur', async () => {
     mockLoad.mockResolvedValue(mockGraph);
     const mockMountVr = vi.fn().mockResolvedValue({ destroy: vi.fn() });

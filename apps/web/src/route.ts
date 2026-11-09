@@ -3,7 +3,10 @@ import { LANGS, type Lang } from '@xplor/shared';
 const shareTokenRegex = /^[A-Za-z0-9_-]{1,22}$/;
 const previewTokenRegex = /^[A-Za-z0-9_-]{1,200}\.[A-Za-z0-9_-]{1,100}$/;
 
-export type ViewerRoute = { kind: 'share'; token: string } | { kind: 'preview'; token: string };
+export type ViewerRoute =
+  | { kind: 'share'; token: string }
+  | { kind: 'preview'; token: string }
+  | { kind: 'legal' };
 
 export function parseShareToken(pathname: string): string | null {
   if (!pathname.startsWith('/v/')) {
@@ -27,6 +30,10 @@ export function parseViewerRoute(pathname: string): ViewerRoute | null {
   let rest = pathname.slice(3);
   if (rest.endsWith('/')) {
     rest = rest.slice(0, -1);
+  }
+
+  if (rest === 'legal') {
+    return { kind: 'legal' };
   }
 
   if (rest === 'preview' || rest.startsWith('preview/')) {
