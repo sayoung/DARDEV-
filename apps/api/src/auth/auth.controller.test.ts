@@ -50,6 +50,7 @@ const me: MeResponse = {
   role: Role.EDITOR,
   uiLang: 'fr',
   csrfToken: 'csrf-token',
+  totpEnabled: false,
 };
 
 type CookieCall = {

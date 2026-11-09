@@ -357,6 +357,7 @@ describe('AuthService.login', () => {
       role: Role.EDITOR,
       uiLang: 'fr',
       csrfToken: result.me.csrfToken,
+      totpEnabled: false,
     });
     expect(await sessions.get(previous)).toBeNull();
     expect(await sessions.get(result.sessionId)).toEqual({
@@ -648,6 +649,7 @@ describe('AuthService.login2fa', () => {
       role: Role.ADMIN,
       uiLang: 'fr',
       csrfToken: result.me.csrfToken,
+      totpEnabled: false,
     });
 
     // compteur remis à zéro et lastLoginAt renseigné
@@ -869,6 +871,7 @@ describe('AuthService.me', () => {
       role: Role.ADMIN,
       uiLang: 'ar',
       csrfToken: 'csrf-courant',
+      totpEnabled: false,
     });
   });
 

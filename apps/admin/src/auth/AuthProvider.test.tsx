@@ -19,6 +19,7 @@ const mockProfile: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-token-123',
+  totpEnabled: false,
 };
 
 let currentAuth: ReturnType<typeof useAuth> | null = null;
