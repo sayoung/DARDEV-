@@ -825,7 +825,7 @@ describe('createControls', () => {
       controls.destroy();
     });
 
-    it('setVrActive bascule la visibilité de #legal-link sans erreur s\'il est absent ou présent', () => {
+    it('setVrActive ne plante pas lorsque #legal-link est absent du document', () => {
       const handlers = {
         onPrevious: vi.fn(),
         onNext: vi.fn(),
@@ -844,6 +844,23 @@ describe('createControls', () => {
         controls.setVrActive(true);
         controls.setVrActive(false);
       }).not.toThrow();
+
+      controls.destroy();
+    });
+
+    it('setVrActive(true) masque #legal-link et setVrActive(false) le ré-affiche', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers
+      );
 
       // Avec #legal-link dans le document : masquage puis ré-affichage
       const link = doc.createElement('a');
