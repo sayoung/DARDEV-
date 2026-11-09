@@ -461,6 +461,8 @@
     "play": "Lecture",
     "pause": "Pause",
     "close": "Fermer",
+    "places": "Places",
+    "placesTitle": "Go to",
     "loading": "Chargement de la visite…",
     "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
     "loadError": "Impossible de charger la visite. Réessayez plus tard."

@@ -730,6 +730,8 @@
     "play": "Lecture",
     "pause": "Pause",
     "close": "Fermer",
+    "places": "Lieux",
+    "placesTitle": "Aller à",
     "loading": "Chargement de la visite…",
     "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
     "loadError": "Impossible de charger la visite. Réessayez plus tard.",
