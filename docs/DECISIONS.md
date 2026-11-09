@@ -1101,6 +1101,15 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** refus de connexion côté API, ou blocage total de l'interface.
 - **À valider :** oui
 
+## D-139 — Conservation des journaux de production (M8 NF-02)
+
+- **Date :** 09/11/2026
+- **Décision :** conservation des journaux bornée par rotation json-file (10 Mo × 3) plutôt que par durée stricte de 30 jours.
+- **Alternatives :** logrotate sur l'hôte ; un service de journaux centralisé.
+- **Remarque :** Emplacements « [à compléter] » des mentions légales à fournir par le porteur.
+- **À valider :** oui
+
+
 
 
 
