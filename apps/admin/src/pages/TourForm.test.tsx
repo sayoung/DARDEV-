@@ -3,7 +3,7 @@ import { resources } from '@xplor/i18n';
 import { Role, type MeResponse, type TourResponse, TourStatus, TourUpdateSchema } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { clearCsrfToken } from '../api/client.js';
+import { clearCsrfToken, resetIsRedirectingForTests } from '../api/client.js';
 import { App } from '../App.js';
 import { i18n } from '../i18n.js';
 
@@ -113,6 +113,7 @@ const fetchMock = vi.fn<(input: unknown, init?: unknown) => Promise<Response>>()
 describe('TourForm Pages', () => {
   beforeEach(async () => {
     clearCsrfToken();
+    resetIsRedirectingForTests();
     localStorage.clear();
     await i18n.changeLanguage('fr');
     fetchMock.mockReset();
@@ -136,6 +137,7 @@ describe('TourForm Pages', () => {
     cleanup();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    window.history.replaceState(null, '', '/');
   });
 
   it('création envoie le bon corps puis navigue', async () => {
@@ -410,7 +412,7 @@ describe('TourForm Pages', () => {
     fireEvent.change(titleInput, { target: { value: 'Titre Modifié' } });
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.save }));
 
-    const alerts = await screen.findAllByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
+    const alerts = await screen.findAllByText(resources.fr.common.error.generic);
     expect(alerts.length).toBeGreaterThan(0);
     const kept = screen.getAllByDisplayValue('Titre Modifié').find((el) => !el.classList.contains('sr-only'));
     expect(kept).toBeTruthy();
@@ -451,7 +453,7 @@ describe('TourForm Pages', () => {
     await screen.findAllByDisplayValue('Tour 1');
     fireEvent.click(screen.getByRole('button', { name: resources.fr.common.delete }));
 
-    const alerts = await screen.findAllByText(resources.fr.common.error.generic, undefined, { timeout: 3000 });
+    const alerts = await screen.findAllByText(resources.fr.common.error.generic);
     expect(alerts.length).toBeGreaterThan(0);
     expect(screen.getAllByDisplayValue('Tour 1').length).toBeGreaterThan(0);
     expect(window.location.pathname).toBe('/tours/018f6b21-4d39-7a1b-9e45-3f8c5b2a1d9f');
