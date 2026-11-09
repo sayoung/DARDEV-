@@ -11,6 +11,8 @@ import {
   type MeResponse,
 } from '@xplor/shared';
 
+import { expectNoA11yViolations } from './helpers/axe.js';
+
 const fr = resources.fr;
 const ar = resources.ar;
 
@@ -63,6 +65,19 @@ test('une connexion réussie affiche le nom et le rôle, puis la déconnexion re
 
   await expect(page.getByRole('heading', { name: fr.auth.login.title, exact: true })).toBeVisible();
   expect(api.logoutCsrf()).toBe(api.profile.csrfToken);
+});
+
+test('la page de connexion ne présente aucune violation d’accessibilité (axe)', async ({
+  page,
+}) => {
+  await installApi(page, 'ok');
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: fr.auth.login.title, exact: true })).toBeVisible();
+  await expect(page.getByLabel(fr.auth.login.email, { exact: true })).toBeVisible();
+  await expect(page.getByLabel(fr.auth.login.password, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: fr.auth.login.submit, exact: true })).toBeVisible();
+
+  await expectNoA11yViolations(page);
 });
 
 test('un 401 INVALID_CREDENTIALS affiche auth.login.error', async ({ page }) => {
