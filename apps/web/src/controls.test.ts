@@ -1,3 +1,7 @@
+/**
+ * @vitest-environment happy-dom
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -678,6 +682,146 @@ describe('createControls', () => {
       expect(panel.getAttribute('dir')).toBe('rtl');
 
       doc.documentElement.removeAttribute('dir');
+      controls.destroy();
+    });
+
+    it('setVrActive(true) ferme un panneau ouvert et masque le bouton', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      expect(placesBtn.hidden).toBe(false);
+
+      placesBtn.click();
+      expect(doc.getElementById('places-panel')).not.toBeNull();
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('true');
+
+      controls.setVrActive(true);
+
+      expect(doc.getElementById('places-panel')).toBeNull();
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+      expect(placesBtn.hidden).toBe(true);
+
+      controls.destroy();
+    });
+
+    it('setVrActive(false) le ré-affiche', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      controls.setVrActive(true);
+      expect(placesBtn.hidden).toBe(true);
+
+      controls.setVrActive(false);
+      expect(placesBtn.hidden).toBe(false);
+
+      controls.destroy();
+    });
+
+    it('un panneau ne peut pas être ouvert tant que le bouton est masqué', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      controls.setVrActive(true);
+      expect(placesBtn.hidden).toBe(true);
+
+      placesBtn.click();
+      expect(doc.getElementById('places-panel')).toBeNull();
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+
+      controls.setVrActive(false);
+      expect(placesBtn.hidden).toBe(false);
+
+      placesBtn.click();
+      expect(doc.getElementById('places-panel')).not.toBeNull();
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('true');
+
+      controls.destroy();
+    });
+
+    it('ensurePlacesButton respecte l\'état VR courant', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      expect(nav.querySelector('button.xplor-nav-btn--places')).toBeNull();
+
+      controls.setVrActive(true);
+
+      controls.update({
+        previous: null,
+        next: null,
+        canGoBack: false,
+        hasPracticalInfo: false,
+        scenes: mockScenes,
+      });
+
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      expect(placesBtn.hidden).toBe(true);
+
+      controls.setVrActive(false);
+      expect(placesBtn.hidden).toBe(false);
+
       controls.destroy();
     });
   });

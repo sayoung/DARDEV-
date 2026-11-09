@@ -57,6 +57,7 @@ export function createControls(
 ): {
   update(state: ControlsState): void;
   showGyroscope(visible: boolean): void;
+  setVrActive(active: boolean): void;
   destroy(): void;
 } {
   let currentScenes: readonly ControlsScene[] | undefined;
@@ -143,6 +144,7 @@ export function createControls(
     gyroBtn.hidden = true;
   }
 
+  let isVrActive = false;
   let isPanelOpen = false;
   let openPanel: HTMLElement | null = null;
   let placesBtn: HTMLButtonElement | null = null;
@@ -161,7 +163,7 @@ export function createControls(
       openPanel = null;
     }
 
-    if (restoreFocus && placesBtn) {
+    if (restoreFocus && placesBtn && !placesBtn.hidden) {
       placesBtn.focus();
     }
   };
@@ -260,15 +262,14 @@ export function createControls(
       closePlacesPanel(true);
       return;
     }
+    if (!placesBtn || placesBtn.hidden) return;
     if (!currentScenes || currentScenes.length === 0) return;
 
     const places = groupScenesIntoPlaces(currentScenes, preferredLang);
     if (places.length === 0) return;
 
     isPanelOpen = true;
-    if (placesBtn) {
-      placesBtn.setAttribute('aria-expanded', 'true');
-    }
+    placesBtn.setAttribute('aria-expanded', 'true');
 
     const panel = doc.createElement('div');
     panel.id = 'places-panel';
@@ -367,6 +368,7 @@ export function createControls(
     btn.setAttribute('aria-expanded', 'false');
     btn.setAttribute('aria-controls', 'places-panel');
     btn.innerHTML = PLACES_ICON_SVG;
+    btn.hidden = isVrActive;
     btn.addEventListener('click', () => {
       if (isPanelOpen) {
         closePlacesPanel(true);
@@ -382,9 +384,13 @@ export function createControls(
   }
 
   const ensurePlacesButton = () => {
-    if (!placesBtn && currentScenes !== undefined) {
-      placesBtn = createPlacesButton();
-      nav.insertBefore(placesBtn, prevBtn);
+    if (!placesBtn) {
+      if (currentScenes !== undefined) {
+        placesBtn = createPlacesButton();
+        nav.insertBefore(placesBtn, prevBtn);
+      }
+    } else {
+      placesBtn.hidden = isVrActive;
     }
   };
 
@@ -451,6 +457,17 @@ export function createControls(
     showGyroscope(visible: boolean) {
       if (gyroBtn) {
         gyroBtn.hidden = !visible;
+      }
+    },
+    setVrActive(active: boolean) {
+      isVrActive = active;
+      if (active) {
+        closePlacesPanel(false);
+        if (placesBtn) {
+          placesBtn.hidden = true;
+        }
+      } else if (placesBtn) {
+        placesBtn.hidden = false;
       }
     },
     destroy() {
