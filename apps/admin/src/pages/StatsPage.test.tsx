@@ -210,13 +210,13 @@ describe('StatsPage (M7 F-81 / F-82)', () => {
     expect(formScope.getByLabelText(resources.ar.page.stats.channel)).toBeTruthy();
     expect(formScope.getByLabelText(resources.ar.page.stats.language)).toBeTruthy();
 
+    // Navigation links in Arabic
+    expect(screen.getByRole('link', { name: resources.ar.nav.hotels })).toBeTruthy();
+    expect(screen.getByRole('link', { name: resources.ar.nav.kiosks })).toBeTruthy();
+
     // Missing keys in Arabic fall back to French (D-03 suspendue)
-    expect(hasProperty(resources.ar.nav, 'hotels')).toBe(false);
-    expect(hasProperty(resources.ar.nav, 'kiosks')).toBe(false);
-    expect(i18n.t('nav.hotels', { lng: 'ar' })).toBe(resources.fr.nav.hotels);
-    expect(i18n.t('nav.kiosks', { lng: 'ar' })).toBe(resources.fr.nav.kiosks);
-    expect(screen.getByRole('link', { name: resources.fr.nav.hotels })).toBeTruthy();
-    expect(screen.getByRole('link', { name: resources.fr.nav.kiosks })).toBeTruthy();
+    expect(hasProperty(resources.ar.page, 'hotels')).toBe(false);
+    expect(i18n.t('page.hotels.title', { lng: 'ar' })).toBe(resources.fr.page.hotels.title);
   });
 
   it('applique dir=ltr en anglais, affiche les libellés traduits et replie les clés manquantes sur le français (D-03 suspendue)', async () => {
@@ -251,13 +251,13 @@ describe('StatsPage (M7 F-81 / F-82)', () => {
     expect(formScope.getByLabelText(resources.en.page.stats.channel)).toBeTruthy();
     expect(formScope.getByLabelText(resources.en.page.stats.language)).toBeTruthy();
 
+    // Navigation links in English
+    expect(screen.getByRole('link', { name: resources.en.nav.hotels })).toBeTruthy();
+    expect(screen.getByRole('link', { name: resources.en.nav.kiosks })).toBeTruthy();
+
     // Missing keys in English fall back to French (D-03 suspendue)
-    expect(hasProperty(resources.en.nav, 'hotels')).toBe(false);
-    expect(hasProperty(resources.en.nav, 'kiosks')).toBe(false);
-    expect(i18n.t('nav.hotels', { lng: 'en' })).toBe(resources.fr.nav.hotels);
-    expect(i18n.t('nav.kiosks', { lng: 'en' })).toBe(resources.fr.nav.kiosks);
-    expect(screen.getByRole('link', { name: resources.fr.nav.hotels })).toBeTruthy();
-    expect(screen.getByRole('link', { name: resources.fr.nav.kiosks })).toBeTruthy();
+    expect(hasProperty(resources.en.page, 'hotels')).toBe(false);
+    expect(i18n.t('page.hotels.title', { lng: 'en' })).toBe(resources.fr.page.hotels.title);
   });
 
   it('envoie les filtres hôtel, visite, canal, langue et période à l\'API lors de l\'application', async () => {

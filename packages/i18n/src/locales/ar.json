@@ -11,15 +11,23 @@
     },
     "deleteConfirm": "هل أنت متأكد؟",
     "save": "حفظ",
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
     "delete": "حذف",
     "retry": "إعادة المحاولة",
+    "actions": {
+      "cancel": "إلغاء"
+    },
     "error": {
       "generic": "حدث خطأ."
     },
     "unknown": "غير معروف",
+    "select": "تحديد",
     "change": "تغيير"
   },
   "auth": {
+    "slogan": "رحلتكم تبدأ هنا",
     "login": {
       "title": "تسجيل الدخول",
       "email": "البريد الإلكتروني",
@@ -58,6 +66,7 @@
       "requiredForAdmin": "المصادقة الثنائية إلزامية للمسؤول",
       "verify": "تحقق"
     },
+    "twoFactorAdminAlert": "المصادقة الثنائية إلزامية للمسؤولين. قم بتفعيلها للمتابعة.",
     "errors": {
       "TOKEN_INVALID": "هذا الرابط لم يعد صالحًا.",
       "PASSWORD_TOO_COMMON": "كلمة المرور هذه شائعة جدًا.",
@@ -239,8 +248,11 @@
     "cities": "المدن",
     "categories": "الفئات",
     "media": "الوسائط",
+    "hotels": "الفنادق",
+    "kiosks": "الأكشاك",
     "stats": "الإحصاءات",
     "users": "المستخدمون",
+    "audit": "سجل التدقيق",
     "accountSecurity": "أمان الحساب"
   },
   "media": {
@@ -434,6 +446,7 @@
       "selectCity": "اختر مدينة...",
       "categoryIds": "الفئات",
       "coverAssetId": "صورة الغلاف",
+      "coverRequired": "يرجى اختيار صورة الغلاف.",
       "durationMinutes": "المدة (دقائق)",
       "lat": "خط العرض",
       "lng": "خط الطول"
@@ -465,7 +478,9 @@
     "placesTitle": "الانتقال إلى",
     "loading": "Chargement de la visite…",
     "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
-    "loadError": "Impossible de charger la visite. Réessayez plus tard."
+    "loadError": "Impossible de charger la visite. Réessayez plus tard.",
+    "language": "اللغة",
+    "openMap": "عرض على الخريطة"
   },
   "editor": {
     "sceneAriaLabel": "Éditeur de panorama 360",

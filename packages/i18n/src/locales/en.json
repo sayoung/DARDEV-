@@ -11,15 +11,23 @@
     },
     "deleteConfirm": "Are you sure?",
     "save": "Save",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
     "delete": "Delete",
     "retry": "Retry",
+    "actions": {
+      "cancel": "Cancel"
+    },
     "error": {
       "generic": "An error occurred."
     },
     "unknown": "Unknown",
+    "select": "Select",
     "change": "Change"
   },
   "auth": {
+    "slogan": "Your journey begins here",
     "login": {
       "title": "Sign in",
       "email": "Email address",
@@ -58,6 +66,7 @@
       "requiredForAdmin": "2FA required for ADMIN",
       "verify": "Verify"
     },
+    "twoFactorAdminAlert": "Two-factor authentication is required for administrators. Enable it to continue.",
     "errors": {
       "TOKEN_INVALID": "This link is no longer valid.",
       "PASSWORD_TOO_COMMON": "This password is too common.",
@@ -239,8 +248,11 @@
     "cities": "Cities",
     "categories": "Categories",
     "media": "Media",
+    "hotels": "Hotels",
+    "kiosks": "Kiosks",
     "stats": "Statistics",
     "users": "Users",
+    "audit": "Audit log",
     "accountSecurity": "Account security"
   },
   "media": {
@@ -434,6 +446,7 @@
       "selectCity": "Select a city...",
       "categoryIds": "Categories",
       "coverAssetId": "Cover",
+      "coverRequired": "Please select a cover.",
       "durationMinutes": "Duration (minutes)",
       "lat": "Latitude",
       "lng": "Longitude"
@@ -465,7 +478,9 @@
     "placesTitle": "Go to",
     "loading": "Chargement de la visite…",
     "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
-    "loadError": "Impossible de charger la visite. Réessayez plus tard."
+    "loadError": "Impossible de charger la visite. Réessayez plus tard.",
+    "language": "Language",
+    "openMap": "View on map"
   },
   "editor": {
     "sceneAriaLabel": "Éditeur de panorama 360",
