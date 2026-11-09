@@ -260,6 +260,7 @@
     "subtitle": "Manage images, panoramas, and sounds.",
     "empty": "No media found.",
     "columns": {
+      "name": "Name",
       "date": "Creation date",
       "dimensions": "Dimensions",
       "size": "Size (MB)",
@@ -291,6 +292,21 @@
     },
     "errors": {
       "inUse": "This media is used by a scene or hotspot."
+    },
+    "cleanup": {
+      "button": "Clean up media library",
+      "empty": "The media library is already clean",
+      "confirm": "{{count}} unused media, {{size}} MB, will be permanently deleted",
+      "success": "{{count}} media have been deleted",
+      "confirmTitle": "Confirmation",
+      "emptyTitle": "Information",
+      "successTitle": "Success"
+    },
+    "folders": {
+      "title": "Folders",
+      "all": "All media",
+      "unused": "Unused",
+      "mobileMenu": "Folders"
     }
   },
   "page": {
