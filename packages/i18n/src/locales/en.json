@@ -460,6 +460,70 @@
     "tourDetail": {
       "title": "Tour details"
     },
+    "hotels": {
+      "title": "Hotels",
+      "columns": {
+        "name": "Name",
+        "city": "City"
+      },
+      "selection": "Selection",
+      "empty": "No hotels found.",
+      "loadError": "Unable to load hotels."
+    },
+    "kiosks": {
+      "title": "Kiosks",
+      "loadError": "Unable to load kiosks.",
+      "empty": "No kiosks found.",
+      "actionError": "Unable to perform this action.",
+      "columns": {
+        "label": "Name",
+        "hotel": "Hotel",
+        "state": "State",
+        "lastHeartbeat": "Last signal",
+        "version": "Version",
+        "freeSpace": "Free space",
+        "actions": "Actions"
+      },
+      "notAvailable": "—",
+      "freeSpaceValue": "{{mb}} MB",
+      "form": {
+        "label": "Kiosk name",
+        "hotel": "Hotel",
+        "selectHotel": "Select a hotel",
+        "deviceType": "Device type",
+        "deviceTypes": {
+          "TOUCH_SCREEN": "Touch screen",
+          "VR_HEADSET": "VR headset",
+          "TOUCH_AND_HEADSET": "Touch screen and VR headset"
+        },
+        "idleTimeout": "Idle timeout (seconds)",
+        "submit": "Create kiosk",
+        "cancel": "Cancel",
+        "createError": "Unable to create kiosk."
+      },
+      "enrollmentCode": {
+        "title": "Enrollment code",
+        "instruction": "Enter this code on the device.",
+        "close": "Close",
+        "copy": "Copy"
+      },
+      "confirmDisable": "Are you sure you want to disable this kiosk?",
+      "confirmDelete": "Are you sure you want to delete this kiosk?",
+      "actions": {
+        "disable": "Disable",
+        "forceSync": "Force synchronization",
+        "newKiosk": "New kiosk",
+        "enrollmentCode": "Enrollment code",
+        "delete": "Delete"
+      },
+      "status": {
+        "online": "Online",
+        "offline": "Offline",
+        "outOfSync": "Out of sync",
+        "pending": "Pending",
+        "disabled": "Disabled"
+      }
+    },
     "hotelSelection": {
       "title": "Tour selection",
       "selectedTours": "Selected tours",

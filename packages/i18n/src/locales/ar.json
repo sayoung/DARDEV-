@@ -460,6 +460,70 @@
     "tourDetail": {
       "title": "تفاصيل الزيارة"
     },
+    "hotels": {
+      "title": "الفنادق",
+      "columns": {
+        "name": "الاسم",
+        "city": "المدينة"
+      },
+      "selection": "التحديد",
+      "empty": "لم يتم العثور على أي فندق.",
+      "loadError": "تعذر تحميل الفنادق."
+    },
+    "kiosks": {
+      "title": "الأكشاك",
+      "loadError": "تعذر تحميل الأكشاك.",
+      "empty": "لم يتم العثور على أي كشك.",
+      "actionError": "تعذر تنفيذ هذا الإجراء.",
+      "columns": {
+        "label": "الاسم",
+        "hotel": "الفندق",
+        "state": "الحالة",
+        "lastHeartbeat": "آخر إشارة",
+        "version": "الإصدار",
+        "freeSpace": "المساحة المتوفرة",
+        "actions": "الإجراءات"
+      },
+      "notAvailable": "—",
+      "freeSpaceValue": "{{mb}} ميغابايت",
+      "form": {
+        "label": "اسم الكشك",
+        "hotel": "الفندق",
+        "selectHotel": "اختيار فندق",
+        "deviceType": "نوع الجهاز",
+        "deviceTypes": {
+          "TOUCH_SCREEN": "شاشة لمس",
+          "VR_HEADSET": "نظارة واقع افتراضي",
+          "TOUCH_AND_HEADSET": "شاشة لمس ونظارة واقع افتراضي"
+        },
+        "idleTimeout": "المهلة قبل وضع السكون (بالثواني)",
+        "submit": "إنشاء الكشك",
+        "cancel": "إلغاء",
+        "createError": "تعذر إنشاء الكشك."
+      },
+      "enrollmentCode": {
+        "title": "رمز التسجيل",
+        "instruction": "أدخل هذا الرمز على الجهاز.",
+        "close": "إغلاق",
+        "copy": "نسخ"
+      },
+      "confirmDisable": "هل أنت متأكد أنك تريد تعطيل هذا الكشك؟",
+      "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا الكشك؟",
+      "actions": {
+        "disable": "تعطيل",
+        "forceSync": "فرض المزامنة",
+        "newKiosk": "كشك جديد",
+        "enrollmentCode": "رمز التسجيل",
+        "delete": "حذف"
+      },
+      "status": {
+        "online": "متصل",
+        "offline": "غير متصل",
+        "outOfSync": "غير متزامن",
+        "pending": "قيد الانتظار",
+        "disabled": "معطل"
+      }
+    },
     "hotelSelection": {
       "title": "تحديد الزيارات",
       "selectedTours": "الزيارات المحددة",
