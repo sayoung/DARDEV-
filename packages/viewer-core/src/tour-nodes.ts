@@ -9,25 +9,64 @@ export type EditorPanorama = {
   tileUrl: (col: number, row: number) => string;
 };
 
-export function toTourNodes(graph: TourGraph): VirtualTourNode[] {
-  const sceneIds = new Set(graph.scenes.map((s) => s.id));
+export type TourLinkDir = 'next' | 'prev' | 'other';
 
-  return graph.scenes.map((scene) => {
+export function resolveTourLinkDir(
+  currentIndex: number,
+  targetIndex: number,
+  totalScenes: number,
+): TourLinkDir {
+  if (
+    totalScenes <= 0 ||
+    currentIndex < 0 ||
+    currentIndex >= totalScenes ||
+    targetIndex < 0 ||
+    targetIndex >= totalScenes
+  ) {
+    return 'other';
+  }
+
+  const nextIndex = (currentIndex + 1) % totalScenes;
+  const prevIndex = (currentIndex - 1 + totalScenes) % totalScenes;
+
+  // Quand il n'y a qu'une ou deux scènes et que next et prev coïncident, 'next' l'emporte.
+  if (targetIndex === nextIndex) {
+    return 'next';
+  }
+  if (targetIndex === prevIndex) {
+    return 'prev';
+  }
+  return 'other';
+}
+
+export function toTourNodes(graph: TourGraph): VirtualTourNode[] {
+  const sceneIndexById = new Map<string, number>();
+  graph.scenes.forEach((s, idx) => {
+    sceneIndexById.set(s.id, idx);
+  });
+  const totalScenes = graph.scenes.length;
+
+  return graph.scenes.map((scene, currentIndex) => {
     const links = scene.hotspots.flatMap((h) => {
-      if (h.type === HotspotType.SCENE_LINK && sceneIds.has(h.targetSceneId)) {
-        return [
-          {
-            nodeId: h.targetSceneId,
-            position: {
-              yaw: h.yaw,
-              pitch: h.pitch,
+      if (h.type === HotspotType.SCENE_LINK) {
+        const targetIndex = sceneIndexById.get(h.targetSceneId);
+        if (targetIndex !== undefined) {
+          const dir = resolveTourLinkDir(currentIndex, targetIndex, totalScenes);
+          return [
+            {
+              nodeId: h.targetSceneId,
+              position: {
+                yaw: h.yaw,
+                pitch: h.pitch,
+              },
+              data: {
+                arrivalYaw: h.arrivalYaw,
+                label: h.label,
+                dir,
+              },
             },
-            data: {
-              arrivalYaw: h.arrivalYaw,
-              label: h.label,
-            },
-          },
-        ];
+          ];
+        }
       }
       return [];
     });
