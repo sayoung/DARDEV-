@@ -128,22 +128,22 @@ Ce document dresse l'état des mesures de sécurité mises en œuvre sur la plat
    - Aucune donnée à caractère personnel (nom, prénom, courriel, téléphone, etc.) de voyageur n'est collectée sur les kiosques ou la visionneuse web.
    - Les événements d'analytique (`Event`) n'enregistrent jamais l'adresse IP des visiteurs.
 2. **Limitation de débit anonyme respectueuse de la vie privée :**
-   - `EventsRateLimitService` calcule une empreinte SHA-256 éphémère de l'adresse IP cliente pour constituer la clé Redis (`anon_events:rate:<sha256>`).
+   - `EventsRateLimitService` calcule une empreinte SHA-256 éphémère de l'adresse IP cliente pour constituer la clé Redis (`rl:events:anon:<sha256>`).
    - L'adresse IP brute n'est jamais journalisée ni stockée en base de données.
-   - Les clés expirent automatiquement dans Redis après la fenêtre de temps configurée (30 secondes).
+   - Les clés expirent automatiquement dans Redis après la fenêtre de temps configurée (60 secondes).
 3. **Zero-Trust Kiosque :**
    - Chaque kiosque doit s'enrôler avec un code éphémère et s'authentifier par jeton porteur dédié (`KioskTokenGuard`).
-   - Le statut du kiosque (`ACTIVE`, `SUSPENDED`) est vérifié à chaque interaction avec l'API.
+   - Le statut du kiosque (`ACTIVE`, `DISABLED`) est vérifié à chaque interaction avec l'API.
 4. **Validation temporelle :** Rejet des événements horodatés à plus de 24 heures dans le futur pour éviter l'empoisonnement des statistiques d'usage.
 
 #### Preuves Code & Tests
-- `apps/api/src/events/events-rate-limit.ts` (lignes 1-80)  
+- `apps/api/src/events/events-rate-limit.ts` (lignes 1-76)  
   *Test :* `apps/api/src/events/events-rate-limit.test.ts`  
-  - `it("utilise un hash SHA-256 de l'IP sans la persister")`
-  - `it("expireCalls avec EVENTS_ANON_RATE_LIMIT_WINDOW_SECONDS")`
+  - `it("génère une clé préfixée contenant le sha256 de l’adresse IP sans jamais inclure l’IP en clair")`
+  - `it("appelle expire uniquement au premier incr avec la durée de 60 secondes")`
 - `apps/api/src/events/events-ingest.service.ts`  
   *Test :* `apps/api/src/events/events-ingest.service.test.ts`  
-  - `it("rejette un événement situé à plus de 24 h dans le futur")`
+  - `it("rejette avec BadRequestException sans appeler createMany si occurredAt est à plus de 24 h dans le futur")`
 - `apps/api/src/kiosks/kiosk-token.guard.ts`  
   *Test :* `apps/api/src/kiosks/kiosk-token.guard.test.ts`
 - `apps/api/src/auth/access-policy.ts`  
