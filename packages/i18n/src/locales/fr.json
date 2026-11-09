@@ -664,7 +664,17 @@
     },
     "audit": {
       "title": "Journal d'audit",
-      "subtitle": "Historique des actions sensibles sur la plateforme."
+      "subtitle": "Historique des actions sensibles sur la plateforme.",
+      "loadError": "Impossible de charger le journal d'audit.",
+      "empty": "Aucun événement d'audit enregistré.",
+      "columns": {
+        "date": "Date",
+        "action": "Action",
+        "entityType": "Type d'entité",
+        "entityId": "Identifiant d'entité",
+        "user": "Utilisateur"
+      },
+      "emptyValue": "—"
     }
   },
   "tour": {

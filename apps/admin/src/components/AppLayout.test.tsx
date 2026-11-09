@@ -76,7 +76,7 @@ describe('AppLayout', () => {
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         ));
       }
-      if (method === 'GET' && url.includes('/admin/users')) {
+      if (method === 'GET' && (url.includes('/admin/users') || url.includes('/admin/audit'))) {
         return Promise.resolve(new Response(
           JSON.stringify({
             items: [],
