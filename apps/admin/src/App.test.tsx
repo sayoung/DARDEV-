@@ -75,6 +75,7 @@ describe('langue du back-office', () => {
               role: 'ADMIN',
               uiLang: 'fr',
               csrfToken: 'tok',
+              totpEnabled: false,
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } },
           ),

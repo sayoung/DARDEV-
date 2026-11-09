@@ -20,7 +20,7 @@ export const MeResponseSchema = z.object({
   role: z.enum(Role),
   uiLang: z.enum(LANGS),
   csrfToken: z.string().min(1),
-  totpEnabled: z.boolean().default(false),
+  totpEnabled: z.boolean(),
 });
 
 export type MeResponse = z.infer<typeof MeResponseSchema>;

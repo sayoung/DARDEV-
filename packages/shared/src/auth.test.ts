@@ -21,6 +21,7 @@ const me = {
   role: Role.EDITOR,
   uiLang: 'ar' as const,
   csrfToken: 'csrf-token',
+  totpEnabled: false,
 };
 
 describe('LoginRequestSchema', () => {
@@ -37,8 +38,8 @@ describe('LoginRequestSchema', () => {
 });
 
 describe('MeResponseSchema', () => {
-  it('décrit le profil et le jeton CSRF, et donne totpEnabled: false par défaut si absent', () => {
-    expect(MeResponseSchema.parse(me)).toEqual({ ...me, totpEnabled: false });
+  it('décrit le profil, le jeton CSRF et totpEnabled', () => {
+    expect(MeResponseSchema.parse(me)).toEqual(me);
   });
 
   it('accepte et conserve un profil avec totpEnabled: true', () => {
@@ -47,8 +48,10 @@ describe('MeResponseSchema', () => {
     expect(MeResponseSchema.parse(profile).totpEnabled).toBe(true);
   });
 
-  it('un profil sans le champ donne false', () => {
-    expect(MeResponseSchema.parse(me).totpEnabled).toBe(false);
+  it('refuse un profil sans totpEnabled', () => {
+    const withoutTotp: Record<string, unknown> = { ...me };
+    delete withoutTotp.totpEnabled;
+    expect(MeResponseSchema.safeParse(withoutTotp).success).toBe(false);
   });
 
   it('ne laisse passer aucun champ totpSecret', () => {
@@ -187,7 +190,7 @@ describe('TwoFactorRequiredResponseSchema', () => {
 
 describe('LoginResponseSchema', () => {
   it('accepte un MeResponse complet', () => {
-    expect(LoginResponseSchema.parse(me)).toEqual({ ...me, totpEnabled: false });
+    expect(LoginResponseSchema.parse(me)).toEqual(me);
   });
 
   it('accepte une demande de 2FA', () => {

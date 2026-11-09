@@ -219,8 +219,7 @@
                       "minLength": 1
                     },
                     "totpEnabled": {
-                      "type": "boolean",
-                      "default": false
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -229,7 +228,8 @@
                     "name",
                     "role",
                     "uiLang",
-                    "csrfToken"
+                    "csrfToken",
+                    "totpEnabled"
                   ]
                 }
               }
@@ -470,8 +470,7 @@
                       "minLength": 1
                     },
                     "totpEnabled": {
-                      "type": "boolean",
-                      "default": false
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -480,7 +479,8 @@
                     "name",
                     "role",
                     "uiLang",
-                    "csrfToken"
+                    "csrfToken",
+                    "totpEnabled"
                   ]
                 }
               }
