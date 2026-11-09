@@ -24,6 +24,7 @@ const profileAdmin: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-admin',
+  totpEnabled: false,
 };
 
 const mockReadyAsset: AssetResponse = {

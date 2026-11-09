@@ -17,6 +17,7 @@ const profile = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-for-kiosks',
+  totpEnabled: false,
 } satisfies MeResponse;
 
 const kioskId = '018f3a38-c393-79d2-97b7-5f214f4df7e3';

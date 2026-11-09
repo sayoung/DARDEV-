@@ -25,6 +25,7 @@ const mockProfile: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-123',
+  totpEnabled: false,
 };
 
 function AuthStatusConsumer() {

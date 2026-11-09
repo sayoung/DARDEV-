@@ -19,6 +19,7 @@ const profile: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-for-two-factor-tests',
+  totpEnabled: false,
 };
 
 const setupPayload: TwoFactorSetupResponse = {

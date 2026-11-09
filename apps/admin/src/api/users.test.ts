@@ -26,6 +26,7 @@ const profile: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-token-for-users-tests',
+  totpEnabled: false,
 };
 
 const userId = '018f3a38-c393-79d2-97b7-5f214f4df7e1';

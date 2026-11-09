@@ -217,6 +217,10 @@
                     "csrfToken": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "totpEnabled": {
+                      "type": "boolean",
+                      "default": false
                     }
                   },
                   "required": [
@@ -464,6 +468,10 @@
                     "csrfToken": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "totpEnabled": {
+                      "type": "boolean",
+                      "default": false
                     }
                   },
                   "required": [

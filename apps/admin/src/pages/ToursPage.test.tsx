@@ -14,6 +14,7 @@ const profileAdmin: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-admin',
+  totpEnabled: false,
 };
 
 const profilePartner: MeResponse = {
@@ -23,6 +24,7 @@ const profilePartner: MeResponse = {
   role: Role.PARTNER,
   uiLang: 'fr',
   csrfToken: 'csrf-partner',
+  totpEnabled: false,
 };
 
 const mockCity: CityResponse = {

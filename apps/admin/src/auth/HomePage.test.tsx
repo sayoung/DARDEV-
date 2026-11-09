@@ -14,6 +14,7 @@ const profileAdmin: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-admin',
+  totpEnabled: false,
 };
 
 const profileEditor: MeResponse = {
@@ -23,6 +24,7 @@ const profileEditor: MeResponse = {
   role: Role.EDITOR,
   uiLang: 'fr',
   csrfToken: 'csrf-editor',
+  totpEnabled: false,
 };
 
 const profilePartner: MeResponse = {
@@ -32,6 +34,7 @@ const profilePartner: MeResponse = {
   role: Role.PARTNER,
   uiLang: 'fr',
   csrfToken: 'csrf-partner',
+  totpEnabled: false,
 };
 
 const tour1: TourResponse = {
