@@ -1,7 +1,14 @@
 name: xplor-prod
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
+    logging: *default-logging
     image: postgres:16-alpine
     env_file: .env.production
     healthcheck:
@@ -17,6 +24,7 @@ services:
     restart: unless-stopped
 
   redis:
+    logging: *default-logging
     image: redis:7-alpine
     command: redis-server --appendonly yes
     env_file: .env.production
@@ -27,6 +35,7 @@ services:
     restart: unless-stopped
 
   minio:
+    logging: *default-logging
     build: ./docker/minio
     image: xplor-prod-minio:2025-09-07
     command: server /data
@@ -44,6 +53,7 @@ services:
     restart: unless-stopped
 
   minio-init:
+    logging: *default-logging
     build: ./docker/minio
     image: xplor-prod-minio:2025-09-07
     depends_on:
@@ -62,6 +72,7 @@ services:
     restart: "no"
 
   api:
+    logging: *default-logging
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -74,6 +85,7 @@ services:
     restart: unless-stopped
 
   worker:
+    logging: *default-logging
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
@@ -86,6 +98,7 @@ services:
     restart: unless-stopped
 
   caddy:
+    logging: *default-logging
     build:
       context: .
       dockerfile: deploy/caddy/Dockerfile
