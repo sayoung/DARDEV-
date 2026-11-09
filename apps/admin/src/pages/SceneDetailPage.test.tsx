@@ -79,7 +79,7 @@ const mockAuth = (role = Role.ADMIN) => {
         role,
         uiLang: 'fr',
         csrfToken: 'token',
-        totpEnabled: false,
+        totpEnabled: true,
       },
     },
     login: vi.fn(),

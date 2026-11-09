@@ -14,7 +14,7 @@ const profileAdmin: MeResponse = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-admin',
-  totpEnabled: false,
+  totpEnabled: true,
 };
 
 const mockTour: TourResponse = {

@@ -49,7 +49,7 @@ describe('SelectionPage', () => {
     });
     fetchMock.mockReset().mockResolvedValue(jsonResponse(200, {
       id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-      uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
+      uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: true,
     }));
     vi.stubGlobal('fetch', fetchMock);
   });

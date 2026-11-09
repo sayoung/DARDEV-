@@ -31,7 +31,7 @@ const adminProfile: MeResponse = MeResponseSchema.parse({
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-token-123',
-  totpEnabled: false,
+  totpEnabled: true,
 });
 
 const editorProfile: MeResponse = MeResponseSchema.parse({
