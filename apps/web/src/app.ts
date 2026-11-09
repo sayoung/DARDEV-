@@ -75,6 +75,24 @@ export async function startViewer(
     return;
   }
 
+  switch (route.kind) {
+    case 'legal': {
+      status.hidden = true;
+      doc.title = resources.fr.legal.title;
+      let legal = doc.getElementById('legal');
+      if (!legal) {
+        legal = doc.createElement('div');
+        legal.id = 'legal';
+        doc.body.append(legal);
+      }
+      legal.textContent = resources.fr.legal.title;
+      return;
+    }
+    case 'preview':
+    case 'share':
+      break;
+  }
+
   const isPreview = route.kind === 'preview';
   const token = route.token;
 
