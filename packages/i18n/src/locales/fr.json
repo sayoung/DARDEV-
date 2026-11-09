@@ -842,6 +842,27 @@
   "vr": {
     "enter": "Vivre en VR",
     "startFailed": "La VR n'a pas pu démarrer"
+  },
+  "legal": {
+    "title": "Mentions légales et confidentialité",
+    "linkLabel": "Mentions légales",
+    "back": "Retour à la visite",
+    "publisher": {
+      "title": "Éditeur",
+      "body": "Éditeur de la plateforme : [à compléter par le porteur].\nRaison sociale : [à compléter par le porteur].\nAdresse : [à compléter par le porteur].\nContact : [à compléter par le porteur]."
+    },
+    "hosting": {
+      "title": "Hébergement",
+      "body": "La plateforme est hébergée sur un serveur virtuel privé (VPS au Maroc). Hébergeur : [à compléter]."
+    },
+    "privacy": {
+      "title": "Protection des données personnelles",
+      "body": "Conformément à la loi marocaine n° 09-08 (CNDP) : aucune donnée personnelle de voyageur n'est collectée, les statistiques sont anonymes par conception, aucune adresse IP n'est stockée, les journaux techniques sont conservés au plus 30 jours et la plateforme n'utilise aucun cookie de suivi."
+    },
+    "contact": {
+      "title": "Contact et droits d'accès",
+      "body": "Pour toute question ou pour exercer vos droits d'accès et de rectification conformément à la loi 09-08, vous pouvez contacter : [à compléter]."
+    }
   }
 }
 

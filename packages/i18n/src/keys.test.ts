@@ -173,6 +173,32 @@ describe('clés i18n', () => {
       'Impossible de mettre à jour les hôtels.',
     );
   });
+
+  it('définit les clés de la page légale en français', () => {
+    const legal = resources.fr.legal;
+    expect(legal.title).toBe('Mentions légales et confidentialité');
+    expect(legal.linkLabel).toBe('Mentions légales');
+    expect(legal.back).toBe('Retour à la visite');
+    expect(legal.publisher.title).toBe('Éditeur');
+    expect(legal.publisher.body).toContain('[à compléter par le porteur]');
+    expect(legal.publisher.body).toContain('Raison sociale');
+    expect(legal.publisher.body).toContain('Adresse');
+    expect(legal.publisher.body).toContain('Contact');
+    expect(legal.hosting.title).toBe('Hébergement');
+    expect(legal.hosting.body).toContain('VPS au Maroc');
+    expect(legal.hosting.body).toContain('[à compléter]');
+    expect(legal.privacy.title).toBe('Protection des données personnelles');
+    expect(legal.privacy.body).toContain('09-08');
+    expect(legal.privacy.body).toContain('CNDP');
+    expect(legal.privacy.body).toContain('aucune donnée personnelle de voyageur');
+    expect(legal.privacy.body).toContain('statistiques sont anonymes par conception');
+    expect(legal.privacy.body).toContain('aucune adresse IP');
+    expect(legal.privacy.body).toContain('30 jours');
+    expect(legal.privacy.body).toContain('cookie de suivi');
+    expect(legal.contact.title).toBe('Contact et droits d\'accès');
+    expect(legal.contact.body).toContain('droits d\'accès et de rectification');
+    expect(legal.contact.body).toContain('[à compléter]');
+  });
 });
 
 describe('isRtl / dir', () => {
