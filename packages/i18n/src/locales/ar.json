@@ -428,7 +428,22 @@
       "metrics": { "sessions": "الجلسات", "averageDuration": "متوسط المدة", "toursOpened": "الجولات المفتوحة", "scenesViewed": "المشاهدات", "hotspotClicks": "نقرات النقاط", "vrEntries": "مرات دخول VR", "qrScans": "مسح QR" }
     },
     "home": {
-      "title": "الرئيسية"
+      "title": "الرئيسية",
+      "loading": "جارٍ تحميل لوحة التحكم…",
+      "error": "تعذر تحميل لوحة التحكم.",
+      "stats": {
+        "total": "إجمالي الزيارات",
+        "drafts": "المسودات",
+        "published": "المنشورة",
+        "scenes": "المشاهد"
+      },
+      "shortcuts": {
+        "title": "اختصارات",
+        "newTour": "زيارة جديدة",
+        "manageTours": "إدارة الزيارات",
+        "manageCities": "إدارة المدن",
+        "manageCategories": "إدارة الفئات"
+      }
     },
     "cities": {
       "title": "المدن"
@@ -555,6 +570,34 @@
           "save": "حفظ الفنادق",
           "saving": "جارٍ الحفظ…"
         }
+      }
+    },
+    "audit": {
+      "title": "سجل التدقيق",
+      "subtitle": "سجل الإجراءات الحساسة على المنصة.",
+      "loadError": "تعذر تحميل سجل التدقيق.",
+      "empty": "لا توجد أحداث تدقيق مسجلة.",
+      "filters": {
+        "action": "الإجراء",
+        "allActions": "جميع الإجراءات",
+        "entityType": "نوع الكيان",
+        "entityTypePlaceholder": "مثال: Tour، User، Kiosk…",
+        "from": "من",
+        "to": "إلى"
+      },
+      "columns": {
+        "date": "التاريخ",
+        "action": "الإجراء",
+        "entityType": "نوع الكيان",
+        "entityId": "معرف الكيان",
+        "user": "المستخدم"
+      },
+      "emptyValue": "—",
+      "pagination": {
+        "prev": "السابق",
+        "next": "التالي",
+        "info": "صفحة {{page}} من {{total}}",
+        "label": "تنقل صفحات سجل التدقيق"
       }
     }
   },

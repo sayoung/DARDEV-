@@ -428,7 +428,22 @@
       "metrics": { "sessions": "Sessions", "averageDuration": "Average duration", "toursOpened": "Tours opened", "scenesViewed": "Scenes viewed", "hotspotClicks": "Hotspot clicks", "vrEntries": "VR entries", "qrScans": "QR scans" }
     },
     "home": {
-      "title": "Home"
+      "title": "Home",
+      "loading": "Loading dashboard…",
+      "error": "Unable to load dashboard.",
+      "stats": {
+        "total": "Total tours",
+        "drafts": "Drafts",
+        "published": "Published",
+        "scenes": "Scenes"
+      },
+      "shortcuts": {
+        "title": "Shortcuts",
+        "newTour": "New tour",
+        "manageTours": "Manage tours",
+        "manageCities": "Manage cities",
+        "manageCategories": "Manage categories"
+      }
     },
     "cities": {
       "title": "Cities"
@@ -555,6 +570,34 @@
           "save": "Save hotels",
           "saving": "Saving…"
         }
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "subtitle": "History of sensitive actions on the platform.",
+      "loadError": "Unable to load audit log.",
+      "empty": "No audit events recorded.",
+      "filters": {
+        "action": "Action",
+        "allActions": "All actions",
+        "entityType": "Entity type",
+        "entityTypePlaceholder": "E.g. Tour, User, Kiosk…",
+        "from": "From",
+        "to": "To"
+      },
+      "columns": {
+        "date": "Date",
+        "action": "Action",
+        "entityType": "Entity type",
+        "entityId": "Entity ID",
+        "user": "User"
+      },
+      "emptyValue": "—",
+      "pagination": {
+        "prev": "Previous",
+        "next": "Next",
+        "info": "Page {{page}} of {{total}}",
+        "label": "Audit log pagination"
       }
     }
   },
