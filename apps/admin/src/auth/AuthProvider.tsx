@@ -14,11 +14,13 @@ export type AuthState =
   | { status: 'two-factor' }
   | { status: 'authenticated'; profile: MeResponse };
 
-type AuthContextValue = {
+export type AuthContextValue = {
   state: AuthState;
   login: (input: LoginRequest) => Promise<void>;
   verifyTwoFactor: (code: string) => Promise<void>;
   logout: () => Promise<void>;
+  setTotpEnabled: (enabled: boolean) => void;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -84,6 +86,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return requestLogout().then(() => {
         setState({ status: 'anonymous' });
       });
+    },
+    setTotpEnabled: (enabled: boolean) => {
+      setState((prev) => {
+        if (prev.status !== 'authenticated') {
+          return prev;
+        }
+        return {
+          status: 'authenticated',
+          profile: {
+            ...prev.profile,
+            totpEnabled: enabled,
+          },
+        };
+      });
+    },
+    refreshProfile: () => {
+      return fetchCurrentUser().then(
+        (profile) => {
+          setState({ status: 'authenticated', profile });
+        },
+        () => {
+          setState({ status: 'anonymous' });
+        },
+      );
     },
   };
 

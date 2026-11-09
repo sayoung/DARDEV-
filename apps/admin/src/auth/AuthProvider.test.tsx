@@ -237,6 +237,101 @@ describe('AuthProvider', () => {
     expect(screen.getByTestId('status').textContent).toBe('anonymous');
   });
 
+  it('setTotpEnabled met à jour profile.totpEnabled lorsque authentifié', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(mockProfile);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+        <AuthCapture />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('authenticated');
+    });
+
+    if (currentAuth !== null && currentAuth.state.status === 'authenticated') {
+      expect(currentAuth.state.profile.totpEnabled).toBe(false);
+    }
+
+    act(() => {
+      if (currentAuth !== null) {
+        currentAuth.setTotpEnabled(true);
+      }
+    });
+
+    if (currentAuth !== null && currentAuth.state.status === 'authenticated') {
+      expect(currentAuth.state.profile.totpEnabled).toBe(true);
+    }
+
+    act(() => {
+      if (currentAuth !== null) {
+        currentAuth.setTotpEnabled(false);
+      }
+    });
+
+    if (currentAuth !== null && currentAuth.state.status === 'authenticated') {
+      expect(currentAuth.state.profile.totpEnabled).toBe(false);
+    }
+  });
+
+  it('setTotpEnabled est sans effet si le statut est anonymous', async () => {
+    render(
+      <AuthProvider>
+        <TestConsumer />
+        <AuthCapture />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('anonymous');
+    });
+
+    act(() => {
+      if (currentAuth !== null) {
+        currentAuth.setTotpEnabled(true);
+      }
+    });
+
+    expect(screen.getByTestId('status').textContent).toBe('anonymous');
+    if (currentAuth !== null) {
+      expect(currentAuth.state.status).toBe('anonymous');
+    }
+  });
+
+  it('refreshProfile recharge le profil utilisateur et met à jour l\'état', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(mockProfile);
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+        <AuthCapture />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status').textContent).toBe('authenticated');
+    });
+
+    const updatedProfile: MeResponse = {
+      ...mockProfile,
+      totpEnabled: true,
+    };
+    vi.mocked(fetchCurrentUser).mockResolvedValue(updatedProfile);
+
+    await act(async () => {
+      if (currentAuth !== null) {
+        await currentAuth.refreshProfile();
+      }
+    });
+
+    expect(screen.getByTestId('status').textContent).toBe('authenticated');
+    if (currentAuth !== null && currentAuth.state.status === 'authenticated') {
+      expect(currentAuth.state.profile.totpEnabled).toBe(true);
+    }
+  });
+
   it('useAuth hors AuthProvider lance une erreur', () => {
     expect(() => {
       render(<AuthCapture />);
