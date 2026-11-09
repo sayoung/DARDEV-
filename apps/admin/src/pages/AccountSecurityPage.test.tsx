@@ -305,7 +305,7 @@ describe('AccountSecurityPage (M8 F-90)', () => {
     const confirmButton = screen.getByRole('button', { name: resources.fr.page.accountSecurity.confirmButton });
     fireEvent.click(confirmButton);
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByText(resources.fr.auth.twoFactor.invalidCode);
     expect(alert.textContent).toBe(resources.fr.auth.twoFactor.invalidCode);
   });
 
@@ -499,7 +499,7 @@ describe('AccountSecurityPage (M8 F-90)', () => {
     const disableButton = screen.getByRole('button', { name: resources.fr.page.accountSecurity.disableButton });
     fireEvent.click(disableButton);
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByText(resources.fr.auth.twoFactor.invalidCode);
     expect(alert.textContent).toBe(resources.fr.auth.twoFactor.invalidCode);
   });
 

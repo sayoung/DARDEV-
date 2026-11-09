@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Role } from '@xplor/shared';
 
 import { AuthProvider, useAuth } from './auth/AuthProvider.js';
 import { ForgotPasswordPage } from './auth/ForgotPasswordPage.js';
@@ -23,7 +24,7 @@ import { AccountSecurityPage } from './pages/AccountSecurityPage.js';
 import { UsersPage } from './pages/UsersPage.js';
 import { UserDetailPage } from './pages/UserDetailPage.js';
 import { AuditPage } from './pages/AuditPage.js';
-import { useAppLocation } from './router.js';
+import { navigate, useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
 
@@ -56,6 +57,20 @@ function AdminShell() {
     auth.state.status === 'anonymous' || auth.state.status === 'two-factor';
   const isAuthenticated = auth.state.status === 'authenticated';
 
+  const isEnforcing2fa =
+    auth.state.status === 'authenticated' &&
+    auth.state.profile.role === Role.ADMIN &&
+    !auth.state.profile.totpEnabled;
+
+  useEffect(() => {
+    if (isEnforcing2fa && isAuthenticatedRoute && route.name !== 'account-security') {
+      navigate('/account/security');
+    }
+  }, [isEnforcing2fa, isAuthenticatedRoute, route.name]);
+
+  const canRenderProtected =
+    isAuthenticated && (!isEnforcing2fa || route.name === 'account-security');
+
   return (
     <AppLayout>
       {route.name === 'forgot' ? <ForgotPasswordPage /> : null}
@@ -70,24 +85,24 @@ function AdminShell() {
 
       {isAuthenticatedRoute && isAnonymous ? <LoginPage /> : null}
 
-      {isAuthenticated && route.name === 'home' ? <HomePage /> : null}
-      {isAuthenticated && route.name === 'cities' ? <CitiesPage /> : null}
-      {isAuthenticated && route.name === 'hotels' ? <HotelsPage /> : null}
-      {isAuthenticated && route.name === 'kiosks' ? <KiosksPage /> : null}
-      {isAuthenticated && route.name === 'stats' ? <StatsPage /> : null}
-      {isAuthenticated && route.name === 'hotel-selection' ? <SelectionPage hotelId={route.id} /> : null}
-      {isAuthenticated && route.name === 'categories' ? <CategoriesPage /> : null}
-      {isAuthenticated && route.name === 'tours' ? <ToursPage /> : null}
-      {isAuthenticated && route.name === 'tour-new' ? <TourNewPage /> : null}
-      {isAuthenticated && route.name === 'tour-detail' ? <TourDetailPage /> : null}
-      {isAuthenticated && route.name === 'scene-detail' ? <SceneDetailPage /> : null}
-      {isAuthenticated && route.name === 'media' ? <MediaPage /> : null}
-      {isAuthenticated && route.name === 'hotspots' ? <HotspotsPage /> : null}
-      {isAuthenticated && (route.name === 'hotspot-new' || route.name === 'hotspot-detail') ? <HotspotDetailPage /> : null}
+      {canRenderProtected && route.name === 'home' ? <HomePage /> : null}
+      {canRenderProtected && route.name === 'cities' ? <CitiesPage /> : null}
+      {canRenderProtected && route.name === 'hotels' ? <HotelsPage /> : null}
+      {canRenderProtected && route.name === 'kiosks' ? <KiosksPage /> : null}
+      {canRenderProtected && route.name === 'stats' ? <StatsPage /> : null}
+      {canRenderProtected && route.name === 'hotel-selection' ? <SelectionPage hotelId={route.id} /> : null}
+      {canRenderProtected && route.name === 'categories' ? <CategoriesPage /> : null}
+      {canRenderProtected && route.name === 'tours' ? <ToursPage /> : null}
+      {canRenderProtected && route.name === 'tour-new' ? <TourNewPage /> : null}
+      {canRenderProtected && route.name === 'tour-detail' ? <TourDetailPage /> : null}
+      {canRenderProtected && route.name === 'scene-detail' ? <SceneDetailPage /> : null}
+      {canRenderProtected && route.name === 'media' ? <MediaPage /> : null}
+      {canRenderProtected && route.name === 'hotspots' ? <HotspotsPage /> : null}
+      {canRenderProtected && (route.name === 'hotspot-new' || route.name === 'hotspot-detail') ? <HotspotDetailPage /> : null}
       {isAuthenticated && route.name === 'account-security' ? <AccountSecurityPage /> : null}
-      {isAuthenticated && route.name === 'users' ? <UsersPage /> : null}
-      {isAuthenticated && route.name === 'user-detail' ? <UserDetailPage userId={route.id} /> : null}
-      {isAuthenticated && route.name === 'audit' ? <AuditPage /> : null}
+      {canRenderProtected && route.name === 'users' ? <UsersPage /> : null}
+      {canRenderProtected && route.name === 'user-detail' ? <UserDetailPage userId={route.id} /> : null}
+      {canRenderProtected && route.name === 'audit' ? <AuditPage /> : null}
     </AppLayout>
   );
 }

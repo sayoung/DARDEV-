@@ -16,6 +16,7 @@ import { LANG_STORAGE_KEY, applyDocumentLang, resolveLang } from '../lang.js';
 import { hrefFor, navigate, useAppLocation } from '../router.js';
 import { Button } from './ui/Button.js';
 import { Badge } from './ui/Badge.js';
+import { Alert } from './ui/Alert.js';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -251,6 +252,11 @@ const isKiosksActive = route.name === 'kiosks';
         </header>
 
         <main className="flex-1 p-6" aria-busy={false}>
+          {auth.state.profile.role === Role.ADMIN && !auth.state.profile.totpEnabled ? (
+            <Alert variant="destructive" className="mb-6">
+              {t('auth.twoFactorAdminAlert')}
+            </Alert>
+          ) : null}
           {children}
         </main>
       </div>
