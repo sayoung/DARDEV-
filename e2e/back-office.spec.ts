@@ -80,24 +80,19 @@ test('la page de connexion ne présente aucune violation d’accessibilité (axe
   await expectNoA11yViolations(page);
 });
 
-test.fixme(
-  'le tableau de bord après connexion ne présente aucune violation d’accessibilité (axe)',
-  async ({ page }) => {
-    // Bloqué : pour un profil ADMIN avec totpEnabled: false (maintenu dans le double d'API),
-    // App.tsx applique l'obligation 2FA (M8 F-90) et redirige immédiatement vers /account/security.
-    // Le titre fr.page.home.title ("Accueil") n'est donc pas affiché (la page affiche "Sécurité du compte").
-    // De plus, axe signale une violation de contraste (color-contrast) sur le lien actif de navigation
-    // portant la classe "bg-white/20 font-bold" sur fond violet #6958A5.
-    const api = await installApi(page, 'ok');
-    await page.goto('/');
-    await submitLogin(page);
+test('le tableau de bord après connexion ne présente aucune violation d’accessibilité (axe)', async ({
+  page,
+}) => {
+  const api = await installApi(page, 'ok');
+  api.profile.role = Role.EDITOR;
+  await page.goto('/');
+  await submitLogin(page);
 
-    await expect(page.getByRole('banner').getByText(api.profile.name, { exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: fr.page.home.title, exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByText(api.profile.name, { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: fr.page.home.title, exact: true })).toBeVisible();
 
-    await expectNoA11yViolations(page);
-  },
-);
+  await expectNoA11yViolations(page);
+});
 
 test('un 401 INVALID_CREDENTIALS affiche auth.login.error', async ({ page }) => {
   await installApi(page, 'invalid-credentials');
