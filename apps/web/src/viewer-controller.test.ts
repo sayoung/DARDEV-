@@ -433,7 +433,7 @@ describe('createViewerController', () => {
     const controlsContainer = doc.getElementById('controls');
     expect(controlsContainer).not.toBeNull();
     expect(mountVr).toHaveBeenCalledTimes(1);
-    expect(mountVr).toHaveBeenCalledWith(controlsContainer, 's1', mockGraph1);
+    expect(mountVr).toHaveBeenCalledWith(controlsContainer, 's1', mockGraph1, expect.any(Function));
 
     // Un changement de scène au sein de la même visite n'appelle pas mountVr à nouveau
     controller.onSceneChange('s2');
@@ -578,5 +578,53 @@ describe('createViewerController', () => {
 
     finishGoTo();
     await new Promise((r) => setTimeout(r, 0));
+  });
+
+  it('relie le signal VR au menu Lieux : masque le bouton et ferme le panneau en VR, le réaffiche à la sortie', async () => {
+    const { load, mountScene } = setupDeps();
+    let onVrChangeCallback: ((active: boolean) => void) | undefined;
+    const mountVr = vi.fn().mockImplementation((
+      _container: HTMLElement,
+      _sceneId: string,
+      _graph: TourGraph,
+      onVrChange?: (active: boolean) => void
+    ) => {
+      onVrChangeCallback = onVrChange;
+      return Promise.resolve({ destroy: vi.fn() });
+    });
+
+    const controller = createViewerController(doc, {
+      load,
+      mountScene,
+      labels,
+      mountVr,
+    });
+
+    await controller.start('token1');
+
+    const placesBtn = doc.querySelector('button.xplor-nav-btn--places');
+    expect(placesBtn).not.toBeNull();
+    if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+    expect(placesBtn.hidden).toBe(false);
+    expect(typeof onVrChangeCallback).toBe('function');
+
+    // Ouverture préalable du panneau Lieux
+    placesBtn.click();
+    expect(doc.getElementById('places-panel')).not.toBeNull();
+    expect(placesBtn.getAttribute('aria-expanded')).toBe('true');
+
+    // Entrée en VR (active = true) : bouton masqué et panneau fermé
+    if (typeof onVrChangeCallback === 'function') {
+      onVrChangeCallback(true);
+    }
+    expect(placesBtn.hidden).toBe(true);
+    expect(doc.getElementById('places-panel')).toBeNull();
+    expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+
+    // Sortie de VR (active = false) : le bouton revient
+    if (typeof onVrChangeCallback === 'function') {
+      onVrChangeCallback(false);
+    }
+    expect(placesBtn.hidden).toBe(false);
   });
 });

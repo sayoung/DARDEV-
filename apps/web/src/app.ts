@@ -25,7 +25,12 @@ export async function startViewer(
     navigate: (url: string) => void;
     stats?: Pick<WebStats, 'openTour' | 'langChange'> & Partial<Pick<WebStats, 'qrShown'>> &
       Partial<Pick<WebStats, 'sceneView' | 'hotspotClick' | 'audioPlay'>>;
-    mountVr?: (container: HTMLElement, sceneId: string, graph: TourGraph) => Promise<{ destroy(): void }>;
+    mountVr?: (
+      container: HTMLElement,
+      sceneId: string,
+      graph: TourGraph,
+      onVrChange?: (active: boolean) => void
+    ) => Promise<{ destroy(): void }>;
   }
 ): Promise<void> {
   const lang = resolveLang(location.search);
