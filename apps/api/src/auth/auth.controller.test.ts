@@ -6,11 +6,14 @@ import {
   HttpException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MeResponseSchema, Role, type MeResponse } from '@xplor/shared';
 import type { FastifyReply } from 'fastify';
 import { describe, expect, it } from 'vitest';
 
+import { ENV } from '../config/config.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthModule } from './auth.module.js';
 import {
@@ -22,7 +25,7 @@ import {
   PASSWORD_TOO_COMMON,
   TOKEN_INVALID,
 } from './auth.errors.js';
-import type { AuthService, LoginResult } from './auth.service.js';
+import { AuthService, type LoginResult } from './auth.service.js';
 import { CsrfGuard } from './csrf.guard.js';
 import { SESSION_COOKIE_NAME, type SessionCookieOptions } from './session-cookie.js';
 import type { SessionRequest } from './session-request.js';
@@ -614,6 +617,64 @@ describe('AuthController', () => {
     expect(Reflect.getMetadata(GUARDS_METADATA, logout)).toEqual([SessionGuard, CsrfGuard]);
     expect(Reflect.getMetadata(HTTP_CODE_METADATA, logout)).toBe(204);
     expect(Reflect.getMetadata(GUARDS_METADATA, meHandler)).toEqual([SessionGuard]);
+  });
+
+  describe('Limitation de débit sur /auth/login (NF-01)', () => {
+    it('bloque la 6e requête avec 429 après 5 échecs consécutifs avec de mauvais identifiants', async () => {
+      const moduleRef: TestingModule = await Test.createTestingModule({
+        imports: [
+          ThrottlerModule.forRoot({
+            throttlers: [{ ttl: 60_000, limit: 5 }],
+          }),
+        ],
+        controllers: [AuthController],
+        providers: [
+          {
+            provide: AuthService,
+            useValue: {
+              login: (): Promise<never> =>
+                Promise.reject(new AuthRejectedError(401, INVALID_CREDENTIALS)),
+            },
+          },
+          {
+            provide: ENV,
+            useValue: { NODE_ENV: 'test' },
+          },
+        ],
+      })
+        .overrideGuard(SessionGuard)
+        .useValue({ canActivate: (): boolean => true })
+        .overrideGuard(CsrfGuard)
+        .useValue({ canActivate: (): boolean => true })
+        .compile();
+
+      const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      try {
+        const badCredentials = { email: 'wrong@xplor.test', password: 'wrongpassword' };
+        const limit = 5;
+
+        for (let attempt = 1; attempt <= limit; attempt += 1) {
+          const response = await app.inject({
+            method: 'POST',
+            url: '/auth/login',
+            payload: badCredentials,
+          });
+          expect(response.statusCode).toBe(401);
+        }
+
+        const blockedResponse = await app.inject({
+          method: 'POST',
+          url: '/auth/login',
+          payload: badCredentials,
+        });
+        expect(blockedResponse.statusCode).toBe(429);
+      } finally {
+        await app.close();
+      }
+    });
   });
 
   it('répond 202 pour forgot, limité à 5 par minute, sans session ni CSRF', async () => {
