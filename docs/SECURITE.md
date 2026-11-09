@@ -80,7 +80,7 @@ Ce document dresse l'état des mesures de sécurité mises en œuvre sur la plat
   *Tests :* `apps/api/src/auth/password.service.test.ts` ("hache en argon2id puis vérifie") et `apps/api/src/auth/auth.service.test.ts` (vérification dummy)
 - `apps/api/src/kiosks/kiosk-secrets.ts` (lignes 1-25)  
   *Tests :* `apps/api/src/kiosks/kiosk-secrets.test.ts`  
-  - `it("génère des jetons aléatoires de 256 bits encodés en base64url")`
+  - `it("produit des jetons base64url de 32 octets distincts")`
   - `it("calcule une empreinte SHA-256 déterministe distincte du jeton")`
 - `apps/api/src/kiosks/kiosks.service.ts`  
   *Tests :* `apps/api/src/kiosks/kiosks.service.test.ts`  
