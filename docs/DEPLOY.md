@@ -174,7 +174,26 @@ Contrôlez que `ACME_EMAIL` est correct dans `.env.production`, que vos enregist
 
 **Limitation de débit :** si tous les utilisateurs sont bloqués ensemble, vérifier `API_TRUST_PROXY=true`.
 
-## 12. Importer une visite
+## 12. Journaux et loi 09-08
+
+Conformément à l'exigence NF-02 et à la loi marocaine 09-08 sur la protection des données personnelles :
+
+- **Absence d'IP visiteur dans les données et journaux Caddy :**
+  - Aucune adresse IP de visiteur n'est conservée dans les données métier (la table `Event` ne stocke aucune adresse IP ; la limitation de débit anonyme repose sur un hachage SHA-256 éphémère dans Redis expirant au bout de 60 secondes).
+  - Dans le routeur Caddy (`deploy/caddy/Caddyfile`), aucun bloc `log` n'est configuré : aucun journal d'accès contenant l'IP des visiteurs n'est écrit dans un fichier persistant.
+
+- **Rotation par taille des journaux Docker (json-file) :**
+  - Les journaux applicatifs (stdout/stderr) utilisent le pilote Docker `json-file`.
+  - La rotation par taille est configurée sur tous les services de production via l'ancre `x-logging` de `docker-compose.prod.yml` : 10 Mo × 3 fichiers par conteneur (`max-size: "10m"`, `max-file: "3"`).
+
+- **Purge manuelle :**
+  - Si besoin, une purge manuelle des journaux d'un conteneur peut être effectuée sur le VPS par le porteur en recréant le conteneur concerné avec la commande :
+    ```bash
+    docker compose -f docker-compose.prod.yml --env-file .env.production up -d --force-recreate <service>
+    ```
+    *(Remplacer `<service>` par le nom du service, par exemple `caddy`, `api` ou `worker`).*
+
+## 13. Importer une visite
 
 Pour préparer la Démo 1 (ou importer une autre visite générique), vous devez exécuter un script d'import depuis votre PC.
 
@@ -225,7 +244,7 @@ Vous pouvez fournir votre propre fichier JSON et votre dossier de panoramas via 
 pnpm import:oudayas --data "C:\chemin\vers\mon-tour.json" --dir "C:\chemin\vers\panoramas"
 ```
 
-## 13. Démo 1 : Scan QR Code des Oudayas
+## 14. Démo 1 : Scan QR Code des Oudayas
 
 Pour valider l'expérience globale sur mobile depuis la production :
 1. Dans le back-office, accédez à la visite virtuelle des "Oudayas".

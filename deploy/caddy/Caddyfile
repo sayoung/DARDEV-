@@ -1,4 +1,5 @@
 {
+	# Pas de directive log : aucun journal d'accès avec IP visiteur dans un fichier persistant (loi 09-08, NF-02). Ne pas en ajouter sans filtre delete sur request>remote_ip et request>client_ip.
 	email {$ACME_EMAIL}
 }
 
