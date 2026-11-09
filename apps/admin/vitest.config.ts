@@ -5,7 +5,7 @@ export default defineConfig({
     name: '@xplor/admin',
     environment: 'jsdom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    exclude: [...configDefaults.exclude, '**/*.int.test.ts', 'e2e/**'],
     testTimeout: 20_000,
     hookTimeout: 20_000,
     setupFiles: ['./src/test/setup.ts'],

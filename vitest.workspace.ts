@@ -1,7 +1,7 @@
 import { configDefaults, type TestProjectConfiguration } from 'vitest/config';
 import { resolve } from 'node:path';
 
-const exclude = [...configDefaults.exclude, 'e2e/**'];
+const exclude = [...configDefaults.exclude, '**/*.int.test.ts', 'e2e/**'];
 
 const workspace: TestProjectConfiguration[] = [
   {
