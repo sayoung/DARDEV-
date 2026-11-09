@@ -107,6 +107,14 @@
       "preview": {
         "open": "اختبر الزيارة",
         "openLink": "فتح المعاينة"
+      },
+      "linkMap": {
+        "title": "خريطة الروابط",
+        "refresh": "تحديث",
+        "orphans": "مشاهد لا يمكن الوصول إليها من مشهد البداية:",
+        "noOrphans": "جميع المشاهد قابلة للوصول.",
+        "start": "البداية:",
+        "empty": "لا توجد مشاهد في هذه الزيارة."
       }
     },
     "asset": {
@@ -225,8 +233,11 @@
         "initialYaw": "الانعراج الأولي",
         "initialPitch": "الميل الأولي",
         "initialZoom": "التكبير الأولي",
-        "hotspotCount": "النقاط الفعالة"
+        "hotspotCount": "النقاط الفعالة",
+        "narration": "السرد الصوتي",
+        "ambient": "الصوت المحيطي"
       },
+      "saveSuccess": "تم حفظ المشهد بنجاح",
       "actions": {
         "add": "إضافة مشهد",
         "moveUp": "تحريك لأعلى",
@@ -296,6 +307,44 @@
         "body": "النص",
         "mediaAssetIds": "الوسائط",
         "url": "عنوان URL خارجي"
+      }
+    },
+    "publication": {
+      "status": "الحالة",
+      "validate": "التحقق",
+      "publish": "نشر",
+      "unpublish": "إلغاء النشر",
+      "noIssues": "لا توجد مشاكل: يمكن نشر الزيارة",
+      "issuesTitle": "مشاكل يجب تصحيحها قبل النشر",
+      "shareToken": "رمز المشاركة",
+      "regenerateShareLink": "إعادة إنشاء رابط المشاركة",
+      "regenerateConfirm": "لن تعمل الروابط ورموز QR السابقة بعد الآن. هل تريد المتابعة؟",
+      "regenerateSuccess": "تمت إعادة إنشاء رابط المشاركة بنجاح.",
+      "publicLink": "الرابط العام",
+      "qrCodeTitle": "رمز QR للزيارة",
+      "downloadQrCode": "تنزيل رمز QR"
+    },
+    "issue": {
+      "START_SCENE_MISSING": "مشهد البداية مفقود",
+      "START_SCENE_FOREIGN": "مشهد البداية لا ينتمي إلى هذه الزيارة",
+      "PANORAMA_NOT_READY": "بانوراما المشهد ليست جاهزة",
+      "SCENE_UNREACHABLE": "مشهد لا يمكن الوصول إليه (لا يوجد رابط يؤدي إلى هذا المشهد)",
+      "SCENE_LINK_TARGET_MISSING": "المشهد المستهدف للرابط مفقود",
+      "SCENE_LINK_SELF": "يشير الرابط إلى نفس المشهد",
+      "SCENE_LINK_FOREIGN": "يشير الرابط إلى مشهد في زيارة أخرى",
+      "SCENE_LINK_TARGET_DELETED": "يشير الرابط إلى مشهد محذوف",
+      "TOUR_LINK_TARGET_MISSING": "الزيارة المستهدفة للرابط مفقودة",
+      "TOUR_LINK_SELF": "يشير الرابط إلى نفس الزيارة",
+      "TOUR_LINK_TARGET_UNPUBLISHED": "الزيارة المستهدفة غير منشورة",
+      "TOUR_LINK_SCENE_FOREIGN": "المشهد المستهدف ينتمي إلى زيارة أخرى"
+    },
+    "scenes": {
+      "tabs": {
+        "info": "المعلومات",
+        "editor": "محرر 360"
+      },
+      "editor": {
+        "panoramaNotReady": "بانوراما المشهد المستهدف ليست جاهزة."
       }
     }
   },

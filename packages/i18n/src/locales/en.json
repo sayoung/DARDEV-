@@ -107,6 +107,14 @@
       "preview": {
         "open": "Test the tour",
         "openLink": "Open preview"
+      },
+      "linkMap": {
+        "title": "Link map",
+        "refresh": "Refresh",
+        "orphans": "Unreachable scenes from the starting scene:",
+        "noOrphans": "All scenes are reachable.",
+        "start": "Start:",
+        "empty": "No scenes in this tour."
       }
     },
     "asset": {
@@ -225,8 +233,11 @@
         "initialYaw": "Initial yaw",
         "initialPitch": "Initial pitch",
         "initialZoom": "Initial zoom",
-        "hotspotCount": "Hotspots"
+        "hotspotCount": "Hotspots",
+        "narration": "Audio narration",
+        "ambient": "Ambient sound"
       },
+      "saveSuccess": "Scene saved successfully",
       "actions": {
         "add": "Add a scene",
         "moveUp": "Move up",
@@ -296,6 +307,44 @@
         "body": "Text",
         "mediaAssetIds": "Media",
         "url": "External URL"
+      }
+    },
+    "publication": {
+      "status": "Status",
+      "validate": "Check",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "noIssues": "No issues: the tour can be published",
+      "issuesTitle": "Issues to fix before publishing",
+      "shareToken": "Share token",
+      "regenerateShareLink": "Regenerate share link",
+      "regenerateConfirm": "Previous links and QR codes will no longer work. Do you want to continue?",
+      "regenerateSuccess": "Share link regenerated successfully.",
+      "publicLink": "Public link",
+      "qrCodeTitle": "Tour QR code",
+      "downloadQrCode": "Download QR code"
+    },
+    "issue": {
+      "START_SCENE_MISSING": "Missing start scene",
+      "START_SCENE_FOREIGN": "The start scene does not belong to this tour",
+      "PANORAMA_NOT_READY": "The scene panorama is not ready",
+      "SCENE_UNREACHABLE": "Unreachable scene (no link leads to this scene)",
+      "SCENE_LINK_TARGET_MISSING": "The target scene of the link is missing",
+      "SCENE_LINK_SELF": "A link points to the same scene",
+      "SCENE_LINK_FOREIGN": "A link points to a scene from another tour",
+      "SCENE_LINK_TARGET_DELETED": "A link points to a deleted scene",
+      "TOUR_LINK_TARGET_MISSING": "The target tour of the link is missing",
+      "TOUR_LINK_SELF": "A link points to the same tour",
+      "TOUR_LINK_TARGET_UNPUBLISHED": "The target tour is not published",
+      "TOUR_LINK_SCENE_FOREIGN": "The target scene belongs to another tour"
+    },
+    "scenes": {
+      "tabs": {
+        "info": "Information",
+        "editor": "360 Editor"
+      },
+      "editor": {
+        "panoramaNotReady": "The target scene panorama is not ready."
       }
     }
   },
