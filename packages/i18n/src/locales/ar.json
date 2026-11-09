@@ -460,6 +460,16 @@
     "tourDetail": {
       "title": "تفاصيل الزيارة"
     },
+    "hotels": {
+      "title": "الفنادق",
+      "columns": {
+        "name": "الاسم",
+        "city": "المدينة"
+      },
+      "selection": "التحديد",
+      "empty": "لم يتم العثور على أي فندق.",
+      "loadError": "تعذر تحميل الفنادق."
+    },
     "hotelSelection": {
       "title": "تحديد الزيارات",
       "selectedTours": "الزيارات المحددة",

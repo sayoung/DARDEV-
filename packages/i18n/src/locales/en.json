@@ -460,6 +460,16 @@
     "tourDetail": {
       "title": "Tour details"
     },
+    "hotels": {
+      "title": "Hotels",
+      "columns": {
+        "name": "Name",
+        "city": "City"
+      },
+      "selection": "Selection",
+      "empty": "No hotels found.",
+      "loadError": "Unable to load hotels."
+    },
     "hotelSelection": {
       "title": "Tour selection",
       "selectedTours": "Selected tours",
