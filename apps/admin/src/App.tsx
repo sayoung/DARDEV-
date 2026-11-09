@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AuthProvider, useAuth } from './auth/AuthProvider.js';
@@ -26,10 +27,11 @@ import { useAppLocation } from './router.js';
 
 import { AppLayout } from './components/AppLayout.js';
 
-export function App() {
+export function App({ children }: { children?: ReactNode } = {}) {
   return (
     <AuthProvider>
       <AdminShell />
+      {children}
     </AuthProvider>
   );
 }

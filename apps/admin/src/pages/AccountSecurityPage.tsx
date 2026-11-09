@@ -1,6 +1,6 @@
-import { Role, z, type MeResponse } from '@xplor/shared';
+import { Role, type MeResponse } from '@xplor/shared';
 import QRCode from 'qrcode';
-import { useState, type SubmitEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { beginTwoFactorSetup, confirmTwoFactor, disableTwoFactor } from '../api/two-factor.js';
@@ -13,21 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card.
 import { Input } from '../components/ui/Input.js';
 import { Label } from '../components/ui/Label.js';
 
-const ProfileWithTotpSchema = z.object({
-  totpEnabled: z.boolean(),
-});
-
-function isTotpEnabledInProfile(profile: MeResponse): boolean {
-  const result = ProfileWithTotpSchema.safeParse(profile);
-  if (result.success) {
-    return result.data.totpEnabled;
-  }
-  return false;
-}
-
 interface SetupData {
   readonly secret: string;
   readonly qrDataUrl: string;
+}
+
+interface AccountSecurityContentProps {
+  readonly profile: MeResponse;
+  readonly onTotpEnabledChange?: (enabled: boolean) => void;
 }
 
 export function AccountSecurityPage() {
@@ -38,13 +31,23 @@ export function AccountSecurityPage() {
     return <p className="p-4">{t('auth.accessDenied')}</p>;
   }
 
-  return <AccountSecurityContent profile={auth.state.profile} />;
+  return (
+    <AccountSecurityContent
+      profile={auth.state.profile}
+      onTotpEnabledChange={auth.setTotpEnabled}
+    />
+  );
 }
 
-function AccountSecurityContent({ profile }: { profile: MeResponse }) {
+function AccountSecurityContent({
+  profile,
+  onTotpEnabledChange,
+}: AccountSecurityContentProps) {
   const { t } = useTranslation();
-  const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState<boolean>(() =>
-    isTotpEnabledInProfile(profile),
+  const auth = useAuth();
+  const setTotp = onTotpEnabledChange ?? auth.setTotpEnabled;
+  const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState<boolean>(
+    profile.totpEnabled,
   );
   const [setupState, setSetupState] = useState<SetupData | null>(null);
   const [confirmCode, setConfirmCode] = useState<string>('');
@@ -54,6 +57,10 @@ function AccountSecurityContent({ profile }: { profile: MeResponse }) {
   const [isDisabling, setIsDisabling] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsTwoFactorEnabled(profile.totpEnabled);
+  }, [profile.totpEnabled]);
 
   async function handleBeginSetup(): Promise<void> {
     if (isActivating) {
@@ -95,6 +102,7 @@ function AccountSecurityContent({ profile }: { profile: MeResponse }) {
     try {
       await confirmTwoFactor(trimmed);
       setIsTwoFactorEnabled(true);
+      setTotp(true);
       setSetupState(null);
       setConfirmCode('');
       setSuccessMessage(t('page.accountSecurity.successEnabled'));
@@ -117,6 +125,7 @@ function AccountSecurityContent({ profile }: { profile: MeResponse }) {
     try {
       await disableTwoFactor(trimmed);
       setIsTwoFactorEnabled(false);
+      setTotp(false);
       setDisableCode('');
       setSuccessMessage(t('page.accountSecurity.successDisabled'));
     } catch {

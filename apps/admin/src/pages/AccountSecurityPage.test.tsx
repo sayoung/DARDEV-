@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../App.js';
 import { clearCsrfToken } from '../api/client.js';
+import { useAuth } from '../auth/AuthProvider.js';
 import { i18n } from '../i18n.js';
 
 const fetchMock = vi.fn<(input: unknown, init?: unknown) => Promise<Response>>();
@@ -74,6 +75,16 @@ const adminUser: MeResponse = MeResponseSchema.parse({
   totpEnabled: false,
 });
 
+const adminUserWithTotp: MeResponse = MeResponseSchema.parse({
+  id: 'user-admin-01',
+  email: 'admin@xplor.test',
+  name: 'Admin Test',
+  role: Role.ADMIN,
+  uiLang: 'fr',
+  csrfToken: 'csrf-admin-token-xyz',
+  totpEnabled: true,
+});
+
 const editorUser: MeResponse = MeResponseSchema.parse({
   id: 'user-editor-01',
   email: 'editor@xplor.test',
@@ -89,8 +100,16 @@ const setupData: TwoFactorSetupResponse = TwoFactorSetupResponseSchema.parse({
   otpauthUri: 'otpauth://totp/Xplor:admin@xplor.test?secret=JBSWY3DPEHPK3PXP&issuer=Xplor',
 });
 
+let capturedAuth: ReturnType<typeof useAuth> | null = null;
+
+function AuthCapture() {
+  capturedAuth = useAuth();
+  return null;
+}
+
 describe('AccountSecurityPage (M8 F-90)', () => {
   beforeEach(async () => {
+    capturedAuth = null;
     clearCsrfToken();
     localStorage.clear();
     window.history.replaceState(null, '', '/account/security?lang=fr');
@@ -173,7 +192,11 @@ describe('AccountSecurityPage (M8 F-90)', () => {
       return Promise.resolve(new Response(null, { status: 404 }));
     });
 
-    render(<App />);
+    render(
+      <App>
+        <AuthCapture />
+      </App>,
+    );
 
     const activateButton = await screen.findByRole('button', { name: resources.fr.auth.twoFactor.enable });
     fireEvent.click(activateButton);
@@ -201,6 +224,51 @@ describe('AccountSecurityPage (M8 F-90)', () => {
 
     expect(screen.getByText(resources.fr.page.accountSecurity.statusEnabled)).toBeTruthy();
     expect(screen.getByRole('button', { name: resources.fr.page.accountSecurity.disableButton })).toBeTruthy();
+
+    await waitFor(() => {
+      expect(capturedAuth?.state.status).toBe('authenticated');
+      if (capturedAuth?.state.status === 'authenticated') {
+        expect(capturedAuth.state.profile.totpEnabled).toBe(true);
+      }
+    });
+  });
+
+  it('pour un profil avec totpEnabled true, la page affiche directement la désactivation', async () => {
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (method === 'GET' && url.endsWith('/auth/me')) {
+        return Promise.resolve(jsonResponse(200, adminUserWithTotp));
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    });
+
+    render(
+      <App>
+        <AuthCapture />
+      </App>,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: resources.fr.page.accountSecurity.title }),
+    ).toBeTruthy();
+
+    expect(screen.getByText(resources.fr.page.accountSecurity.statusEnabled)).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: resources.fr.page.accountSecurity.disableButton }),
+    ).toBeTruthy();
+    expect(screen.getByLabelText(resources.fr.auth.twoFactor.code)).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: resources.fr.auth.twoFactor.enable }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole('img', { name: resources.fr.page.accountSecurity.qrAlt }),
+    ).toBeNull();
+
+    if (capturedAuth !== null && capturedAuth.state.status === 'authenticated') {
+      expect(capturedAuth.state.profile.totpEnabled).toBe(true);
+    }
   });
 
   it('un code refusé affiche « Code invalide » lors de la confirmation', async () => {
@@ -284,7 +352,11 @@ describe('AccountSecurityPage (M8 F-90)', () => {
       return Promise.resolve(new Response(null, { status: 404 }));
     });
 
-    render(<App />);
+    render(
+      <App>
+        <AuthCapture />
+      </App>,
+    );
 
     const activateButton = await screen.findByRole('button', { name: resources.fr.auth.twoFactor.enable });
     fireEvent.click(activateButton);
@@ -297,6 +369,13 @@ describe('AccountSecurityPage (M8 F-90)', () => {
       'textContent',
       resources.fr.page.accountSecurity.successEnabled,
     );
+
+    await waitFor(() => {
+      expect(capturedAuth?.state.status).toBe('authenticated');
+      if (capturedAuth?.state.status === 'authenticated') {
+        expect(capturedAuth.state.profile.totpEnabled).toBe(true);
+      }
+    });
 
     const disableInput = screen.getByLabelText(resources.fr.auth.twoFactor.code);
     fireEvent.change(disableInput, { target: { value: '654321' } });
@@ -321,6 +400,60 @@ describe('AccountSecurityPage (M8 F-90)', () => {
 
     expect(screen.getByText(resources.fr.page.accountSecurity.statusDisabled)).toBeTruthy();
     expect(screen.getByRole('button', { name: resources.fr.auth.twoFactor.enable })).toBeTruthy();
+
+    await waitFor(() => {
+      expect(capturedAuth?.state.status).toBe('authenticated');
+      if (capturedAuth?.state.status === 'authenticated') {
+        expect(capturedAuth.state.profile.totpEnabled).toBe(false);
+      }
+    });
+  });
+
+  it('désactive la 2FA directement depuis un profil où elle est déjà activée', async () => {
+    let disableCalled = false;
+    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (method === 'GET' && url.endsWith('/auth/me')) {
+        return Promise.resolve(jsonResponse(200, adminUserWithTotp));
+      }
+      if (method === 'POST' && url.endsWith('/auth/2fa/disable')) {
+        disableCalled = true;
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    });
+
+    render(
+      <App>
+        <AuthCapture />
+      </App>,
+    );
+
+    const disableButton = await screen.findByRole('button', {
+      name: resources.fr.page.accountSecurity.disableButton,
+    });
+    const disableInput = screen.getByLabelText(resources.fr.auth.twoFactor.code);
+    fireEvent.change(disableInput, { target: { value: '654321' } });
+    fireEvent.click(disableButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('status').textContent).toBe(
+        resources.fr.page.accountSecurity.successDisabled,
+      );
+    });
+
+    expect(disableCalled).toBe(true);
+    expect(screen.getByText(resources.fr.page.accountSecurity.statusDisabled)).toBeTruthy();
+    expect(screen.getByRole('button', { name: resources.fr.auth.twoFactor.enable })).toBeTruthy();
+
+    await waitFor(() => {
+      expect(capturedAuth?.state.status).toBe('authenticated');
+      if (capturedAuth?.state.status === 'authenticated') {
+        expect(capturedAuth.state.profile.totpEnabled).toBe(false);
+      }
+    });
   });
 
   it('un code refusé affiche « Code invalide » lors de la désactivation', async () => {
