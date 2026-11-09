@@ -15,7 +15,7 @@ const profile = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-from-me',
-  totpEnabled: false,
+  totpEnabled: true,
 } satisfies MeResponse;
 
 const fetchMock = vi.fn<(input: unknown, init?: unknown) => Promise<Response>>();
