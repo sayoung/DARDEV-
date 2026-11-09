@@ -1,7 +1,8 @@
 import { expect, test, Page } from '@playwright/test';
 import { resources } from '@xplor/i18n';
+import { expectNoA11yViolations } from './helpers/axe.js';
 import { ensureReadyPanoramas } from './helpers/panoramas.js';
-import { enablePublicShare } from './helpers/public-share.js';
+import { enablePublicShare, installPublicTourDouble } from './helpers/public-share.js';
 
 async function readPost<T>(
   page: Page,
@@ -131,5 +132,32 @@ test.describe('M3 F-40/F-30 : page publique (Viewer)', () => {
     const statusDiv = page.locator('#status');
     await expect(statusDiv).toBeVisible();
     await expect(statusDiv).toHaveText(notFoundText);
+  });
+
+  test('la visionneuse publique ne présente aucune violation d’accessibilité (axe)', async ({
+    page,
+  }) => {
+    const { token } = await installPublicTourDouble(page);
+    await page.goto(`http://localhost:5174/v/${token}?lang=fr`);
+
+    const psvContainer = page.locator('.psv-container');
+    await expect(psvContainer).toBeVisible();
+
+    const statusDiv = page.locator('#status');
+    await expect(statusDiv).toBeHidden();
+
+    const controls = page.locator('#controls');
+    await expect(controls).toBeVisible();
+
+    await expectNoA11yViolations(page, { exclude: ['canvas'] });
+  });
+
+  test('la page légale ne présente aucune violation d’accessibilité (axe)', async ({
+    page,
+  }) => {
+    await page.goto('http://localhost:5174/v/legal');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    await expectNoA11yViolations(page);
   });
 });
