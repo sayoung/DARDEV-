@@ -1094,5 +1094,13 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** paquet npm `otplib` (rejeté : ajoute une dépendance externe pour un algorithme standard RFC 6238 / RFC 4226 simple à sécuriser et tester avec `node:crypto`).
 - **À valider :** non
 
+## D-138 — 2FA ADMIN obligatoire côté back-office (M8 F-90)
+
+- **Date :** 09/11/2026
+- **Décision :** 2FA ADMIN imposée côté back-office par redirection vers l'activation (/account/security) et bandeau d'alerte, sans refus de connexion côté API, pour ne bloquer aucun administrateur.
+- **Alternatives :** refus de connexion côté API, ou blocage total de l'interface.
+- **À valider :** oui
+
+
 
 
