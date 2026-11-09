@@ -20,10 +20,6 @@ import { LANG_STORAGE_KEY } from '../lang.js';
 
 const fetchMock = vi.fn<(input: unknown, init?: unknown) => Promise<Response>>();
 
-function hasProperty<K extends string>(obj: unknown, key: K): obj is Record<K, unknown> {
-  return typeof obj === 'object' && obj !== null && key in obj;
-}
-
 const adminProfile: MeResponse = MeResponseSchema.parse({
   id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d00',
   email: 'admin@example.test',
@@ -215,8 +211,8 @@ describe('StatsPage (M7 F-81 / F-82)', () => {
     expect(screen.getByRole('link', { name: resources.ar.nav.kiosks })).toBeTruthy();
 
     // Missing keys in Arabic fall back to French (D-03 suspendue)
-    expect(hasProperty(resources.ar.page, 'hotels')).toBe(false);
-    expect(i18n.t('page.hotels.title', { lng: 'ar' })).toBe(resources.fr.page.hotels.title);
+    i18n.addResource('fr', 'translation', 'page.__repli_test__.title', 'Titre de repli');
+    expect(i18n.t('page.__repli_test__.title', { lng: 'ar' })).toBe('Titre de repli');
   });
 
   it('applique dir=ltr en anglais, affiche les libellés traduits et replie les clés manquantes sur le français (D-03 suspendue)', async () => {
@@ -256,8 +252,8 @@ describe('StatsPage (M7 F-81 / F-82)', () => {
     expect(screen.getByRole('link', { name: resources.en.nav.kiosks })).toBeTruthy();
 
     // Missing keys in English fall back to French (D-03 suspendue)
-    expect(hasProperty(resources.en.page, 'hotels')).toBe(false);
-    expect(i18n.t('page.hotels.title', { lng: 'en' })).toBe(resources.fr.page.hotels.title);
+    i18n.addResource('fr', 'translation', 'page.__repli_test__.title', 'Titre de repli');
+    expect(i18n.t('page.__repli_test__.title', { lng: 'en' })).toBe('Titre de repli');
   });
 
   it('envoie les filtres hôtel, visite, canal, langue et période à l\'API lors de l\'application', async () => {
