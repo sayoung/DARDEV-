@@ -213,7 +213,7 @@ describe('AuditPage', () => {
     });
 
     expect(window.location.search).toContain('page=2');
-    await screen.findByText('entity.delete');
+    await within(await screen.findByRole('table')).findByText('entity.delete');
 
     const prevButtonOnPage2 = screen.getByRole('button', {
       name: resources.fr.page.audit.pagination.prev,
@@ -233,7 +233,7 @@ describe('AuditPage', () => {
 
     render(<AuditPage />);
 
-    await screen.findByText('entity.delete');
+    await within(await screen.findByRole('table')).findByText('entity.delete');
 
     const prevButton = screen.getByRole('button', {
       name: resources.fr.page.audit.pagination.prev,
@@ -254,7 +254,7 @@ describe('AuditPage', () => {
     });
 
     expect(window.location.search).toContain('page=1');
-    await screen.findByText('tour.publish');
+    await within(await screen.findByRole('table')).findByText('tour.publish');
 
     const prevButtonOnPage1 = screen.getByRole('button', {
       name: resources.fr.page.audit.pagination.prev,
@@ -303,5 +303,188 @@ describe('AuditPage', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain(resources.fr.page.audit.loadError);
+  });
+
+  it('garde le champ entityType activé pendant le chargement lors de la frappe de plusieurs caractères', () => {
+    vi.mocked(listAuditLogs).mockReturnValue(new Promise(() => {}));
+
+    render(<AuditPage />);
+
+    expect(screen.getByRole('status')).toBeDefined();
+    const entityTypeInput = screen.getByTestId('audit-filter-entity-type');
+    expect(entityTypeInput.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.change(entityTypeInput, { target: { value: 'T' } });
+    expect(entityTypeInput.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.change(entityTypeInput, { target: { value: 'To' } });
+    expect(entityTypeInput.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.change(entityTypeInput, { target: { value: 'Tou' } });
+    expect(entityTypeInput.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.change(entityTypeInput, { target: { value: 'Tour' } });
+    expect(entityTypeInput.hasAttribute('disabled')).toBe(false);
+
+    if (entityTypeInput instanceof HTMLInputElement) {
+      expect(entityTypeInput.value).toBe('Tour');
+    } else {
+      throw new Error('entityTypeInput is not an HTMLInputElement');
+    }
+
+    expect(listAuditLogs).toHaveBeenCalledTimes(1);
+  });
+
+  it('transmet les filtres action, entityType, from et to à listAuditLogs et les reflète dans l’URL', async () => {
+    vi.mocked(listAuditLogs).mockResolvedValue(defaultResponse);
+
+    render(<AuditPage />);
+
+    await screen.findByRole('table');
+    expect(listAuditLogs).toHaveBeenCalledWith({ page: 1 });
+
+    const actionSelect = screen.getByTestId('audit-filter-action');
+    const entityTypeInput = screen.getByTestId('audit-filter-entity-type');
+    const fromInput = screen.getByTestId('audit-filter-from');
+    const toInput = screen.getByTestId('audit-filter-to');
+
+    fireEvent.change(actionSelect, { target: { value: 'tour.publish' } });
+
+    await waitFor(() => {
+      expect(listAuditLogs).toHaveBeenCalledWith({
+        page: 1,
+        action: 'tour.publish',
+      });
+    });
+    expect(window.location.search).toContain('action=tour.publish');
+
+    fireEvent.change(entityTypeInput, { target: { value: 'Tour' } });
+    fireEvent.keyDown(entityTypeInput, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(listAuditLogs).toHaveBeenCalledWith({
+        page: 1,
+        action: 'tour.publish',
+        entityType: 'Tour',
+      });
+    });
+    expect(window.location.search).toContain('action=tour.publish');
+    expect(window.location.search).toContain('entityType=Tour');
+
+    fireEvent.change(fromInput, { target: { value: '2026-10-01' } });
+
+    await waitFor(() => {
+      expect(listAuditLogs).toHaveBeenCalledWith({
+        page: 1,
+        action: 'tour.publish',
+        entityType: 'Tour',
+        from: '2026-10-01',
+      });
+    });
+    expect(window.location.search).toContain('from=2026-10-01');
+
+    fireEvent.change(toInput, { target: { value: '2026-10-31' } });
+
+    await waitFor(() => {
+      expect(listAuditLogs).toHaveBeenCalledWith({
+        page: 1,
+        action: 'tour.publish',
+        entityType: 'Tour',
+        from: '2026-10-01',
+        to: '2026-10-31',
+      });
+    });
+    expect(window.location.search).toContain('to=2026-10-31');
+  });
+
+  it('remet la page à 1 lors d’un changement de filtre', async () => {
+    vi.mocked(listAuditLogs).mockResolvedValue(page2Response);
+    window.history.replaceState(null, '', '/audit?page=2');
+
+    render(<AuditPage />);
+
+    await within(await screen.findByRole('table')).findByText('entity.delete');
+    expect(listAuditLogs).toHaveBeenCalledWith({ page: 2 });
+
+    const actionSelect = screen.getByTestId('audit-filter-action');
+    fireEvent.change(actionSelect, { target: { value: 'tour.publish' } });
+
+    await waitFor(() => {
+      expect(listAuditLogs).toHaveBeenCalledWith({
+        page: 1,
+        action: 'tour.publish',
+      });
+    });
+    expect(window.location.search).toContain('action=tour.publish');
+    expect(window.location.search).not.toContain('page=2');
+  });
+
+  it('met à jour le filtre entityType lors du blur du champ texte', async () => {
+    vi.mocked(listAuditLogs).mockResolvedValue(page2Response);
+    window.history.replaceState(null, '', '/audit?page=2');
+
+    render(<AuditPage />);
+
+    await within(await screen.findByRole('table')).findByText('entity.delete');
+
+    const entityTypeInput = screen.getByTestId('audit-filter-entity-type');
+    fireEvent.change(entityTypeInput, { target: { value: 'Kiosk' } });
+    fireEvent.blur(entityTypeInput);
+
+    await waitFor(() => {
+      expect(listAuditLogs).toHaveBeenCalledWith({
+        page: 1,
+        entityType: 'Kiosk',
+      });
+    });
+    expect(window.location.search).toContain('entityType=Kiosk');
+    expect(window.location.search).not.toContain('page=2');
+  });
+
+  it('initialise les filtres depuis les paramètres de l’URL', async () => {
+    vi.mocked(listAuditLogs).mockResolvedValue(defaultResponse);
+    window.history.replaceState(
+      null,
+      '',
+      '/audit?page=1&action=tour.publish&entityType=Tour&from=2026-10-01&to=2026-10-31',
+    );
+
+    render(<AuditPage />);
+
+    await screen.findByRole('table');
+
+    expect(listAuditLogs).toHaveBeenCalledWith({
+      page: 1,
+      action: 'tour.publish',
+      entityType: 'Tour',
+      from: '2026-10-01',
+      to: '2026-10-31',
+    });
+
+    const actionSelect = screen.getByTestId('audit-filter-action');
+    const entityTypeInput = screen.getByTestId('audit-filter-entity-type');
+    const fromInput = screen.getByTestId('audit-filter-from');
+    const toInput = screen.getByTestId('audit-filter-to');
+
+    if (actionSelect instanceof HTMLSelectElement) {
+      expect(actionSelect.value).toBe('tour.publish');
+    } else {
+      throw new Error('actionSelect is not an HTMLSelectElement');
+    }
+    if (entityTypeInput instanceof HTMLInputElement) {
+      expect(entityTypeInput.value).toBe('Tour');
+    } else {
+      throw new Error('entityTypeInput is not an HTMLInputElement');
+    }
+    if (fromInput instanceof HTMLInputElement) {
+      expect(fromInput.value).toBe('2026-10-01');
+    } else {
+      throw new Error('fromInput is not an HTMLInputElement');
+    }
+    if (toInput instanceof HTMLInputElement) {
+      expect(toInput.value).toBe('2026-10-31');
+    } else {
+      throw new Error('toInput is not an HTMLInputElement');
+    }
   });
 });

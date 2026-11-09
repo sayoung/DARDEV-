@@ -667,6 +667,14 @@
       "subtitle": "Historique des actions sensibles sur la plateforme.",
       "loadError": "Impossible de charger le journal d'audit.",
       "empty": "Aucun événement d'audit enregistré.",
+      "filters": {
+        "action": "Action",
+        "allActions": "Toutes les actions",
+        "entityType": "Type d'entité",
+        "entityTypePlaceholder": "Ex. Tour, User, Kiosk…",
+        "from": "Du",
+        "to": "Au"
+      },
       "columns": {
         "date": "Date",
         "action": "Action",
