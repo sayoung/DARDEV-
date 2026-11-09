@@ -1125,3 +1125,15 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** attendre les mises à jour des dépendances amont, abaisser le seuil d'audit.
 - **À valider :** oui
 
+## D-141 — Outillage d'audit d'accessibilité avec @axe-core/playwright (M8 NF-05)
+
+- **Date :** 09/11/2026
+- **Décision :** Ajout de `@axe-core/playwright` en `devDependency` au niveau du `package.json` racine pour les tests e2e Playwright. Raison : contrôle automatique WCAG 2.1 AA exigé par NF-05 (via AxeBuilder avec les tags wcag2a, wcag2aa, wcag21a et wcag21aa). Licence : MPL-2.0.
+- **Alternatives :** Audits d'accessibilité manuels ou scripts d'analyse statique sans rendu navigateur.
+- **À valider :** oui
+
+| Paquet | Raison | Licence |
+| --- | --- | --- |
+| @axe-core/playwright | Contrôle automatique WCAG 2.1 AA exigé par NF-05 | MPL-2.0 |
+
+

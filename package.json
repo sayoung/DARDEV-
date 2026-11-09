@@ -33,6 +33,7 @@
     "import:oudayas": "tsx --conditions=development scripts/oudayas/import.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.19.1",
