@@ -86,7 +86,8 @@ describe('createViewerController', () => {
     fullscreen: 'FS', practicalInfo: 'Info',
     goTo: 'Go to {{title}}', confirm: 'Yes', cancel: 'No',
     loading: 'Loading', notFound: 'Not found', loadError: 'Error',
-    close: 'Close', play: 'Play', pause: 'Pause', openMap: 'Voir sur la carte'
+    close: 'Close', play: 'Play', pause: 'Pause', openMap: 'Voir sur la carte',
+    places: 'Lieux', placesTitle: 'Aller à'
   };
 
   beforeEach(() => {
@@ -509,5 +510,73 @@ describe('createViewerController', () => {
     await expect(controller.start('token1')).resolves.toBeUndefined();
     const status = doc.getElementById('status');
     expect(status?.hidden).toBe(true);
+  });
+
+  it('le bouton Lieux apparaît pour un graphe multi-scènes et cliquer un lieu appelle le mount goToScene sur la bonne scène', async () => {
+    const { load, mountScene, goToScene } = setupDeps();
+    const controller = createViewerController(doc, { load, mountScene, labels });
+
+    // Avant le démarrage, le bouton Lieux n'est pas encore présent
+    expect(doc.querySelector('button.xplor-nav-btn--places')).toBeNull();
+
+    await controller.start('token1');
+
+    // Le bouton Lieux apparaît pour un graphe multi-scènes
+    const placesBtn = doc.querySelector('button.xplor-nav-btn--places');
+    expect(placesBtn).not.toBeNull();
+    if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+    expect(placesBtn.hidden).toBe(false);
+    expect(placesBtn.getAttribute('aria-label')).toBe('Lieux');
+    expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+
+    // Cliquer sur le bouton Lieux ouvre le dialogue
+    placesBtn.click();
+    expect(placesBtn.getAttribute('aria-expanded')).toBe('true');
+    const panel = doc.getElementById('places-panel');
+    expect(panel).not.toBeNull();
+
+    const placeButtons = doc.querySelectorAll('button.xplor-place-item');
+    expect(placeButtons.length).toBe(2);
+
+    // Cliquer sur le second lieu (scène s2)
+    const secondPlaceBtn = placeButtons[1];
+    if (!(secondPlaceBtn instanceof HTMLButtonElement)) throw new Error('Missing secondPlaceBtn');
+    secondPlaceBtn.click();
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(goToScene).toHaveBeenCalledWith('s2');
+    expect(doc.getElementById('places-panel')).toBeNull();
+    expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('goToScene ne déclenche rien pendant une transition en cours', async () => {
+    const { load, mountScene, goToScene } = setupDeps();
+    let finishGoTo: () => void = () => {};
+    const pendingPromise = new Promise<void>((resolve) => {
+      finishGoTo = resolve;
+    });
+    goToScene.mockReturnValueOnce(pendingPromise);
+
+    const controller = createViewerController(doc, { load, mountScene, labels });
+    await controller.start('token1');
+
+    const placesBtn = doc.querySelector('button.xplor-nav-btn--places');
+    if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+    placesBtn.click();
+    const placeButtons = doc.querySelectorAll('button.xplor-place-item');
+    const secondPlaceBtn = placeButtons[1];
+    if (!(secondPlaceBtn instanceof HTMLButtonElement)) throw new Error('Missing secondPlaceBtn');
+
+    secondPlaceBtn.click();
+    expect(goToScene).toHaveBeenCalledTimes(1);
+
+    // Pendant la transition en cours, un clic répété ne doit pas ré-invoquer goToScene
+    secondPlaceBtn.click();
+    expect(goToScene).toHaveBeenCalledTimes(1);
+
+    finishGoTo();
+    await new Promise((r) => setTimeout(r, 0));
   });
 });
