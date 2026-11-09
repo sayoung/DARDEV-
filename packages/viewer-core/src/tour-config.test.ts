@@ -225,6 +225,7 @@ describe('tourPluginOptions (2D navigation arrows)', () => {
         data: {
           arrivalYaw: 0.8,
           label: 'Vers le salon',
+          dir: 'next',
         },
       },
     ]);
