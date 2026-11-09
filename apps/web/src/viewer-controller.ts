@@ -46,7 +46,12 @@ export interface ViewerDeps {
   onSceneChange?: (sceneId: string) => void;
   openUrl?: (url: string) => void;
   audioFactory?: (url: string) => HTMLAudioElement;
-  mountVr?: (container: HTMLElement, sceneId: string, graph: TourGraph) => Promise<{ destroy(): void }>;
+  mountVr?: (
+    container: HTMLElement,
+    sceneId: string,
+    graph: TourGraph,
+    onVrChange?: (active: boolean) => void
+  ) => Promise<{ destroy(): void }>;
   stats?: Partial<Pick<WebStats, 'sceneView' | 'hotspotClick' | 'audioPlay'>>;
 }
 
@@ -82,7 +87,11 @@ export function createViewerController(doc: Document, deps: ViewerDeps) {
 
     const sessionId = ++vrSessionId;
     try {
-      const vr = await deps.mountVr(controlsEl, sceneId, graph);
+      const vr = await deps.mountVr(controlsEl, sceneId, graph, (active: boolean) => {
+        if (controls) {
+          controls.setVrActive(active);
+        }
+      });
       if (isDestroyed || sessionId !== vrSessionId) {
         try {
           vr.destroy();

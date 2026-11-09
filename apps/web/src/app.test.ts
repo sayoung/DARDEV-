@@ -243,6 +243,49 @@ describe('startViewer', () => {
     const controls = doc.getElementById('controls');
     expect(controls).not.toBeNull();
     expect(mockMountVr).toHaveBeenCalledTimes(1);
-    expect(mockMountVr).toHaveBeenCalledWith(controls, 'scene-1', mockGraph);
+    expect(mockMountVr).toHaveBeenCalledWith(controls, 'scene-1', mockGraph, expect.any(Function));
+  });
+
+  it('transmet le callback onVrChange du contrôleur à mountVr', async () => {
+    mockLoad.mockResolvedValue(mockGraph);
+    let capturedOnVrChange: ((active: boolean) => void) | undefined;
+    const mockMountVr = vi.fn().mockImplementation((
+      _container: HTMLElement,
+      _sceneId: string,
+      _graph: TourGraph,
+      onVrChange?: (active: boolean) => void
+    ) => {
+      capturedOnVrChange = onVrChange;
+      return Promise.resolve({ destroy: vi.fn() });
+    });
+
+    await startViewer(
+      doc,
+      { pathname: '/v/validToken', search: '' },
+      {
+        load: mockLoad,
+        loadPreview: mockLoadPreview,
+        mount: mockMount,
+        navigate: mockNavigate,
+        mountVr: mockMountVr,
+      }
+    );
+
+    expect(typeof capturedOnVrChange).toBe('function');
+
+    const placesBtn = doc.querySelector('button.xplor-nav-btn--places');
+    expect(placesBtn).not.toBeNull();
+    if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+    expect(placesBtn.hidden).toBe(false);
+
+    if (typeof capturedOnVrChange === 'function') {
+      capturedOnVrChange(true);
+    }
+    expect(placesBtn.hidden).toBe(true);
+
+    if (typeof capturedOnVrChange === 'function') {
+      capturedOnVrChange(false);
+    }
+    expect(placesBtn.hidden).toBe(false);
   });
 });

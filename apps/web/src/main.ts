@@ -26,7 +26,7 @@ void startViewer(document, window.location, {
   loadPreview: (t, lang) => fetchPreviewGraph('/api/v1', t, lang),
   stats,
   mount: (el, graph, opts) => mountViewer(el, graph, opts),
-  mountVr: (container, sceneId, graph) => {
+  mountVr: (container, sceneId, graph, onVrChange) => {
     let currentSceneId = sceneId;
     return mountVr(container, {
       label: resources[graph.lang].vr.enter,
@@ -60,6 +60,7 @@ void startViewer(document, window.location, {
         const query = params.toString();
         window.location.href = query.length > 0 ? `/v/${link.shareToken}?${query}` : `/v/${link.shareToken}`;
       },
+      onSessionChange: onVrChange,
     });
   },
   navigate: (url) => { window.location.href = url; }
