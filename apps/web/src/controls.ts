@@ -41,8 +41,15 @@ export function createControls(
   };
 
   const backBtn = createButton(labels.back, '↩', () => { handlers.onBack(); });
+  // Bouton Précédente ❮ : classe xplor-nav-btn--prev.
+  // Couleur demandée #D64545 (contraste 4.38:1 < 4.5:1), assombrie à #d24444 (contraste 4.52:1 ≥ 4.5:1) dans style.css.
   const prevBtn = createButton(labels.previous, '❮', () => { handlers.onPrevious(); });
+  prevBtn.classList.add('xplor-nav-btn--prev');
+
+  // Bouton Suivante ❯ : classe xplor-nav-btn--next.
+  // Couleur demandée #1E9E4A (contraste 3.47:1 < 4.5:1), assombrie à #1a8840 (contraste 4.53:1 ≥ 4.5:1) dans style.css.
   const nextBtn = createButton(labels.next, '❯', () => { handlers.onNext(); });
+  nextBtn.classList.add('xplor-nav-btn--next');
   const infoBtn = createButton(labels.practicalInfo, 'ℹ︎', () => { handlers.onPracticalInfo(); });
   const fsBtn = createButton(labels.fullscreen, '⛶', () => { handlers.onFullscreen(); });
 

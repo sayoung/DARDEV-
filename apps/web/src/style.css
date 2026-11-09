@@ -371,6 +371,61 @@ body {
   outline-offset: 2px;
 }
 
+/*
+ * Boutons de navigation Suivante / Précédente :
+ * Vérification du contraste WCAG 2.1 AA (texte blanc #ffffff, seuil requis ≥ 4,5:1) :
+ * - Précédente ❮ : couleur demandée rouge #D64545
+ *   Luminance relative L = 0.1898 -> Contraste avec blanc #ffffff = 4.38:1 (< 4.5:1).
+ *   Le seuil de 4,5:1 n'étant pas atteint, le fond est assombri à #d24444 (L = 0.1825, contraste 4.52:1 ≥ 4.5:1).
+ * - Suivante ❯ : couleur demandée vert #1E9E4A
+ *   Luminance relative L = 0.2522 -> Contraste avec blanc #ffffff = 3.47:1 (< 4.5:1).
+ *   Le seuil de 4,5:1 n'étant pas atteint, le fond est assombri à #1a8840 (L = 0.1820, contraste 4.53:1 ≥ 4.5:1).
+ * Note : les disques SVG du viewer conservent les couleurs d'origine (#D64545 et #1E9E4A).
+ */
+
+.xplor-nav-btn--prev,
+#controls button.xplor-nav-btn--prev {
+  background-color: #d24444;
+  color: #ffffff;
+}
+
+.xplor-nav-btn--prev:hover:not(:disabled),
+#controls button.xplor-nav-btn--prev:hover:not(:disabled) {
+  background-color: #b83636;
+}
+
+.xplor-nav-btn--prev:focus-visible,
+#controls button.xplor-nav-btn--prev:focus-visible {
+  outline: 2px solid #d24444;
+  outline-offset: 2px;
+}
+
+.xplor-nav-btn--next,
+#controls button.xplor-nav-btn--next {
+  background-color: #1a8840;
+  color: #ffffff;
+}
+
+.xplor-nav-btn--next:hover:not(:disabled),
+#controls button.xplor-nav-btn--next:hover:not(:disabled) {
+  background-color: #156d33;
+}
+
+.xplor-nav-btn--next:focus-visible,
+#controls button.xplor-nav-btn--next:focus-visible {
+  outline: 2px solid #1a8840;
+  outline-offset: 2px;
+}
+
+.xplor-nav-btn--prev:disabled,
+.xplor-nav-btn--next:disabled,
+#controls button.xplor-nav-btn--prev:disabled,
+#controls button.xplor-nav-btn--next:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* vr-button */
 .xplor-vr-button {
   min-inline-size: 44px;
