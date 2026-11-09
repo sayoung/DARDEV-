@@ -158,3 +158,60 @@ Pour obtenir un jeton kiosque de test valide sans compromettre de secret ni impa
 Conformément à la spécification **NF-03 Performance** du cahier des charges (*« 200 événements < 100 ms » (p95)*) :
 - **`http_req_duration: ['p(95)<100']`** : 95 % des requêtes d'ingestion de lots de 200 événements doivent répondre en moins de 100 ms (P95).
 - **`http_req_failed: ['rate<0.01']`** : le taux d'erreur HTTP doit être strictement inférieur à 1 % (soit au moins 99 % de réponses avec le statut 200 OK).
+
+---
+
+## 5. Consultation des listes du back-office (NF-03)
+
+Le script `perf/k6/admin-api.js` teste les performances des requêtes de consultation des listes du back-office administrateur, conformément à l'exigence **NF-03 Performance** du cahier des charges (*« Back-office : réponses API < 300 ms (P95) »*).
+
+> [!CAUTION]
+> **Interdiction formelle de lancer ce script sur la production (`api.xplor.ma` / `admin.xplor.ma`)** sans accord préalable du porteur. Ces tests doivent être exécutés exclusivement sur une instance locale ou un environnement de test dédié.
+
+### Authentification unique (`setup()`) et gestion de session
+
+L'API NestJS protège la route `POST /api/v1/auth/login` avec un limiteur de débit strict (`ThrottlerGuard` configuré à 5 requêtes par minute et par IP, voir `apps/api/src/auth/auth.controller.ts`).
+
+Afin de respecter cette contrainte :
+- La connexion n'est **jamais appelée dans la boucle des utilisateurs virtuels**.
+- La phase `setup()` de k6 effectue **une seule connexion initiale** avec les identifiants fournis.
+- Le cookie de session opaque (`xplor_sid`, défini dans `apps/api/src/auth/session-cookie.ts`) et le jeton CSRF associés sont propagés aux 10 utilisateurs virtuels.
+- Chaque VU transmet le cookie `xplor_sid` lors de toutes ses requêtes de consultation.
+
+### Endpoints testés à chaque itération (GET en lecture seule)
+
+Chaque itération simule la consultation des trois listes principales du back-office :
+1. **Visites virtuelles** : `GET /api/v1/admin/tours` (défini dans `apps/api/src/catalog/tours.controller.ts`).
+2. **Hôtels** : `GET /api/v1/admin/hotels` (défini dans `apps/api/src/hotels/hotels.controller.ts`).
+3. **Kiosques** : `GET /api/v1/admin/kiosks` (défini dans `apps/api/src/kiosks/kiosks.controller.ts`).
+
+### Paramètres (variables d'environnement)
+
+- `BASE_URL` (optionnel) : URL de base de l'API. Par défaut : `http://localhost:3000`.
+- `ADMIN_EMAIL` (**obligatoire**) : Adresse e-mail d'un compte administrateur ou gestionnaire (ex. `admin@xplor.local`). Arrêt immédiat si manquante.
+- `ADMIN_PASSWORD` (**obligatoire**) : Mot de passe du compte. Arrêt immédiat si manquant.
+*(Aucune valeur par défaut n'est inscrite dans le script afin d'éviter la fuite d'identifiants).*
+
+### Commande d'exécution
+
+```bash
+k6 run -e BASE_URL=... -e ADMIN_EMAIL=... -e ADMIN_PASSWORD=... perf/k6/admin-api.js
+```
+
+Exemple en local avec le compte administrateur du seed (`pnpm db:seed` initialise le compte avec la valeur de `SEED_DEFAULT_PASSWORD` définie dans `.env`, par exemple `xplor-seed-dev-2026`) :
+
+```bash
+k6 run -e BASE_URL=http://localhost:3000 -e ADMIN_EMAIL=admin@xplor.local -e ADMIN_PASSWORD=xplor-seed-dev-2026 perf/k6/admin-api.js
+```
+
+### Profil de charge et seuils de performance NF-03
+
+#### Profil de charge
+- **Utilisateurs virtuels (VU)** : 10 VU simultanés (`vus: 10`).
+- **Durée** : 1 minute (`duration: '1m'`).
+- **Comportement par VU** : à chaque itération, l'utilisateur virtuel envoie le cookie de session et effectue les trois requêtes `GET` en lecture seule sur les listes de visites, d'hôtels et de kiosques.
+
+#### Seuils d'acceptation (Thresholds)
+Conformément à la spécification **NF-03 Performance** du cahier des charges (*« Back-office : réponses API < 300 ms (P95) »*) :
+- **`http_req_duration: ['p(95)<300']`** : 95 % des requêtes de consultation du back-office doivent répondre en moins de 300 ms (P95).
+- **`http_req_failed: ['rate<0.01']`** : le taux d'erreur HTTP doit être strictement inférieur à 1 % (soit au moins 99 % de réponses avec le statut 200 OK).
