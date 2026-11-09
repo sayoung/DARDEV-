@@ -1109,7 +1109,19 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Remarque :** Emplacements « [à compléter] » des mentions légales à fournir par le porteur.
 - **À valider :** oui
 
+## D-140 — Overrides de sécurité pnpm (M8 NF-01)
 
-
-
+- **Date :** 09/11/2026 (2026-11-09)
+- **Décision :** Overrides de sécurité ciblés ajoutés dans `package.json` (`pnpm.overrides`) pour corriger les vulnérabilités de sévérité élevée ou critique identifiées lors de l'audit de sécurité pnpm (M8 NF-01 1/4a, commit c583149) :
+  - `fastify@<5.12.2` → `>=5.12.2` : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a).
+  - `happy-dom@<21.0.4` → `>=21.0.4` (et la devDependency `happy-dom` passée de `^20.14.5` à `^21.0.4`) : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a).
+  - `source-map-js@<1.2.2` → `>=1.2.2` : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a).
+  - `tinypool@<2.1.2` → `>=2.1.2` : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a) (risque de compatibilité tinypool 2.x avec vitest 3.x, à surveiller).
+  - `undici@<8.12.2` → `>=8.12.2` : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a).
+  - `vite@>=7.0.0 <7.3.7` → `>=7.3.7` : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a).
+  - `vite@>=8.0.0 <8.3.3` → `>=8.3.3` : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a).
+  - `zod@<4.6.6` → `>=4.6.6` : vulnérabilité high/critical signalée par pnpm audit (M8 NF-01 1/4a).
+  L'override `deepmerge-ts: 8.0.2` existe déjà (D-60) et n'est pas recopié.
+- **Alternatives :** attendre les mises à jour des dépendances amont, abaisser le seuil d'audit.
+- **À valider :** oui
 
