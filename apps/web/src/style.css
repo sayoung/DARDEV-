@@ -578,3 +578,183 @@ body {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
+
+/* Bouton Lieux : classe xplor-nav-btn--places */
+.xplor-nav-btn--places,
+#controls button.xplor-nav-btn--places {
+  background-color: #6958a5;
+  color: #ffffff;
+}
+
+.xplor-nav-btn--places:hover:not(:disabled),
+#controls button.xplor-nav-btn--places:hover:not(:disabled) {
+  background-color: #62549f;
+}
+
+.xplor-nav-btn--places:focus-visible,
+#controls button.xplor-nav-btn--places:focus-visible {
+  outline: 2px solid #6958a5;
+  outline-offset: 2px;
+}
+
+/*
+ * Menu Lieux : panneau accessible (role="dialog")
+ * Popover sous la barre sur desktop, feuille en bas de l'écran sous 640 px.
+ * Propriétés CSS logiques et compatibilité RTL complète (dir).
+ */
+.xplor-places-panel,
+#places-panel {
+  position: fixed;
+  inset-block-end: 5.5rem;
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: min(90vw, 380px);
+  max-block-size: min(70vh, 480px);
+  background-color: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  padding-block: 1rem;
+  padding-inline: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 60;
+  overflow-y: auto;
+  box-sizing: border-box;
+  color: #3c3c3b;
+  text-align: start;
+}
+
+.xplor-places-panel[dir="rtl"],
+[dir="rtl"] .xplor-places-panel,
+[dir="rtl"] #places-panel {
+  direction: rtl;
+  text-align: start;
+}
+
+.xplor-places-panel[dir="ltr"],
+[dir="ltr"] .xplor-places-panel,
+[dir="ltr"] #places-panel {
+  direction: ltr;
+  text-align: start;
+}
+
+.xplor-places-title {
+  margin-block: 0;
+  margin-inline: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #6958a5;
+  text-align: start;
+}
+
+.xplor-places-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  padding-inline-end: 0.25rem;
+}
+
+.xplor-place-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+  padding-inline: 0.75rem;
+  background-color: #f7f7f9;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  text-align: start;
+  transition: background-color 150ms ease, border-color 150ms ease;
+  min-block-size: 48px;
+  color: #3c3c3b;
+  font-family: inherit;
+  font-size: 0.95rem;
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.xplor-place-item:hover {
+  background-color: #edeaf5;
+  border-color: #bdb6d7;
+}
+
+.xplor-place-item:focus-visible {
+  outline: 2px solid #6958a5;
+  outline-offset: 2px;
+  border-color: #6958a5;
+}
+
+.xplor-place-item[aria-current="true"] {
+  background-color: #edeaf5;
+  border-color: #6958a5;
+  font-weight: 600;
+}
+
+.xplor-place-thumb {
+  inline-size: 56px;
+  block-size: 40px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  flex-shrink: 0;
+  background-color: #e6e7e9;
+}
+
+.xplor-place-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 0.5rem;
+  min-inline-size: 0;
+}
+
+.xplor-place-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+}
+
+.xplor-place-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0.125rem;
+  padding-inline: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6958a5;
+  background-color: #edeaf5;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}
+
+.xplor-place-item[aria-current="true"] .xplor-place-count {
+  background-color: #6958a5;
+  color: #ffffff;
+}
+
+/* Feuille en bas de l'écran sous 640 px */
+@media (max-width: 640px) {
+  .xplor-places-panel,
+  #places-panel {
+    inset-block-end: 0;
+    inset-inline: 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: 75vh;
+    border-start-start-radius: 1rem;
+    border-start-end-radius: 1rem;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    border-radius: 1rem 1rem 0 0;
+    padding-block: 1.25rem;
+    padding-inline: 1rem;
+  }
+}
+
