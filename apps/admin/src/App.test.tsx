@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
-import type { Lang } from '@xplor/shared';
+import { Role, type Lang } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App.js';
@@ -91,6 +91,157 @@ describe('langue du back-office', () => {
 
     const linkCities = screen.getByRole('link', { name: 'Villes' });
     expect(linkCities.getAttribute('aria-current')).toBeNull();
+  });
+});
+
+describe('obligation 2FA pour les administrateurs (M8 F-90)', () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    window.history.replaceState(null, '', '/');
+    document.documentElement.setAttribute('lang', 'fr');
+    document.documentElement.setAttribute('dir', 'ltr');
+    await i18n.changeLanguage('fr');
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('un ADMIN sans 2FA qui ouvre /users est redirigé vers /account/security et voit le bandeau', async () => {
+    window.history.replaceState(null, '', '/users');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: unknown) => {
+        const url = typeof input === 'string' ? input : input instanceof Request ? input.url : '';
+        if (url.endsWith('/auth/me')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: 'u-admin-no-2fa',
+                email: 'admin@xplor.test',
+                name: 'Admin Sans 2FA',
+                role: Role.ADMIN,
+                uiLang: 'fr',
+                csrfToken: 'csrf-tok',
+                totpEnabled: false,
+              }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ items: [], total: 0, page: 1, pageSize: 20 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      }),
+    );
+
+    render(<App />);
+
+    const alertBanner = await screen.findByText(
+      resources.fr.auth.twoFactorAdminAlert,
+    );
+    expect(alertBanner).toBeTruthy();
+    expect(window.location.pathname).toBe('/account/security');
+    expect(
+      await screen.findByRole('heading', {
+        name: resources.fr.page.accountSecurity.title,
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: resources.fr.page.users.title })).toBeNull();
+  });
+
+  it('un ADMIN avec 2FA accède à /users sans bandeau', async () => {
+    window.history.replaceState(null, '', '/users');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: unknown) => {
+        const url = typeof input === 'string' ? input : input instanceof Request ? input.url : '';
+        if (url.endsWith('/auth/me')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: 'u-admin-2fa',
+                email: 'admin@xplor.test',
+                name: 'Admin Avec 2FA',
+                role: Role.ADMIN,
+                uiLang: 'fr',
+                csrfToken: 'csrf-tok',
+                totpEnabled: true,
+              }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+          );
+        }
+        if (url.includes('/admin/users')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ items: [], total: 0, page: 1, pageSize: 20 }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', {
+        name: resources.fr.page.users.title,
+      }),
+    ).toBeTruthy();
+    expect(window.location.pathname).toBe('/users');
+    expect(screen.queryByText(resources.fr.auth.twoFactorAdminAlert)).toBeNull();
+  });
+
+  it("un EDITOR sans 2FA n'est pas redirigé et n'a pas de bandeau", async () => {
+    window.history.replaceState(null, '', '/users');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: unknown) => {
+        const url = typeof input === 'string' ? input : input instanceof Request ? input.url : '';
+        if (url.endsWith('/auth/me')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: 'u-editor-no-2fa',
+                email: 'editor@xplor.test',
+                name: 'Editor Sans 2FA',
+                role: Role.EDITOR,
+                uiLang: 'fr',
+                csrfToken: 'csrf-tok',
+                totpEnabled: false,
+              }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+          );
+        }
+        if (url.includes('/admin/users')) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ items: [], total: 0, page: 1, pageSize: 20 }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('heading', {
+        name: resources.fr.page.users.title,
+      }),
+    ).toBeTruthy();
+    expect(window.location.pathname).toBe('/users');
+    expect(screen.queryByText(resources.fr.auth.twoFactorAdminAlert)).toBeNull();
   });
 });
 

@@ -72,7 +72,7 @@ describe('AppLayout', () => {
             role: Role.ADMIN,
             uiLang: 'fr',
             csrfToken: 'csrf-tok',
-            totpEnabled: false,
+            totpEnabled: true,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         ));
@@ -275,5 +275,35 @@ describe('AppLayout', () => {
     expect(screen.queryByRole('link', { name: resources.fr.nav.users })).toBeNull();
     expect(screen.queryByRole('link', { name: resources.fr.nav.audit })).toBeNull();
     expect(screen.queryByRole('link', { name: resources.fr.nav.accountSecurity })).toBeNull();
+  });
+
+  it("affiche le bandeau Alert d'obligation 2FA pour un ADMIN sans 2FA", async () => {
+    const fetchMock = vi.fn((input: unknown, init?: unknown) => {
+      const url = requestUrl(input);
+      const method = methodOf(input, init);
+
+      if (method === 'GET' && url.endsWith('/auth/me')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              id: 'u-admin-no-2fa',
+              email: 'admin2fa@xplor.test',
+              name: 'Admin No 2FA',
+              role: Role.ADMIN,
+              uiLang: 'fr',
+              csrfToken: 'csrf-tok',
+              totpEnabled: false,
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 401 }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    expect(await screen.findByText(resources.fr.auth.twoFactorAdminAlert)).toBeTruthy();
   });
 });

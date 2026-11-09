@@ -66,6 +66,7 @@
       "requiredForAdmin": "2FA obligatoire pour ADMIN",
       "verify": "Vérifier"
     },
+    "twoFactorAdminAlert": "La double authentification est obligatoire pour les administrateurs. Activez-la pour continuer.",
     "errors": {
       "TOKEN_INVALID": "Ce lien n'est plus valable.",
       "PASSWORD_TOO_COMMON": "Ce mot de passe est trop courant.",
