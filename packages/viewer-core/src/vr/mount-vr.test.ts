@@ -1377,4 +1377,185 @@ describe('mountVr (M6 F-70, F-71)', () => {
       handle.destroy();
     });
   });
+
+  describe('signal onSessionChange (M3 F-32 / menu Lieux)', () => {
+    type VoidCallback = () => void;
+
+    it('session fictive : bindSession → true, événement end → false, pas d appel après destroy', async () => {
+      const sessionStates: boolean[] = [];
+      const onSessionChange = (active: boolean): void => {
+        sessionStates.push(active);
+      };
+
+      const endListeners: VoidCallback[] = [];
+      const fakeSession = {
+        addEventListener: vi.fn((type: string, listener: VoidCallback) => {
+          if (type === 'end') {
+            endListeners.push(listener);
+          }
+        }),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: validGraph,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+        onSessionChange,
+      });
+
+      expect(sessionStates).toEqual([]);
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(sessionStates).toEqual([true]);
+      });
+
+      expect(endListeners.length).toBeGreaterThan(0);
+      for (const listener of endListeners) {
+        listener();
+      }
+
+      expect(sessionStates).toEqual([true, false]);
+
+      handle.destroy();
+      expect(sessionStates).toEqual([true, false]);
+
+      handle.destroy();
+      expect(sessionStates).toEqual([true, false]);
+    });
+
+    it('notifie false au destroy si la session était encore active sans événement end préalable', async () => {
+      const sessionStates: boolean[] = [];
+      const onSessionChange = (active: boolean): void => {
+        sessionStates.push(active);
+      };
+
+      const fakeSession = {
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: validGraph,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+        onSessionChange,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(sessionStates).toEqual([true]);
+      });
+
+      handle.destroy();
+      expect(sessionStates).toEqual([true, false]);
+
+      handle.destroy();
+      expect(sessionStates).toEqual([true, false]);
+    });
+
+    it('aucun changement de comportement si l option onSessionChange est absente', async () => {
+      const endListeners: VoidCallback[] = [];
+      const fakeSession = {
+        addEventListener: vi.fn((type: string, listener: VoidCallback) => {
+          if (type === 'end') {
+            endListeners.push(listener);
+          }
+        }),
+        removeEventListener: vi.fn(),
+        end: vi.fn().mockResolvedValue(undefined),
+      };
+
+      const fakeNavigator = {
+        xr: {
+          isSessionSupported: () => Promise.resolve(true),
+          requestSession: vi.fn().mockResolvedValue(fakeSession),
+        },
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: validGraph,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: fakeNavigator,
+      });
+
+      const button = container.querySelector('button');
+      expect(button).not.toBeNull();
+      if (button !== null) {
+        button.click();
+      }
+
+      await vi.waitFor(() => {
+        expect(fakeSession.addEventListener).toHaveBeenCalledWith(
+          'end',
+          expect.any(Function),
+        );
+      });
+
+      expect(endListeners.length).toBeGreaterThan(0);
+      for (const listener of endListeners) {
+        listener();
+      }
+
+      expect(() => {
+        handle.destroy();
+      }).not.toThrow();
+    });
+
+    it('aucun appel à onSessionChange si destroy() est appelé sans session VR démarrée', async () => {
+      const sessionStates: boolean[] = [];
+      const onSessionChange = (active: boolean): void => {
+        sessionStates.push(active);
+      };
+
+      const handle = await mountVr(container, {
+        label: 'Entrer en VR',
+        graph: validGraph,
+        getCurrentSceneId: () => 'scene-1',
+        showScene: async () => {},
+        resolveTextureUrl: () => null,
+        navigatorLike: {},
+        onSessionChange,
+      });
+
+      handle.destroy();
+      expect(sessionStates).toEqual([]);
+    });
+  });
 });

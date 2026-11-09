@@ -39,6 +39,7 @@ export interface MountVrOptions {
   resolveTextureUrl: (sceneId: string) => string | null;
   navigatorLike?: Parameters<typeof isVrSupported>[0];
   openTourLink?: (hotspotId: string) => void | Promise<void>;
+  onSessionChange?: (active: boolean) => void;
 }
 
 /**
@@ -236,6 +237,7 @@ interface CreateXrInputTrackerOptions {
   scene: THREE.Scene;
   getTargets: () => VrMarkerTarget[];
   onSelectHotspot: (hotspotId: string, customTime?: number) => void;
+  onSessionChange?: (active: boolean) => void;
 }
 
 function createRayLine(): THREE.Line {
@@ -367,6 +369,7 @@ function createXrInputTracker(
       return;
     }
     activeSession = session;
+    opts.onSessionChange?.(true);
 
     const onSessionSelect = (e: unknown): void => {
       let matchedController: THREE.Object3D | null = null;
@@ -401,6 +404,7 @@ function createXrInputTracker(
     session.addEventListener('select', onSessionSelect);
 
     const onSessionEnd = (): void => {
+      opts.onSessionChange?.(false);
       dispose();
     };
     sessionEndListener = onSessionEnd;
@@ -509,6 +513,15 @@ export async function mountVr(
   let isDestroyed = false;
   let alertElement: HTMLDivElement | null = null;
   let alertTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  let isSessionActive = false;
+
+  const handleSessionChange = (active: boolean): void => {
+    if (isSessionActive === active) {
+      return;
+    }
+    isSessionActive = active;
+    opts.onSessionChange?.(active);
+  };
 
   const removeAlert = (): void => {
     if (alertTimeoutId !== null) {
@@ -622,6 +635,7 @@ export async function mountVr(
               : currentFrameTime;
           interaction.selectNow(hotspotId, timeToUse);
         },
+        onSessionChange: handleSessionChange,
       });
 
       let isDisposed = false;
@@ -733,6 +747,9 @@ export async function mountVr(
         currentTeardown();
         currentTeardown = null;
       }
+      if (isSessionActive) {
+        handleSessionChange(false);
+      }
       throw error;
     } finally {
       isStarting = false;
@@ -748,6 +765,9 @@ export async function mountVr(
           currentTeardown();
           currentTeardown = null;
         }
+        if (isSessionActive) {
+          handleSessionChange(false);
+        }
         console.error(error);
         showAlert(opts.startFailedLabel ?? "La VR n'a pas pu démarrer");
       });
@@ -762,6 +782,9 @@ export async function mountVr(
       isDestroyed = true;
       removeAlert();
       buttonHandle.destroy();
+      if (isSessionActive) {
+        handleSessionChange(false);
+      }
       if (currentSession !== null && currentSession.isActive()) {
         void currentSession.exit();
       }
