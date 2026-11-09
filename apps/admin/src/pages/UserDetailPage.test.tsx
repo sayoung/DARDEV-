@@ -688,9 +688,9 @@ describe('UserDetailPage', () => {
     fireEvent.click(saveHotelsBtn);
 
     expect(
-      screen.getByRole('button', {
+      (await screen.findByRole('button', {
         name: resources.fr.page.userDetail.hotels.actions.saving,
-      }).hasAttribute('disabled'),
+      })).hasAttribute('disabled'),
     ).toBe(true);
 
     resolveSetHotels(managerUser);
