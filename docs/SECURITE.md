@@ -58,7 +58,7 @@ Ce document dresse l'état des mesures de sécurité mises en œuvre sur la plat
   *Test :* `apps/api/src/catalog/assets.service.test.ts`  
   - `it("un gestionnaire de l'hôtel A ne voit pas les visites de l'hôtel B")`
 - `apps/api/src/auth/session.guard.ts` & `apps/api/src/auth/csrf.guard.ts`  
-  *Tests :* `apps/api/src/auth/session.guard.test.ts` et `apps/api/src/auth/csrf.guard.test.ts`
+  *Tests :* `apps/api/src/auth/session.guard.test.ts` et `apps/api/src/auth/auth.controller.test.ts`
 
 ---
 
