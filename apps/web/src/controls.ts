@@ -461,6 +461,10 @@ export function createControls(
     },
     setVrActive(active: boolean) {
       isVrActive = active;
+      const legalLink = doc.getElementById('legal-link');
+      if (legalLink instanceof HTMLElement) {
+        legalLink.hidden = active;
+      }
       if (active) {
         closePlacesPanel(false);
         if (placesBtn) {

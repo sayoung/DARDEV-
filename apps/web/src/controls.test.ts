@@ -824,6 +824,43 @@ describe('createControls', () => {
 
       controls.destroy();
     });
+
+    it('setVrActive bascule la visibilité de #legal-link sans erreur s\'il est absent ou présent', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers
+      );
+
+      // Sans #legal-link dans le document : aucun crash
+      expect(() => {
+        controls.setVrActive(true);
+        controls.setVrActive(false);
+      }).not.toThrow();
+
+      // Avec #legal-link dans le document : masquage puis ré-affichage
+      const link = doc.createElement('a');
+      link.id = 'legal-link';
+      doc.body.append(link);
+
+      expect(link.hidden).toBe(false);
+
+      controls.setVrActive(true);
+      expect(link.hidden).toBe(true);
+
+      controls.setVrActive(false);
+      expect(link.hidden).toBe(false);
+
+      link.remove();
+      controls.destroy();
+    });
   });
 
 });
