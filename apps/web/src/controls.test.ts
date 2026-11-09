@@ -1,7 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { TourGraphSceneSchema, type TourGraphScene } from '@xplor/shared';
 import { createControls } from './controls';
+
+function makeScene(id: string, title: string, thumb = `thumb-${id}.jpg`): TourGraphScene {
+  return TourGraphSceneSchema.parse({
+    id,
+    title,
+    caption: null,
+    panorama: {
+      preview: `preview-${id}.jpg`,
+      web: `web-${id}.jpg`,
+      tiles: { width: 512, cols: 2, rows: 1, baseUrl: `tiles-${id}` },
+    },
+    initialView: { yaw: 0, pitch: 0, zoom: 0 },
+    narrationUrl: null,
+    ambientUrl: null,
+    thumb,
+    hotspots: [],
+  });
+}
 
 function srgbToLinear(c: number): number {
   return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
@@ -272,5 +291,395 @@ describe('createControls', () => {
       expect(darkenedGreenContrast).toBeGreaterThanOrEqual(4.5);
       expect(darkenedGreenContrast).toBeCloseTo(4.53, 1);
     });
+
+    it('should define places menu button and popover/sheet styles in style.css', () => {
+      const cssPath = typeof __dirname !== 'undefined'
+        ? path.resolve(__dirname, 'style.css')
+        : path.resolve(process.cwd(), 'apps/web/src/style.css');
+      const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+      expect(cssContent).toContain('.xplor-nav-btn--places');
+      expect(cssContent).toContain('.xplor-places-panel');
+      expect(cssContent).toContain('#places-panel');
+      expect(cssContent).toContain('@media (max-width: 640px)');
+
+      // Verify logical CSS properties
+      expect(cssContent).toMatch(/inset-block-end:/);
+      expect(cssContent).toMatch(/inset-inline:/);
+      expect(cssContent).toMatch(/margin-inline:/);
+      expect(cssContent).toMatch(/padding-block:/);
+      expect(cssContent).toMatch(/padding-inline:/);
+    });
   });
+
+  describe('places menu button and dialog panel', () => {
+    const mockScenes: TourGraphScene[] = [
+      makeScene('s1', 'Salon (1/2)', 'thumb-salon1.jpg'),
+      makeScene('s2', 'Salon (2/2)', 'thumb-salon2.jpg'),
+      makeScene('s3', 'Piscine', 'thumb-piscine.jpg'),
+    ];
+
+    it('should not render places button when scenes are omitted', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(doc, defaultLabels, handlers);
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      expect(placesBtn).toBeNull();
+      controls.destroy();
+    });
+
+    it('should render places button before ❮ when scenes are provided', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes
+      );
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+
+      const buttons = Array.from(nav.querySelectorAll('button'));
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      const prevBtn = nav.querySelector('button.xplor-nav-btn--prev');
+
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+      if (!(prevBtn instanceof HTMLButtonElement)) throw new Error('Missing prevBtn');
+
+      expect(placesBtn.getAttribute('aria-label')).toBe('Lieux');
+      expect(placesBtn.getAttribute('aria-haspopup')).toBe('dialog');
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+      expect(placesBtn.innerHTML).toContain('<svg');
+
+      const placesIndex = buttons.indexOf(placesBtn);
+      const prevIndex = buttons.indexOf(prevBtn);
+      expect(placesIndex).toBe(prevIndex - 1);
+
+      controls.destroy();
+    });
+
+    it('should open dialog with places grouped by groupScenesIntoPlaces upon click', () => {
+      const goToScene = vi.fn();
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux', placesTitle: 'Aller à' },
+        handlers,
+        mockScenes,
+        goToScene
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      placesBtn.click();
+
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('true');
+      const panel = doc.getElementById('places-panel');
+      if (!panel) throw new Error('Missing panel');
+      expect(panel.getAttribute('role')).toBe('dialog');
+      expect(panel.getAttribute('aria-modal')).toBe('true');
+
+      const entryButtons = Array.from(panel.querySelectorAll('button.xplor-place-item'));
+      expect(entryButtons.length).toBe(2);
+
+      const salonBtn = entryButtons[0];
+      const piscineBtn = entryButtons[1];
+      if (!(salonBtn instanceof HTMLButtonElement) || !(piscineBtn instanceof HTMLButtonElement)) {
+        throw new Error('Missing entry buttons');
+      }
+
+      expect(salonBtn.textContent).toContain('Salon');
+      expect(salonBtn.textContent).toContain('2');
+      const salonImg = salonBtn.querySelector('img');
+      if (!salonImg) throw new Error('Missing salonImg');
+      expect(salonImg.getAttribute('src')).toBe('thumb-salon1.jpg');
+
+      expect(piscineBtn.textContent).toContain('Piscine');
+      expect(piscineBtn.textContent).toContain('1');
+      const piscineImg = piscineBtn.querySelector('img');
+      if (!piscineImg) throw new Error('Missing piscineImg');
+      expect(piscineImg.getAttribute('src')).toBe('thumb-piscine.jpg');
+
+      // Initial active place: salon contains s1
+      expect(salonBtn.getAttribute('aria-current')).toBe('true');
+      expect(piscineBtn.getAttribute('aria-current')).toBeNull();
+
+      controls.destroy();
+    });
+
+    it('should update aria-current on the place when update() is called', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        { scenes: mockScenes }
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      placesBtn.click();
+      const panel = doc.getElementById('places-panel');
+      if (!panel) throw new Error('Missing panel');
+      const entryButtons = Array.from(panel.querySelectorAll('button.xplor-place-item'));
+      const salonBtn = entryButtons[0];
+      const piscineBtn = entryButtons[1];
+      if (!(salonBtn instanceof HTMLButtonElement) || !(piscineBtn instanceof HTMLButtonElement)) {
+        throw new Error('Missing entry buttons');
+      }
+
+      expect(salonBtn.getAttribute('aria-current')).toBe('true');
+      expect(piscineBtn.getAttribute('aria-current')).toBeNull();
+
+      controls.update({
+        previous: null,
+        next: null,
+        canGoBack: false,
+        hasPracticalInfo: false,
+        currentSceneId: 's3',
+      });
+
+      expect(salonBtn.getAttribute('aria-current')).toBeNull();
+      expect(piscineBtn.getAttribute('aria-current')).toBe('true');
+
+      controls.destroy();
+    });
+
+    it('clicking an entry should call goToScene with firstSceneId and close panel', () => {
+      const goToScene = vi.fn();
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes,
+        goToScene
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      placesBtn.click();
+      const panel = doc.getElementById('places-panel');
+      if (!panel) throw new Error('Missing panel');
+      const entryButtons = Array.from(panel.querySelectorAll('button.xplor-place-item'));
+      const piscineBtn = entryButtons[1];
+      if (!(piscineBtn instanceof HTMLButtonElement)) throw new Error('Missing piscineBtn');
+
+      piscineBtn.click();
+
+      expect(goToScene).toHaveBeenCalledWith('s3');
+      expect(doc.getElementById('places-panel')).toBeNull();
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+
+      controls.destroy();
+    });
+
+    it('pressing Escape should close the dialog and restore focus to places button', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      placesBtn.click();
+      expect(doc.getElementById('places-panel')).not.toBeNull();
+
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+      expect(doc.getElementById('places-panel')).toBeNull();
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+      expect(doc.activeElement).toBe(placesBtn);
+
+      controls.destroy();
+    });
+
+    it('clicking outside should close the dialog and restore focus to places button', () => {
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      placesBtn.click();
+      expect(doc.getElementById('places-panel')).not.toBeNull();
+
+      const outsideEl = doc.createElement('div');
+      doc.body.appendChild(outsideEl);
+      outsideEl.click();
+
+      expect(doc.getElementById('places-panel')).toBeNull();
+      expect(placesBtn.getAttribute('aria-expanded')).toBe('false');
+      expect(doc.activeElement).toBe(placesBtn);
+
+      outsideEl.remove();
+      controls.destroy();
+    });
+
+    it('keyboard navigation with ArrowDown, ArrowUp, Enter, and Tab focus trap', () => {
+      const goToScene = vi.fn();
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes,
+        goToScene
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      placesBtn.click();
+      const panel = doc.getElementById('places-panel');
+      if (!panel) throw new Error('Missing panel');
+      const entryButtons = Array.from(panel.querySelectorAll('button.xplor-place-item'));
+      const firstEntry = entryButtons[0];
+      const secondEntry = entryButtons[1];
+      if (!(firstEntry instanceof HTMLButtonElement) || !(secondEntry instanceof HTMLButtonElement)) {
+        throw new Error('Missing entry buttons');
+      }
+
+      // Initial focus is on the current place (firstEntry)
+      expect(doc.activeElement).toBe(firstEntry);
+
+      // ArrowDown moves to secondEntry
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      expect(doc.activeElement).toBe(secondEntry);
+
+      // ArrowDown wraps to firstEntry
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      expect(doc.activeElement).toBe(firstEntry);
+
+      // ArrowUp wraps to secondEntry
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      expect(doc.activeElement).toBe(secondEntry);
+
+      // ArrowUp moves to firstEntry
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      expect(doc.activeElement).toBe(firstEntry);
+
+      // Tab trap: Shift+Tab on first wraps to last
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+      expect(doc.activeElement).toBe(secondEntry);
+
+      // Tab trap: Tab on last wraps to first
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: false, bubbles: true }));
+      expect(doc.activeElement).toBe(firstEntry);
+
+      // ArrowDown to secondEntry then Enter activates it
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      expect(doc.activeElement).toBe(secondEntry);
+
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      expect(goToScene).toHaveBeenCalledWith('s3');
+      expect(doc.getElementById('places-panel')).toBeNull();
+
+      controls.destroy();
+    });
+
+    it('respects document dir for RTL', () => {
+      doc.documentElement.setAttribute('dir', 'rtl');
+      const handlers = {
+        onPrevious: vi.fn(),
+        onNext: vi.fn(),
+        onBack: vi.fn(),
+        onFullscreen: vi.fn(),
+        onPracticalInfo: vi.fn(),
+      };
+      const controls = createControls(
+        doc,
+        { ...defaultLabels, places: 'Lieux' },
+        handlers,
+        mockScenes
+      );
+
+      const nav = doc.getElementById('controls');
+      if (!nav) throw new Error('Missing nav');
+      const placesBtn = nav.querySelector('button.xplor-nav-btn--places');
+      if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
+
+      placesBtn.click();
+      const panel = doc.getElementById('places-panel');
+      if (!panel) throw new Error('Missing panel');
+      expect(panel.getAttribute('dir')).toBe('rtl');
+
+      doc.documentElement.removeAttribute('dir');
+      controls.destroy();
+    });
+  });
+
 });
