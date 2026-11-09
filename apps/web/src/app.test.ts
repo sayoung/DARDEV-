@@ -224,7 +224,7 @@ describe('startViewer', () => {
     expect(mockMount).not.toHaveBeenCalled();
   });
 
-  it('legal: affiche le rendu provisoire et ne tente pas de charger une visite', async () => {
+  it('route legal : affiche la page légale complète sans charger de visite', async () => {
     await startViewer(
       doc,
       { pathname: '/v/legal', search: '' },
@@ -238,8 +238,117 @@ describe('startViewer', () => {
     expect(status?.hidden).toBe(true);
     const legal = doc.getElementById('legal');
     expect(legal).not.toBeNull();
-    expect(legal?.textContent).toBe(resources.fr.legal.title);
+    const h1 = legal?.querySelector('h1');
+    expect(h1).not.toBeNull();
+    expect(h1?.textContent).toBe(resources.fr.legal.title);
     expect(doc.title).toBe(resources.fr.legal.title);
+
+    const sections = legal?.querySelectorAll('section');
+    expect(sections?.length).toBe(4);
+    expect(legal?.querySelector('.xplor-legal-publisher')).not.toBeNull();
+    expect(legal?.querySelector('.xplor-legal-hosting')).not.toBeNull();
+    expect(legal?.querySelector('.xplor-legal-privacy')).not.toBeNull();
+    expect(legal?.querySelector('.xplor-legal-contact')).not.toBeNull();
+
+    // Sans paramètre from, aucun bouton retour
+    expect(legal?.querySelector('.xplor-legal-back')).toBeNull();
+    // Le lien vers /v/legal n'est pas affiché sur la page légale elle-même
+    expect(doc.getElementById('legal-link')).toBeNull();
+  });
+
+  it('route legal : retire #legal-link s\'il était déjà présent dans le DOM et masque le viewer', async () => {
+    const existingLink = doc.createElement('a');
+    existingLink.id = 'legal-link';
+    doc.body.append(existingLink);
+
+    await startViewer(
+      doc,
+      { pathname: '/v/legal', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    expect(doc.getElementById('legal-link')).toBeNull();
+    expect(doc.getElementById('viewer')?.hidden).toBe(true);
+  });
+
+  it('route legal : un from externe (https://evil.example) est ignoré et backHref est null', async () => {
+    await startViewer(
+      doc,
+      { pathname: '/v/legal', search: '?from=https://evil.example' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    const legal = doc.getElementById('legal');
+    expect(legal).not.toBeNull();
+    expect(legal?.querySelector('.xplor-legal-back')).toBeNull();
+  });
+
+  it('route legal : un from externe relatif sans /v/ ou avec protocole est ignoré', async () => {
+    await startViewer(
+      doc,
+      { pathname: '/v/legal', search: '?from=%2F%2Fevil.example' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+    expect(doc.querySelector('.xplor-legal-back')).toBeNull();
+
+    const secondDoc = document.implementation.createHTMLDocument();
+    await startViewer(
+      secondDoc,
+      { pathname: '/v/legal', search: '?from=javascript:alert(1)' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+    expect(secondDoc.querySelector('.xplor-legal-back')).toBeNull();
+
+    const thirdDoc = document.implementation.createHTMLDocument();
+    await startViewer(
+      thirdDoc,
+      { pathname: '/v/legal', search: '?from=%2Fv%2F%2Fevil.example' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+    expect(thirdDoc.querySelector('.xplor-legal-back')).toBeNull();
+  });
+
+  it('route legal : un from interne valide commençant par /v/ affiche le bouton retour', async () => {
+    await startViewer(
+      doc,
+      { pathname: '/v/legal', search: '?from=%2Fv%2FvalidToken' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    const backLink = doc.querySelector('.xplor-legal-back');
+    expect(backLink).not.toBeNull();
+    if (backLink instanceof HTMLAnchorElement) {
+      expect(backLink.getAttribute('href')).toBe('/v/validToken');
+      expect(backLink.textContent).toBe(resources.fr.legal.back);
+    }
+  });
+
+  it('route legal : respecte la langue demandée via resolveLang(location.search)', async () => {
+    await startViewer(
+      doc,
+      { pathname: '/v/legal', search: '?lang=en&from=%2Fv%2FvalidToken' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    expect(doc.documentElement.getAttribute('lang')).toBe('en');
+    expect(doc.documentElement.getAttribute('dir')).toBe('ltr');
+    expect(doc.title).toBe(resources.en.legal.title);
+    const h1 = doc.querySelector('.xplor-legal-title');
+    expect(h1?.textContent).toBe(resources.en.legal.title);
+    const backLink = doc.querySelector('.xplor-legal-back');
+    expect(backLink?.textContent).toBe(resources.en.legal.back);
+
+    const arDoc = document.implementation.createHTMLDocument();
+    await startViewer(
+      arDoc,
+      { pathname: '/v/legal', search: '?lang=ar' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    expect(arDoc.documentElement.getAttribute('lang')).toBe('ar');
+    expect(arDoc.documentElement.getAttribute('dir')).toBe('rtl');
+    expect(arDoc.title).toBe(resources.ar.legal.title);
+    expect(arDoc.querySelector('.xplor-legal-title')?.textContent).toBe(resources.ar.legal.title);
   });
 
   it('transmet mountVr et le libellé i18n au contrôleur', async () => {

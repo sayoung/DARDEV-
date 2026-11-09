@@ -5,6 +5,7 @@ import { TourNotFoundError } from '@xplor/viewer-core';
 import { parseViewerRoute, resolveLang } from './route.js';
 import { createLangSwitcher } from './lang-switcher.js';
 import { createViewerController } from './viewer-controller.js';
+import { renderLegalPage, translateLegal } from './legal-page.js';
 import type { WebStats } from './stats.js';
 
 export async function startViewer(
@@ -78,14 +79,21 @@ export async function startViewer(
   switch (route.kind) {
     case 'legal': {
       status.hidden = true;
-      doc.title = resources.fr.legal.title;
+      viewer.hidden = true;
+      const existingLegalLink = doc.getElementById('legal-link');
+      if (existingLegalLink) {
+        existingLegalLink.remove();
+      }
+      doc.title = translateLegal(lang, 'legal.title');
       let legal = doc.getElementById('legal');
       if (!legal) {
         legal = doc.createElement('div');
         legal.id = 'legal';
         doc.body.append(legal);
       }
-      legal.textContent = resources.fr.legal.title;
+      const rawFrom = new URLSearchParams(location.search).get('from');
+      const backHref = rawFrom !== null && rawFrom.startsWith('/v/') && !rawFrom.startsWith('/v//') ? rawFrom : null;
+      renderLegalPage(doc, legal, (key) => translateLegal(lang, key), lang, backHref);
       return;
     }
     case 'preview':

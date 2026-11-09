@@ -570,6 +570,27 @@
   "vr": {
     "enter": "Enter VR",
     "startFailed": "VR could not start"
+  },
+  "legal": {
+    "title": "Legal notices and privacy",
+    "linkLabel": "Legal notices",
+    "back": "Back to tour",
+    "publisher": {
+      "title": "Publisher",
+      "body": "Platform publisher: [to be completed by owner].\nCompany name: [to be completed by owner].\nAddress: [to be completed by owner].\nContact: [to be completed by owner]."
+    },
+    "hosting": {
+      "title": "Hosting",
+      "body": "The platform is hosted on a private virtual server (VPS in Morocco). Host: [to be completed]."
+    },
+    "privacy": {
+      "title": "Personal data protection",
+      "body": "In accordance with Moroccan Law No. 09-08 (CNDP): no traveller personal data is collected, statistics are anonymous by design, no IP address is stored, technical logs are kept for a maximum of 30 days and the platform uses no tracking cookies."
+    },
+    "contact": {
+      "title": "Contact and access rights",
+      "body": "For any questions or to exercise your rights of access and rectification under Law 09-08, you can contact: [to be completed]."
+    }
   }
 }
 

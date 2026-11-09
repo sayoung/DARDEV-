@@ -2,7 +2,7 @@ import { resources } from '@xplor/i18n';
 import type { Lang } from '@xplor/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { renderLegalPage } from './legal-page.js';
+import { renderLegalPage, translateLegal } from './legal-page.js';
 
 describe('renderLegalPage', () => {
   let root: HTMLElement;
@@ -188,5 +188,38 @@ describe('renderLegalPage', () => {
     expect(root.querySelector('#stale-placeholder')).toBeNull();
     expect(root.classList.contains('xplor-legal')).toBe(true);
     expect(root.querySelector('main')?.classList.contains('xplor-legal')).toBe(true);
+  });
+
+  it('fonctionne avec translateLegal', () => {
+    const main = renderLegalPage(document, root, (key) => translateLegal('fr', key), 'fr', '/v/valid');
+    expect(main.querySelector('h1')?.textContent).toBe(resources.fr.legal.title);
+    const back = main.querySelector('.xplor-legal-back');
+    expect(back?.textContent).toBe(resources.fr.legal.back);
+    expect(back?.getAttribute('href')).toBe('/v/valid');
+  });
+});
+
+describe('translateLegal', () => {
+  it('traduit les clés en français', () => {
+    expect(translateLegal('fr', 'legal.title')).toBe(resources.fr.legal.title);
+    expect(translateLegal('fr', 'legal.linkLabel')).toBe(resources.fr.legal.linkLabel);
+    expect(translateLegal('fr', 'legal.back')).toBe(resources.fr.legal.back);
+    expect(translateLegal('fr', 'legal.publisher.title')).toBe(resources.fr.legal.publisher.title);
+    expect(translateLegal('fr', 'legal.publisher.body')).toBe(resources.fr.legal.publisher.body);
+    expect(translateLegal('fr', 'legal.hosting.title')).toBe(resources.fr.legal.hosting.title);
+    expect(translateLegal('fr', 'legal.hosting.body')).toBe(resources.fr.legal.hosting.body);
+    expect(translateLegal('fr', 'legal.privacy.title')).toBe(resources.fr.legal.privacy.title);
+    expect(translateLegal('fr', 'legal.privacy.body')).toBe(resources.fr.legal.privacy.body);
+    expect(translateLegal('fr', 'legal.contact.title')).toBe(resources.fr.legal.contact.title);
+    expect(translateLegal('fr', 'legal.contact.body')).toBe(resources.fr.legal.contact.body);
+  });
+
+  it('traduit les clés en arabe et en anglais', () => {
+    expect(translateLegal('ar', 'legal.title')).toBe(resources.ar.legal.title);
+    expect(translateLegal('en', 'legal.title')).toBe(resources.en.legal.title);
+  });
+
+  it('renvoie la clé si elle est inconnue', () => {
+    expect(translateLegal('fr', 'unknown.key')).toBe('unknown.key');
   });
 });
