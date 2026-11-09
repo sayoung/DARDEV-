@@ -40,7 +40,7 @@ describe('HotelsPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, [hotel]));
       return Promise.resolve(jsonResponse(404, {}));
@@ -67,7 +67,7 @@ describe('HotelsPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/hotels')) {
         return new Promise((resolve) => { resolveHotels = resolve; });
@@ -92,7 +92,7 @@ describe('HotelsPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, []));
       return Promise.resolve(jsonResponse(404, {}));
@@ -109,7 +109,7 @@ describe('HotelsPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(500, {}));
       return Promise.resolve(jsonResponse(404, {}));

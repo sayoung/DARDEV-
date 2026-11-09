@@ -31,6 +31,7 @@ const adminProfile: MeResponse = MeResponseSchema.parse({
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-token-123',
+  totpEnabled: false,
 });
 
 const editorProfile: MeResponse = MeResponseSchema.parse({
@@ -40,6 +41,7 @@ const editorProfile: MeResponse = MeResponseSchema.parse({
   role: Role.EDITOR,
   uiLang: 'fr',
   csrfToken: 'csrf-token-456',
+  totpEnabled: false,
 });
 
 const hotelList: HotelListResponse = HotelListResponseSchema.parse([

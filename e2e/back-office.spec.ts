@@ -26,7 +26,8 @@ const profileBody = {
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-e2e-token',
-} as const;
+  totpEnabled: false,
+};
 
 type LoginOutcome = 'ok' | 'invalid-credentials' | 'locked';
 

@@ -37,7 +37,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith(`/admin/kiosks/${kiosk.id}/disable`)) {
         return Promise.resolve(jsonResponse(200, { ...kiosk, status: 'DISABLED', connectionState: 'DISABLED' }));
@@ -76,7 +76,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, {
         items: ['OFFLINE', 'DESYNCHRONIZED', 'PENDING', 'DISABLED'].map((connectionState, index) => ({
@@ -107,7 +107,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [] }));
       if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, []));
@@ -123,7 +123,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(500, {}));
       if (url.endsWith('/admin/hotels')) return Promise.resolve(jsonResponse(200, []));
@@ -173,7 +173,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [
         { ...kiosk, id: '018f6b21-4d39-7a1b-9e45-3f8c5b2a1d21', label: 'Désactivé', status: 'DISABLED', connectionState: 'DISABLED' },
@@ -196,7 +196,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith(`/admin/kiosks/${kiosk.id}/disable`)) {
         return Promise.resolve(jsonResponse(500, {}));
@@ -232,7 +232,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/kiosks') && (init as RequestInit | undefined)?.method === 'POST') return Promise.resolve(jsonResponse(201, pendingKiosk));
       if (url.endsWith(`/admin/kiosks/${pendingKiosk.id}/enrollment-code`)) return Promise.resolve(jsonResponse(200, { code: 'AB12CD34', expiresAt: '2026-10-17T11:00:00.000Z' }));
@@ -265,7 +265,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith('/admin/kiosks') && (init as RequestInit | undefined)?.method === 'POST') return Promise.resolve(jsonResponse(500, {}));
       if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [] }));
@@ -287,7 +287,7 @@ describe('KiosksPage', () => {
       const url = requestUrl(input);
       if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse(200, {
         id: 'user-admin', email: 'admin@xplor.test', name: 'Admin User', role: Role.ADMIN,
-        uiLang: 'fr', csrfToken: 'csrf-admin',
+        uiLang: 'fr', csrfToken: 'csrf-admin', totpEnabled: false,
       }));
       if (url.endsWith(`/admin/kiosks/${pendingKiosk.id}/enrollment-code`)) return Promise.resolve(jsonResponse(200, { code: 'ZX98YU76', expiresAt: '2026-10-17T11:00:00.000Z' }));
       if (url.endsWith('/admin/kiosks')) return Promise.resolve(jsonResponse(200, { items: [pendingKiosk] }));

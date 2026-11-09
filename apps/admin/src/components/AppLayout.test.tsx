@@ -72,6 +72,7 @@ describe('AppLayout', () => {
             role: Role.ADMIN,
             uiLang: 'fr',
             csrfToken: 'csrf-tok',
+            totpEnabled: false,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         ));
@@ -171,6 +172,7 @@ describe('AppLayout', () => {
             role: Role.EDITOR,
             uiLang: 'fr',
             csrfToken: 'csrf-tok',
+            totpEnabled: false,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         ));
@@ -212,6 +214,7 @@ describe('AppLayout', () => {
             role: Role.HOTEL_MANAGER,
             uiLang: 'fr',
             csrfToken: 'csrf-tok',
+            totpEnabled: false,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         ));
@@ -253,6 +256,7 @@ describe('AppLayout', () => {
             role: Role.PARTNER,
             uiLang: 'fr',
             csrfToken: 'csrf-tok',
+            totpEnabled: false,
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } }
         ));

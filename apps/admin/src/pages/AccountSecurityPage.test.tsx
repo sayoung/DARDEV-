@@ -71,6 +71,7 @@ const adminUser: MeResponse = MeResponseSchema.parse({
   role: Role.ADMIN,
   uiLang: 'fr',
   csrfToken: 'csrf-admin-token-xyz',
+  totpEnabled: false,
 });
 
 const editorUser: MeResponse = MeResponseSchema.parse({
@@ -80,6 +81,7 @@ const editorUser: MeResponse = MeResponseSchema.parse({
   role: Role.EDITOR,
   uiLang: 'fr',
   csrfToken: 'csrf-editor-token-xyz',
+  totpEnabled: false,
 });
 
 const setupData: TwoFactorSetupResponse = TwoFactorSetupResponseSchema.parse({

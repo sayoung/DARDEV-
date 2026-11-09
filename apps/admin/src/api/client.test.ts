@@ -276,7 +276,7 @@ describe('requestJson', () => {
   it('en-tête X-CSRF-Token présent sur POST et absent sur GET', async () => {
     // Simuler le login pour obtenir le jeton CSRF
     fetchMock.mockResolvedValueOnce(jsonResponse(200, {
-      id: 'user', email: 'u@test.com', name: 'U', role: 'ADMIN', uiLang: 'fr', csrfToken: 'fake-csrf'
+      id: 'user', email: 'u@test.com', name: 'U', role: 'ADMIN', uiLang: 'fr', csrfToken: 'fake-csrf', totpEnabled: false,
     }));
     const { fetchCurrentUser } = await import('./client.js');
     await fetchCurrentUser();
