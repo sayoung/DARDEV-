@@ -2,6 +2,8 @@
 
 Ce répertoire contient les scénarios de test de charge réalisés avec [k6](https://k6.io/) pour valider les exigences non fonctionnelles de performance (**NF-03** du cahier des charges).
 
+> **Fiche de résultats :** Le protocole complet des 5 seuils NF-03 et le tableau de suivi des mesures sont documentés dans la fiche de résultats : [docs/PERFORMANCE.md](../docs/PERFORMANCE.md).
+
 > [!CAUTION]
 > **Interdiction formelle de lancer ces tests sur la production** (`api.xplor.ma`, `admin.xplor.ma`, `v.xplor.ma` ou tout autre domaine de production) sans accord explicite et préalable du porteur du projet. Ces tirs génèrent un trafic soutenu qui peut saturer les ressources, déclencher le rate limiting applicatif (`ThrottlerGuard`) ou dégrader le service pour les utilisateurs réels. Les tests doivent être exécutés uniquement sur une instance locale ou un environnement de test dédié.
 
@@ -215,3 +217,11 @@ k6 run -e BASE_URL=http://localhost:3000 -e ADMIN_EMAIL=admin@xplor.local -e ADM
 Conformément à la spécification **NF-03 Performance** du cahier des charges (*« Back-office : réponses API < 300 ms (P95) »*) :
 - **`http_req_duration: ['p(95)<300']`** : 95 % des requêtes de consultation du back-office doivent répondre en moins de 300 ms (P95).
 - **`http_req_failed: ['rate<0.01']`** : le taux d'erreur HTTP doit être strictement inférieur à 1 % (soit au moins 99 % de réponses avec le statut 200 OK).
+
+---
+
+## 6. Fiche de résultats
+
+Le protocole complet d'évaluation des performances couvrant l'ensemble des 5 seuils NF-03 (API back-office, manifeste public, ingestion d'événements, premier affichage visionneuse web 4G et transition de scène kiosque en cache), les commandes associées (Lighthouse, Chromium DevTools, scripts k6) et le tableau de suivi des mesures sont documentés dans la fiche de résultats :
+- [docs/PERFORMANCE.md](../docs/PERFORMANCE.md)
+
