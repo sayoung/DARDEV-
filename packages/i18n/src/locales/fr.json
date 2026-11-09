@@ -674,7 +674,13 @@
         "entityId": "Identifiant d'entité",
         "user": "Utilisateur"
       },
-      "emptyValue": "—"
+      "emptyValue": "—",
+      "pagination": {
+        "prev": "Précédent",
+        "next": "Suivant",
+        "info": "Page {{page}} sur {{total}}",
+        "label": "Pagination du journal d'audit"
+      }
     }
   },
   "tour": {
