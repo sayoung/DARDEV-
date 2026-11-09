@@ -8,10 +8,16 @@ import {
   TRANSITION_MS,
   ARROW_SIZE,
   CIRCULAR_ARROW_SVG,
+  CIRCULAR_ARROW_NEXT_SVG,
+  CIRCULAR_ARROW_PREV_SVG,
+  CIRCULAR_ARROW_OTHER_SVG,
+  CIRCULAR_ARROW_SVGS,
   CIRCULAR_ARROW_DATA_URL,
   createArrowElement,
+  getCircularArrowSvg,
   getLinkTooltip,
   extractHotspotLabel,
+  extractHotspotDir,
 } from './tour-config.js';
 import { computeSceneOrientation } from './orientation.js';
 import { TourGraphSchema } from '@xplor/shared';
@@ -184,6 +190,158 @@ describe('tourPluginOptions (2D navigation arrows)', () => {
     expect(extractHotspotLabel({ nodeId: 's' })).toBe('');
     expect(extractHotspotLabel(null)).toBe('');
     expect(extractHotspotLabel(undefined)).toBe('');
+  });
+
+  describe('createArrowElement direction variations (next / prev / other)', () => {
+    it('produces green circle (#1E9E4A), forward arrow, and --next class for dir="next"', () => {
+      const linkNext: VirtualTourLink = {
+        nodeId: 'scene-next',
+        data: {
+          dir: 'next',
+          label: 'Scène suivante',
+        },
+      };
+
+      const element = createArrowElement(linkNext);
+
+      expect(element.className).toContain('psv-virtual-tour-arrow');
+      expect(element.className).toContain('xplor-tour-arrow');
+      expect(element.classList.contains('xplor-tour-arrow--next')).toBe(true);
+      expect(element.title).toBe('Scène suivante');
+      expect(element.getAttribute('aria-label')).toBe('Scène suivante');
+
+      const circle = element.querySelector('circle');
+      expect(circle).not.toBeNull();
+      expect(circle?.getAttribute('fill')).toBe('#1E9E4A');
+      expect(circle?.getAttribute('stroke')).toBe('#ffffff');
+      expect(circle?.getAttribute('stroke-width')).toBe('2');
+
+      const path = element.querySelector('path');
+      expect(path).not.toBeNull();
+      expect(path?.getAttribute('d')).toBe('M19 29 L28 19 L37 29 M28 19 L28 37');
+    });
+
+    it('produces red circle (#D64545), return arrow, and --prev class for dir="prev"', () => {
+      const linkPrev: VirtualTourLink = {
+        nodeId: 'scene-prev',
+        data: {
+          dir: 'prev',
+          label: 'Scène précédente',
+        },
+      };
+
+      const element = createArrowElement(linkPrev);
+
+      expect(element.className).toContain('psv-virtual-tour-arrow');
+      expect(element.className).toContain('xplor-tour-arrow');
+      expect(element.classList.contains('xplor-tour-arrow--prev')).toBe(true);
+      expect(element.title).toBe('Scène précédente');
+      expect(element.getAttribute('aria-label')).toBe('Scène précédente');
+
+      const circle = element.querySelector('circle');
+      expect(circle).not.toBeNull();
+      expect(circle?.getAttribute('fill')).toBe('#D64545');
+      expect(circle?.getAttribute('stroke')).toBe('#ffffff');
+      expect(circle?.getAttribute('stroke-width')).toBe('2');
+
+      const path = element.querySelector('path');
+      expect(path).not.toBeNull();
+      expect(path?.getAttribute('d')).toBe('M19 27 L28 37 L37 27 M28 19 L28 37');
+    });
+
+    it('produces purple circle (#6958A5), upward arrow, and --other class for dir="other"', () => {
+      const linkOther: VirtualTourLink = {
+        nodeId: 'scene-other',
+        data: {
+          dir: 'other',
+          label: 'Autre vue',
+        },
+      };
+
+      const element = createArrowElement(linkOther);
+
+      expect(element.className).toContain('psv-virtual-tour-arrow');
+      expect(element.className).toContain('xplor-tour-arrow');
+      expect(element.classList.contains('xplor-tour-arrow--other')).toBe(true);
+      expect(element.title).toBe('Autre vue');
+
+      const circle = element.querySelector('circle');
+      expect(circle).not.toBeNull();
+      expect(circle?.getAttribute('fill')).toBe('#6958A5');
+      expect(circle?.getAttribute('stroke')).toBe('#ffffff');
+      expect(circle?.getAttribute('stroke-width')).toBe('2');
+
+      const path = element.querySelector('path');
+      expect(path).not.toBeNull();
+      expect(path?.getAttribute('d')).toBe('M19 29 L28 19 L37 29 M28 19 L28 37');
+    });
+
+    it('falls back to --other class and purple circle (#6958A5) when dir is absent, null or invalid', () => {
+      const linkWithoutDir: VirtualTourLink = {
+        nodeId: 'scene-x',
+        data: {
+          label: 'Vue sans dir',
+        },
+      };
+      const elementNoDir = createArrowElement(linkWithoutDir);
+      expect(elementNoDir.classList.contains('xplor-tour-arrow--other')).toBe(true);
+      expect(elementNoDir.querySelector('circle')?.getAttribute('fill')).toBe('#6958A5');
+
+      const linkInvalidDir: VirtualTourLink = {
+        nodeId: 'scene-y',
+        data: {
+          dir: 'unknown-dir',
+        },
+      };
+      const elementInvalid = createArrowElement(linkInvalidDir);
+      expect(elementInvalid.classList.contains('xplor-tour-arrow--other')).toBe(true);
+      expect(elementInvalid.querySelector('circle')?.getAttribute('fill')).toBe('#6958A5');
+
+      const elementNull = createArrowElement(null);
+      expect(elementNull.classList.contains('xplor-tour-arrow--other')).toBe(true);
+      expect(elementNull.querySelector('circle')?.getAttribute('fill')).toBe('#6958A5');
+
+      const elementUndefined = createArrowElement(undefined);
+      expect(elementUndefined.classList.contains('xplor-tour-arrow--other')).toBe(true);
+      expect(elementUndefined.querySelector('circle')?.getAttribute('fill')).toBe('#6958A5');
+    });
+
+    it('ensures shape is different between next and prev (accessibility for color blindness)', () => {
+      const elementNext = createArrowElement({ nodeId: 's2', data: { dir: 'next' } });
+      const elementPrev = createArrowElement({ nodeId: 's1', data: { dir: 'prev' } });
+
+      const pathNext = elementNext.querySelector('path')?.getAttribute('d');
+      const pathPrev = elementPrev.querySelector('path')?.getAttribute('d');
+
+      expect(pathNext).toBeDefined();
+      expect(pathPrev).toBeDefined();
+      expect(pathNext).not.toBe(pathPrev);
+      expect(pathNext).toBe('M19 29 L28 19 L37 29 M28 19 L28 37');
+      expect(pathPrev).toBe('M19 27 L28 37 L37 27 M28 19 L28 37');
+    });
+
+    it('extractHotspotDir safely extracts dir without type coercion', () => {
+      expect(extractHotspotDir({ nodeId: 's', data: { dir: 'next' } })).toBe('next');
+      expect(extractHotspotDir({ nodeId: 's', data: { dir: 'prev' } })).toBe('prev');
+      expect(extractHotspotDir({ nodeId: 's', data: { dir: 'other' } })).toBe('other');
+      expect(extractHotspotDir({ nodeId: 's', data: { dir: 'unknown' } })).toBe('other');
+      expect(extractHotspotDir({ nodeId: 's', data: { dir: 123 } })).toBe('other');
+      expect(extractHotspotDir({ nodeId: 's', data: null })).toBe('other');
+      expect(extractHotspotDir({ nodeId: 's' })).toBe('other');
+      expect(extractHotspotDir(null)).toBe('other');
+      expect(extractHotspotDir(undefined)).toBe('other');
+    });
+
+    it('getCircularArrowSvg returns the correct SVG per direction', () => {
+      expect(getCircularArrowSvg('next')).toBe(CIRCULAR_ARROW_NEXT_SVG);
+      expect(getCircularArrowSvg('prev')).toBe(CIRCULAR_ARROW_PREV_SVG);
+      expect(getCircularArrowSvg('other')).toBe(CIRCULAR_ARROW_OTHER_SVG);
+      expect(getCircularArrowSvg(null)).toBe(CIRCULAR_ARROW_OTHER_SVG);
+      expect(getCircularArrowSvg(undefined)).toBe(CIRCULAR_ARROW_OTHER_SVG);
+      expect(CIRCULAR_ARROW_SVGS.next).toBe(CIRCULAR_ARROW_NEXT_SVG);
+      expect(CIRCULAR_ARROW_SVGS.prev).toBe(CIRCULAR_ARROW_PREV_SVG);
+      expect(CIRCULAR_ARROW_SVGS.other).toBe(CIRCULAR_ARROW_OTHER_SVG);
+    });
   });
 
   it('getLinkTooltip returns hotspot label on hover, or falls back to node content', () => {
