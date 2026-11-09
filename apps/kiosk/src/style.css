@@ -11,6 +11,7 @@
 }
 
 html {
+  font-size: 18px;
   overscroll-behavior: none;
 }
 
@@ -19,6 +20,7 @@ body {
   margin-inline: 0;
   padding-block: 0;
   padding-inline: 0;
+  font-size: 18px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-primary);
   background-color: var(--bg-page);
@@ -39,7 +41,7 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  min-height: 100vh;
+  min-block-size: 100vh;
   padding-block: 2rem;
   padding-inline: 2.5rem;
 }
@@ -78,6 +80,8 @@ body {
 }
 
 .kiosk-lang-btn {
+  min-block-size: 48px;
+  min-inline-size: 48px;
   padding-block: 0.6rem;
   padding-inline: 1.2rem;
   font-size: 1rem;
@@ -131,7 +135,7 @@ body {
   display: inline-block;
   padding-block: 0.3rem;
   padding-inline: 0.8rem;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -149,6 +153,8 @@ body {
 }
 
 .kiosk-featured-btn {
+  min-block-size: 48px;
+  min-inline-size: 48px;
   padding-block: 0.75rem;
   padding-inline: 1.75rem;
   font-size: 1.1rem;
@@ -174,6 +180,8 @@ body {
 }
 
 .kiosk-category-btn {
+  min-block-size: 48px;
+  min-inline-size: 48px;
   padding-block: 0.6rem;
   padding-inline: 1.4rem;
   font-size: 1rem;
@@ -231,7 +239,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 100%;
+  inline-size: 100%;
+  min-block-size: 48px;
+  min-inline-size: 48px;
   padding-block: 1.5rem;
   padding-inline: 1.5rem;
   text-align: start;
@@ -258,7 +268,7 @@ body {
 }
 
 .kiosk-tour-cta {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--brand-color);
 }
@@ -276,6 +286,12 @@ body {
   border-radius: 0.75rem;
 }
 
+/* Boutons : tailles minimales tactiles (NF-05) */
+button {
+  min-block-size: 48px;
+  min-inline-size: 48px;
+}
+
 /* État désactivé pour éviter les doubles clics */
 button:disabled {
   opacity: 0.6;
@@ -286,7 +302,7 @@ button:disabled {
 /* Écrans d'état kiosque (F-66) */
 .kiosk-screen {
   box-sizing: border-box;
-  min-height: 100vh;
+  min-block-size: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -309,7 +325,7 @@ button:disabled {
   font-size: 1.75rem;
   font-weight: 600;
   color: var(--text-primary);
-  max-width: 600px;
+  max-inline-size: 600px;
 }
 
 /* Écran de chargement */
@@ -330,14 +346,14 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
+  inline-size: 100%;
 }
 
 .kiosk-enroll-card {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 480px;
+  inline-size: 100%;
+  max-inline-size: 480px;
   padding-block: 2.5rem;
   padding-inline: 2.5rem;
   background-color: var(--bg-card);
@@ -376,14 +392,15 @@ button:disabled {
 }
 
 .kiosk-enroll-label {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .kiosk-enroll-input {
   box-sizing: border-box;
-  width: 100%;
+  inline-size: 100%;
+  min-block-size: 48px;
   padding-block: 0.85rem;
   padding-inline: 1rem;
   font-size: 1.6rem;
@@ -412,13 +429,15 @@ button:disabled {
 }
 
 .kiosk-enroll-error {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   color: #dc3545;
   margin-block-start: -0.25rem;
 }
 
 .kiosk-enroll-btn {
+  min-block-size: 48px;
+  min-inline-size: 48px;
   padding-block: 0.9rem;
   padding-inline: 1.5rem;
   font-size: 1.1rem;
@@ -438,9 +457,9 @@ button:disabled {
 /* Mode veille (attract screen) — F-63 */
 .kiosk-screen-attract {
   position: relative;
-  width: 100%;
-  height: 100vh;
-  min-height: 100vh;
+  inline-size: 100%;
+  block-size: 100vh;
+  min-block-size: 100vh;
   padding-block: 0;
   padding-inline: 0;
   overflow: hidden;
@@ -456,8 +475,8 @@ button:disabled {
   inset-block-end: 0;
   inset-inline-start: 0;
   inset-inline-end: 0;
-  width: 100%;
-  height: 100%;
+  inline-size: 100%;
+  block-size: 100%;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -472,7 +491,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  max-width: 90%;
+  max-inline-size: 90%;
   padding-block: 1.75rem;
   padding-inline: 2.5rem;
   background-color: rgba(26, 26, 36, 0.75);
@@ -513,7 +532,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 100vh;
+  min-block-size: 100vh;
   padding-block: 2rem;
   padding-inline: 1.5rem;
   background-color: var(--bg-page);
@@ -523,14 +542,14 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  max-width: 440px;
+  inline-size: 100%;
+  max-inline-size: 440px;
 }
 
 .kiosk-maintenance-card {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  inline-size: 100%;
   box-sizing: border-box;
   padding-block: 2rem;
   padding-inline: 2rem;
@@ -554,7 +573,7 @@ button:disabled {
   margin-block-start: 0;
   margin-block-end: 1.5rem;
   margin-inline: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text-muted);
 }
 
@@ -571,7 +590,7 @@ button:disabled {
 }
 
 .kiosk-pin-label {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
   text-align: start;
@@ -579,7 +598,8 @@ button:disabled {
 
 .kiosk-pin-input {
   box-sizing: border-box;
-  width: 100%;
+  inline-size: 100%;
+  min-block-size: 48px;
   padding-block: 0.85rem;
   padding-inline: 1rem;
   font-size: 1.75rem;
@@ -603,11 +623,11 @@ button:disabled {
 }
 
 .kiosk-pin-error {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   color: #dc3545;
   text-align: start;
-  min-height: 1.25rem;
+  min-block-size: 1.25rem;
 }
 
 .kiosk-pin-keypad {
@@ -621,8 +641,8 @@ button:disabled {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 54px;
-  min-width: 48px;
+  min-block-size: 54px;
+  min-inline-size: 48px;
   padding-block: 0.75rem;
   padding-inline: 0.5rem;
   font-size: 1.35rem;
@@ -685,7 +705,8 @@ button:disabled {
 }
 
 .kiosk-pin-cancel-btn {
-  min-height: 48px;
+  min-block-size: 48px;
+  min-inline-size: 48px;
   font-size: 1rem;
   font-weight: 500;
   color: var(--text-muted);
@@ -700,7 +721,7 @@ button:disabled {
 
 /* Écran technique d'état de maintenance (F-67 2/2) */
 .kiosk-maintenance-status-container {
-  max-width: 520px;
+  max-inline-size: 520px;
 }
 
 .kiosk-maintenance-status-card {
@@ -734,21 +755,21 @@ button:disabled {
 }
 
 .kiosk-status-dt {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
 .kiosk-status-dd {
   margin-inline-start: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
   text-align: end;
 }
 
 .kiosk-status-row-failed .kiosk-status-dd {
-  width: 100%;
+  inline-size: 100%;
   text-align: start;
 }
 
@@ -757,7 +778,7 @@ button:disabled {
   align-items: center;
   padding-block: 0.25rem;
   padding-inline: 0.65rem;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
   border-radius: 9999px;
 }
@@ -775,7 +796,7 @@ button:disabled {
 }
 
 .kiosk-status-empty {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -787,7 +808,7 @@ button:disabled {
   margin-block: 0.25rem 0;
   margin-inline: 0;
   padding-inline-start: 1.25rem;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #dc3545;
 }
 
@@ -803,7 +824,8 @@ button:disabled {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  min-height: 48px;
+  min-block-size: 48px;
+  min-inline-size: 48px;
   padding-block: 0.75rem;
   padding-inline: 1.25rem;
   font-size: 1rem;
@@ -894,6 +916,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   min-block-size: 48px;
+  min-inline-size: 48px;
   padding-block: 0.75rem;
   padding-inline: 1.5rem;
   font-size: 1.125rem;
@@ -915,6 +938,8 @@ button:disabled {
   z-index: 100;
   inline-size: 3.25rem;
   block-size: 3.25rem;
+  min-block-size: 48px;
+  min-inline-size: 48px;
   color: #FFFFFF;
   background-color: var(--brand-color);
   border: 2px solid rgba(255, 255, 255, 0.4);
@@ -941,4 +966,12 @@ button:disabled {
 .kiosk-tour-back-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Vignettes de scène et flèches de navigation dans la visionneuse (NF-05) */
+.psv-gallery-item,
+.psv-gallery-arrow,
+.psv-virtual-tour-arrow {
+  min-block-size: 48px;
+  min-inline-size: 48px;
 }
