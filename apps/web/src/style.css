@@ -758,3 +758,90 @@ body {
   }
 }
 
+/* Page des mentions légales et confidentialité (NF-02) */
+.xplor-legal {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 70ch;
+  margin-inline: auto;
+  margin-block: 0;
+  padding-block: 2.5rem;
+  padding-inline: 1.5rem;
+  background-color: #ffffff;
+  color: #3c3c3b;
+  font-family: Montserrat, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.65;
+  text-align: start;
+}
+
+.xplor-legal .xplor-legal {
+  max-inline-size: 100%;
+  margin-inline: 0;
+  margin-block: 0;
+  padding-block: 0;
+  padding-inline: 0;
+  background-color: transparent;
+}
+
+.xplor-legal h1,
+.xplor-legal .xplor-legal-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #62549f;
+  margin-block-start: 0;
+  margin-block-end: 2rem;
+  line-height: 1.25;
+}
+
+.xplor-legal-section {
+  margin-block-end: 2rem;
+  padding-block: 1rem;
+  border-block-end: 1px solid #e6e7e9;
+}
+
+.xplor-legal-section:last-of-type {
+  border-block-end: none;
+}
+
+.xplor-legal-section h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #62549f;
+  margin-block-start: 0;
+  margin-block-end: 0.75rem;
+  line-height: 1.35;
+}
+
+.xplor-legal-section p {
+  font-size: 1rem;
+  color: #3c3c3b;
+  margin-block: 0;
+  white-space: pre-line;
+}
+
+.xplor-legal-back {
+  display: inline-flex;
+  align-items: center;
+  margin-block-start: 1.5rem;
+  padding-block: 0.5rem;
+  padding-inline: 1rem;
+  color: #62549f;
+  background-color: #f3f2f8;
+  border-radius: 0.5rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 600;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.xplor-legal-back:hover {
+  background-color: #edeaf5;
+  color: #4a3e7a;
+}
+
+.xplor-legal-back:focus-visible {
+  outline: 2px solid #62549f;
+  outline-offset: 2px;
+}
+
+
