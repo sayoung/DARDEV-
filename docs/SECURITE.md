@@ -164,13 +164,13 @@ Ce document dresse l'état des mesures de sécurité mises en œuvre sur la plat
    - Le fichier `.gitignore` ignore `.env` et `.env.*`, à l'exception des modèles `.env.example` et `.env.production.example`.
    - Les gabarits d'environnement ne contiennent aucun mot de passe ou jeton de production.
 3. **Validation de l'environnement au démarrage :**
-   - `apps/api/src/config/env.ts` applique un schéma Zod validant tous les paramètres obligatoires (`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, etc.).
+   - `apps/api/src/config/env.ts` applique un schéma Zod validant tous les paramètres obligatoires (`DATABASE_URL`, `REDIS_URL`, `SESSION_SECRET`, etc.).
    - En cas de variable manquante ou mal formatée, le processus s'arrête immédiatement (*fail-fast*).
 4. **Configuration de production Caddy :**
    - `deploy/caddy/Caddyfile` force HTTPS avec TLS 1.3 et applique les en-têtes de sécurité sur tous les sous-domaines (`api.xplor.ma`, `admin.xplor.ma`, `v.xplor.ma`).
 
 #### Preuves Code & Tests
-- `apps/api/src/http-security.ts` (lignes 1-25)  
+- `apps/api/src/http-security.ts` (lignes 1-24)  
   *Test :* `apps/api/src/http-security.test.ts`  
   - `it("(1) inclut strict-transport-security avec max-age")`
   - `it("(2) inclut content-security-policy stricte sans unsafe-inline (default-src 'none'...)")`
