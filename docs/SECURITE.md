@@ -272,9 +272,9 @@ Ce document dresse l'état des mesures de sécurité mises en œuvre sur la plat
   - `it("renvoie null pour un buffer vide ou trop court")`
 - `apps/api/src/catalog/assets.service.ts` (`getRange 0-65535` vers `readImageDimensions`, réponse 422 avec le code `INVALID_FORMAT` quand les dimensions sont illisibles)  
   *Test :* `apps/api/src/catalog/assets.service.test.ts`  
+  - `describe("createUploadUrl")` : `it("refuse d’emblée un panorama qui n’est pas un JPEG")` (ligne 461, rejet 422 avec code `INVALID_FORMAT` testant le MIME déclaré `image/png`, pas la lecture de signature)
   - `describe("complete")` : `it("met en file un panorama 4096x2048 conforme")`
-  - `it("refuse d’emblée un panorama qui n’est pas un JPEG")` (rejet 422 avec code `INVALID_FORMAT`)
-  - Réponse HTTP 422 avec `{ error: { code: 'INVALID_FORMAT', message: 'Dimensions illisibles' } }` si `dimensions === null`
+  - *(le chemin de `complete` avec réponse HTTP 422 `INVALID_FORMAT` pour « Dimensions illisibles » lorsque `dimensions === null` n'a pas de test dédié dans `assets.service.test.ts` ; le renvoi de `null` par `readImageDimensions` pour un buffer corrompu ou vide est couvert par `apps/api/src/catalog/jpeg-dimensions.test.ts`)*
 - `apps/api/src/storage/storage.utils.ts` (lignes 1-45) & `apps/api/src/storage/storage.controller.ts`  
   *Test :* `apps/api/src/storage/storage.controller.test.ts`  
   - `it("devrait échouer avec une signature falsifiée")` (vérification du code 403 Forbidden)
