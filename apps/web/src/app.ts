@@ -52,6 +52,23 @@ export async function startViewer(
     deps.navigate(`?lang=${newLang}`);
   });
 
+  const existingLegal = doc.getElementById('legal-link');
+  let legalLink: HTMLAnchorElement;
+  if (existingLegal instanceof HTMLAnchorElement) {
+    legalLink = existingLegal;
+  } else {
+    if (existingLegal) {
+      existingLegal.remove();
+    }
+    legalLink = doc.createElement('a');
+    legalLink.id = 'legal-link';
+    doc.body.append(legalLink);
+  }
+  legalLink.textContent = resources[lang].legal.linkLabel;
+  const legalHref = `/v/legal?lang=${lang}&from=${encodeURIComponent(location.pathname)}`;
+  legalLink.setAttribute('href', legalHref);
+  legalLink.href = legalHref;
+
   let viewer = doc.getElementById('viewer');
   if (!viewer) {
     viewer = doc.createElement('div');

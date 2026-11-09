@@ -405,14 +405,91 @@ describe('startViewer', () => {
     if (!(placesBtn instanceof HTMLButtonElement)) throw new Error('Missing placesBtn');
     expect(placesBtn.hidden).toBe(false);
 
+    const legalLink = doc.getElementById('legal-link');
+    expect(legalLink).not.toBeNull();
+    if (!(legalLink instanceof HTMLElement)) throw new Error('Missing legalLink');
+    expect(legalLink.hidden).toBe(false);
+
     if (typeof capturedOnVrChange === 'function') {
       capturedOnVrChange(true);
     }
     expect(placesBtn.hidden).toBe(true);
+    expect(legalLink.hidden).toBe(true);
 
     if (typeof capturedOnVrChange === 'function') {
       capturedOnVrChange(false);
     }
     expect(placesBtn.hidden).toBe(false);
+    expect(legalLink.hidden).toBe(false);
+  });
+
+  it('visite publique : crée le lien #legal-link avec libellé i18n et href encodé', async () => {
+    mockLoad.mockResolvedValue(mockGraph);
+
+    await startViewer(
+      doc,
+      { pathname: '/v/validToken', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    const legalLink = doc.getElementById('legal-link');
+    expect(legalLink).not.toBeNull();
+    if (!(legalLink instanceof HTMLAnchorElement)) {
+      throw new Error('Expected #legal-link to be an HTMLAnchorElement');
+    }
+    expect(legalLink.textContent).toBe(resources.fr.legal.linkLabel);
+    expect(legalLink.getAttribute('href')).toBe('/v/legal?lang=fr&from=%2Fv%2FvalidToken');
+    expect(legalLink.hidden).toBe(false);
+  });
+
+  it('visite publique : respecte la langue pour le libellé et le paramètre lang de #legal-link', async () => {
+    mockLoad.mockResolvedValue(mockGraph);
+
+    await startViewer(
+      doc,
+      { pathname: '/v/validToken', search: '?lang=en' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    const enLink = doc.getElementById('legal-link');
+    expect(enLink).not.toBeNull();
+    if (!(enLink instanceof HTMLAnchorElement)) {
+      throw new Error('Expected #legal-link to be an HTMLAnchorElement');
+    }
+    expect(enLink.textContent).toBe(resources.en.legal.linkLabel);
+    expect(enLink.getAttribute('href')).toBe('/v/legal?lang=en&from=%2Fv%2FvalidToken');
+
+    const arDoc = document.implementation.createHTMLDocument();
+    await startViewer(
+      arDoc,
+      { pathname: '/v/validToken', search: '?lang=ar' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    const arLink = arDoc.getElementById('legal-link');
+    expect(arLink).not.toBeNull();
+    if (!(arLink instanceof HTMLAnchorElement)) {
+      throw new Error('Expected #legal-link to be an HTMLAnchorElement');
+    }
+    expect(arLink.textContent).toBe(resources.ar.legal.linkLabel);
+    expect(arLink.getAttribute('href')).toBe('/v/legal?lang=ar&from=%2Fv%2FvalidToken');
+  });
+
+  it('route preview : conserve le lien #legal-link avec le pathname de prévisualisation dans from', async () => {
+    mockLoadPreview.mockResolvedValue(mockGraph);
+
+    await startViewer(
+      doc,
+      { pathname: '/v/preview/tok-preview', search: '' },
+      { load: mockLoad, loadPreview: mockLoadPreview, mount: mockMount, navigate: mockNavigate }
+    );
+
+    const legalLink = doc.getElementById('legal-link');
+    expect(legalLink).not.toBeNull();
+    if (!(legalLink instanceof HTMLAnchorElement)) {
+      throw new Error('Expected #legal-link to be an HTMLAnchorElement');
+    }
+    expect(legalLink.textContent).toBe(resources.fr.legal.linkLabel);
+    expect(legalLink.getAttribute('href')).toBe('/v/legal?lang=fr&from=%2Fv%2Fpreview%2Ftok-preview');
   });
 });
