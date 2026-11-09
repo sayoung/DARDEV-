@@ -114,6 +114,8 @@
       "error": "Failed to load media.",
       "emptyOption": "Select media...",
       "thumbnailOf": "Miniature de {{id}}",
+      "fallbackFilename": "Media from {{date}}",
+      "searchPlaceholder": "Search by name...",
       "kind": {
         "IMAGE": "Image",
         "PANORAMA": "Panorama",
@@ -125,6 +127,11 @@
         "READY": "Ready",
         "ERROR": "Error"
       },
+      "searchLabel": "Search media",
+      "kindFilterLabel": "Filter by type",
+      "loadMore": "Load more",
+      "allKinds": "All types",
+      "pickerTitle": "Select media",
       "libraryTab": "Media Library",
       "uploadTab": "Upload from my computer",
       "upload": "Upload",
@@ -150,7 +157,9 @@
       "invalidForm": "Please correct the errors in the form.",
       "inUse": "This item is in use and cannot be deleted.",
       "panoramaAssetNotFound": "The selected panorama could not be found.",
-      "sceneSetMismatch": "The list of scenes is invalid or incomplete."
+      "sceneSetMismatch": "The list of scenes is invalid or incomplete.",
+      "sceneNotFound": "The requested scene could not be found.",
+      "panoramaNotReady": "The panorama is not ready."
     },
     "actions": "Actions",
     "edit": "Edit",
@@ -226,9 +235,28 @@
       }
     },
     "hotspots": {
+      "title": "Hotspots",
+      "list": "Scene hotspots",
+      "backToList": "Back to list",
+      "backToScene": "Back to scene",
+      "add": "Add a hotspot",
       "edit": "Edit hotspot",
+      "empty": "No hotspots for this scene.",
+      "deleteConfirm": "Are you sure you want to delete this hotspot?",
       "editor": {
+        "newTitle": "New hotspot",
+        "hint": "Click on the panorama to place a hotspot.",
         "edit": "Edit",
+        "delete": "Delete",
+        "confirmDelete": "Delete this hotspot?",
+        "undo": "Undo",
+        "redo": "Redo",
+        "setInitialView": "Set current view as initial view",
+        "initialViewSaved": "Initial view saved",
+        "setArrival": "Set arrival orientation",
+        "arrivalSaved": "Arrival orientation saved",
+        "relocate": "Move here",
+        "relocateHint": "Click on the photo or press Esc to cancel.",
         "status": {
           "pending": "Pending changes…",
           "saving": "Saving…",
@@ -236,8 +264,38 @@
           "error": "Failed to save"
         },
         "retry": "Retry",
-        "relocate": "Move here",
-        "relocateHint": "Click on the photo or press Esc to cancel."
+        "useThisDirection": "Use this direction"
+      },
+      "columns": {
+        "type": "Type",
+        "label": "Label",
+        "target": "Target",
+        "icon": "Icon"
+      },
+      "type": {
+        "SCENE_LINK": "Link to a scene",
+        "TOUR_LINK": "Link to a tour",
+        "INFO": "Information",
+        "MEDIA": "Media",
+        "URL": "External link"
+      },
+      "icon": {
+        "ARROW": "Arrow",
+        "INFO": "Info",
+        "PHOTO": "Photo",
+        "PLAY": "Play",
+        "PORTAL": "Portal"
+      },
+      "fields": {
+        "type": "Type",
+        "icon": "Icon",
+        "label": "Label",
+        "targetSceneId": "Target scene",
+        "targetTourId": "Target tour",
+        "targetTourSceneId": "Starting scene (optional)",
+        "body": "Text",
+        "mediaAssetIds": "Media",
+        "url": "External URL"
       }
     }
   },
