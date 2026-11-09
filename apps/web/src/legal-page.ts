@@ -1,4 +1,4 @@
-import { dir } from '@xplor/i18n';
+import { dir, resources } from '@xplor/i18n';
 import type { Lang } from '@xplor/shared';
 
 const LEGAL_BLOCKS: readonly string[] = [
@@ -7,6 +7,36 @@ const LEGAL_BLOCKS: readonly string[] = [
   'privacy',
   'contact',
 ];
+
+export function translateLegal(lang: Lang, key: string): string {
+  const legal = resources[lang].legal;
+  switch (key) {
+    case 'legal.title':
+      return legal.title;
+    case 'legal.linkLabel':
+      return legal.linkLabel;
+    case 'legal.back':
+      return legal.back;
+    case 'legal.publisher.title':
+      return legal.publisher.title;
+    case 'legal.publisher.body':
+      return legal.publisher.body;
+    case 'legal.hosting.title':
+      return legal.hosting.title;
+    case 'legal.hosting.body':
+      return legal.hosting.body;
+    case 'legal.privacy.title':
+      return legal.privacy.title;
+    case 'legal.privacy.body':
+      return legal.privacy.body;
+    case 'legal.contact.title':
+      return legal.contact.title;
+    case 'legal.contact.body':
+      return legal.contact.body;
+    default:
+      return key;
+  }
+}
 
 export function renderLegalPage(
   doc: Document,
