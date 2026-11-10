@@ -1,5 +1,18 @@
 # Guide de l'éditeur — Back-office Xplor
 
+## Sommaire
+- [Introduction](#introduction)
+- [Connexion](#connexion)
+- [Médiathèque et import de panoramas](#mediatheque-et-import-de-panoramas)
+- [Créer une visite](#creer-une-visite)
+- [Ajouter des scènes](#ajouter-des-scenes)
+- [Éditeur visuel 360°](#editeur-visuel-360)
+- [Contenus fr/ar/en](#contenus-fr-ar-en)
+- [Publication, QR code et lien /v/](#publication-qr-code-et-lien-v)
+
+---
+
+<a id="introduction"></a>
 ## Introduction
 
 ### À quoi sert le back-office Xplor ?
@@ -16,6 +29,7 @@ Ce document s'adresse principalement aux utilisateurs disposant du rôle d'Édit
 
 ---
 
+<a id="connexion"></a>
 ## Connexion
 
 ### Accéder à la page de connexion
@@ -61,6 +75,7 @@ Dès la validation du code, votre session est établie et vous accédez immédia
 
 ---
 
+<a id="mediatheque-et-import-de-panoramas"></a>
 ## Médiathèque et import de panoramas
 
 ### Rôle et présentation de la médiathèque
@@ -139,6 +154,7 @@ Lors de l'édition d'une visite (choix de la vignette) ou d'une scène (choix du
 
 ---
 
+<a id="creer-une-visite"></a>
 ## Créer une visite
 
 ### Accéder à la création d'une visite
@@ -151,7 +167,7 @@ Pour créer une nouvelle visite virtuelle :
 ### Formulaire de nouvelle visite
 Le formulaire regroupe les informations descriptives et géographiques de la visite :
 
-- **Titre** : nom de la visite virtuelle (champ obligatoire). Si le titre n'est pas renseigné au moment de soumettre le formulaire, le message d'erreur **Le français est obligatoire.** s'affiche.
+- **Titre** : nom de la visite virtuelle (champ obligatoire). Si le titre n'est pas renseigné au moment de soumettre le formulaire, le message d'erreur **Le français est obligatoire.** s'affiche (pour le détail sur la saisie multilingue et le mécanisme de repli, voir la section [Contenus fr/ar/en](#contenus-fr-ar-en)).
 - **Résumé** : texte de présentation synthétique de la visite (champ multiligne obligatoire, limité à 500 caractères). Si le résumé n'est pas renseigné au moment de soumettre le formulaire, le message d'erreur **Le français est obligatoire.** s'affiche.
 - **Description** : texte de présentation détaillé de la visite (champ multiligne optionnel).
 - **Informations pratiques** : renseignements utiles aux visiteurs (horaires, accès, recommandations ; champ multiligne optionnel).
@@ -181,7 +197,7 @@ Chaque visite possède un cycle de vie caractérisé par deux statuts :
 - **Publiée** : statut actif indiquant que la visite est finalisée, validée et mise à disposition des visiteurs.
 
 #### Gestion du statut depuis la fiche de la visite
-Dans la partie supérieure de l'écran **Détails de la visite**, le bloc de publication permet de gérer l'état de la visite :
+Dans la partie supérieure de l'écran **Détails de la visite**, le bloc de publication permet de gérer l'état de la visite (pour le détail complet sur la vérification, la publication, le QR code et la consultation web, reportez-vous à la section dédiée [Publication, QR code et lien /v/](#publication-qr-code-et-lien-v)) :
 - La mention **Statut :** est suivie du badge d'état actuel (**Brouillon** ou **Publiée**).
 - **Vérifier** : ce bouton lance un contrôle d'intégrité de la visite (présence d'une scène de départ, cohérence des liens entre les scènes et conformité des panoramas).
   - Si aucune anomalie n'est détectée, le message **Aucun problème : la visite peut être publiée** s'affiche.
@@ -200,6 +216,7 @@ Sur la page **Visites** :
 
 ---
 
+<a id="ajouter-des-scenes"></a>
 ## Ajouter des scènes
 
 ### Présentation de la section des scènes
@@ -265,6 +282,7 @@ Sous le tableau des scènes, le bloc **Carte des liens** permet de contrôler qu
 
 ---
 
+<a id="editeur-visuel-360"></a>
 ## Éditeur visuel 360°
 
 ### Présentation et accès à l'éditeur 360°
@@ -440,4 +458,139 @@ Pour les éditeurs souhaitant un inventaire synthétique ou une relecture exhaus
     - Bouton **Modifier** : ouvre le formulaire d'édition détaillé de ce hotspot (`/tours/<tourId>/scenes/<sceneId>/hotspots/<id>`).
     - Bouton **Supprimer** : supprime le hotspot après demande de confirmation : « Êtes-vous sûr de vouloir supprimer ce hotspot ? ».
 - Les boutons d'en-tête permettent de revenir directement à l'édition de la scène (**Retour à la scène**) ou d'ouvrir le formulaire manuel d'ajout (**Ajouter un hotspot**).
+
+---
+
+<a id="contenus-fr-ar-en"></a>
+## Contenus fr/ar/en
+
+### Principes multilingues de la plateforme (décision D-03)
+Conformément à la décision architecturale **D-03** (consignée dans [DECISIONS.md](DECISIONS.md)), la plateforme Xplor est conçue nativement pour un environnement multilingue à trois langues :
+- **Français (`fr`)** : langue par défaut de la plateforme et langue pivot pour l'ensemble des contenus éditoriaux.
+- **Arabe (`ar`)** : langue officielle locale, présentée avec une disposition de droite à gauche (**RTL**).
+- **Anglais (`en`)** : langue internationale permettant aux touristes et visiteurs étrangers de profiter des visites.
+
+Tous les contenus éditoriaux du catalogue (titre, résumé, description et informations pratiques d'une visite ; titre et légende d'une scène ; libellé et contenu textuel d'un hotspot ; nom d'une ville ou d'une catégorie) sont gérés sous la forme d'un objet de texte localisé (`LocalizedText`) associant chaque langue à sa traduction.
+
+### Règle du français obligatoire et mécanisme de repli
+Lors de la gestion des contenus par les éditeurs, deux règles fondamentales s'appliquent :
+
+1. **Le français est obligatoire :**
+   - Pour tout élément requis dans l'application (par exemple le titre et le résumé d'une visite, le titre d'une scène ou le libellé d'un point d'intérêt), la saisie en français est strictement obligatoire.
+   - Si l'éditeur tente de valider un formulaire sans avoir renseigné la version française, le champ bloque l'enregistrement et affiche le message d'erreur : **Le français est obligatoire.** (`catalog.translation.frRequired`).
+
+2. **Repli automatique sur le français (*fallback*) :**
+   - Conformément à la décision du porteur du 30/09/2026 (décision **D-82** dans [DECISIONS.md](DECISIONS.md)), afin de faciliter la création rapide de contenus sans bloquer les éditeurs, la saisie des traductions en arabe et en anglais est optionnelle.
+   - Lorsqu'un contenu n'a pas encore été traduit en arabe ou en anglais, le système applique un mécanisme de repli automatique (*fallback*) sur le français lors de la consultation. Ainsi, un visiteur sélectionnant l'arabe ou l'anglais lira le texte français si la traduction correspondante n'est pas encore saisie, garantissant une consultation fluide sans contenu vide.
+   - Les traductions complètes en arabe et en anglais peuvent être ajoutées progressivement par les éditeurs sans jamais interrompre la disponibilité des visites existantes.
+
+### Le composant de saisie multilingue dans le back-office
+Dans le back-office (`apps/admin`), la saisie de chaque champ textuel traduisible s'effectue via le composant d'onglets multilingue (`LocalizedTextField`) :
+
+- **Trois onglets de langue :**
+  - **Français** (`catalog.translation.tab.fr`) : premier onglet, sélectionné par défaut à l'ouverture. Pour les champs requis, il affiche la mention **obligatoire** (`catalog.translation.required`).
+  - **Arabe** (`catalog.translation.tab.ar`) : onglet pour la version arabe.
+  - **Anglais** (`catalog.translation.tab.en`) : onglet pour la version anglaise.
+- **Indicateur de traduction manquante :**
+  - Si un texte n'a pas encore été renseigné dans l'une des langues, l'onglet correspondant affiche un badge distinctif **Traduction manquante** (`catalog.translation.missing`). Cet indicateur visuel permet à l'éditeur de repérer instantanément les traductions restant à compléter.
+- **Prise en charge native de l'arabe (RTL) :**
+  - Dès que l'éditeur clique sur l'onglet **Arabe**, le champ de saisie bascule automatiquement son sens d'écriture de droite à gauche (`dir="rtl"`), garantissant un confort de frappe et une ponctuation conformes aux règles typographiques de la langue arabe.
+- **Navigation ergonomique au clavier :**
+  - La sélection des onglets de langue peut se faire au clavier en utilisant les flèches directionnelles **Gauche** et **Droite** lorsque le sélecteur d'onglets a le focus.
+
+---
+
+<a id="publication-qr-code-et-lien-v"></a>
+## Publication, QR code et lien /v/
+
+### Cycle de vie et statuts d'une visite
+Chaque visite virtuelle suit un cycle de publication rigoureux orchestré depuis le panneau de statut situé sur sa fiche détaillée (`/tours/<id>`) :
+
+- **Brouillon** (`catalog.tour.status.DRAFT` : **Brouillon**) :
+  - Statut par défaut de toute nouvelle visite.
+  - La visite est en cours de composition : l'éditeur peut y ajouter des scènes, placer des points d'intérêt et ajuster les textes.
+  - La visite demeure totalement invisible pour le grand public : aucun visiteur non authentifié ne peut y accéder via l'application web ou les bornes hôtelières.
+- **Publiée** (`catalog.tour.status.PUBLISHED` : **Publiée**) :
+  - La visite a été validée avec succès et mise en ligne.
+  - La visite devient immédiatement accessible via son lien public web `/v/<shareToken>`, son QR code dédié et la synchronisation avec les bornes kiosques des hôtels partenaires.
+  - La date de mise en ligne `publishedAt` est enregistrée.
+
+### Vérification de l'intégrité avant publication
+Avant de rendre une visite publique, il est indispensable de vérifier la cohérence de son graphe de navigation et la conformité de ses médias. Le panneau de publication propose le bouton **Vérifier** (`catalog.publication.validate`), réservé aux utilisateurs disposant des rôles Éditeur ou Administrateur.
+
+Cette vérification interroge l'API via la route sécurisée :
+`POST /api/v1/admin/tours/:id/validate`
+
+Le moteur d'analyse effectue automatiquement les contrôles suivants :
+1. **Scène de départ définie** : la visite doit comporter une scène d'entrée marquée comme départ. En cas d'absence, le système remonte l'anomalie `START_SCENE_MISSING` (**Scène de départ manquante**).
+2. **Appartenance de la scène de départ** : la scène désignée comme point d'entrée doit appartenir à la visite en cours (`START_SCENE_FOREIGN` : **La scène de départ n'appartient pas à cette visite**).
+3. **Disponibilité des panoramas 360°** : chaque scène doit posséder une image panoramique dont le traitement par le worker d'arrière-plan est achevé et au statut **Prêt** (`PANORAMA_NOT_READY` : **Le panorama de la scène n'est pas prêt**).
+4. **Accessibilité de toutes les scènes** : aucune scène ne doit être orpheline ou isolée. Chaque scène de la visite doit pouvoir être atteinte en suivant les points d'intérêt depuis la scène de départ.
+
+**Résultat de la vérification :**
+- **Succès** : si l'ensemble des critères est satisfait, un message de confirmation vert s'affiche : **Aucun problème : la visite peut être publiée** (`catalog.publication.noIssues`).
+- **Anomalies détectées** : si des points bloquants subsistent, un encadré rouge intitulé **Problèmes à corriger avant publication** (`catalog.publication.issuesTitle`) dresse la liste des anomalies, avec des liens directs permettant de naviguer vers chaque scène à corriger.
+
+### Publier et dépublier une visite
+Le panneau de publication offre aux rôles habilités (Éditeur et Administrateur) le contrôle direct sur la mise en ligne :
+
+- **Publier la visite :**
+  - Lorsque la visite est au statut **Brouillon**, le bouton **Publier** (`catalog.publication.publish`) est actif.
+  - Cliquer sur ce bouton transmet la demande à l'endpoint :
+    `POST /api/v1/admin/tours/:id/publish`
+  - Le serveur exécute une vérification transactionnelle complète. Si aucune anomalie n'est présente, la visite passe instantanément au statut **Publiée**.
+  - Si des erreurs d'intégrité subsistent, l'API renvoie le code d'erreur `TOUR_NOT_PUBLISHABLE`, la publication est refusée et la liste des problèmes à corriger s'affiche.
+- **Dépublier la visite :**
+  - Si une visite publiée nécessite des ajustements majeurs ou doit être retirée temporairement, cliquez sur le bouton **Dépublier** (`catalog.publication.unpublish`).
+  - Cette action appelle l'endpoint :
+    `POST /api/v1/admin/tours/:id/unpublish`
+  - La visite repasse immédiatement au statut **Brouillon**. Les accès publics existants sont instantanément coupés (toute tentative d'accès via l'URL publique ou un scan de QR code renvoie alors une réponse 404).
+
+### Prévisualisation sécurisée (Tester la visite)
+Pour visualiser fidèlement le rendu immersif d'une visite sans avoir à la publier :
+1. Dans l'en-tête de la page de la visite, cliquez sur le bouton **Tester la visite** (`tour.preview.open`).
+2. Le back-office génère un jeton temporaire d'aperçu signé cryptographiquement via l'appel :
+   `POST /api/v1/admin/tours/:id/preview-token`
+3. Le visualiseur public s'ouvre dans un nouvel onglet à l'adresse sécurisée :
+   `/v/preview/<token>?lang=<lang>`
+   *(Si votre navigateur bloque l'ouverture automatique, cliquez sur le lien textuel de secours **Ouvrir l'aperçu** (`tour.preview.openLink`)).*
+4. Le visualiseur interroge l'API sur l'endpoint public dédié :
+   `GET /api/v1/public/preview/:token`
+5. Un badge semi-transparent rappelle la mention **Aperçu – visite non publiée** (`viewer.preview.badge`) en surimpression. Cette interface permet de naviguer dans les panoramas 360°, de franchir les transitions de scènes et de vérifier les orientations d'arrivée exactement comme le ferait un visiteur.
+
+### Lien public web et route /v/
+Dès qu'une visite est publiée, le panneau affiche la section **Lien public** (`catalog.publication.publicLink`) :
+
+- **Format de l'URL publique :**
+  - L'adresse web de consultation prend la forme :
+    `https://v.xplor.ma/v/<shareToken>`
+  - Cette route est gérée côté frontend par l'application web (`apps/web`) sur la route `/v/:shareToken`.
+  - Le client web interroge ensuite l'endpoint API public :
+    `GET /api/v1/public/tours/:shareToken`
+- **Paramètres de requête pris en charge :**
+  - `?lang=fr` (ou `?lang=ar`, `?lang=en`) : force l'ouverture de la visite dans la langue spécifiée.
+  - `?src=kiosk` : paramètre automatiquement ajouté lorsque le lien est ouvert depuis le scan du QR code affiché sur une borne VR d'hôtel. Il permet au système d'enregistrer précisément l'origine du scan dans les statistiques d'utilisation sans collecter aucune donnée personnelle de l'utilisateur.
+- **Jeton de partage (`shareToken`) :**
+  - Le jeton public est une chaîne alphanumérique unique et sécurisée affichée dans le volet sous l'étiquette **Jeton de partage** (`catalog.publication.shareToken`).
+- **Régénérer le lien de partage :**
+  - Si un lien public a été partagé de manière inopportune ou si vous souhaitez révoquer l'accès aux anciens supports diffusés, cliquez sur le bouton **Régénérer le lien de partage** (`catalog.publication.regenerateShareLink`).
+  - Une boîte de dialogue de confirmation affiche l'avertissement : « Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ? » (`catalog.publication.regenerateConfirm`).
+  - Après confirmation, le back-office contacte l'endpoint :
+    `POST /api/v1/admin/tours/:id/share-token`
+  - Un nouveau jeton de partage aléatoire est assigné à la visite, l'ancien jeton est définitivement invalidé, et le message de confirmation **Lien de partage régénéré avec succès.** (`catalog.publication.regenerateSuccess`) s'affiche.
+
+### QR code de la visite
+Dans le panneau de publication, chaque visite publiée présente automatiquement son **QR code de la visite** (`catalog.publication.qrCodeTitle`) :
+
+- **Génération vectorielle automatique :**
+  - Le QR code encode directement l'URL publique de la visite (`https://v.xplor.ma/v/<shareToken>`).
+  - Il est rendu directement dans l'interface sous forme vectorielle SVG nette et fluide.
+- **Télécharger le QR code pour l'impression :**
+  - Cliquez sur le bouton **Télécharger le QR code** (`catalog.publication.downloadQrCode`).
+  - Le navigateur télécharge immédiatement le fichier vectoriel au format SVG nommé `xplor-<shareToken>.svg`.
+  - **Avantage du format vectoriel SVG :** contrairement à une image matricielle (PNG ou JPEG), le fichier SVG peut être redimensionné à n'importe quelle échelle sans perte de qualité ni flou de pixellisation. Il est idéal pour l'impression professionnelle sur des supports physiques variés :
+    - Présentoirs et chevalets au comptoir d'accueil des hôtels.
+    - Cartes postales et brochures touristiques remises aux clients.
+    - Affiches et signalétique murale à proximité des bornes de réalité virtuelle.
+
 
