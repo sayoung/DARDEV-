@@ -113,7 +113,7 @@ Ce dossier est créé par défaut dans `/var/backups/xplor/<horodatage>/` (modif
 - `db.dump` : la base de données PostgreSQL.
 - `media.tar.gz` : l'archive des fichiers stockés dans MinIO.
 
-Le script effectue automatiquement une rotation et supprime les dossiers de sauvegarde vieux de plus de 7 jours (`-mtime +7`).
+Le script effectue automatiquement une rotation et supprime les dossiers de sauvegarde vieux de plus de 30 jours (durée par défaut, modifiable via la variable `BACKUP_RETENTION_DAYS` dans `.env.production`).
 
 Pour automatiser une sauvegarde quotidienne à 3h30 du matin, ajoutez la ligne suivante à la table de planification de l'utilisateur `xplor` (via `crontab -e`) :
 
