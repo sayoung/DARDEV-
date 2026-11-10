@@ -263,3 +263,181 @@ Sous le tableau des scènes, le bloc **Carte des liens** permet de contrôler qu
 - Si le graphe est complet, le message **Toutes les scènes sont accessibles.** confirme qu'un visiteur peut atteindre chaque scène à partir du point d'entrée.
 - Si une ou plusieurs scènes ne sont connectées par aucun lien de navigation (hotspot), le message **Scènes inaccessibles depuis la scène de départ :** en dresse la liste. Il convient alors d'ajouter un hotspot pointant vers ces scènes pour rétablir la continuité du parcours.
 
+---
+
+## Éditeur visuel 360°
+
+### Présentation et accès à l'éditeur 360°
+L'**Éditeur 360** est l'espace de composition visuelle interactive de la visite. Il permet d'immerger directement l'éditeur dans le panorama de chaque scène pour positionner les points d'intérêt (hotspots), définir le cadrage d'accueil du visiteur et régler les transitions de regard entre les pièces ou points de vue.
+
+Pour accéder à l'éditeur visuel d'une scène :
+1. Dans la fiche de détail de la visite (`/tours/<id>`), faites défiler jusqu'à la section **Scènes**.
+2. Cliquez sur le titre de la scène à modifier (ou sur le bouton **Modifier**).
+3. Sur la page de la scène, deux onglets sont proposés sous le titre :
+   - **Informations** : caractéristiques générales et saisie textuelle.
+   - **Éditeur 360** : interface visuelle interactive. Cliquez sur cet onglet.
+4. **Condition préalable** : le fichier panoramique associé à la scène doit avoir achevé son traitement en arrière-plan et afficher le statut **Prêt** dans la médiathèque. Si le traitement est encore en cours ou a échoué, l'éditeur ne s'ouvre pas et le message d'alerte **Le panorama n'est pas prêt.** s'affiche.
+
+### Interface de l'éditeur 360°
+L'écran de l'éditeur 360 se compose de deux zones complémentaires :
+
+- **Le visualiseur 360° interactif (à gauche)** :
+  - Affiche le panorama équirectangulaire complet. Vous pouvez faire pivoter la vue dans toutes les directions (lacet horizontal et tangage vertical) en maintenant le clic gauche enfoncé et en déplaçant la souris, ou par glissement sur écran tactile.
+  - La molette de la souris permet d'ajuster le niveau de zoom.
+  - En bas du visualiseur, la barre d'outils Photo Sphere Viewer intègre les commandes de zoom (`+` et `-`), le bouton **Déplacer** (mode déplacement de marqueur), la légende éventuelle et le bouton de bascule en plein écran.
+  - En haut du visualiseur, la barre d'outils d'édition met à disposition :
+    - Les boutons d'historique **Annuler** et **Rétablir**.
+    - Le bouton **Définir la vue actuelle comme vue initiale**.
+    - L'indicateur de statut de synchronisation automatique (**Modifications en attente…**, **Enregistrement…**, **Enregistré**, ou **Échec de l'enregistrement**).
+- **Le panneau latéral de gestion (à droite)** :
+  - **État neutre** : lorsqu'aucun point n'est sélectionné, il affiche le message d'aide : **Cliquez sur le panorama pour placer un hotspot.**
+  - **Création** : dès qu'un clic est effectué sur le panorama, il affiche le formulaire **Nouveau hotspot**.
+  - **Édition / Sélection** : lorsqu'un point existant est sélectionné, il affiche son libellé et propose les boutons d'action (**Modifier**, **Déplacer ici**, **Définir l'orientation d'arrivée**, **Supprimer**, **Annuler**).
+
+### Placer un nouveau point d'intérêt (hotspot)
+Pour créer un point d'intérêt dans la scène :
+1. Dans le visualiseur 360°, orientez la caméra vers l'endroit précis où doit se situer l'interaction (par exemple une porte, un passage vers une autre pièce, un monument ou un objet remarquable).
+2. Cliquez directement sur l'image panoramique à cet emplacement.
+3. Un marqueur temporaire est positionné et le panneau latéral droit ouvre le formulaire intitulé **Nouveau hotspot**.
+4. Configurez les propriétés du hotspot :
+   - **Type** : sélectionnez l'interaction souhaitée :
+     - **Lien vers une scène** : crée une transition de navigation vers une autre scène de la même visite.
+     - **Lien vers une visite** : permet de relier la scène à une autre visite virtuelle complète (liaison inter-visites).
+     - **Information** : ouvre une bulle d'information ou un panneau explicatif au clic ou survol.
+     - **Média** : présente des photographies d'illustration complémentaires.
+     - **Lien externe** : propose un lien vers une page web extérieure.
+   - **Icône** : choisissez le pictogramme représentatif affiché sur le panorama parmi **Flèche**, **Info**, **Photo**, **Lecture** ou **Portail**.
+   - **Libellé** : saisissez le nom ou l'infobulle du point d'intérêt. Ce champ utilise le composant multilingue avec onglets par langue (**Français**, **العربية**, **English**) ; la saisie en français est obligatoire.
+   - **Champs spécifiques au type choisi** :
+     - Pour un **Lien vers une scène** : sélectionnez la **Scène cible** dans la liste déroulante regroupant les autres scènes de la visite.
+     - Pour un **Lien vers une visite** : recherchez la visite de destination via le champ de recherche textuel, sélectionnez la **Visite cible**, puis choisissez optionnellement la **Scène de départ (optionnelle)** au sein de cette visite distante.
+     - Pour une **Information** : rédigez le contenu textuel dans le champ **Texte** (saisie multiligne multilingue, français obligatoire).
+     - Pour un **Média** : cliquez sur le sélecteur **Médias** pour choisir une ou plusieurs images prêtes dans la médiathèque.
+     - Pour un **Lien externe** : renseignez l'adresse web dans le champ **URL externe** (doit débuter par `http://` ou `https://`).
+5. Cliquez sur le bouton **Enregistrer**.
+   - Le bouton est désactivé pendant la transmission pour empêcher les soumissions en double.
+   - Si des données requises sont manquantes, le message d'erreur **Veuillez corriger les erreurs dans le formulaire.** s'affiche.
+   - Dès la validation par le serveur, le nouveau hotspot apparaît de manière permanente sur le panorama et dans la liste des points de la scène.
+6. Si vous souhaitez annuler la création en cours avant enregistrement, cliquez sur le bouton **Annuler** : le formulaire se ferme et le marqueur temporaire disparaît.
+
+### Déplacer et repositionner un point d'intérêt
+Si un point d'intérêt n'est pas parfaitement aligné avec l'élément visible du panorama, vous pouvez ajuster sa position à tout moment selon 3 méthodes complémentaires :
+
+1. **Glisser-déposer direct (Drag & Drop)** :
+   - Dans le visualiseur 360°, cliquez sur l'icône du hotspot, maintenez le bouton de la souris enfoncé (ou le contact tactile) et déplacez le curseur vers le nouvel emplacement.
+   - Relâchez pour fixer la nouvelle position.
+   - Le visualiseur convertit automatiquement les coordonnées physiques 2D de l'écran en coordonnées sphériques 360° (lacet et tangage).
+2. **Repositionnement guidé (« Déplacer ici »)** :
+   - Cliquez une fois sur le hotspot pour le sélectionner (une bordure de mise en évidence l'entoure).
+   - Dans le volet latéral droit, cliquez sur le bouton **Déplacer ici**.
+   - L'indication **Cliquez sur la photo ou appuyez sur Échap pour annuler.** s'affiche.
+   - Cliquez à l'endroit désiré sur le panorama : le point sélectionné est immédiatement téléporté à ces nouvelles coordonnées.
+3. **Mode « Déplacer » de la barre d'outils du visualiseur** :
+   - Sélectionnez le point d'intérêt à déplacer.
+   - Dans la barre inférieure du visualiseur, cliquez sur le bouton **Déplacer** pour activer le mode.
+   - Cliquez sur le nouvel emplacement dans le panorama. Le marqueur est mis à jour et le mode déplacement se désactive automatiquement.
+
+**Annulation du repositionnement (touche Échap)** :
+Si vous avez activé le mode de repositionnement par erreur (via le bouton **Déplacer ici** ou le mode déplacement), appuyez simplement sur la touche **Échap (Escape)** de votre clavier : le mode déplacement est immédiatement interrompu et le hotspot conserve son emplacement d'origine.
+
+### Annulation et rétablissement des modifications
+L'éditeur 360 intègre un système d'historique et de sauvegarde automatique temporisée pour garantir un travail fluide et sans risque de perte :
+
+- **Boutons Annuler et Rétablir** :
+  - Situés en haut à gauche au-dessus de l'image panoramique, les boutons **Annuler** et **Rétablir** permettent de naviguer dans l'historique des déplacements effectués au cours de la session.
+  - Vous pouvez également utiliser les raccourcis clavier standards :
+    - `Ctrl + Z` (ou `Cmd + Z` sous macOS) pour **Annuler** le dernier déplacement.
+    - `Ctrl + Y` ou `Ctrl + Maj + Z` (ou `Cmd + Shift + Z` sous macOS) pour **Rétablir** le déplacement annulé.
+  - Les boutons se désactivent automatiquement lorsque l'historique ne contient aucune action antérieure ou postérieure.
+- **Sauvegarde automatique temporisée (Debounced Saver)** :
+  - Chaque déplacement de hotspot est automatiquement mis en attente et enregistré sur le serveur après un délai d'inactivité de 1 seconde (évitant ainsi des requêtes réseau superflues lors des ajustements continus).
+  - L'état de synchronisation est affiché en direct en haut à droite :
+    - **Modifications en attente…** : le déplacement a été pris en compte localement et attend la fin de vos manipulations.
+    - **Enregistrement…** : la mise à jour est en cours d'envoi vers le serveur.
+    - **Enregistré** : les coordonnées sont validées et enregistrées de façon pérenne.
+    - **Échec de l'enregistrement** : la communication avec le serveur a échoué. Un bouton **Réessayer** apparaît alors automatiquement à côté du message pour relancer immédiatement l'enregistrement sans perdre vos modifications.
+
+### Définir la vue initiale d'une scène
+La vue initiale correspond à l'angle de regard et au niveau de grossissement découverts par le visiteur dès l'ouverture de la scène.
+
+Pour ajuster la vue initiale de manière visuelle :
+1. Dans l'onglet **Éditeur 360**, naviguez dans le panorama, faites pivoter l'angle de vue horizontalement et verticalement, et ajustez le zoom jusqu'à trouver le cadrage le plus accueillant et représentatif de la scène.
+2. Cliquez sur le bouton **Définir la vue actuelle comme vue initiale** situé dans la barre supérieure de l'éditeur.
+3. Le système capture automatiquement le cadrage actuel du visualiseur (lacet horizontal, tangage vertical et niveau de zoom).
+4. Le message vert de confirmation **Vue initiale enregistrée** apparaît.
+5. Les valeurs sont enregistrées sur la scène et synchronisées avec les champs correspondants de l'onglet **Informations**.
+
+### Orientation d'arrivée pour les liens de scène
+Lorsqu'un visiteur clique sur un hotspot de type **Lien vers une scène** pour franchir une porte ou changer de pièce, il est essentiel que son regard s'oriente naturellement dans la continuité de son déplacement à son entrée dans la scène cible (par exemple en regardant vers l'intérieur de la nouvelle pièce plutôt que de revenir au cadrage initial par défaut).
+
+Pour configurer cette orientation d'arrivée :
+1. Dans l'éditeur 360, cliquez sur le hotspot de transition (type **Lien vers une scène**) pour le sélectionner.
+2. Dans le panneau latéral droit, sous l'intitulé du hotspot, cliquez sur le bouton **Définir l'orientation d'arrivée**.
+3. Une boîte de dialogue modale s'ouvre avec le titre **Utiliser cette direction** :
+   - Elle charge et affiche le panorama 360° de la scène de destination.
+   - *(Si le panorama de la scène cible n'a pas terminé son traitement, l'alerte rouge « Le panorama de la scène cible n'est pas prêt. » est affichée).*
+4. Dans cette fenêtre, faites pivoter le panorama 360° jusqu'à aligner la vue dans la direction précise où le regard du visiteur doit se porter lorsqu'il arrive dans cette nouvelle scène.
+5. Cliquez sur le bouton **Utiliser cette direction** situé en bas à droite de la fenêtre. (Pour annuler sans enregistrer, cliquez sur le bouton **Fermer** ou sur la croix).
+6. Le réglage est enregistré sur le hotspot et le message de confirmation **Orientation d'arrivée enregistrée** s'affiche.
+7. Lors de la consultation, le lecteur 360 appliquera automatiquement cet angle d'arrivée lors de la transition.
+
+### Modifier ou supprimer un hotspot existant
+Depuis l'éditeur 360 :
+- Pour modifier les paramètres textuels, l'icône ou la cible d'un point :
+  1. Cliquez sur le hotspot sur le panorama pour le sélectionner.
+  2. Dans le volet latéral, cliquez sur le bouton **Modifier**.
+  3. Le formulaire s'ouvre avec le titre **Modifier le hotspot** pré-rempli avec les données existantes.
+  4. Effectuez vos corrections et cliquez sur **Enregistrer** (ou sur **Annuler** pour revenir sans modifier).
+- Pour supprimer définitivement un point :
+  1. Sélectionnez le hotspot sur le panorama.
+  2. Cliquez sur le bouton rouge **Supprimer**.
+  3. Une boîte de dialogue de confirmation demande : « Supprimer ce hotspot ? ».
+  4. Cliquez sur **OK** pour confirmer la suppression définitive.
+
+### Tester et prévisualiser la visite
+Le back-office intègre un mode d'aperçu fidèle permettant de vérifier l'expérience immersive en conditions réelles avant toute publication :
+
+- **Lancer l'aperçu** :
+  - Depuis la page de détail d'une visite (`/tours/<id>`), cliquez sur le bouton **Tester la visite** situé en haut à droite dans l'en-tête de la page.
+  - Le système contacte l'API pour générer un jeton temporaire d'aperçu sécurisé (`previewToken`), puis ouvre automatiquement la visite dans un nouvel onglet du navigateur via le visualiseur public (sur l'URL `/v/preview/<token>`).
+  - Si votre navigateur bloque l'ouverture automatique des fenêtres contextuelles (pop-ups), un lien textuel de secours intitulé **Ouvrir l'aperçu** apparaît immédiatement à côté du bouton pour vous permettre d'ouvrir l'onglet d'un simple clic.
+- **Comportement en mode aperçu** :
+  - En haut du visualiseur, un badge semi-transparent rappelle la mention **Aperçu – visite non publiée**.
+  - L'aperçu permet de tester l'ensemble du parcours :
+    - Déclenchement de la scène de départ avec son cadrage initial.
+    - Franchissement des hotspots de navigation et vérification des orientations d'arrivée.
+    - Consultation des panneaux d'information, des galeries d'images et des liens externes.
+    - Diffusion des narrations vocales et des sons d'ambiance.
+    - Contrôle du confort visuel en mode plein écran.
+
+### Carte des liens (visualisation du graphe de navigation)
+Dans la page **Détails de la visite** (`/tours/<id>`), la section **Carte des liens** propose une analyse visuelle automatisée de la structure de votre visite virtuelle :
+
+- **Représentation graphique (XYFlow / React Flow)** :
+  - Le graphe schématise l'ensemble des scènes sous forme de blocs rectangulaires disposés de manière ordonnée.
+  - La scène de départ est mise en évidence avec la mention **Départ :** précédant son titre.
+  - Les liaisons de navigation internes (hotspots reliant deux scènes de la même visite) sont représentées par des flèches pleines indiquant le sens du déplacement.
+  - Les liaisons vers des visites externes (liens inter-visites) sont représentées avec des bordures et traits en pointillés pour les distinguer immédiatement.
+  - Des contrôles de navigation en bas à gauche du graphe permettent de zoomer, dézoomer, verrouiller ou adapter la vue à l'écran.
+- **Détection des anomalies et scènes inaccessibles (orphelines)** :
+  - Le système calcule en temps réel le graphe de connectivité depuis la scène de départ :
+    - Si toutes les scènes peuvent être atteintes par au moins un chemin de navigation depuis l'entrée, la mention **Toutes les scènes sont accessibles.** s'affiche.
+    - Si une ou plusieurs scènes ne sont reliées par aucun lien (ou constituent une boucle isolée inatteignable depuis le départ), ces nœuds s'affichent avec une bordure rouge d'alerte dans le graphe, et un encadré rouge détaille la liste sous le titre : **Scènes inaccessibles depuis la scène de départ :**.
+- **Actualisation du graphe** :
+  - Cliquez sur le bouton **Actualiser** en haut à droite de la carte des liens pour recalculer et redessiner immédiatement le graphe après avoir ajouté ou déplacé des hotspots.
+  - Si la visite ne compte encore aucune scène, le message informatif **Aucune scène dans cette visite.** est affiché.
+
+### Gestion tabulaire des points d'intérêt (vue avancée)
+Pour les éditeurs souhaitant un inventaire synthétique ou une relecture exhaustive de tous les points d'une scène sans passer par la sphère 360°, une vue sous forme de tableau est accessible :
+
+- Accessible via le chemin de navigation ou à l'adresse `/tours/<tourId>/scenes/<sceneId>/hotspots`, la page présente le titre **Hotspots** (ou **Hotspots de la scène**) et le fil d'Ariane complet (**Visites** > *[Nom de la visite]* > *[Nom de la scène]* > **Hotspots**).
+- Le tableau regroupe tous les points d'intérêt configurés avec les colonnes suivantes :
+  - **Type** : badge indiquant le type (**Lien vers une scène**, **Lien vers une visite**, **Information**, **Média**, **Lien externe**).
+  - **Libellé** : titre textuel du hotspot.
+  - **Cible** : nom de la scène de destination pour un lien interne, nom de la visite pour un lien distant, ou adresse URL cliquable pour un lien externe.
+  - **Icône** : pictogramme associé (**Flèche**, **Info**, **Photo**, **Lecture**, **Portail**).
+  - **Actions** :
+    - Bouton **Modifier** : ouvre le formulaire d'édition détaillé de ce hotspot (`/tours/<tourId>/scenes/<sceneId>/hotspots/<id>`).
+    - Bouton **Supprimer** : supprime le hotspot après demande de confirmation : « Êtes-vous sûr de vouloir supprimer ce hotspot ? ».
+- Les boutons d'en-tête permettent de revenir directement à l'édition de la scène (**Retour à la scène**) ou d'ouvrir le formulaire manuel d'ajout (**Ajouter un hotspot**).
+
