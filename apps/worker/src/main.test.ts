@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import type { PrismaClient } from '@prisma/client';
 import type { Worker } from 'bullmq';
 
-import { boot, type BootFactories } from './main.js';
+import { boot, bootstrap, type BootFactories, type BootFunction } from './main.js';
+import { createWorkerLogger } from './logger.js';
 import { generateFlatDerivatives } from './derivatives/panorama.derivatives.js';
 import { generateTiles } from './derivatives/panorama.tiles.js';
 import type { KioskOfflineJobHandle } from './kiosk-offline.job.js';
@@ -595,3 +597,78 @@ describe('boot', () => {
     expect(messages).toEqual([]);
   });
 });
+
+describe('bootstrap (M9 NF-10)', () => {
+  const logJsonSchema = z.object({
+    level: z.string(),
+    message: z.string(),
+    timestamp: z.number(),
+  });
+
+  it('en production, le message « worker prêt » produit une ligne JSON avec level, message et timestamp', async () => {
+    const stdout: string[] = [];
+    const logger = createWorkerLogger('production', {
+      stdout: (chunk: string): void => {
+        stdout.push(chunk);
+      },
+    });
+
+    const mockBoot: BootFunction = (_source, log) => {
+      log('worker prêt (file panorama, concurrence 2)');
+      return Promise.resolve(() => Promise.resolve());
+    };
+
+    const shutdown = await bootstrap(
+      { NODE_ENV: 'production' },
+      logger,
+      undefined,
+      mockBoot,
+    );
+
+    expect(typeof shutdown).toBe('function');
+    expect(stdout.length).toBeGreaterThan(0);
+    const line = stdout[0];
+    expect(line).toBeDefined();
+    if (line !== undefined) {
+      const parsed = logJsonSchema.parse(JSON.parse(line));
+      expect(parsed.level).toBe('info');
+      expect(parsed.message).toBe('worker prêt (file panorama, concurrence 2)');
+      expect(typeof parsed.timestamp).toBe('number');
+      expect(parsed.timestamp).toBeGreaterThan(0);
+    }
+  });
+
+  it('en production, une erreur de démarrage produit une ligne JSON sur stderr avec level, message et timestamp', async () => {
+    const stderr: string[] = [];
+    const logger = createWorkerLogger('production', {
+      stderr: (chunk: string): void => {
+        stderr.push(chunk);
+      },
+    });
+
+    const failingBoot: BootFunction = () => {
+      return Promise.reject(new Error('Échec critique au démarrage'));
+    };
+
+    await expect(
+      bootstrap(
+        { NODE_ENV: 'production' },
+        logger,
+        undefined,
+        failingBoot,
+      ),
+    ).rejects.toThrow('Échec critique au démarrage');
+
+    expect(stderr.length).toBeGreaterThan(0);
+    const line = stderr[0];
+    expect(line).toBeDefined();
+    if (line !== undefined) {
+      const parsed = logJsonSchema.parse(JSON.parse(line));
+      expect(parsed.level).toBe('error');
+      expect(parsed.message).toContain('Échec critique au démarrage');
+      expect(typeof parsed.timestamp).toBe('number');
+      expect(parsed.timestamp).toBeGreaterThan(0);
+    }
+  });
+});
+
