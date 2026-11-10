@@ -37,7 +37,7 @@ function write(
 
 export function createWorkerLogger(
   nodeEnv: string = process.env.NODE_ENV ?? 'development',
-  options?: { stdout?: (chunk: string) => void; stderr?: (chunk: string) => void },
+  options?: WorkerLoggerOptions,
 ): WorkerLogger {
   const isProd = nodeEnv === 'production';
   const stdout = options?.stdout ?? ((chunk: string): void => {

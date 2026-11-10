@@ -226,7 +226,7 @@ if (process.env.VITEST !== 'true') {
   bootstrap(process.env, logger)
     .then((shutdown) => {
       let shuttingDown = false;
-      const handleSignal = () => {
+      const handleSignal = (): void => {
         if (shuttingDown) return;
         shuttingDown = true;
         void shutdown().then(

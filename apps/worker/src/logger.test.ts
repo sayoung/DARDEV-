@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { createWorkerLogger } from './logger.js';
+import { createWorkerLogger, type WorkerLogger } from './logger.js';
 
 const logJsonSchema = z.object({
   level: z.string(),
@@ -13,7 +13,11 @@ function parseLogLine(line: string): { level: string; message: string; timestamp
   return logJsonSchema.parse(parsed);
 }
 
-function createHarness(nodeEnv: string) {
+function createHarness(nodeEnv: string): {
+  logger: WorkerLogger;
+  stdout: string[];
+  stderr: string[];
+} {
   const stdout: string[] = [];
   const stderr: string[] = [];
   const logger = createWorkerLogger(nodeEnv, {
@@ -83,6 +87,23 @@ describe('createWorkerLogger (M9 NF-10)', () => {
 
     expect(stdout).toHaveLength(0);
     expect(stderr).toEqual(['[ERROR] texte\n']);
+  });
+
+  it('en production, error(x) écrit sur stderr une ligne terminée par \n parsable en JSON avec level error', () => {
+    const { logger, stdout, stderr } = createHarness('production');
+    logger.error('panne worker');
+
+    expect(stdout).toHaveLength(0);
+    expect(stderr).toHaveLength(1);
+    const errLine = stderr[0];
+    expect(errLine).toBeDefined();
+    if (errLine !== undefined) {
+      expect(errLine.endsWith('\n')).toBe(true);
+      const parsed = parseLogLine(errLine);
+      expect(parsed.level).toBe('error');
+      expect(parsed.message).toBe('panne worker');
+      expect(typeof parsed.timestamp).toBe('number');
+    }
   });
 
   it('error({a: 1}) et error(42) gèrent une valeur inconnue sans exception', () => {
