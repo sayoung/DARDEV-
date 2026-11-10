@@ -49,47 +49,47 @@ Le jalon M8 finalise la phase de durcissement technique, de sécurisation et de 
 2. Saisissez les identifiants administrateur du seed :
    - **E-mail** : `admin@xplor.local`
    - **Mot de passe** : `xplor-seed-dev-2026` (ou la valeur de `SEED_DEFAULT_PASSWORD` définie dans `.env`)
-3. Cliquez sur le bouton de connexion :
+3. Cliquez sur le bouton de connexion (**Se connecter**) :
    - L'API valide les identifiants et dépose le cookie sécurisé `xplor_sid`.
-   - À la première connexion (avant configuration TOTP), un bandeau d'alerte en tête du tableau de bord signale que le compte administrateur requiert l'activation de l'authentification à deux facteurs.
+   - À la première connexion (avant configuration TOTP), un bandeau d'alerte en tête du tableau de bord affiche : « La double authentification est obligatoire pour les administrateurs. Activez-la pour continuer. ».
    - Dans le menu latéral de navigation, accédez à la rubrique **Sécurité du compte** (URL `/account/security`).
 
 ### 1.2 Activation du 2FA TOTP
-1. Sur la page `/account/security`, constatez le statut désactivé du 2FA.
-2. Cliquez sur le bouton d'activation :
+1. Sur la page `/account/security`, constatez le statut désactivé du 2FA (badge « Désactivée »).
+2. Cliquez sur le bouton d'activation (**Activer**) :
    - L'API exécute `POST /api/v1/auth/2fa/setup`.
    - Un secret cryptographique aléatoire de 20 octets (encodé en Base32) est généré et stocké de manière chiffrée (AES-256-GCM) dans la colonne `totpSecret` de la table `User`.
    - L'interface affiche le QR code scannable (`otpauth://totp/...`) ainsi que la clé secrète en texte pour saisie manuelle.
 3. Avec une application d'authentification (Google Authenticator, Microsoft Authenticator ou tout générateur TOTP RFC 6238) :
    - Scannez le QR code ou renseignez la clé secrète.
    - Saisissez le code à 6 chiffres généré dans le champ prévu à cet effet.
-4. Cliquez sur le bouton de validation :
+4. Cliquez sur le bouton de validation (**Confirmer l'activation**) :
    - L'API appelle `POST /api/v1/auth/2fa/confirm`.
-   - Le statut passe immédiatement à activé, un message de confirmation s'affiche, et le bandeau d'alerte disparaît.
+   - Le statut passe immédiatement à activé (badge « Activée »), le message de confirmation s'affiche (« L'authentification à deux facteurs a été activée avec succès. »), et le bandeau d'alerte disparaît.
 
 ### 1.3 Déconnexion et reconnexion avec challenge TOTP
-1. Déconnectez-vous via l'action de déconnexion de l'en-tête (`POST /api/v1/auth/logout`).
+1. Déconnectez-vous via l'action de déconnexion de l'en-tête (**Se déconnecter**, `POST /api/v1/auth/logout`).
 2. Tentez une nouvelle connexion avec `admin@xplor.local` et `xplor-seed-dev-2026` :
    - L'appel `POST /api/v1/auth/login` répond avec `{ "twoFactorRequired": true }` et établit un cookie de session temporaire restreint (`pending2fa: true`).
-   - L'interface bascule sur l'écran de challenge TOTP.
-3. Saisissez le code à 6 chiffres actif dans votre application TOTP et validez :
+   - L'interface bascule sur l'écran de challenge TOTP (titre « Authentification à deux facteurs »).
+3. Saisissez le code à 6 chiffres actif dans votre application TOTP et validez via le bouton **Vérifier** :
    - L'appel `POST /api/v1/auth/login/2fa` valide le code, détruit la session temporaire, et établit la session complète `xplor_sid`.
    - Vous êtes redirigé vers le tableau de bord avec les pleins droits administrateur.
 
 ### 1.4 Rejet des codes erronés et limitation anti-bruteforce
 1. Déconnectez-vous à nouveau et revenez sur l'écran du challenge TOTP.
-2. Saisissez un code faux (ex. `000000`) et validez :
+2. Saisissez un code faux (ex. `000000`) et validez via le bouton **Vérifier** :
    - L'API rejette la requête avec un code HTTP 401 `INVALID_CREDENTIALS`.
-   - L'interface affiche l'alerte indiquant que le code est invalide.
+   - L'interface affiche l'alerte « Code invalide ».
 3. Les soumissions excessives en un temps court sont limitées par le guard `ThrottlerGuard` avec le code HTTP 429 `Too Many Requests`.
-4. Après des échecs répétés consécutifs, le compte est temporairement verrouillé (code HTTP 423 `ACCOUNT_LOCKED`), protégeant l'administrateur contre les attaques par force brute.
+4. Après 10 échecs consécutifs, le compte est temporairement verrouillé pendant 15 minutes (code HTTP 423 `ACCOUNT_LOCKED`, message « Compte verrouillé. Réessayez dans 15 minutes. »), protégeant l'administrateur contre les attaques par force brute.
 
 ### 1.5 Désactivation du 2FA
 1. Reconnectez-vous avec un code valide.
 2. Sur la page `/account/security`, la section affiche le formulaire de désactivation.
-3. Saisissez votre code TOTP actuel à 6 chiffres et cliquez sur le bouton de validation :
+3. Saisissez votre code TOTP actuel à 6 chiffres et cliquez sur le bouton **Désactiver** :
    - L'API exécute `POST /api/v1/auth/2fa/disable`.
-   - Le secret TOTP est supprimé de la base et le statut repasse à désactivé.
+   - Le secret TOTP est supprimé de la base, le message de confirmation s'affiche (« L'authentification à deux facteurs a été désactivée. ») et le statut repasse à désactivé (badge « Désactivée »).
 *(Pour la suite de la démo, réactivez le 2FA afin de maintenir un environnement durci conforme aux critères M8).*
 
 ---
@@ -101,12 +101,12 @@ L'administration des utilisateurs est strictement réservée au rôle `ADMIN` (`
 ### 2.1 Consultation et filtrage de l'annuaire (`/users`)
 1. Dans la barre latérale de navigation, cliquez sur **Utilisateurs** (URL `/users`).
 2. Observez le tableau des comptes :
-   - Colonnes : Nom, E-mail, Rôle, Statut (Actif / Inactif), 2FA, Dernière connexion, Hôtels rattachés.
+   - Colonnes : Nom, E-mail, Rôle, Actif, 2FA, Dernière connexion, Hôtels.
    - Les comptes initiaux du seed y figurent (`admin@xplor.local`, `editor@xplor.local`, `manager@xplor.local`, `partner@xplor.local`).
 3. Testez les filtres dynamiques :
    - **Rôle** : sélectionnez `Gestionnaire d'hôtel` → la liste ne conserve que `manager@xplor.local`.
    - **Statut** : filtrez sur `Actifs uniquement` ou `Inactifs uniquement`.
-   - **Recherche textuelle** : saisissez `Rabat` ou `editor` dans le champ de recherche et validez → filtrage immédiat via le paramètre `q`.
+   - **Recherche textuelle** : saisissez `Rabat` ou `editor` dans le champ de recherche et validez via le bouton `Rechercher` → filtrage immédiat via le paramètre `q`.
    - **Pagination** : contrôlez le fonctionnement des boutons `Précédent` et `Suivant` (`page` / `pageSize`).
 
 ### 2.2 Consultation et modification d'une fiche utilisateur (`/users/:id`)
@@ -116,22 +116,20 @@ L'administration des utilisateurs est strictement réservée au rôle `ADMIN` (`
    - Rôle (`role` : Administrateur, Éditeur, Gestionnaire d'hôtel, Partenaire).
    - Statut actif (`active`).
    - Langue d'interface (`uiLang` : Français, Arabe, Anglais).
-   - Établissements rattachés (sélection d'hôtels pour les gestionnaires et partenaires).
-3. Modifiez un champ (par exemple le nom ou la langue d'interface), puis cliquez sur le bouton d'enregistrement :
+   - Établissements rattachés (section « Hôtels rattachés », sélection d'hôtels pour les gestionnaires et partenaires).
+3. Modifiez un champ (par exemple le nom ou la langue d'interface), puis cliquez sur le bouton d'enregistrement (**Enregistrer**) :
    - L'API traite la mise à jour via `PATCH /api/v1/admin/users/:id`.
-   - Si les hôtels rattachés sont modifiés, l'API enregistre les associations via `PUT /api/v1/admin/users/:id/hotels`.
-   - Un message confirme le succès de l'enregistrement.
+   - Si les hôtels rattachés sont modifiés, cliquez sur **Enregistrer les hôtels** : l'API enregistre les associations via `PUT /api/v1/admin/users/:id/hotels`.
+   - Un message confirme le succès de l'enregistrement (« Utilisateur mis à jour avec succès. »).
 
 ### 2.3 Vérification des gardes-fous et règles de sécurité
 1. **Auto-modification d'un administrateur** :
    - Ouvrez votre propre fiche administrateur (`admin@xplor.local`).
-   - Tentez de modifier votre propre rôle.
-   - L'API rejette l'opération avec un code HTTP 403 Forbidden et le message d'erreur exact :
-     > « Un administrateur ne peut pas modifier son propre rôle »
+   - Tentez de modifier votre propre rôle ou de vous désactiver.
+   - L'API rejette l'opération avec un code HTTP 403 Forbidden (message API : « Un administrateur ne peut pas modifier son propre rôle » ou « Un administrateur ne peut pas se désactiver lui-même » ; message d'alerte dans l'interface : « Vous ne pouvez pas modifier votre propre rôle ni vous désactiver. »).
 2. **Protection du dernier administrateur actif** :
    - Tentez de désactiver ou rétrograder le dernier administrateur actif de la plateforme.
-   - L'API rejette l'opération avec un code HTTP 409 Conflict et le message d'erreur exact :
-     > « Impossible de désactiver ou rétrograder le dernier administrateur actif »
+   - L'API rejette l'opération avec un code HTTP 409 Conflict (message API : « Impossible de désactiver ou rétrograder le dernier administrateur actif » ; message d'alerte dans l'interface : « Impossible de modifier ou désactiver le dernier administrateur actif. »).
 
 ### 2.4 Invitation d'un nouvel utilisateur par courriel
 1. L'API expose le point d'entrée sécurisé `POST /api/v1/admin/users/invitations` (`UsersController.invite`).
@@ -139,8 +137,8 @@ L'administration des utilisateurs est strictement réservée au rôle `ADMIN` (`
    - Un jeton cryptographique aléatoire à usage unique est généré (valable 48 heures).
    - Un courriel transactionnel multilingue est expédié vers Mailpit avec le lien direct d'activation : `http://localhost:5173/invite/<jeton>`.
 3. Ouvrez Mailpit (http://localhost:8025), visualisez le message reçu et suivez le lien :
-   - La page d'activation `/invite/:token` s'ouvre (`SetPasswordPage`).
-   - Renseignez un mot de passe conforme (≥ 12 caractères) et validez via le bouton de validation (`POST /api/v1/auth/invite/accept`).
+   - La page d'activation `/invite/:token` s'ouvre (titre « Définir votre mot de passe »).
+   - Renseignez un mot de passe conforme (≥ 12 caractères) et validez via le bouton **Enregistrer** (`POST /api/v1/auth/invite/accept`).
    - Le compte est activé et l'utilisateur peut se connecter immédiatement.
 
 ---
@@ -156,31 +154,32 @@ Le journal d'audit (`AuditLog`) garantit la traçabilité complète et infalsifi
    - `auth.login_failed` : tentatives de mot de passe ou de code TOTP erronés.
    - `user.role_change` : modifications de rôle ou de permissions opérées sur les utilisateurs.
    - Autres actions auditées : `tour.publish`, `tour.unpublish`, `entity.delete`, `kiosk.create`, `kiosk.disable`, `selection.update`.
-3. Chaque ligne présente :
-   - La date et heure de l'événement.
-   - Le badge de l'action (`AUDIT_ACTIONS`).
-   - L'identifiant de l'utilisateur initiateur (`userId`).
-   - L'entité ciblée (`entityType` et `entityId`).
-   - L'adresse IP de l'appelant (`ip`).
-   - Le bloc de détail (`diff`) présentant les modifications au format JSON.
+3. Le tableau présente les 5 colonnes d'interface :
+   - **Date** : date et heure de l'événement (`page.audit.columns.date`).
+   - **Action** : badge de l'action (`page.audit.columns.action`).
+   - **Type d'entité** : type d'entité ciblée (`page.audit.columns.entityType`).
+   - **Identifiant d'entité** : identifiant de l'entité ciblée (`page.audit.columns.entityId`, ou tiret si absent).
+   - **Utilisateur** : identifiant de l'utilisateur initiateur (`page.audit.columns.user`, ou tiret si absent).
+   *(Remarque : l'adresse IP `ip` et le détail des modifications `diff` sont enregistrés en base et exposés par l'API `GET /api/v1/admin/audit`, mais ne constituent pas des colonnes affichées dans ce tableau).*
 
 ### 3.2 Garantie d'occultation des données confidentielles (OWASP A09:2021)
-Inspectez les blocs de détail (`diff`) affichés dans le journal :
+Inspectez les entrées d'audit retournées par l'API `GET /api/v1/admin/audit` (champ `diff`) ou stockées en base :
 - Aucun mot de passe en clair, aucun hash d'empreinte, aucun jeton de session opaque ni aucun secret TOTP n'est jamais consigné dans la base d'audit.
-- Pour les échecs d'authentification (`auth.login_failed`), seule la raison technique (`reason`) est enregistrée.
+- Pour les échecs d'authentification (`auth.login_failed`), seule la raison technique (`reason`) est enregistrée dans `diff`.
 
 ### 3.3 Manipulation des filtres d'audit
 Testez la réactivité du formulaire de filtrage de l'audit (`GET /api/v1/admin/audit`) :
 1. **Filtre Action** : sélectionnez une action (ex. `auth.login_failed`) → seules les tentatives de connexion correspondantes apparaissent.
-2. **Filtre Type d'entité** : saisissez `User` → seules les actions relatives aux utilisateurs sont listées.
+2. **Filtre Type d'entité** : saisissez `User` dans le champ « Type d'entité » → seules les actions relatives aux utilisateurs sont listées.
 3. **Filtres temporels** : renseignez les dates `Du` et `Au` pour restreindre la période.
-4. **Pagination** : naviguez entre les pages de résultats.
+4. **Pagination** : naviguez entre les pages de résultats à l'aide des boutons `Précédent` et `Suivant`.
 
 ### 3.4 Contrôle d'accès strict
 1. Déconnectez-vous et connectez-vous avec un compte Éditeur (`editor@xplor.local`) ou Gestionnaire d'hôtel (`manager@xplor.local`).
 2. Constatez que la rubrique **Journal d'audit** n'apparaît pas dans le menu latéral.
 3. Tentez d'accéder directement à l'URL http://localhost:5173/audit ou d'émettre une requête `GET /api/v1/admin/audit` :
-   - L'accès refusé au journal d'audit est un **403** sans message (`ForbiddenException()` sans corps de texte, `apps/api/src/audit/audit.controller.ts:149`).
+   - Côté interface, l'application affiche l'alerte « Impossible de charger le journal d'audit. ».
+   - Côté API, l'accès refusé au journal d'audit est un **403** sans message (`ForbiddenException()` sans corps de texte, `apps/api/src/audit/audit.controller.ts:149`).
 
 ---
 
@@ -193,10 +192,10 @@ L'exigence **NF-02** impose le respect de la loi marocaine 09-08 relative à la 
    - http://localhost:5174/v/legal
 2. Vérifiez que la page s'affiche sans authentification et sans composant lourd (rendu rapide en TypeScript sans framework).
 3. Observez les 4 sections obligatoires de mentions légales :
-   - **Éditeur du service** : raison sociale, immatriculation et coordonnées de l'éditeur DARDEV / SMIT.
+   - **Éditeur** : raison sociale, immatriculation et coordonnées de l'éditeur DARDEV / SMIT.
    - **Hébergement** : localisation de l'infrastructure d'hébergement.
-   - **Protection des données personnelles (loi 09-08 CNDP)** : mention explicite certifiant qu'aucune donnée à caractère personnel de voyageur n'est collectée, traitée ou cédée.
-   - **Contact & réclamations** : formulaire et coordonnées de contact.
+   - **Protection des données personnelles** : mention explicite certifiant qu'aucune donnée à caractère personnel de voyageur n'est collectée, traitée ou cédée (conformément à la loi marocaine 09-08 CNDP).
+   - **Contact et droits d'accès** : formulaire et coordonnées de contact pour l'exercice des droits d'accès et de rectification.
 
 ### 4.2 Garantie technique d'absence d'adresse IP dans les statistiques
 Pour attester techniquement de la conformité au niveau des données :
@@ -208,8 +207,8 @@ Pour attester techniquement de la conformité au niveau des données :
    - http://localhost:5174/v/demo-rabat
 2. Dans la visionneuse, cliquez sur le lien des mentions légales :
    - La page légale s'ouvre avec le paramètre de provenance : `/v/legal?from=/v/demo-rabat`.
-   - Un bouton de retour vers la visite s'affiche en tête de page légale.
-3. Cliquez sur le bouton de retour : vous revenez directement sur la visite 360° `/v/demo-rabat`.
+   - Un lien de retour vers la visite (« Retour à la visite ») s'affiche en bas de la page légale.
+3. Cliquez sur le lien de retour : vous revenez directement sur la visite 360° `/v/demo-rabat`.
 4. *(Sécurité anti-redirection ouverte)* : Vérifiez qu'un paramètre externe non sécurisé (ex. `?from=https://evil.example`) est automatiquement ignoré et ne produit aucun bouton retour.
 
 ---
@@ -220,27 +219,29 @@ Conformément à la décision **D-142**, les 3 langues officielles (`fr`, `ar`, 
 
 ### 5.1 Bascule multilingue sur le back-office
 1. Connectez-vous sur http://localhost:5173.
-2. Dans l'en-tête, repérez le sélecteur de langue : **FR**, **العربية**, **EN**.
+2. Dans l'en-tête, repérez le sélecteur de langue : **Français**, **العربية**, **English**.
 3. Cliquez sur **العربية** :
    - L'attribut racine `document.documentElement` passe à `lang="ar"` et `dir="rtl"`.
    - La barre latérale violette se positionne sur le **côté droit** de l'écran grâce à l'usage des propriétés CSS logiques (`margin-inline-start`, etc.).
    - L'ensemble des libellés du menu et des écrans s'affiche en arabe :
      - *Accueil* → `الرئيسية`
-     - *Visites virtuelles* → `الجولات الافتراضية`
+     - *Visites* → `الزيارات`
      - *Hôtels* → `الفنادق`
      - *Kiosques* → `الأكشاك`
-     - *Statistiques* → `الإحصائيات`
+     - *Statistiques* → `الإحصاءات`
      - *Utilisateurs* → `المستخدمون`
      - *Journal d'audit* → `سجل التدقيق`
      - *Sécurité du compte* → `أمان الحساب`
    - Les typographies **Montserrat** et **Comfortaa** assurent le rendu des caractères arabes.
    - Aucun défilement horizontal non désiré (`overflow-x`) n'apparaît.
-4. Cliquez sur **EN** puis **FR** pour constater le retour immédiat en mode `dir="ltr"`.
+4. Cliquez sur **English** puis **Français** pour constater le retour immédiat en mode `dir="ltr"`.
 
 ### 5.2 Bascule multilingue et RTL sur la visionneuse web
 1. Ouvrez la visionneuse publique sur http://localhost:5174/v/demo-rabat?lang=ar (ou la page légale http://localhost:5174/v/legal?lang=ar).
 2. Observez l'affichage complet en arabe de la page légale et des commandes de la visionneuse :
    - Alignement textuel à droite (`direction: rtl`).
+   - Titre de la page légale : « إشعار قانوني والخصوصية ».
+   - Lien de retour : « العودة إلى الجولة ».
    - Volet des lieux et points d'intérêt repositionné en cohérence RTL.
    - Respect des contrastes de couleur de la charte Xplor.
 
