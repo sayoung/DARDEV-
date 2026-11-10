@@ -261,7 +261,7 @@ Dans le tableau de la section **Scènes**, plusieurs boutons d'action permettent
 Sous le tableau des scènes, le bloc **Carte des liens** permet de contrôler que toutes les scènes de la visite sont correctement reliées entre elles :
 - Le bouton **Actualiser** permet de recalculer le graphe de navigation.
 - Si le graphe est complet, le message **Toutes les scènes sont accessibles.** confirme qu'un visiteur peut atteindre chaque scène à partir du point d'entrée.
-- Si une ou plusieurs scènes ne sont connectées par aucun lien de navigation (hotspot), le message **Scènes inaccessibles depuis la scène de départ :** en dresse la liste. Il convient alors d'ajouter un hotspot pointant vers ces scènes pour rétablir la continuité du parcours.
+- Si une ou plusieurs scènes ne sont connectées par aucun lien de navigation (hotspot), le message **Scènes inaccessibles depuis la scène de départ :** en dresse la liste. Il convient alors d'ajouter un hotspot pointant vers ces scènes pour rétablir la continuité du parcours, car la présence d'une scène inaccessible bloque la publication de la visite.
 
 ---
 
@@ -422,7 +422,7 @@ Dans la page **Détails de la visite** (`/tours/<id>`), la section **Carte des l
 - **Détection des anomalies et scènes inaccessibles (orphelines)** :
   - Le système calcule en temps réel le graphe de connectivité depuis la scène de départ :
     - Si toutes les scènes peuvent être atteintes par au moins un chemin de navigation depuis l'entrée, la mention **Toutes les scènes sont accessibles.** s'affiche.
-    - Si une ou plusieurs scènes ne sont reliées par aucun lien (ou constituent une boucle isolée inatteignable depuis le départ), ces nœuds s'affichent avec une bordure rouge d'alerte dans le graphe, et un encadré détaille la liste sous le titre : **Scènes inaccessibles depuis la scène de départ :**.
+    - Si une ou plusieurs scènes ne sont reliées par aucun lien (ou constituent une boucle isolée inatteignable depuis le départ), ces nœuds s'affichent avec une bordure rouge d'alerte dans le graphe, et un encadré détaille la liste sous le titre : **Scènes inaccessibles depuis la scène de départ :**. Ces scènes orphelines bloquent la publication de la visite tant qu'elles ne sont pas rattachées au parcours depuis la scène de départ.
 - **Actualisation du graphe** :
   - Cliquez sur le bouton **Actualiser** en haut à droite de la carte des liens pour recalculer et redessiner immédiatement le graphe après avoir ajouté ou déplacé des hotspots.
   - Si la visite ne compte encore aucune scène, le message informatif **Aucune scène dans cette visite.** est affiché.
