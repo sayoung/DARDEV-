@@ -1136,4 +1136,18 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 | --- | --- | --- |
 | @axe-core/playwright | Contrôle automatique WCAG 2.1 AA exigé par NF-05 | MPL-2.0 |
 
+## D-142 — Levée de l'exception temporaire à D-03 (M8 i18n)
+
+- **Date :** 10/11/2026
+- **Décision :** Levée de l'exception temporaire à D-03 (D-82, décision du 30/09/2026). Le lot i18n de préparation au pilote M8 est finalisé :
+  - Traductions arabe (`ar`) et anglaise (`en`) complètes pour l'ensemble des catalogues (`packages/i18n/src/locales/*.json`).
+  - Le contrôle de complétude des clés i18n (`packages/i18n/src/__tests__/keys.test.ts`) est redevenu strictement bloquant (absence de clés ar/en interdite).
+  - Tests end-to-end RTL ajoutés et validés pour le back-office (`apps/admin`) et la visionneuse (`apps/web` / `apps/kiosk`).
+  - Contrôles des 3 langues (fr, ar, en) et exigences RTL pleinement réactivés dans les critères de Definition of Done (DoD).
+- **Alternatives :**
+  - Maintenir le repli sur le français pour l'arabe et l'anglais jusqu'après le pilote M8 : écarté car non conforme aux exigences du cahier des charges pour les établissements hôteliers partenaires et les touristes internationaux.
+  - Conserver un contrôle de complétude des clés non bloquant (avertissement) : écarté car propice aux régressions i18n silencieuses.
+- **À valider :** non
+
+
 
