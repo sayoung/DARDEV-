@@ -1,5 +1,5 @@
 import { HttpException, ForbiddenException } from '@nestjs/common';
-import { AssetKind, ProcessingStatus, type AssetListQuery, AssetCleanupDryRunResponseSchema, AssetCleanupResultSchema, Role, type Principal } from '@xplor/shared';
+import { AssetKind, ProcessingStatus, PanoramaUploadIssueCode, type AssetListQuery, AssetCleanupDryRunResponseSchema, AssetCleanupResultSchema, Role, type Principal } from '@xplor/shared';
 import { type Prisma } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
@@ -507,6 +507,40 @@ describe('AssetsService', () => {
       });
       expect(enqueueSpy).toHaveBeenCalledWith(PANO_ID);
       expect(result.processingStatus).toBe(ProcessingStatus.PROCESSING);
+    });
+
+    it("refuse un panorama dont la signature binaire n'est pas JPEG", async () => {
+      const asset = row(PANO_ID, AssetKind.PANORAMA, '2026-10-02T00:00:00.000Z', { processingStatus: ProcessingStatus.PENDING });
+      const { service, storage, panoramaQueue } = harness([asset]);
+
+      // En-tête PNG valide : signature 89 50 4E 47 + IHDR 4096x2048
+      const pngHeader = Buffer.alloc(33);
+      pngHeader.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+      pngHeader.writeUInt32BE(13, 8);
+      pngHeader.write('IHDR', 12, 'ascii');
+      pngHeader.writeUInt32BE(4096, 16);
+      pngHeader.writeUInt32BE(2048, 20);
+      pngHeader.writeUInt8(8, 24);
+      pngHeader.writeUInt8(2, 25);
+      pngHeader.writeUInt8(0, 26);
+      pngHeader.writeUInt8(0, 27);
+      pngHeader.writeUInt8(0, 28);
+
+      vi.spyOn(storage, 'headObject').mockResolvedValue({ sizeBytes: pngHeader.length, contentType: 'image/jpeg' });
+      vi.spyOn(storage, 'getRange').mockResolvedValue(pngHeader);
+      const enqueueSpy = vi.spyOn(panoramaQueue, 'enqueue');
+
+      const error = await service.complete(PANO_ID).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      if (!(error instanceof HttpException)) return;
+      expect(error.getStatus()).toBe(422);
+      expect(error.getResponse()).toEqual({
+        error: {
+          code: PanoramaUploadIssueCode.INVALID_FORMAT,
+          message: 'Signature JPEG attendue',
+        },
+      });
+      expect(enqueueSpy).not.toHaveBeenCalled();
     });
 
     it('refuse 4000x2000 avec 422 INVALID_DIMENSIONS et message attendu/reçu', async () => {

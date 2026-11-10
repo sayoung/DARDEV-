@@ -192,6 +192,13 @@ export class AssetsService {
         );
       }
 
+      if (dimensions.type !== 'jpg') {
+        throw new HttpException(
+          { error: { code: PanoramaUploadIssueCode.INVALID_FORMAT, message: 'Signature JPEG attendue' } },
+          422,
+        );
+      }
+
       const issues = validatePanoramaUpload({
         mimeType: head.contentType ?? asset.mimeType,
         sizeBytes: head.sizeBytes,
