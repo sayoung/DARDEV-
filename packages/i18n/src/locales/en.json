@@ -36,7 +36,7 @@
       "error": "Incorrect credentials",
       "locked": "Account locked. Try again in 15 minutes.",
       "failed": "Sign-in failed. Try again.",
-      "expired": "Ta session a expiré ou a été ouverte ailleurs. Reconnecte-toi."
+      "expired": "Your session has expired or was opened elsewhere. Please log in again."
     },
     "forgot": {
       "link": "Forgot password",
@@ -121,13 +121,13 @@
       "empty": "No media found.",
       "error": "Failed to load media.",
       "emptyOption": "Select media...",
-      "thumbnailOf": "Miniature de {{id}}",
+      "thumbnailOf": "Thumbnail of {{id}}",
       "fallbackFilename": "Media from {{date}}",
       "searchPlaceholder": "Search by name...",
       "kind": {
         "IMAGE": "Image",
         "PANORAMA": "Panorama",
-        "VIDEO": "Vidéo"
+        "VIDEO": "Video"
       },
       "status": {
         "PENDING": "Pending",
@@ -717,30 +717,30 @@
   },
   "viewer": {
     "preview": {
-      "badge": "Aperçu – visite non publiée"
+      "badge": "Preview – unpublished tour"
     },
-    "goTo": "Aller vers : {{title}}",
-    "confirm": "Y aller",
-    "cancel": "Annuler",
-    "back": "Retour",
-    "previous": "Scène précédente",
-    "next": "Scène suivante",
-    "fullscreen": "Plein écran",
+    "goTo": "Go to: {{title}}",
+    "confirm": "Go",
+    "cancel": "Cancel",
+    "back": "Back",
+    "previous": "Previous scene",
+    "next": "Next scene",
+    "fullscreen": "Fullscreen",
     "gyroscope": "Gyroscope",
-    "practicalInfo": "Infos pratiques",
-    "play": "Lecture",
+    "practicalInfo": "Practical info",
+    "play": "Play",
     "pause": "Pause",
-    "close": "Fermer",
+    "close": "Close",
     "places": "Places",
     "placesTitle": "Go to",
-    "loading": "Chargement de la visite…",
-    "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
-    "loadError": "Impossible de charger la visite. Réessayez plus tard.",
+    "loading": "Loading tour…",
+    "notFound": "This tour does not exist or is no longer shared.",
+    "loadError": "Unable to load tour. Please try again later.",
     "language": "Language",
     "openMap": "View on map"
   },
   "editor": {
-    "sceneAriaLabel": "Éditeur de panorama 360",
+    "sceneAriaLabel": "360 panorama editor",
     "moveMode": "Move"
   },
   "kiosk": {
@@ -849,7 +849,7 @@
     "back": "Back to tour",
     "publisher": {
       "title": "Publisher",
-      "body": "Platform publisher: [to be completed by owner].\nCompany name: [to be completed by owner].\nAddress: [to be completed by owner].\nContact: [to be completed by owner]."
+      "body": "Platform publisher: [to be completed by the project holder].\nCompany name: [to be completed by the project holder].\nAddress: [to be completed by the project holder].\nContact: [to be completed by the project holder]."
     },
     "hosting": {
       "title": "Hosting",

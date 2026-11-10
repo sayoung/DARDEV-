@@ -1,6 +1,6 @@
 {
   "common": {
-    "breadcrumb": "Fil d'Ariane",
+    "breadcrumb": "مسار التنقل",
     "appName": "Xplor",
     "loading": "جاري التحميل...",
     "language": {
@@ -36,7 +36,7 @@
       "error": "بيانات الاعتماد غير صحيحة",
       "locked": "الحساب مقفل. أعد المحاولة بعد 15 دقيقة.",
       "failed": "تعذر تسجيل الدخول. أعد المحاولة.",
-      "expired": "Ta session a expiré ou a été ouverte ailleurs. Reconnecte-toi."
+      "expired": "انتهت جلستك أو تم فتحها في مكان آخر. يُرجى تسجيل الدخول مجددًا."
     },
     "forgot": {
       "link": "نسيت كلمة المرور",
@@ -121,13 +121,13 @@
       "empty": "لم يتم العثور على وسائط.",
       "error": "تعذر تحميل الوسائط.",
       "emptyOption": "اختر وسيط...",
-      "thumbnailOf": "Miniature de {{id}}",
+      "thumbnailOf": "صورة مصغرة لـ {{id}}",
       "fallbackFilename": "وسيط من {{date}}",
       "searchPlaceholder": "البحث بالاسم...",
       "kind": {
-        "IMAGE": "Image",
-        "PANORAMA": "Panorama",
-        "VIDEO": "Vidéo"
+        "IMAGE": "صورة",
+        "PANORAMA": "بانوراما",
+        "VIDEO": "فيديو"
       },
       "status": {
         "PENDING": "قيد الانتظار",
@@ -266,8 +266,8 @@
         "initialViewSaved": "تم حفظ العرض الأولي",
         "setArrival": "تعيين اتجاه الوصول",
         "arrivalSaved": "تم حفظ اتجاه الوصول",
-        "relocate": "Déplacer ici",
-        "relocateHint": "Cliquez sur la photo ou appuyez sur Échap pour annuler.",
+        "relocate": "نقل إلى هنا",
+        "relocateHint": "انقر على الصورة أو اضغط Esc للإلغاء.",
         "status": {
           "pending": "تغييرات معلقة…",
           "saving": "جاري الحفظ…",
@@ -693,7 +693,7 @@
     }
   },
   "tour": {
-    "newScene": "Nouvelle scène",
+    "newScene": "مشهد جديد",
     "form": {
       "title": "العنوان",
       "summary": "الملخص",
@@ -710,37 +710,37 @@
     },
     "notFound": "لم يتم العثور على الجولة.",
     "backToList": "العودة إلى الجولات",
-    "backToDetail": "Retour à la visite",
-    "previousScene": "Scène précédente",
-    "nextScene": "Scène suivante",
+    "backToDetail": "العودة إلى الجولة",
+    "previousScene": "المشهد السابق",
+    "nextScene": "المشهد التالي",
     "saveSuccess": "تم حفظ الجولة."
   },
   "viewer": {
     "preview": {
-      "badge": "Aperçu – visite non publiée"
+      "badge": "معاينة – جولة غير منشورة"
     },
-    "goTo": "Aller vers : {{title}}",
-    "confirm": "Y aller",
-    "cancel": "Annuler",
-    "back": "Retour",
-    "previous": "Scène précédente",
-    "next": "Scène suivante",
-    "fullscreen": "Plein écran",
-    "gyroscope": "Gyroscope",
-    "practicalInfo": "Infos pratiques",
-    "play": "Lecture",
-    "pause": "Pause",
-    "close": "Fermer",
+    "goTo": "الذهاب إلى: {{title}}",
+    "confirm": "الذهاب",
+    "cancel": "إلغاء",
+    "back": "رجوع",
+    "previous": "المشهد السابق",
+    "next": "المشهد التالي",
+    "fullscreen": "ملء الشاشة",
+    "gyroscope": "الجيروسكوب",
+    "practicalInfo": "معلومات عملية",
+    "play": "تشغيل",
+    "pause": "إيقاف مؤقت",
+    "close": "إغلاق",
     "places": "الأماكن",
     "placesTitle": "الانتقال إلى",
-    "loading": "Chargement de la visite…",
-    "notFound": "Cette visite n'existe pas ou n'est plus partagée.",
-    "loadError": "Impossible de charger la visite. Réessayez plus tard.",
+    "loading": "جارٍ تحميل الجولة…",
+    "notFound": "هذه الجولة غير موجودة أو لم تعد مشتركة.",
+    "loadError": "تعذر تحميل الجولة. يرجى المحاولة لاحقاً.",
     "language": "اللغة",
     "openMap": "عرض على الخريطة"
   },
   "editor": {
-    "sceneAriaLabel": "Éditeur de panorama 360",
+    "sceneAriaLabel": "محرر بانوراما 360",
     "moveMode": "نقل"
   },
   "kiosk": {
@@ -849,11 +849,11 @@
     "back": "العودة إلى الجولة",
     "publisher": {
       "title": "الناشر",
-      "body": "ناشر المنصة: [يُستكمل من قِبل الحامل].\nالاسم التجاري: [يُستكمل من قِبل الحامل].\nالعنوان: [يُستكمل من قِبل الحامل].\nالاتصال: [يُستكمل من قِبل الحامل]."
+      "body": "ناشر المنصة: [يُستكمل لاحقًا من قِبل حامل المشروع].\nالاسم التجاري: [يُستكمل لاحقًا من قِبل حامل المشروع].\nالعنوان: [يُستكمل لاحقًا من قِبل حامل المشروع].\nالاتصال: [يُستكمل لاحقًا من قِبل حامل المشروع]."
     },
     "hosting": {
       "title": "الاستضافة",
-      "body": "المنصة مستضافة على خادم افتراضي خاص (VPS في المغرب). المستضيف: [يُستكمل]."
+      "body": "المنصة مستضافة على خادم افتراضي خاص (VPS في المغرب). المستضيف: [يُستكمل لاحقًا]."
     },
     "privacy": {
       "title": "حماية البيانات الشخصية",
@@ -861,7 +861,7 @@
     },
     "contact": {
       "title": "الاتصال وحقوق الوصول",
-      "body": "لأي سؤال أو لممارسة حقوقك في الوصول والتصحيح وفقاً للقانون 09-08، يمكنك الاتصال بـ: [يُستكمل]."
+      "body": "لأي سؤال أو لممارسة حقوقك في الوصول والتصحيح وفقاً للقانون 09-08، يمكنك الاتصال بـ: [يُستكمل لاحقًا]."
     }
   }
 }
