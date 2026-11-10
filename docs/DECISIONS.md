@@ -1149,3 +1149,11 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
   - Conserver un contrôle de complétude des clés non bloquant (avertissement) : écarté car propice aux régressions i18n silencieuses.
 - **À valider :** non
 
+## D-143 — Descriptions en texte brut (M8 NF-01)
+
+- **Date :** 10/11/2026
+- **Décision :** Descriptions en texte brut : aucun HTML utilisateur n'est accepté ni rendu ; l'exigence NF-01 ‘HTML utilisateur assaini’ est couverte par conception (échappement au rendu, escapeHtml + test text-html.test.ts).
+- **Alternatives :** sanitize-html côté API (dépendance inutile).
+- **À valider :** oui
+
+
