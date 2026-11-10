@@ -50,7 +50,7 @@ Lorsque la double authentification est activée sur votre compte (elle concerne 
 
 1. Après validation de votre adresse e-mail et de votre mot de passe, un second écran s'affiche avec le titre **Authentification à deux facteurs**.
 2. Ouvrez votre application d'authentification mobile (par exemple Google Authenticator, Microsoft Authenticator ou toute application compatible avec le protocole standard TOTP).
-3. Dans le champ **Code à 6 chiffres**, saisissez le code numérique temporaire visible dans votre application. Ce code à 6 chiffres est renouvelé toutes les 30 secondes.
+3. Dans le champ **Code à 6 chiffres**, saisissez le code numérique temporaire visible dans votre application. Ce code à 6 chiffres change régulièrement.
 4. Cliquez sur le bouton **Vérifier**.
 
 En cas d'anomalie :
