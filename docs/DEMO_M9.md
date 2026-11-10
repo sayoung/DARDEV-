@@ -9,6 +9,9 @@ Ce document décrit la procédure détaillée pour exécuter et valider la démo
 Valider le déploiement et l'accessibilité en production de la plateforme Xplor (exigence NF-10) :
 - Vérifier la disponibilité et l'état opérationnel de l'API publique via sa sonde de santé.
 - Valider l'accès et l'authentification sur le back-office d'administration en production.
+- Valider le parcours éditeur complet (création, import de panoramas, scènes, publication, QR code et lien public).
+- Valider le parcours gestionnaire d'hôtel (périmètre strict, sélection des visites du kiosque, suivi du parc, statistiques et export CSV, procédure kiosque hors ligne).
+- Contrôler les procédures de sauvegarde et de restauration ainsi que la conformité des journaux JSON structurés et de la rétention (NF-10 et NF-02).
 
 ---
 
@@ -276,3 +279,131 @@ Le fichier nommé `xplor-statistiques.csv` est automatiquement téléchargé par
 La démarche de diagnostic et de remise en service d'un kiosque hors ligne est validée : l'accès sécurisé par code PIN à l'écran de maintenance permet d'inspecter l'état technique de l'appareil physique, de forcer une synchronisation locale et de rassembler les éléments de diagnostic nécessaires à une escalade technique auprès du support.
 
 - [ ] Procédure de diagnostic et d'accès à l'écran de maintenance du kiosque par code PIN validée
+
+---
+
+## Étape 5 : Contrôle d'une sauvegarde et des journaux JSON
+
+Cette étape valide les exigences d'exploitation, de résilience et de conformité réglementaire (exigences NF-10 et NF-02) d'après les sections 4 (« Sauvegardes quotidiennes (Backup) ») et 5 (« Journaux et rotation ») du guide d'exploitation `docs/EXPLOITATION.md` :
+- **Sauvegarde quotidienne** : exécution du script `deploy/backup.sh` et vérification des artefacts (`db.dump`, `media.tar.gz`) ainsi que de la rotation automatique à 30 jours.
+- **Procédure de restauration** : exécution non interactive du script `deploy/restore.sh` sur un environnement bac à sable (sandbox / staging) isolé et vérification des 4 contrôles de validation post-restauration.
+- **Journaux structurés JSON** : contrôle des journaux émis par les conteneurs `api` et `worker` avec présence confirmée des champs obligatoires `level`, `message` et `timestamp` (décisions D-144 et D-145).
+- **Conformité loi 09-08 et rotation Docker** : absence d'adresses IP persistées dans les journaux ou la base, et politique de rotation par taille `json-file` (10 Mo × 3 fichiers).
+
+> [!IMPORTANT]
+> **Rappels d'exploitation et de sécurité :**
+> - Les interventions sur le serveur VPS de production sont réservées au porteur du projet.
+> - Toutes les commandes `docker compose … logs` doivent contenir le paramètre `--env-file .env.production`.
+> - Tout test de restauration doit être exécuté **exclusivement sur un environnement bac à sable (sandbox / staging)** strictement distinct de la production : l'exécution d'une restauration écrase irréversiblement les données existantes.
+
+### 5.1 Sauvegarde quotidienne (deploy/backup.sh)
+
+#### Action
+1. Sur le serveur de production, depuis la racine du projet (`/opt/xplor`), exécuter le script de sauvegarde :
+   ```bash
+   bash deploy/backup.sh
+   ```
+2. Vérifier la programmation de la tâche cron dans la table de l'utilisateur système `xplor` (`crontab -e`) :
+   ```cron
+   30 3 * * * cd /opt/xplor && bash deploy/backup.sh >> /home/xplor/xplor-backup.log 2>&1
+   ```
+3. Inspecter le répertoire horodaté créé sous `/var/backups/xplor/<YYYYMMDD-HHMM>/` (ou défini par `BACKUP_DIR` dans `.env.production`).
+4. Vérifier la présence et la non-vacuité des deux fichiers de sauvegarde :
+   - `db.dump` : export binaire compressé de la base PostgreSQL généré par :
+     ```bash
+     docker compose --env-file .env.production -f docker-compose.prod.yml exec -T postgres pg_dump -U "${POSTGRES_USER}" -Fc "${POSTGRES_DB}"
+     ```
+   - `media.tar.gz` : archive compressée du stockage MinIO `/data` générée par :
+     ```bash
+     docker compose --env-file .env.production -f docker-compose.prod.yml exec -T minio tar -czf - -C /data .
+     ```
+5. Vérifier la rotation automatique des sauvegardes supprimant les répertoires vieux de plus de 30 jours (`BACKUP_RETENTION_DAYS=30`).
+
+#### Résultat attendu
+Le script de sauvegarde s'exécute avec succès et affiche le message final `Sauvegarde terminée avec succès.`. Le dossier horodaté contient `db.dump` et `media.tar.gz` (intègre et non vide), et les sauvegardes antérieures à 30 jours sont automatiquement nettoyées.
+
+- [ ] Sauvegarde quotidienne générée avec succès (db.dump et media.tar.gz) et rotation à 30 jours validée via deploy/backup.sh
+
+### 5.2 Test de restauration sur environnement bac à sable (deploy/restore.sh)
+
+#### Action
+1. Copier de manière sécurisée un dossier de sauvegarde récent (`/var/backups/xplor/<horodatage>/`) depuis le serveur de production vers un environnement bac à sable (sandbox / staging) strictement distinct.
+2. Sur l'environnement bac à sable, depuis la racine du dépôt, exécuter le script de restauration avec l'option non interactive `--yes` :
+   ```bash
+   bash deploy/restore.sh <dossier> --yes
+   ```
+   *(Exemple : `bash deploy/restore.sh /var/backups/xplor/test-20261110-0330 --yes`)*
+3. Vérifier le bon déroulement des 4 étapes du script :
+   - **Étape 1 — Arrêt des services applicatifs** :
+     ```bash
+     docker compose --env-file .env.production -f docker-compose.prod.yml stop api worker
+     ```
+   - **Étape 2 — Restauration de la base de données** :
+     ```bash
+     docker compose --env-file .env.production -f docker-compose.prod.yml exec -T postgres pg_restore --clean --if-exists --no-owner -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" < "$BACKUP_DIR/db.dump"
+     ```
+   - **Étape 3 — Restauration des fichiers médias MinIO** (si `media.tar.gz` est présent) :
+     ```bash
+     docker compose --env-file .env.production -f docker-compose.prod.yml exec -T minio sh -c "tar -xzf - -C /data" < "$BACKUP_DIR/media.tar.gz"
+     ```
+   - **Étape 4 — Redémarrage des services applicatifs** :
+     ```bash
+     docker compose --env-file .env.production -f docker-compose.prod.yml start api worker
+     ```
+4. Réaliser les quatre contrôles obligatoires post-restauration sur l'environnement bac à sable :
+   - **Sonde de santé de l'API** : exécuter `curl -s http://<sandbox-api>/api/health` et vérifier le statut HTTP 200 OK avec `"status": "ok"` (`db: "ok"`, `redis: "ok"`, `storage: "ok"`).
+   - **Connexion admin au back-office** : se connecter sur l'interface d'administration avec un compte administrateur issu de la sauvegarde et vérifier l'accès au tableau de bord.
+   - **Volume des visites publiées** : vérifier dans la liste des visites que le nombre de visites publiées correspond exactement au volume sauvegardé.
+   - **Visualiseur 360°** : ouvrir une scène 360° d'une visite publiée et vérifier le chargement direct du panorama équirectangulaire et de ses tuiles depuis MinIO sans erreur 404.
+
+#### Résultat attendu
+Le script de restauration affiche `Restauration terminée avec succès.`, et les quatre vérifications opérationnelles post-restauration (sonde de santé, connexion back-office, volume de visites publiées, rendu panoramique 360°) confirment l'intégrité de la reprise de service.
+
+- [ ] Procédure de restauration testée avec succès sur bac à sable avec deploy/restore.sh et validation des 4 contrôles post-reprise
+
+### 5.3 Contrôle des journaux structurés JSON (API et Worker)
+
+#### Action
+1. Consulter les journaux récents du service `api` en production via Docker Compose :
+   ```bash
+   docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail 20 api
+   ```
+2. Consulter les journaux récents du service `worker` en production via Docker Compose :
+   ```bash
+   docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail 20 worker
+   ```
+3. Examiner la structure de chaque ligne émise par l'API et le worker sur la sortie standard.
+4. Contrôler que chaque ligne constitue un objet JSON valide contenant obligatoirement les trois propriétés suivantes :
+   - `level` : niveau de criticité du message (`log`, `info`, `warn`, `error`).
+   - `message` : contenu textuel de l'événement journalisé.
+   - `timestamp` : horodatage numérique (epoch millisecondes).
+   *(Note d'architecture : conformément aux décisions D-144 et D-145, le champ `context` est facultatif et propre aux modules internes de NestJS pour l'API ; il n'est pas produit par le worker et n'est donc pas exigé pour valider la conformité du format JSON).*
+
+#### Résultat attendu
+Les journaux applicatifs de l'API et du worker sont émis sous forme de flux JSON structuré sur la sortie standard, chaque ligne contenant obligatoirement les propriétés `level`, `message` et `timestamp`, sans texte brut non structuré en production.
+
+- [ ] Format des journaux JSON structurés validé sur l'API et le worker (présence confirmée de level, message et timestamp)
+
+### 5.4 Contrôle de la conformité loi 09-08 et rotation des journaux Docker
+
+#### Action
+1. Vérifier l'absence de journalisation persistante des adresses IP des visiteurs :
+   - Consulter les journaux du reverse proxy Caddy :
+     ```bash
+     docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail 20 caddy
+     ```
+   - Vérifier dans `deploy/caddy/Caddyfile` qu'aucun bloc `log` n'est configuré pour enregistrer des requêtes d'accès contenant l'IP des visiteurs dans un fichier permanent.
+   - Vérifier que le point de terminaison d'ingestion d'événements anonymes (`POST /events`) utilise un hachage SHA-256 éphémère dans Redis avec un TTL de 60 secondes pour la limitation de débit, et qu'aucune colonne d'adresse IP n'existe dans la table `Event`.
+2. Vérifier la configuration de rotation par taille des journaux Docker dans `docker-compose.prod.yml` via l'ancre `x-logging` :
+   - Pilote : `json-file`
+   - Taille maximale par fichier : `10m` (10 Mo)
+   - Nombre maximal de fichiers : `3` (capacité bornée à 30 Mo par conteneur).
+3. Prendre connaissance de la commande de purge manuelle des journaux d'un conteneur si nécessaire sur le serveur VPS :
+   ```bash
+   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate <service>
+   ```
+
+#### Résultat attendu
+La plateforme respecte strictement les exigences de protection de la vie privée de la loi 09-08 (exigence NF-02) : aucune adresse IP de voyageur n'est conservée sur disque dans les journaux ou la base de données. La rotation par taille des journaux Docker borne l'espace disque consommé à 30 Mo par service.
+
+- [ ] Conformité loi 09-08 (absence d'adresses IP persistées) et politique de rotation Docker (10 Mo x 3) validées
