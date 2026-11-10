@@ -136,3 +136,65 @@ Lors de l'édition d'une visite (choix de la vignette) ou d'une scène (choix du
 - Deux onglets sont proposés :
   - **Médiathèque** : permet de choisir parmi les médias déjà importés et prêts. Vous pouvez utiliser le champ **Rechercher par nom...** pour filtrer rapidement vos fichiers.
   - **Envoyer depuis mon ordinateur** : permet de téléverser directement un nouveau fichier depuis votre ordinateur sans devoir quitter le formulaire d'édition.
+
+---
+
+## Créer une visite
+
+### Accéder à la création d'une visite
+Pour créer une nouvelle visite virtuelle :
+- Dans la barre latérale du back-office, cliquez sur le menu **Visites**.
+- En haut à droite du tableau des visites, cliquez sur le bouton **Nouvelle visite** (accessible aux utilisateurs disposant du rôle Éditeur ou Administrateur).
+- Vous pouvez également cliquer sur le raccourci **Nouvelle visite** accessible sur la page d'**Accueil**.
+- L'écran s'ouvre sur la page intitulée **Nouvelle visite**.
+
+### Formulaire de nouvelle visite
+Le formulaire regroupe les informations descriptives et géographiques de la visite :
+
+- **Titre** : nom de la visite virtuelle (champ obligatoire). Si le titre n'est pas renseigné au moment de soumettre le formulaire, le message d'erreur **Le français est obligatoire.** s'affiche.
+- **Résumé** : texte de présentation synthétique de la visite (champ multiligne obligatoire, limité à 500 caractères). Si le résumé n'est pas renseigné au moment de soumettre le formulaire, le message d'erreur **Le français est obligatoire.** s'affiche.
+- **Description** : texte de présentation détaillé de la visite (champ multiligne optionnel).
+- **Informations pratiques** : renseignements utiles aux visiteurs (horaires, accès, recommandations ; champ multiligne optionnel).
+- **Ville** : liste déroulante obligatoire. L'option initiale indique **Sélectionner une ville...**. Vous devez sélectionner la ville de rattachement parmi les villes configurées dans le catalogue.
+- **Catégories** : liste de cases à cocher présentant les catégories disponibles. Vous devez cocher au moins une catégorie pour pouvoir enregistrer la visite.
+- **Vignette** : image de présentation associée à la visite, affichée sur les listes et sur les fiches de présentation (champ obligatoire).
+  - Le sélecteur affiche au départ le bouton **Sélectionner un média...**. Une fois un média choisi, son intitulé s'affiche accompagné du bouton **Modifier**.
+  - Si aucune vignette n'a été sélectionnée lors de la soumission du formulaire, le message d'erreur **Veuillez sélectionner une vignette.** s'affiche.
+  - Deux types de médias sont acceptés pour la vignette : les images (`Image`) et les photographies panoramiques 360° (`Panorama`).
+  - Cliquez sur le champ pour ouvrir la boîte de dialogue **Sélectionner un média** :
+    - L'onglet **Médiathèque** liste les médias au statut **Prêt**. Vous pouvez utiliser la liste déroulante **Filtrer par type** (**Tous les types**, **Image** ou **Panorama**) et la zone de recherche **Rechercher un média** (champ « Rechercher par nom... »). Cliquez sur le média ou le panorama souhaité pour l'associer comme vignette.
+    - L'onglet **Envoyer depuis mon ordinateur** permet d'importer directement un nouveau fichier image ou panorama depuis votre disque dur en cliquant sur **Choisir un fichier**, puis sur **Envoyer**.
+- **Durée (minutes)** : durée estimée du parcours en minutes (champ numérique optionnel, nombre entier positif).
+- **Latitude** : coordonnée géographique comprise entre -90 et 90 (champ numérique optionnel).
+- **Longitude** : coordonnée géographique comprise entre -180 et 180 (champ numérique optionnel).
+
+### Enregistrement et fiche de la visite
+Pour valider la création de la visite :
+1. Cliquez sur le bouton **Enregistrer** situé au bas du formulaire. Pendant l'enregistrement, le bouton est temporairement désactivé pour éviter tout double envoi.
+2. Si des informations sont invalides ou incomplètes (par exemple si aucune catégorie n'est cochée), le message rouge **Veuillez corriger les erreurs dans le formulaire.** s'affiche (ou **Veuillez sélectionner une vignette.** si aucune vignette n'a été sélectionnée).
+3. Dès que l'enregistrement réussit, vous êtes automatiquement redirigé vers l'écran **Détails de la visite** (`/tours/<id>`). Lors d'une modification ultérieure depuis cette fiche, cliquer sur **Enregistrer** affiche le message de confirmation **Visite enregistrée.**.
+
+### Statuts de la visite : Brouillon et Publiée
+Chaque visite possède un cycle de vie caractérisé par deux statuts :
+
+- **Brouillon** : statut initial de toute visite nouvellement créée. La visite est en cours de composition et demeure invisible pour le public (non consultable sur les bornes ni via les liens publics non authentifiés).
+- **Publiée** : statut actif indiquant que la visite est finalisée, validée et mise à disposition des visiteurs.
+
+#### Gestion du statut depuis la fiche de la visite
+Dans la partie supérieure de l'écran **Détails de la visite**, le bloc de publication permet de gérer l'état de la visite :
+- La mention **Statut :** est suivie du badge d'état actuel (**Brouillon** ou **Publiée**).
+- **Vérifier** : ce bouton lance un contrôle d'intégrité de la visite (présence d'une scène de départ, cohérence des liens entre les scènes et conformité des panoramas).
+  - Si aucune anomalie n'est détectée, le message **Aucun problème : la visite peut être publiée** s'affiche.
+  - Si des erreurs sont présentes, le bloc rouge **Problèmes à corriger avant publication** détaille les points à rectifier (par exemple : scène de départ manquante, panorama non prêt, ou scène inatteignable).
+- **Publier** : bouton visible lorsque la visite est au statut **Brouillon**. Il permet de basculer la visite au statut **Publiée** après vérification automatique de l'intégrité de la visite. Si la visite comporte des anomalies non résolues, la publication est bloquée et les problèmes sont affichés.
+- **Dépublier** : bouton visible lorsque la visite est au statut **Publiée**. Il permet de repasser immédiatement la visite en **Brouillon** pour masquer temporairement son accès public et effectuer des ajustements.
+- **Tester la visite** : bouton situé en haut à droite de l'en-tête de la page. Il permet à l'éditeur d'ouvrir un aperçu immersif dans un nouvel onglet pour tester la navigation et les interactions, même lorsque la visite est encore au statut Brouillon. Si l'ouverture automatique du nouvel onglet est bloquée par votre navigateur, le lien de secours **Ouvrir l'aperçu** s'affiche.
+- **Lien public et QR code** : dès que la visite est publiée, le volet affiche le **Lien public** pérenne ainsi que le **QR code de la visite**. Le bouton **Télécharger le QR code** permet d'enregistrer l'image vectorielle SVG du QR code pour l'impression ou la signalétique.
+- **Régénérer le lien de partage** : permet d'invalider le jeton public actuel et d'en générer un nouveau. Une boîte de dialogue demande confirmation : « Les anciens liens et QR codes ne fonctionneront plus. Voulez-vous continuer ? ».
+
+#### Suivi des statuts dans la liste des visites
+Sur la page **Visites** :
+- Le tableau présente la colonne **Statut** avec le badge **Brouillon** ou **Publiée** pour chaque visite.
+- Le filtre déroulant **Statut** en haut de page permet de filtrer la liste en affichant **Tous les statuts**, uniquement les visites au statut **Brouillon**, ou uniquement les visites **Publiée**.
+- Pour chaque ligne du tableau, le bouton **Modifier** ouvre la fiche de détail, et le bouton **Dupliquer** permet de dupliquer une visite et l'ensemble de ses scènes (la copie est créée au statut Brouillon).
+
