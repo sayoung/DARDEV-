@@ -18,8 +18,9 @@ Ce document constitue la procédure opérationnelle de mise en service d'un nouv
 3. [Étape 3 : Sélection des visites proposées sur le kiosque](#3-sélection-des-visites-proposées-sur-le-kiosque)
 4. [Étape 4 : Enrôlement du kiosque](#4-enrôlement-du-kiosque)
 5. [Étape 5 : Contrôle du heartbeat et du mode hors ligne](#5-contrôle-du-heartbeat-et-du-mode-hors-ligne)
-6. Étape 6 : Test de la passerelle QR code mobile *(partie 3/3)*
-7. Étape 7 : Remise documentaire et signature du procès-verbal *(partie 3/3)*
+6. [Étape 6 : Test d'un QR code sur mobile](#6-test-dun-qr-code-sur-mobile)
+7. [Étape 7 : Remise du guide gestionnaire](#7-remise-du-guide-gestionnaire)
+8. [Check-list récapitulative de mise en service](#8-check-list-récapitulative-de-mise-en-service)
 
 ---
 
@@ -152,3 +153,94 @@ Cette étape valide la boucle de télémétrie, la surveillance opérationnelle 
     3. L'heure locale se situe en période diurne entre **08:00 et 22:00** dans le fuseau horaire marocain `Africa/Casablanca`.
     4. Aucune alerte n'a été transmise pour cette borne au cours des dernières 24 heures (délai anti-répétition `ALERT_COOLDOWN_MS = 24 * 60 * 60 * 1000`).
   - **Destinataires :** un courriel automatique est expédié aux comptes administrateurs (`ADMIN`) dès que ces conditions sont vérifiées.
+
+---
+
+## 6. Test d'un QR code sur mobile
+
+Cette étape valide le fonctionnement de la passerelle kiosque / mobile par QR code (exigences F-33, F-41, F-62, F-63, NF-10), permettant à un visiteur de poursuivre l'exploration d'une visite virtuelle sur son propre smartphone.
+
+### 6.1 URL publique de visionnage (vérifiée dans `docs/DEPLOY.md`)
+
+- Le domaine public dédié à la visionneuse web grand public est **`v.xplor.ma`** (certificat TLS 1.3 géré par Caddy).
+- L'URL publique de consultation d'une visite prend la forme pérenne :
+  `https://v.xplor.ma/v/<jeton>`
+- Lorsque le lien est généré pour le kiosque ou scanné depuis une borne interactive, le paramètre de provenance anonyme `?src=kiosk` est joint à l'URL :
+  `https://v.xplor.ma/v/<jeton>?src=kiosk`
+
+### 6.2 Protocole de test sur smartphone
+
+- [ ] **Affichage du QR code :**
+  - Ouvrir une visite publiée sur l'écran tactile du kiosque.
+  - Afficher le QR code de partage de la visite (ou utiliser le support d'information / présentoir imprimé doté du QR code vectoriel SVG téléchargé depuis le volet de publication du back-office via `xplor-<jeton>.svg`).
+- [ ] **Scan du QR code sur mobile (procédure générique) :**
+  - À l'aide de l'appareil photo ou d'un lecteur de QR code standard d'un smartphone (procédure générique, sans contrainte de système d'exploitation mobile, de version ni de distance particulière), viser le QR code affiché à l'écran ou sur le support.
+  - Constater la détection instantanée du QR code et l'affichage de la notification invitant à ouvrir l'adresse web.
+- [ ] **Chargement et expérience immersive sur mobile :**
+  - Ouvrir le lien dans le navigateur du smartphone.
+  - Vérifier que la page résout correctement l'adresse sécurisée `https://v.xplor.ma/v/<jeton>` (ou `https://v.xplor.ma/v/<jeton>?src=kiosk`).
+  - Constater le chargement immédiat du panorama 360° dans la visionneuse Photo Sphere Viewer v5.
+  - Tester les interactions tactiles mobiles :
+    - Rotation fluide à 360° par glissement du doigt sur l'écran.
+    - Zoom avant et zoom arrière par pincement tactile.
+    - Clic sur un point d'intérêt (hotspot) pour changer de scène ou consulter un contenu enrichi.
+  - Basculer le smartphone entre les orientations portrait et paysage pour vérifier l'adaptation responsive de l'interface.
+- [ ] **Garanties de confidentialité (Loi 09-08 CNDP) :**
+  - Constater qu'aucune autorisation intrusive (géolocalisation, accès aux contacts ou stockage du smartphone) n'est exigée du voyageur.
+  - Vérifier que la consultation s'opère de façon totalement anonyme, sans aucun traçage nominatif ni dépôt de traceurs tiers.
+- [ ] **Prise en compte dans le suivi statistique :**
+  - Se connecter au back-office (`https://admin.xplor.ma/stats`).
+  - Vérifier que l'ouverture web via QR code est correctement comptabilisée dans les indicateurs d'activité hôtelière (indicateur « Scans QR » et sessions web associées).
+
+---
+
+## 7. Remise du guide gestionnaire
+
+Cette étape formalise la passation opérationnelle auprès de la direction et de l'équipe de réception de l'établissement hôtelier.
+
+### 7.1 Remise documentaire et découverte de l'espace hôtelier
+
+- [ ] Remettre au responsable de l'hôtel le [Guide du gestionnaire d'hôtel](GUIDE_GESTIONNAIRE_HOTEL.md) (sans recopier son contenu dans la présente procédure technique).
+- [ ] Accompagner le gestionnaire dans la découverte des chapitres essentiels du guide :
+  - **Connexion sécurisée** ([GUIDE_GESTIONNAIRE_HOTEL.md § 1](GUIDE_GESTIONNAIRE_HOTEL.md#1-connexion)) : accès au back-office sur `https://admin.xplor.ma`, gestion des identifiants et mot de passe robuste d'au moins 12 caractères.
+  - **Périmètre et politique d'accès** ([GUIDE_GESTIONNAIRE_HOTEL.md § 2](GUIDE_GESTIONNAIRE_HOTEL.md#2-périmètre-vos-hôtels)) : vérification de l'étanchéité stricte des données et restriction exclusive aux hôtels rattachés.
+  - **Gestion de la sélection hôtelière** ([GUIDE_GESTIONNAIRE_HOTEL.md § 3](GUIDE_GESTIONNAIRE_HOTEL.md#3-visites-proposées-sur-le-kiosque)) : méthode d'ajout, de retrait, d'ordonnancement des visites, choix de la visite « À la une » et activation du « Mode veille ».
+  - **Suivi opérationnel des kiosques** ([GUIDE_GESTIONNAIRE_HOTEL.md § 4](GUIDE_GESTIONNAIRE_HOTEL.md#4-kiosques-enrôlement-état-et-heartbeat-mode-veille-hors-ligne)) : compréhension des états de connectivité (« En ligne », « Désynchronisé », « Hors ligne ») et rappel de l'autonomie hors ligne.
+  - **Consultation des statistiques** ([GUIDE_GESTIONNAIRE_HOTEL.md § 5](GUIDE_GESTIONNAIRE_HOTEL.md#5-statistiques-et-export-csv)) : suivi des indicateurs de consultation et téléchargement de l'export CSV UTF-8.
+
+### 7.2 Consignes de premier niveau et assistance technique (§ 6 « Qui contacter »)
+
+- [ ] Sensibiliser le personnel de réception aux vérifications simples de premier niveau :
+  - **Alimentation électrique** : contrôler le branchement de la prise secteur et l'allumage de la borne.
+  - **Réseau** : vérifier le branchement du câble Ethernet RJ45 ou la bonne réception du réseau Wi-Fi local de l'hôtel.
+  - **Redémarrage simple** : en cas de blocage, débrancher l'appareil, patienter 15 à 30 secondes, puis rebrancher.
+  - **Code PIN de maintenance** : rappeler au gestionnaire que le code PIN à 4 chiffres configuré lors de l'étape 1 permet de déverrouiller l'écran technique de maintenance directement sur le kiosque.
+- [ ] En cas de dysfonctionnement persistant ou d'anomalie réseau non résolue, orienter le gestionnaire vers les consignes d'assistance du guide :
+  - Se référer directement à [GUIDE_GESTIONNAIRE_HOTEL.md § 6](GUIDE_GESTIONNAIRE_HOTEL.md#6-kiosque-hors-ligne--que-faire-et-qui-contacter) (sous-section [Qui contacter si le dysfonctionnement persiste](GUIDE_GESTIONNAIRE_HOTEL.md#qui-contacter-si-le-dysfonctionnement-persiste)).
+  - Noter les informations requises avant tout contact avec l'administrateur technique :
+    1. Le nom du kiosque (`label`) et le nom de l'hôtel.
+    2. La date et l'heure du « Dernier signal » affichées dans le tableau de bord back-office.
+    3. La version de l'application et l'espace disque disponible.
+    4. La description précise du problème constaté (écran noir, message d'erreur ou symptôme physique).
+
+### 7.3 Rappel de sécurité : gouvernance du serveur VPS
+
+- [ ] Rappeler expressément que **toutes les opérations sur le serveur VPS de production sont exécutées exclusivement par le porteur du projet (DARDEV)**.
+  - Aucun accès distant (SSH, identifiants systèmes, console d'administration hôte) n'est accordé aux gestionnaires d'hôtel, aux équipes sur site ni aux intervenants externes.
+  - La gestion de l'infrastructure Docker, de la base de données PostgreSQL, du stockage MinIO, du cache Redis, du serveur web Caddy et des certificats SSL relève de la responsabilité exclusive du porteur de projet (se référer à [EXPLOITATION.md § 1](EXPLOITATION.md#1-architecture-de-production) et [EXPLOITATION.md § 8](EXPLOITATION.md#8-contacts-et-matrice-descalade)).
+
+---
+
+## 8. Check-list récapitulative de mise en service
+
+Ce récapitulatif synthétise l'ensemble des contrôles d'installation à valider pour acter la mise en service complète de l'établissement hôtelier :
+
+| Étape | Intitulé du contrôle | Statut attendu | Réf. |
+|---|---|---|---|
+| **Étape 1** | Création de l'établissement dans le back-office | Fiche hôtel créée (nom, étoiles, ville, coordonnées, couleur hexadécimale, code PIN maintenance à 4 chiffres) | [Étape 1](#1-création-de-lhôtel-dans-le-back-office) |
+| **Étape 2** | Invitation et rattachement du gestionnaire | Compte utilisateur invité, mot de passe fort configuré (≥ 12 caractères), rattachement exclusif validé par `AccessPolicy` | [Étape 2](#2-invitation-du-gestionnaire-et-rattachement) |
+| **Étape 3** | Sélection du bouquet de visites hôtelier | Visites ajoutées au catalogue local, ordre d'affichage ajusté, visite à la une et mode veille configurés, version incrémentée | [Étape 3](#3-sélection-des-visites-proposées-sur-le-kiosque) |
+| **Étape 4** | Enrôlement physique du kiosque | Appareil déclaré, code d'enrôlement à 8 caractères saisi sur la borne sous 60 minutes, jeton Bearer enregistré, statut `ACTIVE` et téléchargement du manifeste | [Étape 4](#4-enrôlement-du-kiosque) |
+| **Étape 5** | Contrôle télémétrie et autonomie hors ligne | Heartbeat fonctionnel (< 5 min, état « En ligne »), coupure réseau testée avec navigation 360° autonome sans interruption, reconnexion validée | [Étape 5](#5-contrôle-du-heartbeat-et-du-mode-hors-ligne) |
+| **Étape 6** | Test de la passerelle QR code sur mobile | QR code scanné depuis un smartphone standard (sans contrainte d'OS ni distance), URL publique `https://v.xplor.ma/v/<jeton>` ouverte, visionneuse fluide et respect CNDP 09-08 | [Étape 6](#6-test-dun-qr-code-sur-mobile) |
+| **Étape 7** | Remise documentaire et passation | [Guide du gestionnaire d'hôtel](GUIDE_GESTIONNAIRE_HOTEL.md) remis, consignes de premier niveau expliquées, renvoi au § 6 « Qui contacter », rappel des opérations VPS réservées au porteur (DARDEV) | [Étape 7](#7-remise-du-guide-gestionnaire) |
