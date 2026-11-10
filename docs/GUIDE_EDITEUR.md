@@ -364,7 +364,7 @@ Pour ajuster la vue initiale de manière visuelle :
 1. Dans l'onglet **Éditeur 360**, naviguez dans le panorama, faites pivoter l'angle de vue horizontalement et verticalement, et ajustez le zoom jusqu'à trouver le cadrage le plus accueillant et représentatif de la scène.
 2. Cliquez sur le bouton **Définir la vue actuelle comme vue initiale** situé dans la barre supérieure de l'éditeur.
 3. Le système capture automatiquement le cadrage actuel du visualiseur (lacet horizontal, tangage vertical et niveau de zoom).
-4. Le message vert de confirmation **Vue initiale enregistrée** apparaît.
+4. Le message de confirmation **Vue initiale enregistrée** apparaît.
 5. Les valeurs sont enregistrées sur la scène et synchronisées avec les champs correspondants de l'onglet **Informations**.
 
 ### Orientation d'arrivée pour les liens de scène
@@ -422,7 +422,7 @@ Dans la page **Détails de la visite** (`/tours/<id>`), la section **Carte des l
 - **Détection des anomalies et scènes inaccessibles (orphelines)** :
   - Le système calcule en temps réel le graphe de connectivité depuis la scène de départ :
     - Si toutes les scènes peuvent être atteintes par au moins un chemin de navigation depuis l'entrée, la mention **Toutes les scènes sont accessibles.** s'affiche.
-    - Si une ou plusieurs scènes ne sont reliées par aucun lien (ou constituent une boucle isolée inatteignable depuis le départ), ces nœuds s'affichent avec une bordure rouge d'alerte dans le graphe, et un encadré rouge détaille la liste sous le titre : **Scènes inaccessibles depuis la scène de départ :**.
+    - Si une ou plusieurs scènes ne sont reliées par aucun lien (ou constituent une boucle isolée inatteignable depuis le départ), ces nœuds s'affichent avec une bordure rouge d'alerte dans le graphe, et un encadré détaille la liste sous le titre : **Scènes inaccessibles depuis la scène de départ :**.
 - **Actualisation du graphe** :
   - Cliquez sur le bouton **Actualiser** en haut à droite de la carte des liens pour recalculer et redessiner immédiatement le graphe après avoir ajouté ou déplacé des hotspots.
   - Si la visite ne compte encore aucune scène, le message informatif **Aucune scène dans cette visite.** est affiché.
