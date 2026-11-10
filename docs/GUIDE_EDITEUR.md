@@ -185,7 +185,7 @@ Dans la partie supérieure de l'écran **Détails de la visite**, le bloc de pub
 - La mention **Statut :** est suivie du badge d'état actuel (**Brouillon** ou **Publiée**).
 - **Vérifier** : ce bouton lance un contrôle d'intégrité de la visite (présence d'une scène de départ, cohérence des liens entre les scènes et conformité des panoramas).
   - Si aucune anomalie n'est détectée, le message **Aucun problème : la visite peut être publiée** s'affiche.
-  - Si des erreurs sont présentes, le bloc rouge **Problèmes à corriger avant publication** détaille les points à rectifier (par exemple : scène de départ manquante, panorama non prêt, ou scène inatteignable).
+  - Si des erreurs sont présentes, l'encadré d'alerte **Problèmes à corriger avant publication** détaille les points à rectifier (par exemple : scène de départ manquante, panorama non prêt, ou scène inatteignable).
 - **Publier** : bouton visible lorsque la visite est au statut **Brouillon**. Il permet de basculer la visite au statut **Publiée** après vérification automatique de l'intégrité de la visite. Si la visite comporte des anomalies non résolues, la publication est bloquée et les problèmes sont affichés.
 - **Dépublier** : bouton visible lorsque la visite est au statut **Publiée**. Il permet de repasser immédiatement la visite en **Brouillon** pour masquer temporairement son accès public et effectuer des ajustements.
 - **Tester la visite** : bouton situé en haut à droite de l'en-tête de la page. Il permet à l'éditeur d'ouvrir un aperçu immersif dans un nouvel onglet pour tester la navigation et les interactions, même lorsque la visite est encore au statut Brouillon. Si l'ouverture automatique du nouvel onglet est bloquée par votre navigateur, le lien de secours **Ouvrir l'aperçu** s'affiche.
@@ -195,7 +195,7 @@ Dans la partie supérieure de l'écran **Détails de la visite**, le bloc de pub
 #### Suivi des statuts dans la liste des visites
 Sur la page **Visites** :
 - Le tableau présente la colonne **Statut** avec le badge **Brouillon** ou **Publiée** pour chaque visite.
-- Le filtre déroulant **Statut** en haut de page permet de filtrer la liste en affichant **Tous les statuts**, uniquement les visites au statut **Brouillon**, ou uniquement les visites **Publiée**.
+- Le filtre déroulant **Statut** en haut de page permet de filtrer la liste en affichant **Tous les statuts**, uniquement les visites au statut **Brouillon**, ou au statut **Publiée**.
 - Pour chaque ligne du tableau, le bouton **Modifier** ouvre la fiche de détail, et le bouton **Dupliquer** permet de dupliquer une visite et l'ensemble de ses scènes (la copie est créée au statut Brouillon).
 
 ---
@@ -215,7 +215,7 @@ Pour ajouter une scène dans la visite :
 2. La page s'ouvre avec le titre **Ajouter une scène**. Le fil d'Ariane indique le cheminement : **Visites** > *[Titre de la visite]* > **Nouvelle scène**. Le lien **← Retour à la visite** permet de revenir à la visite sans enregistrer.
 3. Renseignez les champs du formulaire :
    - **Titre** : nom de la scène (champ obligatoire, avec onglets **Français**, **Arabe** et **Anglais** ; la saisie en français est obligatoire).
-   - **Légende** : courte mention descriptive affichée en surimpression lors de la visualisation (champ optionnel, multilingue).
+   - **Légende** : courte mention descriptive affichée en surimpression lors de la visualisation (champ optionnel).
    - **Panorama** : photographie panoramique 360° associée à la scène (champ obligatoire).
      - Cliquez sur le champ pour ouvrir la boîte de dialogue **Sélectionner un média**.
      - Dans l'onglet **Médiathèque**, sélectionnez un panorama déjà importé dont le statut est **Prêt** (vous pouvez utiliser le champ de recherche par nom).
@@ -240,7 +240,7 @@ Pour créer rapidement plusieurs scènes à la suite :
 ### Nommer et modifier une scène
 Depuis la section **Scènes** de la visite, cliquez sur le bouton **Modifier** en face de la scène souhaitée (ou sur son titre).
 L'écran présente deux onglets de travail :
-- **Informations** : permet d'ajuster le **Titre**, la **Légende**, le fichier **Panorama** associé, les paramètres de vue initiale et les médias sonores. Cliquez sur **Enregistrer** pour sauvegarder les modifications ; la mention **Scène enregistrée avec succès** confirme l'enregistrement. Le bouton rouge **Supprimer** permet de supprimer définitivement la scène après confirmation par la boîte de dialogue : « Êtes-vous sûr ? ».
+- **Informations** : permet d'ajuster le **Titre**, la **Légende**, le fichier **Panorama** associé, les paramètres de vue initiale et les médias sonores. Cliquez sur **Enregistrer** pour sauvegarder les modifications ; la mention **Scène enregistrée avec succès** confirme l'enregistrement. Le bouton **Supprimer** permet de supprimer définitivement la scène après confirmation par la boîte de dialogue : « Êtes-vous sûr ? ».
 - **Éditeur 360** : affiche le visualiseur panoramique immersif pour positionner les points d'intérêt (hotspots) et ajuster visuellement l'orientation du regard.
 
 Au bas de la page, deux liens permettent de naviguer rapidement entre les scènes de la visite dans l'ordre établi :
