@@ -12,6 +12,7 @@ Valider le déploiement et l'accessibilité en production de la plateforme Xplor
 - Valider le parcours éditeur complet (création, import de panoramas, scènes, publication, QR code et lien public).
 - Valider le parcours gestionnaire d'hôtel (périmètre strict, sélection des visites du kiosque, suivi du parc, statistiques et export CSV, procédure kiosque hors ligne).
 - Contrôler les procédures de sauvegarde et de restauration ainsi que la conformité des journaux JSON structurés et de la rétention (NF-10 et NF-02).
+- Réaliser la revue documentaire du backlog de phase 2 et de la procédure de mise en service en hôtel partenaire (docs/BACKLOG_PHASE2.md et docs/INSTALLATION_HOTEL.md).
 
 ---
 
@@ -407,3 +408,83 @@ Les journaux applicatifs de l'API et du worker sont émis sous forme de flux JSO
 La plateforme respecte strictement les exigences de protection de la vie privée de la loi 09-08 (exigence NF-02) : aucune adresse IP de voyageur n'est conservée sur disque dans les journaux ou la base de données. La rotation par taille des journaux Docker borne l'espace disque consommé à 30 Mo par service.
 
 - [ ] Conformité loi 09-08 (absence d'adresses IP persistées) et politique de rotation Docker (10 Mo x 3) validées
+
+---
+
+## Étape 6 : Revue du backlog de phase 2 et de la procédure d'installation hôtel
+
+Cette étape valide la revue formelle des documents de cadrage stratégique et opérationnel préparant la phase 2 et les déploiements hôteliers :
+- **Backlog de Phase 2 et feuille de route** (`docs/BACKLOG_PHASE2.md`) : inventaire des fonctionnalités reportées, des chantiers techniques et organisationnels de transition, et du plan de déploiement dans 5 hôtels partenaires.
+- **Procédure de mise en service en hôtel** (`docs/INSTALLATION_HOTEL.md`) : check-list opérationnelle exhaustive des étapes d'installation, d'enrôlement et d'accompagnement sur site.
+
+### 6.1 Revue de docs/BACKLOG_PHASE2.md
+
+#### Action
+1. Ouvrir le document `docs/BACKLOG_PHASE2.md` servant de référence pour la transition vers la Phase 2.
+2. Dans la section 1 (« 1. Tableau Synthétique du Backlog de Phase 2 »), vérifier la présence et le détail des 21 entrées nommées, réparties selon leur origine formelle avec la colonne « Priorité proposée » (Haute, Moyenne ou Basse) :
+   - **BP2-EX01** : Paiement en ligne (Moyenne)
+   - **BP2-EX02** : Réservation d'excursions (Haute)
+   - **BP2-EX03** : Application mobile native (Basse)
+   - **BP2-EX04** : Comptes clients finaux (Basse)
+   - **BP2-EX05** : Recommandations par IA (Basse)
+   - **BP2-EX06** : Vidéos 360° en streaming adaptatif (Moyenne)
+   - **BP2-EX07** : Marketplace de contenus tiers (Basse)
+   - **BP2-MAP** : Positionnement sur le plan de la visite (`mapX`, `mapY`) (Haute)
+   - **BP2-F25** : Carte des liens et graphe de visite (Basse)
+   - **BP2-F83** : Rapport mensuel par hôtel (Basse)
+   - **BP2-VR3D** : Panneaux d'information 3D en réalité virtuelle (Moyenne)
+   - **BP2-D118** : Réordonnancement de la sélection hôtel par glisser-déposer (Moyenne)
+   - **BP2-D121** : Calcul dynamique de la taille du manifeste kiosque (`sizeBytes`) (Moyenne)
+   - **BP2-D99** : Distribution des médias non-panoramas par dérivés publics (Basse)
+   - **BP2-D112** : Annulation étendue et corbeille de hotspots (Basse)
+   - **BP2-D125** : Packaging kiosque dédié (Electron / Tauri ou OS kiosque) (Moyenne)
+   - **BP2-CONT** : Production et publication de ≥ 15 visites virtuelles (Haute)
+   - **BP2-NF03** : Mesures réelles de charge et performance (k6) (Haute)
+   - **BP2-QUEST** : Validation matérielle sur casque Meta Quest Browser (F-71) (Haute)
+   - **BP2-REC** : Exécution et signature du PV de Recette Fonctionnelle (Haute)
+   - **BP2-PILOTE** : Exploitation du pilote dans 1 hôtel partenaire (Haute)
+3. Dans la section 2 (« 2. Déploiement dans 5 Hôtels »), examiner le plan de déploiement opérationnel dans 5 établissements hôteliers 4★, 5★ et de luxe de la région pilote (Rabat-Salé-Kénitra).
+4. Dans la sous-section 2.3 (« 2.3 Procédure de Déploiement par Établissement (Checklist Opérationnelle) »), contrôler les intitulés exacts des 5 étapes du déploiement par hôtel :
+   - **Étape 1 : Paramétrage administratif et conventionnel**
+   - **Étape 2 : Configuration de la sélection éditoriale personnalisée**
+   - **Étape 3 : Installation matérielle sur site et raccordement**
+   - **Étape 4 : Enrôlement logique et synchronisation initiale**
+   - **Étape 5 : Formation des équipes de l'établissement et recette sur site**
+
+#### Résultat attendu
+Le document `docs/BACKLOG_PHASE2.md` formalise l'intégralité du backlog de transition : 21 entrées nommées avec leur colonne « Priorité proposée » (Haute, Moyenne, Basse) soumise à arbitrage du porteur, ainsi que le plan de déploiement dans 5 hôtels structuré selon les 5 étapes de la sous-section 2.3.
+
+- [ ] Backlog de phase 2 vérifié dans docs/BACKLOG_PHASE2.md (21 entrées nommées avec colonne « Priorité proposée » Haute/Moyenne/Basse, déploiement dans 5 hôtels et 5 étapes en section 2.3)
+
+### 6.2 Revue de docs/INSTALLATION_HOTEL.md
+
+#### Action
+1. Ouvrir le document `docs/INSTALLATION_HOTEL.md` définissant la procédure opérationnelle d'installation et de mise en service d'un établissement hôtelier partenaire sur Xplor.
+2. Vérifier la présence, l'ordre et le contenu des huit sections opérationnelles du guide (intitulées telles quelles) :
+   - **## 1. Création de l'hôtel dans le back-office** : déclaration de l'établissement par un administrateur via `POST /api/v1/admin/hotels`, configuration du nom, classement, ville, coordonnées, couleur de marque hexadécimale, code PIN de maintenance à 4 chiffres et vérification dans la liste `/hotels`.
+   - **## 2. Invitation du gestionnaire et rattachement** : envoi de l'invitation avec rôle `HOTEL_MANAGER` (`POST /api/v1/admin/users/invitations`), mot de passe robuste (≥ 12 caractères) et rattachement exclusif vérifié par `AccessPolicy`.
+   - **## 3. Sélection des visites proposées sur le kiosque** : constitution du bouquet de visites (`/hotels/:id/selection`), ordonnancement (monter/descendre), choix de la visite « À la une », activation du « Mode veille » et incrémentation de la version du catalogue.
+   - **## 4. Enrôlement du kiosque** : déclaration du kiosque (`/kiosks`), génération du code d'enrôlement à 8 caractères valide 60 minutes, saisie sur l'appareil, enregistrement du jeton Bearer 256 bits, statut `ACTIVE` et téléchargement du manifeste.
+   - **## 5. Contrôle du heartbeat et du mode hors ligne** : émission régulière du signal toutes les 5 minutes (`POST /api/v1/kiosk/heartbeat`), supervision de l'état « En ligne » (`/kiosks`), simulation de perte réseau avec navigation 360° hors ligne autonome ininterrompue, et rappel des seuils d'alerte BullMQ (absence > 2 h en période 08h-22h avec délai anti-répétition de 24 h).
+   - **## 6. Test d'un QR code sur mobile** : vérification de la passerelle mobile via l'URL publique `https://v.xplor.ma/v/<jeton>?src=kiosk`, fluidité du visualiseur immersif Photo Sphere Viewer v5, orientation portrait/paysage, conformité CNDP loi 09-08 (zéro traceur personnel) et comptabilisation des scans QR dans les statistiques.
+   - **## 7. Remise du guide gestionnaire** : remise physique de `docs/GUIDE_GESTIONNAIRE_HOTEL.md`, sensibilisation aux contrôles de premier niveau (alimentation, réseau, redémarrage 15-30 s, code PIN de maintenance), orientation vers la section 6 « Qui contacter », et rappel strict de la gouvernance VPS réservée au porteur (DARDEV).
+   - **## 8. Check-list récapitulative de mise en service** : tableau récapitulatif des 7 contrôles avant validation et signature conjointe de mise en service opérationnelle.
+
+#### Résultat attendu
+Le document `docs/INSTALLATION_HOTEL.md` détaille rigoureusement la check-list de mise en service selon ses 8 sections opérationnelles (sections 1 à 8 citées telles quelles), chaque étape disposant de son résultat attendu et de ses cases à cocher.
+
+- [ ] Procédure de mise en service d'un hôtel vérifiée dans docs/INSTALLATION_HOTEL.md avec les sections opérationnelles 1 à 8 (« ## 1. Création de l'hôtel dans le back-office » à « ## 8. Check-list récapitulative de mise en service »)
+
+---
+
+## Synthèse des points de contrôle pour la recette
+
+| # | Point de contrôle | Résultat attendu | Validé |
+|---|---|---|:---:|
+| 1 | Vérification de la sonde de santé de l'API (NF-10) | Sonde opérationnelle sur https://api.xplor.ma/api/health répondant HTTP 200 OK avec le statut global "ok" et les vérifications "db", "redis" et "storage" au statut "ok". | [ ] |
+| 2 | Connexion au back-office d'administration (NF-10) | Authentification réussie sur https://admin.xplor.ma avec le compte administrateur de production (avec validation TOTP si configuré) et redirection vers le tableau de bord. | [ ] |
+| 3 | Parcours éditeur (Médiathèque, Visite, Scènes, Publication, QR code, Lien /v/) | Cycle complet validé : import panorama équirectangulaire (statut Prêt), création de visite (Brouillon), ajout de scène avec départ, publication (statut Publiée), QR code vectoriel SVG téléchargé, et consultation publique interactive sur https://v.xplor.ma/v/<jeton>. | [ ] |
+| 4 | Parcours gestionnaire d'hôtel (Périmètre, Sélection, Kiosques, Statistiques, Maintenance) | Connexion gestionnaire, cloisonnement strict du périmètre hôtel (AccessPolicy), composition et sauvegarde de la sélection de visites (incrémentation de version), suivi du parc dans le tableau des kiosques, consultation et export CSV des statistiques (xplor-statistiques.csv UTF-8 BOM), et procédure de diagnostic maintenance kiosque par code PIN. | [ ] |
+| 5 | Sauvegardes, restauration et journaux structurés (NF-10, NF-02) | Sauvegarde deploy/backup.sh (db.dump et media.tar.gz avec rétention 30 jours), procédure de restauration deploy/restore.sh sur bac à sable avec 4 contrôles post-reprise, journaux JSON structurés (level, message, timestamp) sur l'API et le worker, respect loi 09-08 (aucune IP persistée) et rotation Docker (10 Mo x 3). | [ ] |
+| 6 | Revue documentaire — Backlog Phase 2 et mise en service hôtel | Revue de docs/BACKLOG_PHASE2.md (21 entrées nommées avec colonne « Priorité proposée » Haute/Moyenne/Basse, déploiement dans 5 hôtels avec les 5 étapes de la section 2.3) et de docs/INSTALLATION_HOTEL.md (sections 1 à 8 : « ## 1. Création de l'hôtel dans le back-office », « ## 2. Invitation du gestionnaire et rattachement », « ## 3. Sélection des visites proposées sur le kiosque », « ## 4. Enrôlement du kiosque », « ## 5. Contrôle du heartbeat et du mode hors ligne », « ## 6. Test d'un QR code sur mobile », « ## 7. Remise du guide gestionnaire » et « ## 8. Check-list récapitulative de mise en service »). | [ ] |
+
