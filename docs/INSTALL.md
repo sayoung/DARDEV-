@@ -135,3 +135,18 @@ Pour le déploiement sur le serveur VPS et l'exploitation de la plateforme en en
 - **Procédure de déploiement** : consulter [DEPLOY.md](DEPLOY.md) (prérequis, configuration `.env.production`, premier déploiement via `deploy/deploy.sh`, certificats SSL automatiques Caddy, sauvegardes et restauration).
 - **Guide d'exploitation** : consulter [EXPLOITATION.md](EXPLOITATION.md) (architecture des conteneurs, supervision `/api/health`, suivi des kiosques et alertes hors ligne, rétention des journaux, tâches périodiques et commandes CLI).
 
+## Documentation du projet
+
+- [DEPLOY.md](DEPLOY.md) : Procédure complète de déploiement en production sur le serveur VPS (configuration, scripts de déploiement, reverse proxy Caddy et sauvegardes).
+- [EXPLOITATION.md](EXPLOITATION.md) : Guide d'exploitation quotidienne et de maintenance opérationnelle de l'infrastructure de production, incluant la supervision et les commandes CLI.
+- [GUIDE_EDITEUR.md](GUIDE_EDITEUR.md) : Guide pas-à-pas destiné aux éditeurs de contenus pour concevoir, enrichir de hotspots et publier des visites virtuelles 360° dans le back-office.
+- [GUIDE_GESTIONNAIRE_HOTEL.md](GUIDE_GESTIONNAIRE_HOTEL.md) : Guide d'utilisation du back-office réservé aux gestionnaires d'établissements hôteliers pour piloter leurs kiosques et leur sélection de visites.
+- [FORMATION.md](FORMATION.md) : Référentiel et plan de formation accompagnant la montée en compétences autonome des éditeurs, gestionnaires d'hôtel et exploitants techniques.
+- [INSTALLATION_HOTEL.md](INSTALLATION_HOTEL.md) : Procédure opérationnelle et check-list détaillée pour la mise en service, l'enrôlement et le contrôle d'une borne kiosque dans un nouvel hôtel.
+- [BACKLOG_PHASE2.md](BACKLOG_PHASE2.md) : Feuille de route et recueil des exigences de la Phase 2, regroupant les fonctionnalités reportées et les perspectives d'évolution future.
+- [SECURITE.md](SECURITE.md) : Synthèse d'audit et d'évaluation des mesures de sécurité du projet au regard des dix catégories du référentiel OWASP Top 10 (2021).
+- [RECETTE.md](RECETTE.md) : Plan de recette fonctionnelle globale et de bout en bout validant la conformité technique et métier de toutes les composantes du système.
+- [PV_RECETTE.md](PV_RECETTE.md) : Modèle formel de procès-verbal de recette consignant l'attestation des tests et la décision de validation avec les parties prenantes.
+- [PILOTE.md](PILOTE.md) : Plan de déploiement et protocole de suivi opérationnel pour éprouver la borne kiosque et son autonomie en conditions réelles lors du pilote en hôtel.
+
+
