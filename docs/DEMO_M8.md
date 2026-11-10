@@ -12,7 +12,7 @@ Le jalon M8 finalise la phase de durcissement technique, de sécurisation et de 
 3. **F-91 / API-30 — Journalisation et audit des opérations sensibles** : Traçabilité immuable (`AuditLog`) des connexions, publications, modifications de droits et actions kiosques, consultation filtrée réservée à l'administrateur avec occultation stricte des secrets (mots de passe, tokens, secrets TOTP).
 4. **NF-02 — Conformité réglementaire loi 09-08 (CNDP)** : Page légale publique (`/v/legal`), mentions légales et politique de confidentialité en 3 langues, absence totale d'adresse IP et de données nominatives dans les événements analytiques (`Event`).
 5. **D-142 — Internationalisation intégrale (fr / ar / en) et mode miroir RTL** : Couverture i18n complète à 100 % des interfaces, bascule instantanée sans rechargement, adaptation RTL fluide (`dir="rtl"`, typographies Montserrat / Comfortaa, propriétés CSS logiques).
-6. **NF-03, NF-04, NF-05 — Durcissement non fonctionnel et outillage automatisé** : Sonde de disponibilité `/api/health`, tests d'accessibilité WCAG 2.1 AA via `@axe-core/playwright`, audit de vulnérabilités `pnpm audit` (0 faille high/critical), et scénarios de montée en charge k6 sur environnement non productif.
+6. **NF-03, NF-04, NF-05 — Durcissement non fonctionnel et outillage automatisé** : Sonde de disponibilité `/api/health`, tests d'accessibilité WCAG 2.1 AA via `@axe-core/playwright`, audit de vulnérabilités `pnpm audit` (0 faille high/critical), et scénarios de montée en charge k6 sur environnement local ou staging.
 7. **Recette globale et pilote en hôtel partenaire** : Renvoi formel vers le plan de recette de bout en bout (`docs/RECETTE.md`), le modèle de procès-verbal (`docs/PV_RECETTE.md`) et le protocole de déploiement pilote (`docs/PILOTE.md`) confiés au porteur du projet.
 
 ---
@@ -281,7 +281,7 @@ pnpm audit --audit-level high
 
 ### 6.3 Campagne de tests de performance de charge (k6)
 > [!CAUTION]
-> **Interdiction formelle de lancer ces tests sur l'environnement de production (`api.xplor.ma`, `admin.xplor.ma`, `v.xplor.ma`) sans autorisation préalable.** Ces tests génèrent une charge importante et doivent être exécutés exclusivement en local ou sur un environnement de test dédié.
+> **Ces tests de charge génèrent un trafic soutenu et doivent être exécutés exclusivement en local ou sur un environnement de staging.** Aucun test k6 ne doit être exécuté sur un environnement de production.
 
 Selon le protocole documenté dans [`perf/README.md`](../perf/README.md) et la fiche de suivi [`docs/PERFORMANCE.md`](PERFORMANCE.md) :
 
@@ -326,5 +326,5 @@ Les opérations formelles de recette contractuelle et de déploiement physique d
 | 3 | Journal d'audit filtré (F-91, API-30) | Traçabilité immuable (/audit), filtres combinés, occultation des secrets (OWASP A09), accès réservé à l'administrateur (403) | [ ] |
 | 4 | Page légale publique (NF-02) | Page publique (/v/legal) en 3 langues, 4 sections obligatoires, absence d'IP dans Event, retour vers visite de démonstration (demo-rabat) | [ ] |
 | 5 | Multilingue et mode miroir RTL (D-142) | Bascule instantanée fr/ar/en, adaptation RTL (dir="rtl", barre latérale à droite, propriétés CSS logiques, pas de débordement) | [ ] |
-| 6 | Commandes automatisées de validation | Suites Playwright e2e (Axe 0 violation, RTL conforme), pnpm audit (0 high/critical), scripts k6 selon perf/README.md hors production | [ ] |
+| 6 | Commandes automatisées de validation | Suites Playwright e2e (Axe 0 violation, RTL conforme), pnpm audit (0 high/critical), scripts k6 selon perf/README.md (local ou staging) | [ ] |
 | 7 | Cadre recette et pilote | Référentiels formels établis pour le porteur : docs/RECETTE.md, docs/PV_RECETTE.md et docs/PILOTE.md | [ ] |
