@@ -1,31 +1,29 @@
 # Suivi — Xplor
 
-## Jalon en cours : M8 — Durcissement & pilote
+## Jalon en cours : M9 — Livraison
 
-Exigences : NF-01 à NF-05, F-90 (2FA), F-91, API-28 et API-30
+Exigence : NF-10
 
-Livrable : PV de recette, rapport de pilote et correctifs
+Livrable : Plateforme en production, prête pour la phase 2 (installation dans 5 hôtels)
 
 | # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | NF-01 : sécurité (helmet/CSP, throttler, CORS, pnpm audit) | fait | docs/SECURITE.md (synthèse OWASP Top 10 conforme, A03/D-143, A08 signature JPEG vérifiée, pnpm audit 0 high/critical) |
-| 2 | NF-02 : loi 09-08 (pas d'IP dans Event, mentions légales) | fait | apps/api/prisma/schema.prisma (modèle Event sans IP) et apps/web/src/legal-page.ts (page /v/legal en 3 langues, testée) |
-| 3 | NF-03 : performance (k6) | à faire par le porteur | perf/k6/*.js et docs/PERFORMANCE.md (scripts k6 rédigés, mesures à exécuter par le porteur en local/préprod) |
-| 4 | NF-04 : /api/health | fait | apps/api/src/health/health.controller.ts et health.probes.ts (sondes db, redis, storage MinIO, délai max 2 000 ms, tests unitaires) |
-| 5 | NF-05 : accessibilité (axe) | fait | e2e/helpers/axe.ts, tests e2e axe (back-office.spec.ts, m3-viewer.spec.ts) et apps/kiosk/src/min-sizes.test.ts (zones tactiles >= 48px) |
-| 6 | F-90 : 2FA TOTP ADMIN | fait | apps/api/src/auth/two-factor.service.ts, apps/admin/src/pages/AccountSecurityPage.tsx et TwoFactorStep.tsx |
-| 7 | F-91 : AuditLog | fait | apps/api/prisma/schema.prisma (modèle AuditLog) et apps/api/src/audit/audit.service.ts |
-| 8 | API-28 : CRUD utilisateurs | fait | apps/api/src/users/users.controller.ts et users-admin.service.ts (invitation, liste, détail, mise à jour rôle/statut/hôtels) |
-| 9 | API-30 : /admin/audit | fait | apps/api/src/audit/audit.controller.ts (GET /admin/audit, filtres et pagination, réservé aux ADMIN) |
-| 10 | Lot « traductions ar/en complètes + vérification RTL + réactivation des contrôles 3 langues » (décision du 30/09/2026, à faire avant le pilote) | fait | docs/DECISIONS.md (D-142), packages/i18n/src/locales/*.json, packages/i18n/src/keys.test.ts bloquant, tests e2e RTL |
-| 11 | Recette | à faire par le porteur | docs/RECETTE.md et docs/PV_RECETTE.md (12 scénarios formalisés, PV de recette à exécuter par le porteur) |
-| 12 | Pilote dans un hôtel | à faire par le porteur | docs/PILOTE.md (plan cadre et protocole opérationnel rédigés, pilote physique à mener par le porteur) |
-| 13 | Lint, typecheck et test | fait | pnpm lint et pnpm typecheck code 0, pnpm test vert (274 fichiers, 3 350 tests passés au 10/11/2026) |
+| 1 | Documentation installation/déploiement (INSTALL.md, DEPLOY.md) | fait | docs/INSTALL.md et docs/DEPLOY.md |
+| 2 | Exploitation et test de restauration (EXPLOITATION.md) | fait | docs/EXPLOITATION.md (procédure de restauration §4.4) |
+| 3 | Sauvegardes avec rétention de 30 jours (deploy/backup.sh) | fait | deploy/backup.sh (BACKUP_RETENTION_DAYS=30) |
+| 4 | Journaux JSON (D-144, D-145) | fait | docs/DECISIONS.md (D-144, D-145), apps/worker/src/logger.ts et apps/api/src/logger.ts |
+| 5 | Guide éditeur | fait | docs/GUIDE_EDITEUR.md |
+| 6 | Guide gestionnaire | fait | docs/GUIDE_GESTIONNAIRE_HOTEL.md |
+| 7 | Formation (FORMATION.md) | fait | docs/FORMATION.md |
+| 8 | Backlog phase 2 (BACKLOG_PHASE2.md) | fait | docs/BACKLOG_PHASE2.md |
+| 9 | Check-list hôtel (INSTALLATION_HOTEL.md) | fait | docs/INSTALLATION_HOTEL.md |
+| 10 | Mise en production | à confirmer par le porteur | deploy/deploy.sh, docker-compose.prod.yml et docs/DEPLOY.md (à confirmer par le porteur) |
+| 11 | Lint, typecheck et test | fait | pnpm lint et pnpm typecheck code 0, pnpm test vert (276 fichiers, 3 364 tests passés au 10/11/2026) |
 
-DoD M8 remplie : non
+DoD M9 remplie : non
 
-M7 validé par le porteur (démo)
-Jalons M0 à M7 marqués validés dans Orch.
+M8 validé par le porteur (démo)
+Jalons M0 à M8 marqués validés dans Orch.
 
 ## Session en cours
 - 07/11/2026 — M8 (bilan) : Bilan d'entrée du jalon M8 — Durcissement & pilote, remplacement de la section M7 par M8 avec tableau de DoD détaillant l'état initial vérifié dans le code (NF-01 à NF-05, F-90, F-91, API-28, API-30, lot 3 langues/RTL, recette, pilote, lint/typecheck/test), mention « M7 validé par le porteur (démo) ». Contrôles lint, typecheck et test vérifiés verts (243 fichiers, 2 628 tests).
