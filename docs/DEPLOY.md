@@ -142,7 +142,7 @@ Le script effectue les opérations suivantes :
 3. Extrait l'archive `media.tar.gz` (si présente) directement dans le dossier `/data` de MinIO, sans purger les fichiers existants.
 4. Redémarre les services `api` et `worker`.
 
-**Recommandation de test :** Il est fortement recommandé d'exécuter un **test de restauration** régulièrement sur un environnement bac à sable distinct pour s'assurer que l'archive est intègre et que la procédure fonctionne.
+**Test de restauration régulier (NF-10) :** Pour la procédure détaillée pas à pas sur un environnement bac à sable distinct de la production, la périodicité recommandée (mensuelle), les contrôles après restauration et le tableau de compte rendu, se référer à [EXPLOITATION.md §4.4 (Test de restauration)](EXPLOITATION.md#44-test-de-restauration).
 
 ## 10. Retour arrière (Rollback)
 
