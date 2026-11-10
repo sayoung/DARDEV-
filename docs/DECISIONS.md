@@ -1163,5 +1163,14 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** Importer depuis `@xplor/api` ; installer `pino` ou `@nestjs/common` dans `@xplor/worker`.
 - **À valider :** non
 
+## D-145 — Journaux JSON de l'API par le ConsoleLogger natif de NestJS (M9 NF-10)
+
+- **Date :** 10/11/2026
+- **Décision :** journaux JSON par le ConsoleLogger natif de NestJS 11 avec `json: true` en production via createAppLogger, journal des requêtes Fastify désactivé pour ne pas enregistrer l'IP (loi 09-08).
+- **Alternatives :** pino/nestjs-pino écarté (dépendance supplémentaire, sérialisation de l'IP à neutraliser).
+- **À valider :** oui
+
+
+
 
 

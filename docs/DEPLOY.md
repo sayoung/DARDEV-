@@ -178,6 +178,13 @@ Contrôlez que `ACME_EMAIL` est correct dans `.env.production`, que vos enregist
 
 Conformément à l'exigence NF-02 et à la loi marocaine 09-08 sur la protection des données personnelles :
 
+- **Format JSON :**
+  - Les journaux de l'API et du worker sont émis au format JSON en production (renvoi à D-145 pour l'API et D-144 pour le worker).
+  - Exemple de consultation des journaux de l'API :
+    ```bash
+    docker compose -f docker-compose.prod.yml logs api
+    ```
+
 - **Absence d'IP visiteur dans les données et journaux Caddy :**
   - Aucune adresse IP de visiteur n'est conservée dans les données métier (la table `Event` ne stocke aucune adresse IP ; la limitation de débit anonyme repose sur un hachage SHA-256 éphémère dans Redis expirant au bout de 60 secondes).
   - Dans le routeur Caddy (`deploy/caddy/Caddyfile`), aucun bloc `log` n'est configuré : aucun journal d'accès contenant l'IP des visiteurs n'est écrit dans un fichier persistant.
