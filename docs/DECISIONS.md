@@ -1156,4 +1156,12 @@ Pas de numéro de décision tant que le porteur n'a pas tranché :
 - **Alternatives :** sanitize-html côté API (dépendance inutile).
 - **À valider :** oui
 
+## D-144 — Logger JSON autonome du worker sans dépendance (M9 NF-10)
+
+- **Date :** 10/11/2026
+- **Décision :** Implémentation d'un logger dédié dans `apps/worker/src/logger.ts` produisant des journaux structurés JSON en production (`level`, `message`, `timestamp`) et lisibles en développement (`[LEVEL] message`), aligné sur le format de l'API mais sans import possible depuis `@xplor/api` (non consommable comme paquet de bibliothèque) et sans nouvelle dépendance (`pino`).
+- **Alternatives :** Importer depuis `@xplor/api` ; installer `pino` ou `@nestjs/common` dans `@xplor/worker`.
+- **À valider :** non
+
+
 
