@@ -54,7 +54,7 @@ Lorsque la double authentification est activée sur votre compte (elle concerne 
 4. Cliquez sur le bouton **Vérifier**.
 
 En cas d'anomalie :
-- Si les 6 chiffres sont erronés ou si le code a expiré entre-temps, le message rouge **Code invalide** s'affiche.
+- Si les 6 chiffres sont erronés ou si le code a expiré entre-temps, le message d'erreur **Code invalide** s'affiche.
 - Si une erreur réseau intervient lors de la validation, le message **La demande a échoué. Réessayez.** s'affiche.
 
 Dès la validation du code, votre session est établie et vous accédez immédiatement à l'accueil du back-office.
@@ -64,11 +64,11 @@ Dès la validation du code, votre session est établie et vous accédez immédia
 ## Médiathèque et import de panoramas
 
 ### Rôle et présentation de la médiathèque
-La **Médiathèque** centralise l'ensemble des ressources multimédias nécessaires à la composition des visites virtuelles (photographies panoramiques 360°, images d'illustration et fichiers sonores).
+La **Médiathèque** centralise les ressources multimédias (notamment les photographies panoramiques 360°) nécessaires à la composition des visites virtuelles.
 
 Pour accéder à la médiathèque :
 - Dans la barre latérale de navigation du back-office, cliquez sur le menu **Médias**.
-- L'écran affiche l'en-tête **Médiathèque** accompagné du sous-titre **Gérez les images, panoramas et sons.**.
+- L'écran affiche l'en-tête **Médiathèque** accompagné du sous-titre **Gérez les images, panoramas et sons.**
 
 ### Organisation des dossiers
 Sur le côté gauche de la page (ou dans le menu déroulant sur écran mobile), la section **Dossiers** permet de filtrer l'affichage des médias :
