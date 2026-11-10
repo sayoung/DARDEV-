@@ -128,3 +128,10 @@ wsl --status
 Le back-office lit d'abord `?lang=`, puis la clé `localStorage` `xplor.lang`, sinon le français. Le sélecteur fr/ar/en change la langue sans recharger la page et enregistre ce choix. Exemple : `http://localhost:5173/?lang=ar` pose `lang="ar"` et `dir="rtl"`.
 
 Le worker lit `REDIS_URL` (fichier `.env` à la racine, sinon la variable d'environnement). Au démarrage il écrit `worker prêt` sur la sortie standard.
+
+## Production (NF-10)
+
+Pour le déploiement sur le serveur VPS et l'exploitation de la plateforme en environnement de production :
+- **Procédure de déploiement** : consulter [DEPLOY.md](DEPLOY.md) (prérequis, configuration `.env.production`, premier déploiement via `deploy/deploy.sh`, certificats SSL automatiques Caddy, sauvegardes et restauration).
+- **Guide d'exploitation** : consulter [EXPLOITATION.md](EXPLOITATION.md) (architecture des conteneurs, supervision `/api/health`, suivi des kiosques et alertes hors ligne, rétention des journaux, tâches périodiques et commandes CLI).
+
