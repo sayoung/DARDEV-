@@ -155,11 +155,57 @@ test('?lang=ar pose dir=rtl et lang=ar, et enregistre la capture de connexion', 
   await page.screenshot({ path: loginArScreenshot, fullPage: true });
 });
 
-async function submitLogin(page: Page): Promise<void> {
-  await expect(page.getByRole('heading', { name: fr.auth.login.title, exact: true })).toBeVisible();
-  await page.getByLabel(fr.auth.login.email, { exact: true }).fill(email);
-  await page.getByLabel(fr.auth.login.password, { exact: true }).fill(password);
-  await page.getByRole('button', { name: fr.auth.login.submit, exact: true }).click();
+test('en langue arabe, le tableau de bord s’affiche en RTL avec la barre latérale à droite sans défilement horizontal', async ({
+  page,
+}) => {
+  const api = await installApi(page, 'ok');
+  api.profile.role = Role.EDITOR;
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem('xplor.lang', 'ar');
+  });
+
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: ar.auth.login.title, exact: true })).toBeVisible();
+  await page.getByRole('button', { name: ar.common.language.ar, exact: true }).click();
+
+  await submitLogin(page, 'ar');
+
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+  expect(await page.evaluate(() => document.documentElement.dir)).toBe('rtl');
+  expect(await page.evaluate(() => document.documentElement.lang)).toBe('ar');
+
+  await expect(
+    page.getByRole('heading', { name: ar.page.home.title, exact: true }),
+  ).toBeVisible();
+
+  const sidebar = page.locator('aside');
+  await expect(sidebar).toBeVisible();
+  const sidebarBox = await sidebar.boundingBox();
+  expect(sidebarBox).not.toBeNull();
+  if (!sidebarBox) {
+    throw new Error('barre latérale introuvable');
+  }
+
+  const windowWidth = await page.evaluate(() => window.innerWidth);
+  expect(sidebarBox.x).toBeGreaterThan(windowWidth / 2);
+
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
+  await expectNoA11yViolations(page);
+});
+
+async function submitLogin(page: Page, lang: 'fr' | 'ar' = 'fr'): Promise<void> {
+  const dict = lang === 'ar' ? ar : fr;
+  await expect(page.getByRole('heading', { name: dict.auth.login.title, exact: true })).toBeVisible();
+  await page.getByLabel(dict.auth.login.email, { exact: true }).fill(email);
+  await page.getByLabel(dict.auth.login.password, { exact: true }).fill(password);
+  await page.getByRole('button', { name: dict.auth.login.submit, exact: true }).click();
 }
 
 async function installApi(page: Page, loginOutcome: LoginOutcome): Promise<ApiDouble> {
