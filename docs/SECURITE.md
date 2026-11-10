@@ -1,7 +1,7 @@
 # Synthèse de Sécurité OWASP Top 10 (2021) — Projet Xplor
 
 > **Référence :** Cahier des charges Xplor v2.0 — Exigence non fonctionnelle **NF-01 Sécurité** et jalon **M8 — Durcissement & pilote**.  
-> **Dernière mise à jour :** 09/11/2026.
+> **Dernière mise à jour :** 10/11/2026.
 
 Ce document dresse l'état des mesures de sécurité mises en œuvre sur la plateforme Xplor au regard des 10 catégories de l'**OWASP Top 10 (2021)**. Chaque mesure est étayée par ses preuves dans le code source et les suites de tests automatisées (localisées via Grep). Lorsque les exigences de NF-01 ne sont pas intégralement couvertes dans le code actuel, un écart explicite (« écart : … ») est consigné.
 
@@ -214,6 +214,19 @@ Ce document dresse l'état des mesures de sécurité mises en œuvre sur la plat
 - `package.json` (bloc `pnpm.overrides`)
 - `docs/DECISIONS.md` (sections `D-60` et `D-140`)
 - *Vérification opérationnelle :* `pnpm audit --audit-level=high` s'exécute avec succès (code de retour 0).
+
+#### Mesure du 10/11/2026
+Remesure opérationnelle de l'audit des dépendances réalisée le 10/11/2026 :
+- `pnpm audit --prod --audit-level high` :
+  - Code de sortie : `0`
+  - Sortie brute : `13 vulnerabilities found` / `Severity: 4 low | 9 moderate`
+  - Compteurs : 4 low | 9 moderate | 0 high | 0 critical
+- `pnpm audit --audit-level high` :
+  - Code de sortie : `0`
+  - Sortie brute : `21 vulnerabilities found` / `Severity: 5 low | 16 moderate`
+  - Compteurs : 5 low | 16 moderate | 0 high | 0 critical
+
+Aucune vulnérabilité de niveau `high` ou `critical` n'a été détectée en production ni dans l'ensemble des dépendances (aucun écart à signaler). Le critère d'audit de la CI GitHub Actions et de l'exigence NF-01 est pleinement satisfait (code de sortie 0).
 
 ---
 
