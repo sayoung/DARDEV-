@@ -20,8 +20,9 @@ if [ -z "${POSTGRES_USER:-}" ] || [ -z "${POSTGRES_DB:-}" ]; then
     exit 1
 fi
 
-# Définition du dossier cible
+# Définition du dossier cible et politique de rétention
 BACKUP_BASE_DIR="${BACKUP_DIR:-/var/backups/xplor}"
+BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 TIMESTAMP=$(date +"%Y%m%d-%H%M")
 CURRENT_BACKUP_DIR="${BACKUP_BASE_DIR}/${TIMESTAMP}"
 
@@ -53,9 +54,9 @@ if [ ! -s "${CURRENT_BACKUP_DIR}/media.tar.gz" ]; then
 fi
 
 # 3. Rotation des sauvegardes
-# Supprime les dossiers de sauvegarde vieux de plus de 7 jours
-echo "Nettoyage des sauvegardes de plus de 7 jours..."
-find "${BACKUP_BASE_DIR}" -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf {} +
+# Supprime les dossiers de sauvegarde vieux de plus de 30 jours (ou selon BACKUP_RETENTION_DAYS)
+echo "Nettoyage des sauvegardes de plus de ${BACKUP_RETENTION_DAYS} jours..."
+find "${BACKUP_BASE_DIR}" -mindepth 1 -maxdepth 1 -type d -mtime +"${BACKUP_RETENTION_DAYS}" -exec rm -rf {} +
 
 # Désactive le trap d'erreur (tout s'est bien passé)
 trap - EXIT
