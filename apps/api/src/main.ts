@@ -13,6 +13,7 @@ import { AppModule } from './app.module.js';
 import { SESSION_COOKIE_NAME, sessionCookieOptions } from './auth/session-cookie.js';
 import { loadEnv } from './config/env.js';
 import { registerHttpSecurity } from './http-security.js';
+import { createAppLogger } from './logger.js';
 
 function loadLocalEnvFile(): void {
   const path = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
@@ -33,6 +34,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule.forRoot(env),
     fastifyAdapter,
+    { logger: createAppLogger(env.NODE_ENV) },
   );
   await app.register(fastifyCookie);
   await registerHttpSecurity(app.getHttpAdapter().getInstance(), env.API_CORS_ORIGINS);
