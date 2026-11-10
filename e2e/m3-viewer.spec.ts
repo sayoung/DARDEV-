@@ -152,6 +152,43 @@ test.describe('M3 F-40/F-30 : page publique (Viewer)', () => {
     await expectNoA11yViolations(page, { exclude: ['canvas'] });
   });
 
+  test('la visionneuse publique s’affiche correctement en arabe (RTL, libellé et accessibilité)', async ({
+    page,
+  }) => {
+    const { token } = await installPublicTourDouble(page);
+    await page.goto(`http://localhost:5174/v/${token}?lang=ar`);
+
+    const psvContainer = page.locator('.psv-container');
+    await expect(psvContainer).toBeVisible();
+
+    const statusDiv = page.locator('#status');
+    await expect(statusDiv).toBeHidden();
+
+    const controls = page.locator('#controls');
+    await expect(controls).toBeVisible();
+
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('lang', 'ar');
+    await expect(html).toHaveAttribute('dir', 'rtl');
+
+    const fullscreenBtn = page.getByRole('button', { name: resources.ar.viewer.fullscreen });
+    await expect(fullscreenBtn).toBeVisible();
+
+    const practicalInfoBtn = page.getByRole('button', { name: resources.ar.viewer.practicalInfo });
+    await expect(practicalInfoBtn).toBeVisible();
+
+    const langSwitcher = page.getByLabel(resources.ar.viewer.language);
+    await expect(langSwitcher).toBeVisible();
+
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
+    await expectNoA11yViolations(page, { exclude: ['canvas'] });
+  });
+
   test('la page légale ne présente aucune violation d’accessibilité (axe)', async ({
     page,
   }) => {

@@ -43,7 +43,7 @@ export async function startViewer(
     vr: resources[lang].vr.enter,
   };
 
-  createLangSwitcher(doc, lang, resources.fr.viewer.language, (newLang) => {
+  createLangSwitcher(doc, lang, resources[lang].viewer.language, (newLang) => {
     try {
       deps.stats?.langChange(newLang);
     } catch {
