@@ -33,7 +33,7 @@ function flatten(value: unknown, prefix = ''): Map<string, unknown> {
   return leaves;
 }
 
-function faultyKeys(trees: Record<string, unknown>): { faultsFr: string[], warnings: string[] } {
+function faultyKeys(trees: Record<string, unknown>): string[] {
   const flat = new Map<string, Map<string, unknown>>();
   const keys = new Set<string>();
   for (const [lang, tree] of Object.entries(trees)) {
@@ -44,30 +44,24 @@ function faultyKeys(trees: Record<string, unknown>): { faultsFr: string[], warni
     }
   }
 
-  const faultsFr: string[] = [];
-  const warnings: string[] = [];
+  const faults: string[] = [];
   for (const key of [...keys].sort()) {
     for (const lang of Object.keys(trees).sort()) {
       const value = flat.get(lang)?.get(key);
       if (value === undefined) {
-        if (lang === 'fr') faultsFr.push(`${lang}: ${key} (manquante)`);
-        else warnings.push(`${lang}: ${key} (manquante)`);
+        faults.push(`${lang}: ${key} (manquante)`);
       } else if (typeof value !== 'string' || value.trim() === '') {
-        if (lang === 'fr') faultsFr.push(`${lang}: ${key} (vide)`);
-        else warnings.push(`${lang}: ${key} (vide)`);
+        faults.push(`${lang}: ${key} (vide)`);
       }
     }
   }
-  return { faultsFr, warnings };
+  return faults;
 }
 
 describe('clés i18n', () => {
-  it('exige les clés non vides en fr, signale les manquantes en ar et en', () => {
-    const { faultsFr, warnings } = faultyKeys(locales);
-    if (warnings.length > 0) {
-      console.warn('Traductions manquantes (non bloquantes) :\n' + warnings.join('\n'));
-    }
-    expect(faultsFr, faultsFr.join('\n')).toEqual([]);
+  it('exige les clés non vides en fr, ar et en', () => {
+    const faults = faultyKeys(locales);
+    expect(faults, faults.join('\n')).toEqual([]);
   });
 
   it('expose les trois fichiers via resources', () => {
