@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { PANORAMA_QUEUE_NAME, PANORAMA_WORKER_CONCURRENCY } from '@xplor/shared';
 
 import { loadEnv } from './env.js';
+import { createWorkerLogger, type WorkerLogger } from './logger.js';
 import { createS3Client, S3WorkerStorage } from './storage.js';
 import { PrismaAssetRepository } from './asset-repository.js';
 import { startPanoramaWorker } from './panorama.worker.js';
@@ -191,25 +192,55 @@ export async function boot(
   }
 }
 
+export type BootFunction = (
+  source: Record<string, string | undefined>,
+  log: (message: string) => void,
+  factories?: BootFactories,
+) => Promise<() => Promise<void>>;
+
+export async function bootstrap(
+  source: Record<string, string | undefined> = process.env,
+  logger: WorkerLogger = createWorkerLogger(source.NODE_ENV ?? process.env.NODE_ENV ?? 'development'),
+  factories: BootFactories = defaultFactories,
+  bootFn: BootFunction = boot,
+): Promise<() => Promise<void>> {
+  try {
+    const shutdown = await bootFn(
+      source,
+      (m) => {
+        logger.info(m);
+      },
+      factories,
+    );
+    return shutdown;
+  } catch (error: unknown) {
+    logger.error(error);
+    throw error;
+  }
+}
+
 if (process.env.VITEST !== 'true') {
   loadLocalEnvFile();
-  boot(process.env, (message) => {
-    console.log(message);
-  }).then((shutdown) => {
-    let shuttingDown = false;
-    const handleSignal = () => {
-      if (shuttingDown) return;
-      shuttingDown = true;
-      void shutdown().then(
-        () => process.exit(0),
-        () => process.exit(1)
-      );
-    };
-    process.on('SIGINT', handleSignal);
-    process.on('SIGTERM', handleSignal);
-  }).catch((error: unknown) => {
-    const message = error instanceof Error ? error.message : 'Unknown startup error';
-    console.error(message);
-    process.exit(1);
-  });
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
+  const logger = createWorkerLogger(nodeEnv);
+  bootstrap(process.env, logger)
+    .then((shutdown) => {
+      let shuttingDown = false;
+      const handleSignal = () => {
+        if (shuttingDown) return;
+        shuttingDown = true;
+        void shutdown().then(
+          () => process.exit(0),
+          (fatalError: unknown) => {
+            logger.error(fatalError);
+            process.exit(1);
+          },
+        );
+      };
+      process.on('SIGINT', handleSignal);
+      process.on('SIGTERM', handleSignal);
+    })
+    .catch(() => {
+      process.exit(1);
+    });
 }
