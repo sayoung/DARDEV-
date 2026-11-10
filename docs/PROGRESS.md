@@ -6,21 +6,21 @@ Exigences : NF-01 à NF-05, F-90 (2FA), F-91, API-28 et API-30
 
 Livrable : PV de recette, rapport de pilote et correctifs
 
-| # | Critère | État | Constat initial vérifié dans le code |
+| # | Critère | État | Preuve |
 |---|---|---|---|
-| 1 | NF-01 : sécurité (helmet/CSP, throttler, CORS, pnpm audit) | à faire | Helmet/CSP et CORS configurés sur Fastify, ThrottlerGuard en place (auth, kiosks, public-tours), limiteur Redis sur /events ; audit CI en place avec overrides (voir D-60), résultat actuel de `pnpm audit` à re-mesurer et audit sécurité complet à finaliser |
-| 2 | NF-02 : loi 09-08 (pas d'IP dans Event, mentions légales) | à faire | Pas d'adresse IP stockée dans `Event` (anonymat par conception), hash SHA-256 IP éphémère Redis pour rate-limiting ; mentions légales et politique de confidentialité sur la page publique absentes |
-| 3 | NF-03 : performance (k6) | à faire | Aucun script k6 dans le dépôt ; seuils P95 (API < 300 ms, manifeste < 200 ms, insertion 200 événements < 100 ms) à mesurer et valider sous tests de charge |
-| 4 | NF-04 : /api/health | fait | Endpoint `/api/health` opérationnel avec sondes actives db (Postgres), redis et storage (MinIO/S3), délai max 2 000 ms, code 200/503 et tests unitaires verts |
-| 5 | NF-05 : accessibilité (axe) | à faire | `@axe-core/playwright` absent des dépendances et de la suite E2E ; conformité WCAG 2.1 AA (contrastes, navigation clavier, libellés) à auditer et automatiser |
-| 6 | F-90 : 2FA TOTP ADMIN (champs présents, logique absente) | à faire | Champs `totpSecret` et `totpEnabled` présents dans le modèle Prisma `User` ; logique TOTP (setup, verify, challenge au login, obligation pour ADMIN) absente |
-| 7 | F-91 : AuditLog (modèle absent) | à faire | Modèle `AuditLog` absent de `schema.prisma` ; journalisation des événements sensibles (connexions, rôles, publications, sélection, kiosques) absente |
-| 8 | API-28 : CRUD utilisateurs (seules les invitations existent) | à faire | Seul `POST /admin/users/invitations` est implémenté ; endpoints CRUD (liste, consultation, mise à jour, désactivation, rattachement hôtels) absents |
-| 9 | API-30 : /admin/audit (absent) | à faire | Endpoint `GET /admin/audit` et contrôleur d'interrogation du journal d'audit absents |
-| 10 | Lot « traductions ar/en complètes + vérification RTL + réactivation des contrôles 3 langues » (décision du 30/09/2026, à faire avant le pilote) | à faire | Infrastructure i18n et RTL en place mais contenus ar/en partiels (repli sur fr) et contrôles stricts suspendus (D-03 / D-82) ; à compléter et réactiver avant le pilote |
-| 11 | Recette | à faire | Scénarios de recette fonctionnelle globale de bout en bout et procès-verbal (PV) de recette à exécuter et rédiger |
-| 12 | Pilote dans un hôtel | à faire | Déploiement pilote en conditions réelles dans un hôtel partenaire, observation d'usage, rapport de pilote et correctifs à produire |
-| 13 | Lint, typecheck et test | fait | `pnpm lint`, `pnpm typecheck` code 0 sans erreur, `pnpm test` vert (243 fichiers, 2 628 tests passés au 07/11/2026) |
+| 1 | NF-01 : sécurité (helmet/CSP, throttler, CORS, pnpm audit) | fait | docs/SECURITE.md (synthèse OWASP Top 10 conforme, A03/D-143, A08 signature JPEG vérifiée, pnpm audit 0 high/critical) |
+| 2 | NF-02 : loi 09-08 (pas d'IP dans Event, mentions légales) | fait | apps/api/prisma/schema.prisma (modèle Event sans IP) et apps/web/src/legal-page.ts (page /v/legal en 3 langues, testée) |
+| 3 | NF-03 : performance (k6) | à faire par le porteur | perf/k6/*.js et docs/PERFORMANCE.md (scripts k6 rédigés, mesures à exécuter par le porteur en local/préprod) |
+| 4 | NF-04 : /api/health | fait | apps/api/src/health/health.controller.ts et health.probes.ts (sondes db, redis, storage MinIO, délai max 2 000 ms, tests unitaires) |
+| 5 | NF-05 : accessibilité (axe) | fait | e2e/helpers/axe.ts, tests e2e axe (back-office.spec.ts, m3-viewer.spec.ts) et apps/kiosk/src/min-sizes.test.ts (zones tactiles >= 48px) |
+| 6 | F-90 : 2FA TOTP ADMIN | fait | apps/api/src/auth/two-factor.service.ts, apps/admin/src/pages/AccountSecurityPage.tsx et TwoFactorStep.tsx |
+| 7 | F-91 : AuditLog | fait | apps/api/prisma/schema.prisma (modèle AuditLog) et apps/api/src/audit/audit.service.ts |
+| 8 | API-28 : CRUD utilisateurs | fait | apps/api/src/users/users.controller.ts et users-admin.service.ts (invitation, liste, détail, mise à jour rôle/statut/hôtels) |
+| 9 | API-30 : /admin/audit | fait | apps/api/src/audit/audit.controller.ts (GET /admin/audit, filtres et pagination, réservé aux ADMIN) |
+| 10 | Lot « traductions ar/en complètes + vérification RTL + réactivation des contrôles 3 langues » (décision du 30/09/2026, à faire avant le pilote) | fait | docs/DECISIONS.md (D-142), packages/i18n/src/locales/*.json, packages/i18n/src/keys.test.ts bloquant, tests e2e RTL |
+| 11 | Recette | à faire par le porteur | docs/RECETTE.md et docs/PV_RECETTE.md (12 scénarios formalisés, PV de recette à exécuter par le porteur) |
+| 12 | Pilote dans un hôtel | à faire par le porteur | docs/PILOTE.md (plan cadre et protocole opérationnel rédigés, pilote physique à mener par le porteur) |
+| 13 | Lint, typecheck et test | fait | pnpm lint et pnpm typecheck code 0, pnpm test vert (274 fichiers, 3 350 tests passés au 10/11/2026) |
 
 DoD M8 remplie : non
 
