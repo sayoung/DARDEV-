@@ -91,7 +91,7 @@ Pour ajouter un ou plusieurs panoramas depuis votre poste de travail :
 1. Dans le volet **Dossiers**, sélectionnez le dossier souhaité (choisissez une visite précise pour rattacher directement vos images, ou restez sur **Tous les médias**).
 2. Dans le bloc d'envoi en haut de la page, cliquez sur le champ **Sélectionner des fichiers** pour choisir un ou plusieurs fichiers JPEG sur votre disque dur (la sélection multiple est possible).
 3. Cliquez sur le bouton **Envoyer**.
-4. Pour chaque fichier, une ligne de progression affiche le nom du fichier, le pourcentage d'avancement du téléversement et la mention **En cours**.
+4. Pour chaque fichier, une ligne affiche le nom du fichier, une barre de progression du téléversement et la mention **En cours**.
 5. Une fois le transfert terminé, l'état indique **Envoyé**.
 6. **Création automatique de scènes (optionnelle)** :
    - Si vous avez sélectionné le dossier d'une visite avant le téléversement, le bouton **Créer les scènes dans cette visite** devient disponible après l'envoi.
@@ -116,7 +116,7 @@ Le tableau de la médiathèque présente les caractéristiques de chaque fichier
 - **Actions** :
   - **Retraiter** : ce bouton (disponible pour les médias au statut **Prêt** ou **Erreur**) permet de relancer le traitement en arrière-plan en cas de besoin, sans devoir re-téléverser l'image.
   - **Supprimer** : permet de supprimer définitivement le média de la plateforme. Une boîte de dialogue demande confirmation : « Êtes-vous sûr de vouloir supprimer ce média ? ».
-    - Si le média est actuellement utilisé par une scène, un point d'intérêt ou comme vignette de visite, la suppression est bloquée et le système affiche : **Ce média est utilisé par une scène ou un point d'intérêt.**.
+    - Si le média est actuellement utilisé par une scène, un point d'intérêt ou comme vignette de visite, la suppression est bloquée et le système affiche : **Ce média est utilisé par une scène ou un point d'intérêt.**
     - Pour pouvoir supprimer ce média, il est nécessaire de le retirer préalablement des scènes ou visites qui y font référence.
 
 Au-delà de 20 éléments dans la liste, une pagination s'affiche au bas du tableau avec les boutons **Précédent** et **Suivant** pour parcourir les différentes pages.
@@ -128,7 +128,7 @@ Pour supprimer en masse les fichiers qui ne sont plus exploités dans aucune vis
    - Si aucun média orphelin n'est trouvé, une boîte de dialogue avec le titre **Information** affiche le message : **La médiathèque est déjà propre**.
    - Si des médias orphelins sont identifiés, une fenêtre de **Confirmation** s'affiche en indiquant le nombre de médias concernés et le volume total en mégaoctets qui sera supprimé.
 3. Cliquez sur **Confirmer** pour procéder à la suppression définitive, ou sur **Annuler** pour abandonner l'opération.
-4. Une notification avec le titre **Succès** confirme le nombre de médias effectivement supprimés.
+4. Une boîte de dialogue avec le titre **Succès** confirme le nombre de médias effectivement supprimés.
 
 ### Sélectionner un média dans l'éditeur de visite ou de scène
 Lors de l'édition d'une visite (choix de la vignette) ou d'une scène (choix du panorama 360°) :
@@ -160,7 +160,7 @@ Le formulaire regroupe les informations descriptives et géographiques de la vis
 - **Vignette** : image de présentation associée à la visite, affichée sur les listes et sur les fiches de présentation (champ obligatoire).
   - Le sélecteur affiche au départ le bouton **Sélectionner un média...**. Une fois un média choisi, son intitulé s'affiche accompagné du bouton **Modifier**.
   - Si aucune vignette n'a été sélectionnée lors de la soumission du formulaire, le message d'erreur **Veuillez sélectionner une vignette.** s'affiche.
-  - Deux types de médias sont acceptés pour la vignette : les images (`Image`) et les photographies panoramiques 360° (`Panorama`).
+  - Deux types de médias sont acceptés pour la vignette : les images (**Image**) et les photographies panoramiques 360° (**Panorama**).
   - Cliquez sur le champ pour ouvrir la boîte de dialogue **Sélectionner un média** :
     - L'onglet **Médiathèque** liste les médias au statut **Prêt**. Vous pouvez utiliser la liste déroulante **Filtrer par type** (**Tous les types**, **Image** ou **Panorama**) et la zone de recherche **Rechercher un média** (champ « Rechercher par nom... »). Cliquez sur le média ou le panorama souhaité pour l'associer comme vignette.
     - L'onglet **Envoyer depuis mon ordinateur** permet d'importer directement un nouveau fichier image ou panorama depuis votre disque dur en cliquant sur **Choisir un fichier**, puis sur **Envoyer**.
@@ -172,7 +172,7 @@ Le formulaire regroupe les informations descriptives et géographiques de la vis
 Pour valider la création de la visite :
 1. Cliquez sur le bouton **Enregistrer** situé au bas du formulaire. Pendant l'enregistrement, le bouton est temporairement désactivé pour éviter tout double envoi.
 2. Si des informations sont invalides ou incomplètes (par exemple si aucune catégorie n'est cochée), le message rouge **Veuillez corriger les erreurs dans le formulaire.** s'affiche (ou **Veuillez sélectionner une vignette.** si aucune vignette n'a été sélectionnée).
-3. Dès que l'enregistrement réussit, vous êtes automatiquement redirigé vers l'écran **Détails de la visite** (`/tours/<id>`). Lors d'une modification ultérieure depuis cette fiche, cliquer sur **Enregistrer** affiche le message de confirmation **Visite enregistrée.**.
+3. Dès que l'enregistrement réussit, vous êtes automatiquement redirigé vers l'écran **Détails de la visite** (`/tours/<id>`). Lors d'une modification ultérieure depuis cette fiche, cliquer sur **Enregistrer** affiche le message de confirmation **Visite enregistrée.**
 
 ### Statuts de la visite : Brouillon et Publiée
 Chaque visite possède un cycle de vie caractérisé par deux statuts :
