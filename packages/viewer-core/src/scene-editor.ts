@@ -283,6 +283,7 @@ export function mountSceneEditor(
         }
       }
 
+      // Positionnement physique du canevas 2D (coordonnées écran vers sphériques 360°)
       const boundingRect = viewer.container.getBoundingClientRect();
       const viewerX = e.clientX - boundingRect.left;
       const viewerY = e.clientY - boundingRect.top;
@@ -302,6 +303,7 @@ export function mountSceneEditor(
       viewer.setOption('mousemove', true);
       
       if (isDragging) {
+        // Positionnement physique du canevas 2D (coordonnées écran vers sphériques 360°)
         const boundingRect = viewer.container.getBoundingClientRect();
         const viewerX = e.clientX - boundingRect.left;
         const viewerY = e.clientY - boundingRect.top;
