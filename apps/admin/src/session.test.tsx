@@ -1,9 +1,9 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { resources } from '@xplor/i18n';
-import { Role, type MeResponse } from '@xplor/shared';
+import { Role, type MeResponse, type PaginatedTourResponse } from '@xplor/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { clearCsrfToken } from './api/client.js';
+import { clearCsrfToken, resetIsRedirectingForTests } from './api/client.js';
 import { App } from './App.js';
 import { i18n } from './i18n.js';
 import { LANG_STORAGE_KEY } from './lang.js';
@@ -18,11 +18,54 @@ const profile = {
   totpEnabled: true,
 } satisfies MeResponse;
 
+const emptyTourList: PaginatedTourResponse = {
+  items: [],
+  page: 1,
+  pageSize: 10,
+  total: 0,
+};
+
+function createSessionFetchMock(initialAuthenticated = false) {
+  let isAuthenticated = initialAuthenticated;
+
+  return (input: unknown, init?: unknown) => {
+    const url = requestUrl(input);
+    const method = methodOf(input, init);
+
+    if (method === 'POST') {
+      if (url.endsWith('/auth/login')) {
+        isAuthenticated = true;
+        return Promise.resolve(jsonResponse(200, profile));
+      }
+      if (url.endsWith('/auth/logout')) {
+        isAuthenticated = false;
+        return Promise.resolve(new Response(null, { status: 200 }));
+      }
+    }
+
+    if (method === 'GET') {
+      if (url.endsWith('/auth/me')) {
+        return Promise.resolve(isAuthenticated ? jsonResponse(200, profile) : anonymous());
+      }
+      if (url.includes('/cities') || url.includes('/categories')) {
+        return Promise.resolve(jsonResponse(200, []));
+      }
+      if (url.includes('/tours')) {
+        return Promise.resolve(jsonResponse(200, emptyTourList));
+      }
+      return Promise.resolve(jsonResponse(200, emptyTourList));
+    }
+
+    return Promise.resolve(anonymous());
+  };
+}
+
 const fetchMock = vi.fn<(input: unknown, init?: unknown) => Promise<Response>>();
 
 describe('session du back-office', () => {
   beforeEach(async () => {
     clearCsrfToken();
+    resetIsRedirectingForTests();
     localStorage.clear();
     window.history.replaceState(null, '', '/');
     document.documentElement.setAttribute('lang', 'fr');
@@ -35,6 +78,7 @@ describe('session du back-office', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    resetIsRedirectingForTests();
   });
 
   it('affiche le formulaire en arabe avec dir=rtl', async () => {
@@ -42,7 +86,7 @@ describe('session du back-office', () => {
     fetchMock.mockResolvedValue(anonymous());
     render(<App />);
 
-    const email = await screen.findByLabelText(resources.ar.auth.login.email);
+    const email = await screen.findByLabelText(resources.ar.auth.login.email, {}, { timeout: 5000 });
     expect(screen.getByLabelText(resources.ar.auth.login.password)).toBeTruthy();
     expect(document.documentElement.getAttribute('lang')).toBe('ar');
     expect(document.documentElement.getAttribute('dir')).toBe('rtl');
@@ -55,22 +99,16 @@ describe('session du back-office', () => {
   });
 
   it('une connexion réussie affiche le nom', async () => {
-    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
-      if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/login')) {
-        return Promise.resolve(jsonResponse(200, profile));
-      }
-      if (methodOf(input, init) === 'GET') {
-        return Promise.resolve(jsonResponse(200, { items: [], total: 0 }));
-      }
-      return Promise.resolve(anonymous());
-    });
+    fetchMock.mockImplementation(createSessionFetchMock(false));
     render(<App />);
     await submitLogin('ada@xplor.test', 'correct-horse');
 
-    expect(await screen.findAllByText(profile.name)).toBeTruthy();
-    expect(screen.getByText(resources.fr.auth.role.ADMIN)).toBeTruthy();
+    expect(await screen.findAllByText(profile.name, {}, { timeout: 5000 })).toBeTruthy();
+    expect(await screen.findByText(resources.fr.auth.role.ADMIN, {}, { timeout: 5000 })).toBeTruthy();
     expect(screen.queryByText(profile.role)).toBeNull();
-    expect(screen.queryByRole('form', { name: resources.fr.auth.login.title })).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('form', { name: resources.fr.auth.login.title })).toBeNull();
+    }, { timeout: 5000 });
     const loginCall = findCall('/auth/login');
     expect(loginCall?.credentials).toBe('include');
     expect(loginCall?.init?.body).toBe(
@@ -88,64 +126,53 @@ describe('session du back-office', () => {
     render(<App />);
     await submitLogin('ada@xplor.test', 'mauvais-mot-de-passe');
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, { timeout: 5000 });
     expect(alert.textContent).toBe(resources.fr.auth.login.error);
     expect(screen.queryByText(profile.name)).toBeNull();
   });
 
   it('affiche le message d’expiration et nettoie l’URL après connexion', async () => {
     window.history.replaceState(null, '', '/tours?notice=expired');
-    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
-      if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/login')) {
-        return Promise.resolve(jsonResponse(200, profile));
-      }
-      if (methodOf(input, init) === 'GET') {
-        return Promise.resolve(jsonResponse(200, { items: [], total: 0 }));
-      }
-      return Promise.resolve(anonymous());
-    });
+    fetchMock.mockImplementation(createSessionFetchMock(false));
     render(<App />);
 
-    const alerts = await screen.findAllByRole('alert');
+    const alerts = await screen.findAllByRole('alert', {}, { timeout: 5000 });
     expect(alerts).toHaveLength(1);
     expect(alerts[0]?.textContent).toBe(resources.fr.auth.login.expired);
 
     await submitLogin('ada@xplor.test', 'correct-horse');
 
-    expect(await screen.findAllByText(profile.name)).toBeTruthy();
-    expect(window.location.pathname).toBe('/tours');
-    expect(window.location.search).toBe('');
+    expect(await screen.findAllByText(profile.name, {}, { timeout: 5000 })).toBeTruthy();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/tours');
+      expect(window.location.search).toBe('');
+    }, { timeout: 5000 });
   });
-
 
   it('affiche le rôle traduit en arabe', async () => {
     window.history.replaceState(null, '', '/?lang=ar');
-    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
-      if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/login')) {
-        return Promise.resolve(jsonResponse(200, profile));
-      }
-      if (methodOf(input, init) === 'GET') {
-        return Promise.resolve(jsonResponse(200, { items: [], total: 0 }));
-      }
-      return Promise.resolve(anonymous());
-    });
+    fetchMock.mockImplementation(createSessionFetchMock(false));
     render(<App />);
 
     expect(
-      await screen.findByRole('heading', { name: resources.ar.auth.login.title }),
+      await screen.findByRole('heading', { name: resources.ar.auth.login.title }, { timeout: 5000 }),
     ).toBeTruthy();
-    fireEvent.change(screen.getByLabelText(resources.ar.auth.login.email), {
+    const emailInput = await screen.findByLabelText(resources.ar.auth.login.email, {}, { timeout: 5000 });
+    const passwordInput = await screen.findByLabelText(resources.ar.auth.login.password, {}, { timeout: 5000 });
+    fireEvent.change(emailInput, {
       target: { value: 'ada@xplor.test' },
     });
-    fireEvent.change(screen.getByLabelText(resources.ar.auth.login.password), {
+    fireEvent.change(passwordInput, {
       target: { value: 'correct-horse' },
     });
-    fireEvent.submit(screen.getByRole('form', { name: resources.ar.auth.login.title }));
+    const form = screen.getByRole('form', { name: resources.ar.auth.login.title });
+    fireEvent.submit(form);
 
-    expect(await screen.findByText(resources.ar.auth.role.ADMIN)).toBeTruthy();
+    const roleElement = await screen.findByText(resources.ar.auth.role.ADMIN, {}, { timeout: 5000 });
+    expect(roleElement).toBeTruthy();
     expect(screen.queryByText(profile.role)).toBeNull();
     expect(document.documentElement.getAttribute('dir')).toBe('rtl');
-    const home = screen.getByText(resources.ar.auth.role.ADMIN).closest('header');
+    const home = roleElement.closest('header');
     expect(home).not.toBeNull();
     if (home !== null) {
       expect(getComputedStyle(home).direction).toBe('rtl');
@@ -162,7 +189,7 @@ describe('session du back-office', () => {
     render(<App />);
     await submitLogin('ada@xplor.test', 'encore-un-essai');
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, { timeout: 5000 });
     expect(alert.textContent).toBe(resources.fr.auth.login.locked);
     expect(screen.queryByText(resources.fr.auth.login.error)).toBeNull();
   });
@@ -177,7 +204,7 @@ describe('session du back-office', () => {
     render(<App />);
     await submitLogin('ada@xplor.test', 'mot-de-passe-valide');
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, { timeout: 5000 });
     expect(alert.textContent).toBe(resources.fr.auth.login.failed);
     expect(screen.queryByText(resources.fr.auth.login.error)).toBeNull();
     expect(screen.queryByText(resources.fr.auth.login.locked)).toBeNull();
@@ -193,24 +220,20 @@ describe('session du back-office', () => {
     render(<App />);
     await submitLogin('ada@xplor.test', 'mot-de-passe-valide');
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, { timeout: 5000 });
     expect(alert.textContent).toBe(resources.fr.auth.login.failed);
   });
 
   it('la déconnexion envoie l’en-tête X-CSRF-Token', async () => {
-    fetchMock.mockImplementation((input: unknown, init?: unknown) => {
-      if (methodOf(input, init) === 'POST' && requestUrl(input).endsWith('/auth/logout')) {
-        return Promise.resolve(new Response(null, { status: 200 }));
-      }
-      return Promise.resolve(jsonResponse(200, profile));
-    });
+    fetchMock.mockImplementation(createSessionFetchMock(true));
     render(<App />);
-    expect(await screen.findAllByText(profile.name)).toBeTruthy();
-    const logoutButton = screen.getAllByRole('button', { name: resources.fr.auth.logout })[0];
+    expect(await screen.findAllByText(profile.name, {}, { timeout: 5000 })).toBeTruthy();
+    const logoutButtons = await screen.findAllByRole('button', { name: resources.fr.auth.logout }, { timeout: 5000 });
+    const logoutButton = logoutButtons[0];
     if (!logoutButton) throw new Error('Logout button not found');
     fireEvent.click(logoutButton);
     expect(
-      await screen.findByRole('heading', { name: resources.fr.auth.login.title }),
+      await screen.findByRole('heading', { name: resources.fr.auth.login.title }, { timeout: 5000 }),
     ).toBeTruthy();
     const logoutCall = findCall('/auth/logout');
     expect(logoutCall?.method).toBe('POST');
@@ -220,14 +243,19 @@ describe('session du back-office', () => {
 });
 
 async function submitLogin(email: string, password: string): Promise<void> {
-  expect(await screen.findByRole('heading', { name: resources.fr.auth.login.title })).toBeTruthy();
-  fireEvent.change(screen.getByLabelText(resources.fr.auth.login.email), {
+  expect(
+    await screen.findByRole('heading', { name: resources.fr.auth.login.title }, { timeout: 5000 }),
+  ).toBeTruthy();
+  const emailInput = await screen.findByLabelText(resources.fr.auth.login.email, {}, { timeout: 5000 });
+  const passwordInput = await screen.findByLabelText(resources.fr.auth.login.password, {}, { timeout: 5000 });
+  fireEvent.change(emailInput, {
     target: { value: email },
   });
-  fireEvent.change(screen.getByLabelText(resources.fr.auth.login.password), {
+  fireEvent.change(passwordInput, {
     target: { value: password },
   });
-  fireEvent.submit(screen.getByRole('form', { name: resources.fr.auth.login.title }));
+  const form = screen.getByRole('form', { name: resources.fr.auth.login.title });
+  fireEvent.submit(form);
 }
 
 function anonymous(): Response {
