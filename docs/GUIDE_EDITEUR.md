@@ -198,3 +198,68 @@ Sur la page **Visites** :
 - Le filtre déroulant **Statut** en haut de page permet de filtrer la liste en affichant **Tous les statuts**, uniquement les visites au statut **Brouillon**, ou uniquement les visites **Publiée**.
 - Pour chaque ligne du tableau, le bouton **Modifier** ouvre la fiche de détail, et le bouton **Dupliquer** permet de dupliquer une visite et l'ensemble de ses scènes (la copie est créée au statut Brouillon).
 
+---
+
+## Ajouter des scènes
+
+### Présentation de la section des scènes
+Sur l'écran **Détails de la visite**, sous le formulaire des caractéristiques générales, se trouve la section **Scènes**.
+Elle regroupe sous forme de tableau toutes les scènes panoramiques 360° qui composent la visite :
+- **Titre** : nom de la scène, avec le badge **Scène de départ** pour la scène d'entrée. Cliquer sur le titre ouvre l'écran de modification de la scène.
+- **Hotspots** : nombre de points d'interaction configurés dans la scène.
+- **Actions** : ensemble des boutons permettant d'ordonner et d'administrer chaque scène.
+
+### Créer une scène manuellement
+Pour ajouter une scène dans la visite :
+1. Cliquez sur le bouton **Ajouter une scène** situé sous le tableau des scènes.
+2. La page s'ouvre avec le titre **Ajouter une scène**. Le fil d'Ariane indique le cheminement : **Visites** > *[Titre de la visite]* > **Nouvelle scène**. Le lien **← Retour à la visite** permet de revenir à la visite sans enregistrer.
+3. Renseignez les champs du formulaire :
+   - **Titre** : nom de la scène (champ obligatoire, avec onglets **Français**, **Arabe** et **Anglais** ; la saisie en français est obligatoire).
+   - **Légende** : courte mention descriptive affichée en surimpression lors de la visualisation (champ optionnel, multilingue).
+   - **Panorama** : photographie panoramique 360° associée à la scène (champ obligatoire).
+     - Cliquez sur le champ pour ouvrir la boîte de dialogue **Sélectionner un média**.
+     - Dans l'onglet **Médiathèque**, sélectionnez un panorama déjà importé dont le statut est **Prêt** (vous pouvez utiliser le champ de recherche par nom).
+     - Dans l'onglet **Envoyer depuis mon ordinateur**, vous pouvez téléverser directement un fichier JPEG équirectangulaire conforme (ratio 2:1, largeur minimale 4 096 pixels, 80 Mo maximum).
+   - Paramètres de vue initiale :
+     - **Lacet initial** : angle horizontal du regard au chargement de la scène, exprimé en radians de -π à π (environ ±3,14, pas de 0,1, valeur par défaut : 0).
+     - **Tangage initial** : angle vertical d'inclinaison du regard, exprimé en radians de -π/2 à π/2 (environ ±1,57, pas de 0,1, valeur par défaut : 0).
+     - **Zoom initial** : niveau de grossissement initial de la vue, sous la forme d'un entier de 0 à 100 (valeur par défaut : 50).
+   - **Narration audio** : fichiers audio d'explication vocale diffusés à l'ouverture de la scène (champs optionnels déclinables pour chaque langue : **Français**, **العربية**, **English**).
+   - **Son d'ambiance** : fichier audio diffusé en boucle en arrière-plan sonore de la scène (champ optionnel).
+4. Cliquez sur le bouton **Enregistrer**. Dès la validation, la scène est créée et l'interface ouvre automatiquement sa page de modification (`/tours/<tourId>/scenes/<sceneId>`).
+
+### Création automatique de scènes depuis la médiathèque
+Pour créer rapidement plusieurs scènes à la suite :
+1. Rendez-vous dans le menu **Médias** de la barre latérale.
+2. Dans le volet **Dossiers**, sélectionnez le dossier correspondant à votre visite.
+3. Utilisez le bloc d'envoi pour téléverser l'ensemble de vos panoramas JPEG 360°.
+4. Une fois l'envoi terminé, cliquez sur le bouton **Créer les scènes dans cette visite**.
+5. Le système crée automatiquement une scène dans la visite pour chaque panorama dès la fin de son traitement, en reprenant le nom de base du fichier comme titre de scène.
+6. Vous pouvez ensuite retourner dans la visite pour renommer les scènes et ajuster leur ordre.
+
+### Nommer et modifier une scène
+Depuis la section **Scènes** de la visite, cliquez sur le bouton **Modifier** en face de la scène souhaitée (ou sur son titre).
+L'écran présente deux onglets de travail :
+- **Informations** : permet d'ajuster le **Titre**, la **Légende**, le fichier **Panorama** associé, les paramètres de vue initiale et les médias sonores. Cliquez sur **Enregistrer** pour sauvegarder les modifications ; la mention **Scène enregistrée avec succès** confirme l'enregistrement. Le bouton rouge **Supprimer** permet de supprimer définitivement la scène après confirmation par la boîte de dialogue : « Êtes-vous sûr ? ».
+- **Éditeur 360** : affiche le visualiseur panoramique immersif pour positionner les points d'intérêt (hotspots) et ajuster visuellement l'orientation du regard.
+
+Au bas de la page, deux liens permettent de naviguer rapidement entre les scènes de la visite dans l'ordre établi :
+- **← Scène précédente**
+- **Scène suivante →**
+
+### Ordonner les scènes et choisir la scène de départ
+Dans le tableau de la section **Scènes**, plusieurs boutons d'action permettent d'organiser le parcours :
+
+- **Monter** : déplace la scène d'un cran vers le haut dans l'ordre d'affichage. Le bouton est désactivé pour la première scène de la liste.
+- **Descendre** : déplace la scène d'un cran vers le bas dans l'ordre d'affichage. Le bouton est désactivé pour la dernière scène de la liste.
+- **Définir comme départ** : définit la scène sélectionnée comme point d'entrée principal de la visite virtuelle.
+  - La scène ainsi désignée reçoit immédiatement le badge **Scène de départ**.
+  - La visite virtuelle doit obligatoirement posséder une scène de départ pour pouvoir être validée et publiée.
+- **Supprimer** : supprime la scène de la visite après confirmation par le message : « Êtes-vous sûr ? ».
+
+### Carte des liens et accessibilité des scènes
+Sous le tableau des scènes, le bloc **Carte des liens** permet de contrôler que toutes les scènes de la visite sont correctement reliées entre elles :
+- Le bouton **Actualiser** permet de recalculer le graphe de navigation.
+- Si le graphe est complet, le message **Toutes les scènes sont accessibles.** confirme qu'un visiteur peut atteindre chaque scène à partir du point d'entrée.
+- Si une ou plusieurs scènes ne sont connectées par aucun lien de navigation (hotspot), le message **Scènes inaccessibles depuis la scène de départ :** en dresse la liste. Il convient alors d'ajouter un hotspot pointant vers ces scènes pour rétablir la continuité du parcours.
+
