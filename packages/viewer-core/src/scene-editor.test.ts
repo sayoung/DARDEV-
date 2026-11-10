@@ -475,6 +475,7 @@ describe('mountSceneEditor', () => {
       removeEventListener: vi.fn(),
       setPointerCapture: vi.fn(),
       releasePointerCapture: vi.fn(),
+      // Positionnement physique du canevas (mock DOMRect pour le conteneur du viewer)
       getBoundingClientRect: vi.fn().mockReturnValue({ left: 0, top: 0 }),
     };
     
@@ -555,6 +556,7 @@ describe('mountSceneEditor', () => {
       removeEventListener: vi.fn(),
       setPointerCapture: vi.fn(),
       releasePointerCapture: vi.fn(),
+      // Positionnement physique du canevas (mock DOMRect pour le conteneur du viewer)
       getBoundingClientRect: vi.fn().mockReturnValue({ left: 0, top: 0 }),
     };
 

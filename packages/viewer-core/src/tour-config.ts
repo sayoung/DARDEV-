@@ -77,6 +77,7 @@ export function createArrowElement(link?: VirtualTourLink | null): HTMLElement {
     throw new Error('document is not defined');
   }
   const dir = extractHotspotDir(link);
+  // Flèches de scène : positionnement physique dans la sphère 3D géré par Photo Sphere Viewer
   const button = document.createElement('button');
   button.type = 'button';
   button.className = `psv-virtual-tour-arrow xplor-tour-arrow xplor-tour-arrow--${dir}`;

@@ -115,6 +115,7 @@ export function drawInfoPanel(
   ctx.fillStyle = opts.textColor ?? DEFAULT_INFO_PANEL_TEXT_COLOR;
   ctx.font = opts.font ?? DEFAULT_INFO_PANEL_FONT;
   ctx.textBaseline = 'top';
+  // Positionnement physique du canevas 2D (inversion RTL gérée explicitement selon isRtl)
   ctx.textAlign = isRtl ? 'right' : 'left';
   ctx.direction = isRtl ? 'rtl' : 'ltr';
 

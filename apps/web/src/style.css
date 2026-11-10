@@ -596,7 +596,7 @@ body {
   font-weight: bold;
 }
 
-/* 2D tour navigation arrows */
+/* Flèches de scène : positionnement physique dans l'espace 3D géré par Photo Sphere Viewer */
 .psv-virtual-tour-arrow.xplor-tour-arrow {
   cursor: pointer;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));

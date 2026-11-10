@@ -968,7 +968,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Vignettes de scène et flèches de navigation dans la visionneuse (NF-05) */
+/* Flèches de scène et vignettes : positionnement physique dans l'espace 3D géré par Photo Sphere Viewer (NF-05) */
 .psv-gallery-item,
 .psv-gallery-arrow,
 .psv-virtual-tour-arrow {
